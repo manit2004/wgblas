@@ -7,6 +7,9 @@
       "wgblas/saxpy": ["./src/saxpy/saxpy.d.ts"],
       "wgblas/scopy": ["./src/scopy/scopy.d.ts"],
       "wgblas/sdot": ["./src/sdot/sdot.d.ts"],
+      "wgblas/sasum": ["./src/sasum/sasum.d.ts"],
+      "wgblas/snrm2": ["./src/snrm2/snrm2.d.ts"],
+      "wgblas/isamax": ["./src/isamax/isamax.d.ts"],
       "wgblas/classes/GpuVector": ["./src/classes/GpuVector.d.ts"]
     }
   }

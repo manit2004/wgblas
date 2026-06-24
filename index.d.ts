@@ -3,6 +3,9 @@ export { sswap } from "./src/sswap/sswap.js";
 export { saxpy } from "./src/saxpy/saxpy.js";
 export { scopy } from "./src/scopy/scopy.js";
 export { sdot } from "./src/sdot/sdot.js";
+export { sasum } from "./src/sasum/sasum.js";
+export { snrm2 } from "./src/snrm2/snrm2.js";
+export { isamax } from "./src/isamax/isamax.js";
 export { GpuVector } from "./src/classes/GpuVector.js";
 
 /**
