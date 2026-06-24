@@ -7,6 +7,8 @@
 - [x] saxpy
 - [x] scopy
 - [x] sdot
+- [x] sasum
+- [x] snrm2
 
 ## Requirements
 
