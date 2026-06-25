@@ -9,6 +9,7 @@
 - [x] sdot
 - [x] sasum
 - [x] snrm2
+- [x] isamax
 
 ## Requirements
 
