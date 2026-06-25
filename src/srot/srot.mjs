@@ -45,7 +45,7 @@ export async function srot(n, x, incx, y, incy, c, s) {
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (xIsGpu) {
+    if (xIsGpu && yIsGpu) {
         destroyBuffers(paramsBuffer);
         if (gpuTimeMs !== undefined) return { gpuTimeMs };
         return {};

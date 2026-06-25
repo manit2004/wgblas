@@ -1,6 +1,7 @@
 // srotm: applies modified Givens rotation H to vectors x and y.
-// param[0] = flag: -2 (identity), -1 (full H), 0 (unit diagonal), 1 (unit off-diagonal)
+// param[0] = flag: -1 (full H), 0 (unit diagonal), 1 (unit off-diagonal)
 // param = [ flag, h11, h21, h12, h22 ]
+// flag == -2 (identity/no-op) is handled in JS before dispatch reaches here.
 
 @group(0) @binding(0) var<storage, read_write> x:     array<f32>;
 @group(0) @binding(1) var<storage, read_write> y:     array<f32>;
@@ -22,9 +23,6 @@ fn main(
   @builtin(num_workgroups) num_wg: vec3u,
 ) {
   let flag = param[0];
-
-  // flag == -2.0 means identity: nothing to do
-  if (flag == -2.0) { return; }
 
   var h11: f32; var h12: f32;
   var h21: f32; var h22: f32;
