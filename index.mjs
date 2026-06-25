@@ -5,3 +5,8 @@ export { sswap } from "./src/sswap/sswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";
 export { sdot } from "./src/sdot/sdot.mjs";
+export { sasum } from "./src/sasum/sasum.mjs";
+export { snrm2 } from "./src/snrm2/snrm2.mjs";
+export { isamax } from "./src/isamax/isamax.mjs";
+export { srot } from "./src/srot/srot.mjs";
+export { srotm } from "./src/srotm/srotm.mjs";

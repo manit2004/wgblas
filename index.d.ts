@@ -6,6 +6,8 @@ export { sdot } from "./src/sdot/sdot.js";
 export { sasum } from "./src/sasum/sasum.js";
 export { snrm2 } from "./src/snrm2/snrm2.js";
 export { isamax } from "./src/isamax/isamax.js";
+export { srot } from "./src/srot/srot.js";
+export { srotm } from "./src/srotm/srotm.js";
 export { GpuVector } from "./src/classes/GpuVector.js";
 
 /**

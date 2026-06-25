@@ -42,6 +42,14 @@
       "import": "./src/isamax/isamax.mjs",
       "types": "./src/isamax/isamax.d.ts"
     },
+    "./srot": {
+      "import": "./src/srot/srot.mjs",
+      "types": "./src/srot/srot.d.ts"
+    },
+    "./srotm": {
+      "import": "./src/srotm/srotm.mjs",
+      "types": "./src/srotm/srotm.d.ts"
+    },
     "./util/random": "./src/util/random.mjs",
     "./classes/GpuVector": {
       "import": "./src/classes/GpuVector.mjs",
