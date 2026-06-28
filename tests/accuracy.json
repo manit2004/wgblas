@@ -6,5 +6,7 @@
   "scopy": { "max_ulp": 0 },
   "sdot":  { "max_ulp": 90 },
   "sasum": { "max_ulp": 15 },
-  "snrm2": { "max_ulp": 5 }
+  "snrm2": { "max_ulp": 5 },
+  "srot":  { "max_ulp": 0 },
+  "srotm": { "max_ulp": 15 }
 }
