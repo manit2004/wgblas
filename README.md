@@ -10,6 +10,8 @@
 - [x] sasum
 - [x] snrm2
 - [x] isamax
+- [x] srot
+- [x] srotm
 
 ## Requirements
 
