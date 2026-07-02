@@ -1,4 +1,4 @@
-.PHONY: test bench cuda example example-gpuvec fixtures help
+.PHONY: test bench cuda example example-gpuvec fixtures protect-results help
 
 # ── Help ─────────────────────────────────────────────────────────────────────
 
@@ -21,6 +21,9 @@ help:
 	@echo "  fixtures              Regenerate all test fixtures"
 	@echo "  fixtures-<name>       Regenerate fixtures for a specific function (e.g. fixtures-sscal)"
 	@echo ""
+	@echo "Results"
+	@echo "  protect-results       Prevent benchmark re-runs from dirtying git status (run once after clone)"
+	@echo ""
 	@echo "Examples"
 	@echo "  example                      Run all Node examples"
 	@echo "  example-gpuvec               Run all GpuVector Node examples"
@@ -28,6 +31,11 @@ help:
 	@echo "  example-<name>-web           Open a specific example in the browser (e.g. example-sscal-web)"
 	@echo "  example-gpuvec-<name>        Run a GpuVector Node example (e.g. example-gpuvec-saxpy)"
 	@echo "  example-gpuvec-<name>-web    Open a GpuVector example in the browser (e.g. example-gpuvec-saxpy-web)"
+
+# ── Results ──────────────────────────────────────────────────────────────────
+
+protect-results:
+	git ls-files benchmarks/results/ | xargs git update-index --skip-worktree
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 

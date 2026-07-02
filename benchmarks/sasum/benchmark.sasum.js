@@ -1,7 +1,7 @@
 import { init, cleanup } from "wgblas";
 import { sasum } from "wgblas/sasum";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/util/random";
+import { randomFloat32Array } from "wgblas/random";
 import { median, printHeader, printRow, getGpuModel, saveResults } from "../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
