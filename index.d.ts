@@ -1,3 +1,5 @@
+export { GpuVector } from "./src/classes/GpuVector.js";
+export { randomFloat32Array, randomFloat64Array } from "./src/random/random.js";
 export { sscal } from "./src/sscal/sscal.js";
 export { sswap } from "./src/sswap/sswap.js";
 export { saxpy } from "./src/saxpy/saxpy.js";
@@ -8,7 +10,6 @@ export { snrm2 } from "./src/snrm2/snrm2.js";
 export { isamax } from "./src/isamax/isamax.js";
 export { srot } from "./src/srot/srot.js";
 export { srotm } from "./src/srotm/srotm.js";
-export { GpuVector } from "./src/classes/GpuVector.js";
 
 /**
  * Initializes the WebGPU device.

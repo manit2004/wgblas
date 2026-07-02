@@ -4,6 +4,8 @@
     "checkJs": false,
     "paths": {
       "wgblas": ["./index.d.ts"],
+      "wgblas/classes/GpuVector": ["./src/classes/GpuVector.d.ts"],
+      "wgblas/random": ["./src/random/random.d.ts"],
       "wgblas/sscal": ["./src/sscal/sscal.d.ts"],
       "wgblas/sswap": ["./src/sswap/sswap.d.ts"],
       "wgblas/saxpy": ["./src/saxpy/saxpy.d.ts"],
@@ -13,8 +15,7 @@
       "wgblas/snrm2": ["./src/snrm2/snrm2.d.ts"],
       "wgblas/isamax": ["./src/isamax/isamax.d.ts"],
       "wgblas/srot": ["./src/srot/srot.d.ts"],
-      "wgblas/srotm": ["./src/srotm/srotm.d.ts"],
-      "wgblas/classes/GpuVector": ["./src/classes/GpuVector.d.ts"]
+      "wgblas/srotm": ["./src/srotm/srotm.d.ts"]
     }
   }
 }

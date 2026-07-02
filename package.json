@@ -10,6 +10,14 @@
       "import": "./index.mjs",
       "types": "./index.d.ts"
     },
+    "./classes/GpuVector": {
+      "import": "./src/classes/GpuVector.mjs",
+      "types": "./src/classes/GpuVector.d.ts"
+    },
+    "./random": {
+      "import": "./src/random/random.mjs",
+      "types": "./src/random/random.d.ts"
+    },
     "./sscal": {
       "import": "./src/sscal/sscal.mjs",
       "types": "./src/sscal/sscal.d.ts"
@@ -49,11 +57,6 @@
     "./srotm": {
       "import": "./src/srotm/srotm.mjs",
       "types": "./src/srotm/srotm.d.ts"
-    },
-    "./util/random": "./src/util/random.mjs",
-    "./classes/GpuVector": {
-      "import": "./src/classes/GpuVector.mjs",
-      "types": "./src/classes/GpuVector.d.ts"
     }
   },
   "repository": {
