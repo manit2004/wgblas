@@ -1,4 +1,4 @@
-import { GpuVector } from "../classes/GpuVector.js";
+import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Scales a single-precision vector by a constant: x = alpha * x

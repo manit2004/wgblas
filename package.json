@@ -4,59 +4,59 @@
   "description": "BLAS on WebGPU",
   "type": "module",
   "main": "index.mjs",
-  "types": "./index.d.ts",
+  "types": "./index.d.mts",
   "exports": {
     ".": {
       "import": "./index.mjs",
-      "types": "./index.d.ts"
+      "types": "./index.d.mts"
     },
     "./classes/GpuVector": {
       "import": "./src/classes/GpuVector.mjs",
-      "types": "./src/classes/GpuVector.d.ts"
+      "types": "./src/classes/GpuVector.d.mts"
     },
     "./random": {
       "import": "./src/random/random.mjs",
-      "types": "./src/random/random.d.ts"
+      "types": "./src/random/random.d.mts"
     },
     "./sscal": {
       "import": "./src/sscal/sscal.mjs",
-      "types": "./src/sscal/sscal.d.ts"
+      "types": "./src/sscal/sscal.d.mts"
     },
     "./sswap": {
       "import": "./src/sswap/sswap.mjs",
-      "types": "./src/sswap/sswap.d.ts"
+      "types": "./src/sswap/sswap.d.mts"
     },
     "./saxpy": {
       "import": "./src/saxpy/saxpy.mjs",
-      "types": "./src/saxpy/saxpy.d.ts"
+      "types": "./src/saxpy/saxpy.d.mts"
     },
     "./scopy": {
       "import": "./src/scopy/scopy.mjs",
-      "types": "./src/scopy/scopy.d.ts"
+      "types": "./src/scopy/scopy.d.mts"
     },
     "./sdot": {
       "import": "./src/sdot/sdot.mjs",
-      "types": "./src/sdot/sdot.d.ts"
+      "types": "./src/sdot/sdot.d.mts"
     },
     "./sasum": {
       "import": "./src/sasum/sasum.mjs",
-      "types": "./src/sasum/sasum.d.ts"
+      "types": "./src/sasum/sasum.d.mts"
     },
     "./snrm2": {
       "import": "./src/snrm2/snrm2.mjs",
-      "types": "./src/snrm2/snrm2.d.ts"
+      "types": "./src/snrm2/snrm2.d.mts"
     },
     "./isamax": {
       "import": "./src/isamax/isamax.mjs",
-      "types": "./src/isamax/isamax.d.ts"
+      "types": "./src/isamax/isamax.d.mts"
     },
     "./srot": {
       "import": "./src/srot/srot.mjs",
-      "types": "./src/srot/srot.d.ts"
+      "types": "./src/srot/srot.d.mts"
     },
     "./srotm": {
       "import": "./src/srotm/srotm.mjs",
-      "types": "./src/srotm/srotm.d.ts"
+      "types": "./src/srotm/srotm.d.mts"
     }
   },
   "repository": {
@@ -77,6 +77,7 @@
     "webgpu": "^0.4.0"
   },
   "devDependencies": {
+    "typescript": "^6.0.3",
     "vite": "^8.0.16"
   }
 }

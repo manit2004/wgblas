@@ -1,4 +1,4 @@
-import { GpuVector } from "../classes/GpuVector.js";
+import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Computes the sum of absolute values of a vector: result = sum(|x[i]|)

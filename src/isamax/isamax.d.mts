@@ -1,4 +1,4 @@
-import { GpuVector } from "../classes/GpuVector.js";
+import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Returns the 0-based index of the element with the largest absolute value.

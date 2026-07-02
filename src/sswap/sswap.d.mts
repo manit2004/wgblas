@@ -1,4 +1,4 @@
-import { GpuVector } from "../classes/GpuVector.js";
+import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Swaps the elements of two single-precision vectors: x <-> y

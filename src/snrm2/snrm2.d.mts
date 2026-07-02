@@ -1,4 +1,4 @@
-import { GpuVector } from "../classes/GpuVector.js";
+import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Computes the Euclidean norm of a vector: result = sqrt(sum(x[i] * x[i]))
