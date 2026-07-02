@@ -1,6 +1,6 @@
 import { init, cleanup } from "wgblas";
 import { isamax } from "wgblas/isamax";
-import { randomFloat32Array } from "wgblas/util/random";
+import { randomFloat32Array } from "wgblas/random";
 
 await init();
 

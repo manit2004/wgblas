@@ -1,4 +1,4 @@
-.PHONY: test bench cuda example fixtures help
+.PHONY: test bench cuda example example-gpuvec fixtures help
 
 # ── Help ─────────────────────────────────────────────────────────────────────
 
@@ -23,6 +23,7 @@ help:
 	@echo ""
 	@echo "Examples"
 	@echo "  example                      Run all Node examples"
+	@echo "  example-gpuvec               Run all GpuVector Node examples"
 	@echo "  example-<name>               Run a specific Node example (e.g. example-sscal)"
 	@echo "  example-<name>-web           Open a specific example in the browser (e.g. example-sscal-web)"
 	@echo "  example-gpuvec-<name>        Run a GpuVector Node example (e.g. example-gpuvec-saxpy)"
@@ -72,6 +73,9 @@ example-%:
 
 example-%-web:
 	npx vite --open /examples/$*/web/$*.html
+
+example-gpuvec:
+	@for d in examples/*/; do node $${d}gpuvec.$$(basename $$d).js; done
 
 example-gpuvec-%:
 	node examples/$*/gpuvec.$*.js

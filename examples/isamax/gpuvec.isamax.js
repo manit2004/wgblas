@@ -2,7 +2,7 @@ import { init, cleanup } from "wgblas";
 import { isamax } from "wgblas/isamax";
 import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/util/random";
+import { randomFloat32Array } from "wgblas/random";
 
 await init();
 

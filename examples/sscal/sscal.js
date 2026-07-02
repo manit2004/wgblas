@@ -1,6 +1,6 @@
 import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
-import { randomFloat32Array } from "wgblas/util/random";
+import { randomFloat32Array } from "wgblas/random";
 
 await init();
 

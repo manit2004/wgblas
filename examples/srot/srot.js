@@ -1,6 +1,6 @@
 import { init, cleanup } from "wgblas";
 import { srot } from "wgblas/srot";
-import { randomFloat32Array } from "wgblas/util/random";
+import { randomFloat32Array } from "wgblas/random";
 
 await init();
 
