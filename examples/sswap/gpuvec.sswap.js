@@ -4,7 +4,7 @@ import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { randomFloat32Array } from "wgblas/random";
 
-await init();
+const device = await init();
 
 const n     = 10;
 const alpha = 2.0;
@@ -17,8 +17,8 @@ const yGpu = GpuVector.from(y);
 console.log("x:               ", x);
 console.log("y:               ", y);
 
-await sswap(n, xGpu, 1, yGpu, 1);
-await sscal(n, alpha, xGpu, 1);
+await sswap(device, n, xGpu, 1, yGpu, 1);
+await sscal(device, n, alpha, xGpu, 1);
 
 // single readback
 const resultX = await xGpu.read();

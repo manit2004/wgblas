@@ -4,7 +4,7 @@ import { saxpy } from "wgblas/saxpy";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { randomFloat32Array } from "wgblas/random";
 
-await init();
+const device = await init();
 
 const n = 10;
 const xCpu = randomFloat32Array(n, -10, 10);
@@ -21,8 +21,8 @@ console.log("y (cpu):   ", yCpu);
 const param = new Float32Array([0, 1, -0.5, 0.5, 1]);
 
 // shift y by adding 2*x on GPU, then apply modified rotation
-await saxpy(n, 2.0, xGpu, 1, yGpu, 1);
-await srotm(n, xGpu, 1, yGpu, 1, param);
+await saxpy(device, n, 2.0, xGpu, 1, yGpu, 1);
+await srotm(device, n, xGpu, 1, yGpu, 1, param);
 
 console.log("x (after): ", await xGpu.read());
 console.log("y (after): ", await yGpu.read());

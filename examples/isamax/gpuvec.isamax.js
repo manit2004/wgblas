@@ -4,7 +4,7 @@ import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { randomFloat32Array } from "wgblas/random";
 
-await init();
+const device = await init();
 
 const n     = 10;
 const scale = 2.0;
@@ -14,8 +14,8 @@ const xGpu = GpuVector.from(x);
 
 console.log("x:        ", x);
 
-await sscal(n, scale, xGpu, 1);
-const { index } = await isamax(n, xGpu, 1);
+await sscal(device, n, scale, xGpu, 1);
+const { index } = await isamax(device, n, xGpu, 1);
 console.log("index (of 2x): ", index);
 
 xGpu.destroy();

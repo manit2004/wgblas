@@ -4,7 +4,7 @@ import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { randomFloat32Array } from "wgblas/random";
 
-await init();
+const device = await init();
 
 const n     = 10;
 const scale = 2.0;
@@ -17,8 +17,8 @@ const yGpu = GpuVector.from(y);
 console.log("x:   ", x);
 console.log("y:   ", y);
 
-await sscal(n, scale, xGpu, 1);
-const { dot } = await sdot(n, xGpu, 1, yGpu, 1);
+await sscal(device, n, scale, xGpu, 1);
+const { dot } = await sdot(device, n, xGpu, 1, yGpu, 1);
 console.log("dot: ", dot);
 
 xGpu.destroy();

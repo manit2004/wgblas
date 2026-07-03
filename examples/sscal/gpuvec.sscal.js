@@ -4,7 +4,7 @@ import { saxpy } from "wgblas/saxpy";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { randomFloat32Array } from "wgblas/random";
 
-await init();
+const device = await init();
 
 const n     = 10;
 const alpha = 2.0;
@@ -17,8 +17,8 @@ const yGpu = GpuVector.from(y);
 console.log("x:              ", x);
 console.log("y:              ", y);
 
-await sscal(n, alpha, xGpu, 1);
-await saxpy(n, 1.0, xGpu, 1, yGpu, 1);
+await sscal(device, n, alpha, xGpu, 1);
+await saxpy(device, n, 1.0, xGpu, 1, yGpu, 1);
 
 const result = await yGpu.read();
 console.log("result (2x + y):", result);
