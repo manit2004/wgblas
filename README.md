@@ -46,6 +46,8 @@ Note: `dom.webgpu.wgpu-backend` is a **string** preference — click the pencil 
 Restart Firefox after making changes.
 
 > **Note:** Firefox's WebGPU implementation is incomplete and some routines may not work correctly. Chrome is recommended.
+>
+> **Multi-GPU:** Firefox only exposes one WebGPU adapter (the display GPU, typically integrated) even on dual-GPU systems — verified via `about:support` → Graphics → WebGPU Default Adapter. Chrome picks the discrete GPU via `powerPreference: "high-performance"`; Firefox does not.
 
 ## Requirements
 
