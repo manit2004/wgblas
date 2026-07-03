@@ -34,14 +34,14 @@ import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
 import { randomFloat32Array } from "wgblas/util/random";
 
-await init();
+const device = await init();
 
 const n = 10;
 const alpha = 2.0;
 const x = randomFloat32Array(n, -10, 10);
 
 console.log("before:", x);
-const result = await sscal(n, alpha, x, 1);
+const result = await sscal(device, n, alpha, x, 1);
 console.log("after: ", result);
 cleanup();
 ```
@@ -53,9 +53,9 @@ Pass `{ benchmark: true }` to `init()` to enable GPU timestamp queries — BLAS 
 **Note:** Here `gpuTimeMs` is only the gpu compute time which doesn't include device to host and host to device transfer time duration.
 
 ```js
-await init({ benchmark: true });
+const device = await init({ benchmark: true });
 // ...
-const { result, gpuTimeMs } = await sscal(n, alpha, x, 1);
+const { result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
 console.log(`compute time: ${gpuTimeMs.toFixed(4)} ms`);
 ```
 
@@ -70,7 +70,7 @@ import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { randomFloat32Array } from "wgblas/util/random";
 
-await init();
+const device = await init();
 
 const n     = 10;
 const alpha = 2;
@@ -85,8 +85,8 @@ console.log("x:      ", x);
 console.log("y:      ", y);
 
 // results stay in the GPU.
-await saxpy(n, alpha, xGpu, 1, yGpu, 1);
-await sscal(n, scale, yGpu, 1);
+await saxpy(device, n, alpha, xGpu, 1, yGpu, 1);
+await sscal(device, n, scale, yGpu, 1);
 
 // single readback
 const result = await yGpu.read();
