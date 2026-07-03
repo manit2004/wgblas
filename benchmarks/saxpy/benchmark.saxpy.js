@@ -10,7 +10,8 @@ const SIZES = [32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194
 
 const COLS = ["n", "compute_ms", "compute_GBs"];
 
-const device = await init({ benchmark: true });
+const powerPreference = process.argv[2] === "low-power" ? "low-power" : "high-performance";
+const device = await init({ benchmark: true, powerPreference });
 
 // save results to benchmarks/results/<gpuModel>/saxpy.wgblas.json
 const gpuModel = getGpuModel();
