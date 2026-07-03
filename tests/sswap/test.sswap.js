@@ -12,7 +12,8 @@ const fixturesPath = join(thisDir, "fixtures/fixtures.json");
 const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("sswap");
 
-before(async () => { await init(); });
+let device;
+before(async () => { device = await init(); });
 after(() => { cleanup(); });
 
 test("sswap fixtures", async () => {
@@ -25,7 +26,7 @@ test("sswap fixtures", async () => {
     const expectedX = new Float32Array(fixture.expected_x);
     const expectedY = new Float32Array(fixture.expected_y);
 
-    const { x: resultX, y: resultY } = await sswap(n, x, incx, y, incy);
+    const { x: resultX, y: resultY } = await sswap(device, n, x, incx, y, incy);
     assertUlp(resultX, expectedX, ULP_THRESHOLD, "sswap x");
     assertUlp(resultY, expectedY, ULP_THRESHOLD, "sswap y");
   }

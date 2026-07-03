@@ -12,7 +12,8 @@ const fixturesPath = join(thisDir, "fixtures/fixtures.json");
 const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("saxpy");
 
-before(async () => { await init(); });
+let device;
+before(async () => { device = await init(); });
 after(() => { cleanup(); });
 
 test("saxpy fixtures", async () => {
@@ -25,7 +26,7 @@ test("saxpy fixtures", async () => {
     const y     = new Float32Array(fixture.y);
     const expectedY = new Float32Array(fixture.expected_y);
 
-    const { y: resultY } = await saxpy(n, alpha, x, incx, y, incy);
+    const { y: resultY } = await saxpy(device, n, alpha, x, incx, y, incy);
     assertUlp(resultY, expectedY, ULP_THRESHOLD, "saxpy");
   }
 });

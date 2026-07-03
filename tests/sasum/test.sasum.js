@@ -12,7 +12,8 @@ const fixturesPath = join(thisDir, "fixtures/fixtures.json");
 const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("sasum");
 
-before(async () => { await init(); });
+let device;
+before(async () => { device = await init(); });
 after(() => { cleanup(); });
 
 test("sasum fixtures", async () => {
@@ -21,7 +22,7 @@ test("sasum fixtures", async () => {
     const incx = fixture.incx;
     const x    = new Float32Array(fixture.x);
 
-    const { asum } = await sasum(n, x, incx);
+    const { asum } = await sasum(device, n, x, incx);
     const diff = ulpDiff(asum, fixture.expected_asum);
     if (diff > ULP_THRESHOLD) {
       throw new Error(`[sasum] ULP ${diff} exceeds threshold ${ULP_THRESHOLD} (actual=${asum}, expected=${fixture.expected_asum})`);

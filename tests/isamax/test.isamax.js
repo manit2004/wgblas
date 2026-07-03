@@ -9,7 +9,8 @@ const thisDir = dirname(fileURLToPath(import.meta.url));
 const fixturesPath = join(thisDir, "fixtures/fixtures.json");
 const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 
-before(async () => { await init(); });
+let device;
+before(async () => { device = await init(); });
 after(() => { cleanup(); });
 
 test("isamax fixtures", async () => {
@@ -18,7 +19,7 @@ test("isamax fixtures", async () => {
     const incx = fixture.incx;
     const x    = new Float32Array(fixture.x);
 
-    const { index } = await isamax(n, x, incx);
+    const { index } = await isamax(device, n, x, incx);
     if (index !== fixture.expected_index) {
       throw new Error(`[isamax] index ${index} !== expected ${fixture.expected_index} (n=${n}, incx=${incx})`);
     }

@@ -11,7 +11,8 @@ const thisDir = dirname(fileURLToPath(import.meta.url));
 const fixtures = JSON.parse(readFileSync(join(thisDir, "fixtures/fixtures.json"), "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("srot");
 
-before(async () => { await init(); });
+let device;
+before(async () => { device = await init(); });
 after(() => { cleanup(); });
 
 test("srot fixtures", async () => {
@@ -22,7 +23,7 @@ test("srot fixtures", async () => {
     const expectedX = new Float32Array(fixture.expected_x);
     const expectedY = new Float32Array(fixture.expected_y);
 
-    const { x: xOut, y: yOut } = await srot(n, x, incx, y, incy, c, s);
+    const { x: xOut, y: yOut } = await srot(device, n, x, incx, y, incy, c, s);
     assertUlp(xOut, expectedX, ULP_THRESHOLD, "srot x");
     assertUlp(yOut, expectedY, ULP_THRESHOLD, "srot y");
   }

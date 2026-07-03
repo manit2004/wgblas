@@ -11,7 +11,8 @@ const thisDir = dirname(fileURLToPath(import.meta.url));
 const fixtures = JSON.parse(readFileSync(join(thisDir, "fixtures/fixtures.json"), "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("srotm");
 
-before(async () => { await init(); });
+let device;
+before(async () => { device = await init(); });
 after(() => { cleanup(); });
 
 test("srotm fixtures", async () => {
@@ -23,7 +24,7 @@ test("srotm fixtures", async () => {
     const expectedX = new Float32Array(fixture.expected_x);
     const expectedY = new Float32Array(fixture.expected_y);
 
-    const { x: xOut, y: yOut } = await srotm(n, x, incx, y, incy, param);
+    const { x: xOut, y: yOut } = await srotm(device, n, x, incx, y, incy, param);
     assertUlp(xOut, expectedX, ULP_THRESHOLD, `srotm x (flag=${param[0]})`);
     assertUlp(yOut, expectedY, ULP_THRESHOLD, `srotm y (flag=${param[0]})`);
   }

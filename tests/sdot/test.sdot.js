@@ -12,7 +12,8 @@ const fixturesPath = join(thisDir, "fixtures/fixtures.json");
 const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("sdot");
 
-before(async () => { await init(); });
+let device;
+before(async () => { device = await init(); });
 after(() => { cleanup(); });
 
 test("sdot fixtures", async () => {
@@ -23,7 +24,7 @@ test("sdot fixtures", async () => {
     const x    = new Float32Array(fixture.x);
     const y    = new Float32Array(fixture.y);
 
-    const { dot } = await sdot(n, x, incx, y, incy);
+    const { dot } = await sdot(device, n, x, incx, y, incy);
     const diff = ulpDiff(dot, fixture.expected_dot);
     if (diff > ULP_THRESHOLD) {
       throw new Error(`[sdot] ULP ${diff} exceeds threshold ${ULP_THRESHOLD} (actual=${dot}, expected=${fixture.expected_dot})`);
