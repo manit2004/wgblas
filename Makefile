@@ -34,7 +34,7 @@ help:
 	@echo "  example-gpuvec               Run all GpuVector Node examples"
 	@echo "  example-<name>               Run a specific Node example (e.g. example-sscal)"
 	@echo "  example-<name>-web           Open a specific example in the browser (e.g. example-sscal-web)"
-	@echo "  example-web                  Open all browser examples (10 tabs) via a local Vite server"
+	@echo "  example-web                  Open all browser examples via a local Vite server"
 	@echo "  example-gpuvec-<name>        Run a GpuVector Node example (e.g. example-gpuvec-saxpy)"
 
 # ── Type check ───────────────────────────────────────────────────────────────
