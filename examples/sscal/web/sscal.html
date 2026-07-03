@@ -1,10 +1,32 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>wgblas</title>
+    <meta charset="UTF-8" />
+    <title>sscal — wgblas browser example</title>
+    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
   </head>
   <body>
-    <p>Open the browser console to see output.</p>
-    <script type="module" src="../sscal.js"></script>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, sscal, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 10;
+        const alpha = 2.0;
+        const x = randomFloat32Array(n, -10, 10);
+
+        console.log("before:", x);
+        const result = await sscal(device, n, alpha, x, 1);
+        console.log("after: ", result);
+
+        document.getElementById("out").textContent =
+          "before: " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
+          "\nafter:  " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
   </body>
 </html>

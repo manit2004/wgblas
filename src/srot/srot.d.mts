@@ -7,6 +7,9 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  *
  * {@includeCode ../../examples/srot/srot.js}
  *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/srot/web/srot.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)
  * @param x - Float32Array input/output vector

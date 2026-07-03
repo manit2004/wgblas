@@ -5,6 +5,9 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  *
  * {@includeCode ../../examples/saxpy/saxpy.js}
  *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/saxpy/web/saxpy.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)
  * @param alpha - scalar multiplier

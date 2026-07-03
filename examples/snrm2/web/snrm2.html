@@ -1,10 +1,29 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>wgblas</title>
+    <meta charset="UTF-8" />
+    <title>snrm2 — wgblas browser example</title>
+    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
   </head>
   <body>
-    <p>Open the browser console to see output.</p>
-    <script type="module" src="../snrm2.js"></script>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, snrm2, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 10;
+        const x = randomFloat32Array(n, -10, 10);
+
+        const { nrm2 } = await snrm2(device, n, x, 1);
+
+        document.getElementById("out").textContent =
+          "x:    " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
+          "\nnrm2: " + nrm2.toFixed(4);
+
+        cleanup();
+      })();
+    </script>
   </body>
 </html>

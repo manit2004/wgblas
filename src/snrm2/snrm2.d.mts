@@ -5,6 +5,9 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  *
  * {@includeCode ../../examples/snrm2/snrm2.js}
  *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/snrm2/web/snrm2.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)
  * @param x - Float32Array input vector

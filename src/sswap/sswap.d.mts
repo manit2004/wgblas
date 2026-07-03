@@ -5,6 +5,9 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  *
  * {@includeCode ../../examples/sswap/sswap.js}
  *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/sswap/web/sswap.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements to swap (must be a positive integer)
  * @param x - Float32Array first input/output vector

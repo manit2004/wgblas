@@ -5,6 +5,9 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  *
  * {@includeCode ../../examples/sscal/sscal.js}
  *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/sscal/web/sscal.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements to scale (must be a positive integer)
  * @param alpha - scalar multiplier

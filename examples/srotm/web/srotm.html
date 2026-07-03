@@ -1,10 +1,40 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>wgblas</title>
+    <meta charset="UTF-8" />
+    <title>srotm — wgblas browser example</title>
+    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
   </head>
   <body>
-    <p>Open the browser console to see output.</p>
-    <script type="module" src="../srotm.js"></script>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, srotm, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 10;
+        const x = randomFloat32Array(n, -10, 10);
+        const y = randomFloat32Array(n, -10, 10);
+
+        // flag = -1: full 2x2 matrix H
+        // H = [ h11  h12 ]  =  [ 0.6  0.8 ]
+        //     [ h21  h22 ]     [-0.8  0.6 ]
+        const param = new Float32Array([-1, 0.6, -0.8, 0.8, 0.6]);
+
+        const xBefore = Array.from(x).map(v => v.toFixed(4)).join(", ");
+        const yBefore = Array.from(y).map(v => v.toFixed(4)).join(", ");
+
+        const { x: xOut, y: yOut } = await srotm(device, n, x, 1, y, 1, param);
+
+        document.getElementById("out").textContent =
+          "x (before): " + xBefore +
+          "\ny (before): " + yBefore +
+          "\nx (after):  " + Array.from(xOut).map(v => v.toFixed(4)).join(", ") +
+          "\ny (after):  " + Array.from(yOut).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
   </body>
 </html>

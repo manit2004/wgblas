@@ -1,10 +1,29 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>wgblas</title>
+    <meta charset="UTF-8" />
+    <title>sasum — wgblas browser example</title>
+    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
   </head>
   <body>
-    <p>Open the browser console to see output.</p>
-    <script type="module" src="../sasum.js"></script>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, sasum, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 10;
+        const x = randomFloat32Array(n, -10, 10);
+
+        const { asum } = await sasum(device, n, x, 1);
+
+        document.getElementById("out").textContent =
+          "x:    " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
+          "\nasum: " + asum.toFixed(4);
+
+        cleanup();
+      })();
+    </script>
   </body>
 </html>
