@@ -2,7 +2,7 @@ import { benchmarkMode } from "./util/benchmark.mjs";
 
 let _device = null;
 let _adapter = null;
-let _gpu = null; // keep wgpu Instance alive — GC'ing it invalidates adapter and device
+let _gpu = null; // eslint-disable-line no-unused-vars
 let _benchmarkEnabled = false;
 
 const _resetCallbacks = [];
