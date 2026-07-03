@@ -4,16 +4,16 @@
 
 ## Available Functions
 
-- sscal
-- sswap
-- saxpy
-- scopy
-- sdot
-- sasum
-- snrm2
-- isamax
-- srot
-- srotm
+- [sscal](https://manit2004.github.io/wgblas/functions/sscal.html)
+- [sswap](https://manit2004.github.io/wgblas/functions/sswap.html)
+- [saxpy](https://manit2004.github.io/wgblas/functions/saxpy.html)
+- [scopy](https://manit2004.github.io/wgblas/functions/scopy.html)
+- [sdot](https://manit2004.github.io/wgblas/functions/sdot.html)
+- [sasum](https://manit2004.github.io/wgblas/functions/sasum.html)
+- [snrm2](https://manit2004.github.io/wgblas/functions/snrm2.html)
+- [isamax](https://manit2004.github.io/wgblas/functions/isamax.html)
+- [srot](https://manit2004.github.io/wgblas/functions/srot.html)
+- [srotm](https://manit2004.github.io/wgblas/functions/srotm.html)
 
 ## Requirements
 
