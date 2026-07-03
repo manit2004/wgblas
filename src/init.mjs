@@ -17,7 +17,7 @@ export function isBenchmarkEnabled() {
 
 export async function init({ powerPreference = "high-performance", benchmark = false } = {}) {
   if (_device) {
-    return "WebGPU already initialized.";
+    return _device;
   }
 
   let gpu;
@@ -45,7 +45,7 @@ export async function init({ powerPreference = "high-performance", benchmark = f
     console.error("Uncaptured GPU error:", e.error.message);
   });
 
-  return "WebGPU initialized successfully.";
+  return _device;
 }
 
 export function cleanup() {

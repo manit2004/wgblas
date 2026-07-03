@@ -1,5 +1,18 @@
 import { getDevice } from "../init.mjs";
 
+const _pipelines = new WeakMap();
+
+export async function getPipeline(device, shaderName) {
+  if (!_pipelines.has(device)) {
+    _pipelines.set(device, new Map());
+  }
+  const byName = _pipelines.get(device);
+  if (!byName.has(shaderName)) {
+    byName.set(shaderName, await loadShader(shaderName));
+  }
+  return byName.get(shaderName);
+}
+
 async function loadCode(shaderName) {
   if (typeof window !== "undefined") {
     const response = await fetch(`/src/shaders/${shaderName}.wgsl`);
