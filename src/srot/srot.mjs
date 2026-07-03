@@ -3,15 +3,11 @@ import { createBindGroup } from "../util/bindgroup.mjs";
 import { runComputePass, submit } from "../util/compute.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { extractResult } from "../util/result.mjs";
-import { loadShader } from "../util/pipeline.mjs";
+import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
-import { onCleanup } from "../init.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 
-let _pipeline = null;
-onCleanup(() => { _pipeline = null; });
-
-export async function srot(n, x, incx, y, incy, c, s) {
+export async function srot(device, n, x, incx, y, incy, c, s) {
     const xIsGpu = x instanceof GpuVector;
     const yIsGpu = y instanceof GpuVector;
 
@@ -25,7 +21,7 @@ export async function srot(n, x, incx, y, incy, c, s) {
     if (x.length < (n - 1) * incx + 1) throw new Error("x does not have enough elements for the given n and incx.");
     if (y.length < (n - 1) * incy + 1) throw new Error("y does not have enough elements for the given n and incy.");
 
-    if (!_pipeline) _pipeline = await loadShader("srot");
+    const pipeline = await getPipeline(device, "srot");
 
     const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "srot-x", true);
     const yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "srot-y", true);
@@ -37,8 +33,8 @@ export async function srot(n, x, incx, y, incy, c, s) {
         { value: incy, type: "u32" },
     ], "srot-params");
 
-    const bindGroup = createBindGroup(_pipeline.getBindGroupLayout(0), [xBuffer, yBuffer, paramsBuffer]);
-    const { commandEncoder, ts } = runComputePass(_pipeline, bindGroup, calcWorkgroups(n));
+    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [xBuffer, yBuffer, paramsBuffer]);
+    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, calcWorkgroups(n));
     const readX = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
     const readY = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
     submit(commandEncoder);

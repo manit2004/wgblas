@@ -3,16 +3,12 @@ import { createBindGroup } from "../util/bindgroup.mjs";
 import { runComputePass, submit } from "../util/compute.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { extractResult } from "../util/result.mjs";
-import { loadShader } from "../util/pipeline.mjs";
-import { onCleanup } from "../init.mjs";
+import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 const WGS = 64; // workgroup size
-let _pipelineMain   = null;
-let _pipelineReduce = null;
-onCleanup(() => { _pipelineMain = null; _pipelineReduce = null; });
 
-export async function snrm2(n, x, incx) {
+export async function snrm2(device, n, x, incx) {
     const xIsGpu = x instanceof GpuVector;
 
     if (!Number.isInteger(n) || !Number.isInteger(incx)) throw new Error("n and incx must be integers.");
@@ -21,8 +17,8 @@ export async function snrm2(n, x, incx) {
     if (n <= 0) return { nrm2: 0 };
     if (x.length < (n - 1) * incx + 1) throw new Error("x does not have enough elements for the given n and incx.");
 
-    if (!_pipelineMain)   _pipelineMain   = await loadShader("snrm2");
-    if (!_pipelineReduce) _pipelineReduce = await loadShader("reduction/sum");
+    const pipelineMain   = await getPipeline(device, "snrm2");
+    const pipelineReduce = await getPipeline(device, "reduction/sum");
 
     const xBuffer        = xIsGpu ? x._buf : uploadBuffer(x, "snrm2-x", false);
     const partialsBuffer = createStorageBuffer((2 * WGS) * 4, "snrm2-partials"); // 2*WGS partial sums of f32
@@ -32,13 +28,13 @@ export async function snrm2(n, x, incx) {
         { value: incx, type: "u32" },
     ], "snrm2-params");
 
-    const bgMain = createBindGroup(_pipelineMain.getBindGroupLayout(0), [xBuffer, partialsBuffer, paramsBuffer]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(_pipelineMain, bgMain, 2 * WGS); // dispatch 2*WGS workgroups
+    const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [xBuffer, partialsBuffer, paramsBuffer]);
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(pipelineMain, bgMain, 2 * WGS); // dispatch 2*WGS workgroups
 
     submit(enc1);
 
-    const bgReduce = createBindGroup(_pipelineReduce.getBindGroupLayout(0), [partialsBuffer, resultBuffer]);
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(_pipelineReduce, bgReduce, 1); // reduce partials to single result
+    const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [partialsBuffer, resultBuffer]);
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(pipelineReduce, bgReduce, 1); // reduce partials to single result
     const readBuffer = stageReadback(enc2, resultBuffer);
 
     submit(enc2);
