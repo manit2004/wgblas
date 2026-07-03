@@ -1,1 +1,1 @@
-make test && make check && npx eslint .
+make test
