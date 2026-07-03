@@ -1,4 +1,4 @@
-export { init, cleanup } from "./src/init.mjs";
+export { init, cleanup, gpuName } from "./src/init.mjs";
 export { GpuVector } from "./src/classes/GpuVector.mjs";
 export {
   randomFloat32Array,

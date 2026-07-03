@@ -25,30 +25,38 @@ export { srotm } from "./src/srotm/srotm.mjs";
  *
  * @example Default (high-performance GPU)
  * ```js
- * import { init } from "wgblas";
- * const device = await init();
+ * import { init, gpuName } from "wgblas";
+ * await init();
+ * const { description, device } = gpuName();
+ * console.log("description:", description, "device:", device);
  * ```
  *
  * @example Low-power (integrated GPU)
  * ```js
- * import { init } from "wgblas";
- * const device = await init({ powerPreference: "low-power" });
+ * import { init, gpuName } from "wgblas";
+ * await init({ powerPreference: "low-power" });
+ * const { description, device } = gpuName();
+ * console.log("description:", description, "device:", device);
  * ```
  *
  * @example Benchmark mode
  * ```js
  * import { init, sscal } from "wgblas";
  * const device = await init({ benchmark: true });
+ * const n = 5;
+ * const alpha = 2.0;
+ * const x = new Float32Array([1, 2, 3, 4, 5]);
  * const { result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
- * console.log(`GPU time: ${gpuTimeMs} ms`);
+ * console.log(`Result: [${Array.from(result).join(", ")}]`);
+ * console.log(`GPU time: ${gpuTimeMs.toFixed(3)} ms`);
  * ```
- * @see [init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
+ * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
  * @category Core
  */
 export declare function init(options?: {
   powerPreference?: GPUPowerPreference;
   benchmark?: boolean;
-}): Promise<string>;
+}): Promise<GPUDevice>;
 
 /**
  * Destroys the WebGPU device, releases the adapter, resets benchmark state, and fires all internal
@@ -56,13 +64,28 @@ export declare function init(options?: {
  *
  * @example
  * ```js
- * import { init, cleanup } from "wgblas";
+ * import { init, cleanup, gpuName } from "wgblas";
  *
- * const device = await init();
- * // ... use BLAS routines ...
- * if (typeof process !== "undefined") cleanup();
+ * await init();
+ * console.log("GPU:", gpuName().description);
+ * if (typeof process !== "undefined") cleanup(); // Node.js only — browser cleanup is automatic
  * ```
- * @see [init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L56-L65)
+ * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L56-L65)
  * @category Core
  */
 export declare function cleanup(): void;
+
+/**
+ * Returns the GPU device name from the WebGPU adapter info. Must be called after `init()`.
+ *
+ * @example
+ * ```js
+ * import { init, gpuName } from "wgblas";
+ * await init();
+ * const { description, device } = gpuName();
+ * console.log("description:", description, "device:", device);
+ * ```
+ * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L81-L87)
+ * @category Core
+ */
+export declare function gpuName(): { description: string; device: string };

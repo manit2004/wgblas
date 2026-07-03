@@ -12,7 +12,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param incx - stride for x (must be a positive integer)
  * @param y - Float32Array input/output vector
  * @param incy - stride for y (must be a positive integer)
- * @see [saxpy.mjs](https://github.com/manit2004/wgblas/blob/main/src/saxpy/saxpy.mjs#L15-L87)
+ * @see [Source code: saxpy.mjs](https://github.com/manit2004/wgblas/blob/main/src/saxpy/saxpy.mjs#L15-L87)
  * @category BLAS Level 1
  */
 export declare function saxpy(
@@ -37,7 +37,7 @@ export declare function saxpy(
  * @param incx - stride for x (must be a positive integer)
  * @param y - GpuVector input/output vector (mutated in place)
  * @param incy - stride for y (must be a positive integer)
- * @see [saxpy.mjs](https://github.com/manit2004/wgblas/blob/main/src/saxpy/saxpy.mjs)
+ * @see [Source code: saxpy.mjs](https://github.com/manit2004/wgblas/blob/main/src/saxpy/saxpy.mjs)
  * @category BLAS Level 1
  */
 export declare function saxpy(

@@ -11,7 +11,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param incx - stride for x (must be a positive integer)
  * @param y - Float32Array second input/output vector
  * @param incy - stride for y (must be a positive integer)
- * @see [sswap.mjs](https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjs#L15-L88)
+ * @see [Source code: sswap.mjs](https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjs#L15-L88)
  * @category BLAS Level 1
  */
 export declare function sswap(
@@ -34,7 +34,7 @@ export declare function sswap(
  * @param incx - stride for x (must be a positive integer)
  * @param y - GpuVector second input/output vector (mutated in place)
  * @param incy - stride for y (must be a positive integer)
- * @see [sswap.mjs](https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjs)
+ * @see [Source code: sswap.mjs](https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjs)
  * @category BLAS Level 1
  */
 export declare function sswap(

@@ -15,8 +15,10 @@ export async function getPipeline(device, shaderName) {
 
 async function loadCode(shaderName) {
   if (typeof window !== "undefined") {
-    const response = await fetch(`/src/shaders/${shaderName}.wgsl`);
-    return response.text();
+    const { shaderSources } = await import("../shaders/browser-shaders.mjs");
+    const src = shaderSources[shaderName];
+    if (!src) throw new Error(`Shader "${shaderName}" not found in browser bundle.`);
+    return src;
   } else {
     const { readFileSync } = await import("fs");
     const { fileURLToPath } = await import("url");

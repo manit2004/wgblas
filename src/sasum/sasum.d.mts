@@ -10,7 +10,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param x - Float32Array input vector
  * @param incx - stride for x (must be a positive integer)
  * @returns absolute sum scalar — always a CPU readback, even for GpuVector inputs
- * @see [sasum.mjs](https://github.com/manit2004/wgblas/blob/main/src/sasum/sasum.mjs#L18-L96)
+ * @see [Source code: sasum.mjs](https://github.com/manit2004/wgblas/blob/main/src/sasum/sasum.mjs#L18-L96)
  * @category BLAS Level 1
  */
 export declare function sasum(
@@ -30,7 +30,7 @@ export declare function sasum(
  * @param x - GpuVector input vector
  * @param incx - stride for x (must be a positive integer)
  * @returns absolute sum scalar — always a CPU readback, even for GpuVector inputs
- * @see [sasum.mjs](https://github.com/manit2004/wgblas/blob/main/src/sasum/sasum.mjs)
+ * @see [Source code: sasum.mjs](https://github.com/manit2004/wgblas/blob/main/src/sasum/sasum.mjs)
  * @category BLAS Level 1
  */
 export declare function sasum(

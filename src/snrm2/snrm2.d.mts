@@ -10,7 +10,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param x - Float32Array input vector
  * @param incx - stride for x (must be a positive integer)
  * @returns Euclidean norm scalar — always a CPU readback, even for GpuVector inputs
- * @see [snrm2.mjs](https://github.com/manit2004/wgblas/blob/main/src/snrm2/snrm2.mjs/L18-L98)
+ * @see [Source code: snrm2.mjs](https://github.com/manit2004/wgblas/blob/main/src/snrm2/snrm2.mjs/L18-L98)
  * @category BLAS Level 1
  */
 export declare function snrm2(
@@ -30,7 +30,7 @@ export declare function snrm2(
  * @param x - GpuVector input vector
  * @param incx - stride for x (must be a positive integer)
  * @returns Euclidean norm scalar — always a CPU readback, even for GpuVector inputs
- * @see [snrm2.mjs](https://github.com/manit2004/wgblas/blob/main/src/snrm2/snrm2.mjs)
+ * @see [Source code: snrm2.mjs](https://github.com/manit2004/wgblas/blob/main/src/snrm2/snrm2.mjs)
  * @category BLAS Level 1
  */
 export declare function snrm2(

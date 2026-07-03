@@ -1,7 +1,7 @@
 /**
  * Represents a Float32Array stored in GPU memory.
  *
- * @see [GpuVector.mjs](https://github.com/manit2004/wgblas/blob/main/src/classes/GpuVector.mjs#L7-L33)
+ * @see [Source code: GpuVector.mjs](https://github.com/manit2004/wgblas/blob/main/src/classes/GpuVector.mjs#L7-L33)
  * @see [MDN: GPUBuffer](https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer)
  * @category Classes
  */
@@ -24,11 +24,11 @@ export declare class GpuVector {
    *
    * @example
    * ```js
-   * import { GpuVector } from "wgblas";
+   * import { init, GpuVector } from "wgblas";
    *
-   * const data = new Float32Array([1, 2, 3, 4]);
-   * const vec = GpuVector.from(data);
-   * console.log(vec.length); // 4
+   * await init();
+   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
+   * console.log("length:", vec.length, "dtype:", vec.dtype.name);
    * ```
    */
   static from(data: Float32Array): GpuVector;
@@ -41,8 +41,12 @@ export declare class GpuVector {
    *
    * @example
    * ```js
+   * import { init, GpuVector } from "wgblas";
+   *
+   * await init();
+   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
    * const data = await vec.read();
-   * console.log(data); // Float32Array [1, 2, 3, 4]
+   * console.log(data);
    * ```
    */
   read(): Promise<Float32Array>;
@@ -53,7 +57,12 @@ export declare class GpuVector {
    *
    * @example
    * ```js
+   * import { init, GpuVector } from "wgblas";
+   *
+   * await init();
+   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
    * vec.destroy();
+   * console.log("GPU buffer released");
    * ```
    */
   destroy(): void;

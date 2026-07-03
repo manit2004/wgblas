@@ -15,10 +15,12 @@
  *
  * @example Custom range [0, 10)
  * ```js
+ * import { randomFloat32Array } from "wgblas";
+ *
  * const x = randomFloat32Array(4, 0, 10);
- * console.log(x); // Float32Array [ 3.1, 7.8, 0.5, 9.2 ]
+ * console.log(x);
  * ```
- * @see [random.mjs](https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1-L5)
+ * @see [Source code: random.mjs](https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1-L5)
  * @category Utilities
  */
 export declare function randomFloat32Array(
@@ -44,10 +46,12 @@ export declare function randomFloat32Array(
  *
  * @example Custom range [0, 10)
  * ```js
+ * import { randomFloat64Array } from "wgblas";
+ *
  * const x = randomFloat64Array(4, 0, 10);
- * console.log(x); // Float64Array [ 3.1, 7.8, 0.5, 9.2 ]
+ * console.log(x);
  * ```
- * @see [random.mjs](https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7-L11)
+ * @see [Source code: random.mjs](https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7-L11)
  * @category Utilities
  */
 export declare function randomFloat64Array(

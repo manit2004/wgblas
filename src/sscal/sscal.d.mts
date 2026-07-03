@@ -10,7 +10,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param alpha - scalar multiplier
  * @param x - Float32Array input/output vector
  * @param incx - stride for x (must be a positive integer)
- * @see [sscal.mjs](https://github.com/manit2004/wgblas/blob/main/src/sscal/sscal.mjs/L15-L68)
+ * @see [Source code: sscal.mjs](https://github.com/manit2004/wgblas/blob/main/src/sscal/sscal.mjs/L15-L68)
  * @category BLAS Level 1
  */
 export declare function sscal(
@@ -31,7 +31,7 @@ export declare function sscal(
  * @param alpha - scalar multiplier
  * @param x - GpuVector input/output vector (mutated in place)
  * @param incx - stride for x (must be a positive integer)
- * @see [sscal.mjs](https://github.com/manit2004/wgblas/blob/main/src/sscal/sscal.mjs)
+ * @see [Source code: sscal.mjs](https://github.com/manit2004/wgblas/blob/main/src/sscal/sscal.mjs)
  * @category BLAS Level 1
  */
 export declare function sscal(

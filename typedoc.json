@@ -4,5 +4,6 @@
   "navigation": {
     "includeCategories": true,
     "includeGroups": false
-  }
+  },
+  "customJs": "docs-assets/runner.js"
 }

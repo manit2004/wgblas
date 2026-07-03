@@ -77,3 +77,14 @@ export function getAdapter() {
   }
   return _adapter;
 }
+
+export function gpuName() {
+  if (!_adapter) {
+    throw new Error("WebGPU adapter not initialized — call init() first.");
+  }
+  const { device, description } = _adapter.info;
+  return {
+    description: description || "unknown",
+    device: device || "unknown",
+  };
+}

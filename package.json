@@ -78,6 +78,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "esbuild": "^0.28.1",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "husky": "^9.1.7",
@@ -88,7 +89,9 @@
     "vite": "^8.0.16"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:browser": "node scripts/build-browser.mjs",
+    "docs": "npx typedoc && npm run build:browser"
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [
