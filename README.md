@@ -55,10 +55,20 @@ Pass `{ benchmark: true }` to `init()` to enable GPU timestamp queries — BLAS 
 **Note:** Here `gpuTimeMs` is only the gpu compute time which doesn't include device to host and host to device transfer time duration.
 
 ```js
+import { init, cleanup } from "wgblas";
+import { sscal } from "wgblas/sscal";
+
 const device = await init({ benchmark: true });
-// ...
+
+const n = 5;
+const alpha = 2.0;
+const x = new Float32Array([1, 2, 3, 4, 5]);
+
 const { result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
+console.log(result);                              // Float32Array [2, 4, 6, 8, 10]
 console.log(`compute time: ${gpuTimeMs.toFixed(4)} ms`);
+
+cleanup();
 ```
 
 ### `GpuVector` usage

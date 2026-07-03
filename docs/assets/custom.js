@@ -109,7 +109,6 @@
         console.error = capture("❌ ");
         (async function () {
           try {
-            // eslint-disable-next-line no-eval
             await eval("(async () => { " + transformed + " })()");
             output.textContent = logs.length ? logs.join("\n") : "(no output)";
           } catch (e) {
@@ -118,7 +117,7 @@
             console.log = origLog;
             console.warn = origWarn;
             console.error = origError;
-            try { if (window.wgblas && window.wgblas.cleanup) window.wgblas.cleanup(); } catch (_) {}
+            try { if (window.wgblas && window.wgblas.cleanup) window.wgblas.cleanup(); } catch (e) { void e; }
             btn.disabled = false;
             btn.textContent = "▶ Run";
           }
