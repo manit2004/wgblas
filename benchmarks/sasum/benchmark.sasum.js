@@ -10,7 +10,7 @@ const SIZES = [32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194
 
 const COLS = ["n", "compute_ms", "compute_GBs"];
 
-await init({ benchmark: true });
+const device = await init({ benchmark: true });
 
 const gpuModel = getGpuModel();
 const records = [];
@@ -21,12 +21,12 @@ for (const n of SIZES) {
   const xGpu = GpuVector.from(randomFloat32Array(n));
 
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await sasum(n, xGpu, 1);
+    await sasum(device, n, xGpu, 1);
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await sasum(n, xGpu, 1);
+    const { gpuTimeMs } = await sasum(device, n, xGpu, 1);
     times.push(gpuTimeMs);
   }
 

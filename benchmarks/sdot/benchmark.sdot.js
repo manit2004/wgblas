@@ -10,7 +10,7 @@ const SIZES = [32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194
 
 const COLS = ["n", "compute_ms", "compute_GBs"];
 
-await init({ benchmark: true });
+const device = await init({ benchmark: true });
 
 // save results to benchmarks/results/<gpuModel>/sdot.wgblas.json
 const gpuModel = getGpuModel();
@@ -24,12 +24,12 @@ for (const n of SIZES) {
 
   // warm up
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await sdot(n, xGpu, 1, yGpu, 1);
+    await sdot(device, n, xGpu, 1, yGpu, 1);
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await sdot(n, xGpu, 1, yGpu, 1);
+    const { gpuTimeMs } = await sdot(device, n, xGpu, 1, yGpu, 1);
     times.push(gpuTimeMs);
   }
 
