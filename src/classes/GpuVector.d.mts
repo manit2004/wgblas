@@ -1,5 +1,9 @@
 /**
  * Represents a Float32Array stored in GPU memory.
+ *
+ * @see [GpuVector.mjs](https://github.com/manit2004/wgblas/blob/main/src/classes/GpuVector.mjs#L7-L33)
+ * @see [MDN: GPUBuffer](https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer)
+ * @category Classes
  */
 export declare class GpuVector {
   /** @internal */
@@ -17,19 +21,40 @@ export declare class GpuVector {
    *
    * @param data - input vector data
    * @returns GpuVector backed by a GPU buffer
+   *
+   * @example
+   * ```js
+   * import { GpuVector } from "wgblas";
+   *
+   * const data = new Float32Array([1, 2, 3, 4]);
+   * const vec = GpuVector.from(data);
+   * console.log(vec.length); // 4
+   * ```
    */
   static from(data: Float32Array): GpuVector;
 
+  // TODO: return type will widen to Promise<Float32Array | Float64Array> when Float64 support is added
   /**
    * Reads the vector data back from GPU memory.
    *
    * @returns vector data as a Float32Array
-   * TODO: return type will widen to Promise<Float32Array | Float64Array> when Float64 support is added
+   *
+   * @example
+   * ```js
+   * const data = await vec.read();
+   * console.log(data); // Float32Array [1, 2, 3, 4]
+   * ```
    */
   read(): Promise<Float32Array>;
 
   /**
-   * Destroys the underlying GPU buffer.
+   * Destroys the underlying GPU buffer. Call when the vector is no longer needed
+   * to free GPU memory — especially important in long-running programs.
+   *
+   * @example
+   * ```js
+   * vec.destroy();
+   * ```
    */
   destroy(): void;
 }

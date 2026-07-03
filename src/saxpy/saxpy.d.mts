@@ -3,46 +3,49 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 /**
  * Performs the operation y = alpha * x + y
  *
+ * {@includeCode ../../examples/saxpy/saxpy.js}
+ *
+ * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)
  * @param alpha - scalar multiplier
- * @param x - input vector (Float32Array or GpuVector)
+ * @param x - Float32Array input vector
  * @param incx - stride for x (must be a positive integer)
- * @param y - input/output vector (Float32Array or GpuVector)
+ * @param y - Float32Array input/output vector
  * @param incy - stride for y (must be a positive integer)
- * @returns updated y vector, or empty object if y is a GpuVector
+ * @see [saxpy.mjs](https://github.com/manit2004/wgblas/blob/main/src/saxpy/saxpy.mjs#L15-L87)
+ * @category BLAS Level 1
  */
 export declare function saxpy(
+  device: GPUDevice,
   n: number,
   alpha: number,
   x: Float32Array,
   incx: number,
   y: Float32Array,
   incy: number,
-): Promise<{ y: Float32Array }>;
+): Promise<{ y: Float32Array } | { y: Float32Array; gpuTimeMs: number }>;
 
+/**
+ * Performs the operation y = alpha * x + y
+ *
+ * {@includeCode ../../examples/saxpy/gpuvec.saxpy.js}
+ *
+ * @param device - GPUDevice from `init()`
+ * @param n - number of elements (must be a positive integer)
+ * @param alpha - scalar multiplier
+ * @param x - GpuVector input vector
+ * @param incx - stride for x (must be a positive integer)
+ * @param y - GpuVector input/output vector (mutated in place)
+ * @param incy - stride for y (must be a positive integer)
+ * @see [saxpy.mjs](https://github.com/manit2004/wgblas/blob/main/src/saxpy/saxpy.mjs)
+ * @category BLAS Level 1
+ */
 export declare function saxpy(
-  n: number,
-  alpha: number,
-  x: Float32Array,
-  incx: number,
-  y: Float32Array,
-  incy: number,
-): Promise<{ y: Float32Array; gpuTimeMs: number }>;
-
-export declare function saxpy(
+  device: GPUDevice,
   n: number,
   alpha: number,
   x: GpuVector,
   incx: number,
   y: GpuVector,
   incy: number,
-): Promise<{}>;
-
-export declare function saxpy(
-  n: number,
-  alpha: number,
-  x: GpuVector,
-  incx: number,
-  y: GpuVector,
-  incy: number,
-): Promise<{ gpuTimeMs: number }>;
+): Promise<{} | { gpuTimeMs: number }>;

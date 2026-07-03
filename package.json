@@ -83,6 +83,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
+    "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
     "vite": "^8.0.16"
   },
@@ -90,6 +91,9 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,mjs,cjs}": ["prettier --write", "eslint"]
+    "*.{js,mjs,cjs}": [
+      "prettier --write",
+      "eslint"
+    ]
   }
 }

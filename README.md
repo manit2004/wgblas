@@ -4,16 +4,16 @@
 
 ## Available Functions
 
-- [x] sscal
-- [x] sswap
-- [x] saxpy
-- [x] scopy
-- [x] sdot
-- [x] sasum
-- [x] snrm2
-- [x] isamax
-- [x] srot
-- [x] srotm
+- sscal
+- sswap
+- saxpy
+- scopy
+- sdot
+- sasum
+- snrm2
+- isamax
+- srot
+- srotm
 
 ## Requirements
 

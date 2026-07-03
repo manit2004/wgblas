@@ -3,41 +3,45 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 /**
  * Swaps the elements of two single-precision vectors: x <-> y
  *
+ * {@includeCode ../../examples/sswap/sswap.js}
+ *
+ * @param device - GPUDevice from `init()`
  * @param n - number of elements to swap (must be a positive integer)
- * @param x - first input/output vector (Float32Array or GpuVector)
+ * @param x - Float32Array first input/output vector
  * @param incx - stride for x (must be a positive integer)
- * @param y - second input/output vector (Float32Array or GpuVector)
+ * @param y - Float32Array second input/output vector
  * @param incy - stride for y (must be a positive integer)
- * @returns swapped vectors, or empty object if inputs are GpuVectors
+ * @see [sswap.mjs](https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjs#L15-L88)
+ * @category BLAS Level 1
  */
 export declare function sswap(
+  device: GPUDevice,
   n: number,
   x: Float32Array,
   incx: number,
   y: Float32Array,
   incy: number,
-): Promise<{ x: Float32Array; y: Float32Array }>;
+): Promise<{ x: Float32Array; y: Float32Array } | { x: Float32Array; y: Float32Array; gpuTimeMs: number }>;
 
+/**
+ * Swaps the elements of two single-precision vectors: x <-> y
+ *
+ * {@includeCode ../../examples/sswap/gpuvec.sswap.js}
+ *
+ * @param device - GPUDevice from `init()`
+ * @param n - number of elements to swap (must be a positive integer)
+ * @param x - GpuVector first input/output vector (mutated in place)
+ * @param incx - stride for x (must be a positive integer)
+ * @param y - GpuVector second input/output vector (mutated in place)
+ * @param incy - stride for y (must be a positive integer)
+ * @see [sswap.mjs](https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjs)
+ * @category BLAS Level 1
+ */
 export declare function sswap(
-  n: number,
-  x: Float32Array,
-  incx: number,
-  y: Float32Array,
-  incy: number,
-): Promise<{ x: Float32Array; y: Float32Array; gpuTimeMs: number }>;
-
-export declare function sswap(
+  device: GPUDevice,
   n: number,
   x: GpuVector,
   incx: number,
   y: GpuVector,
   incy: number,
-): Promise<{}>;
-
-export declare function sswap(
-  n: number,
-  x: GpuVector,
-  incx: number,
-  y: GpuVector,
-  incy: number,
-): Promise<{ gpuTimeMs: number }>;
+): Promise<{} | { gpuTimeMs: number }>;

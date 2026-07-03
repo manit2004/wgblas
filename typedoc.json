@@ -1,0 +1,8 @@
+{
+  "entryPoints": ["index.d.mts"],
+  "out": "docs",
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": false
+  }
+}
