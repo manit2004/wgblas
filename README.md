@@ -15,6 +15,38 @@
 - [srot](https://manit2004.github.io/wgblas/functions/srot.html)
 - [srotm](https://manit2004.github.io/wgblas/functions/srotm.html)
 
+## Browser Support
+
+wgblas runs in any browser with WebGPU enabled. Check if it's working in your browser at [webgpureport.org](https://webgpureport.org).
+
+### Chrome (recommended)
+
+For full WebGPU control, enable all three flags at `chrome://flags` and relaunch:
+
+| Flag | What it does |
+|------|--------------|
+| `#enable-unsafe-webgpu` | Enables WebGPU |
+| `#force-enable-webgpu-interop` | Uses the real GPU via Vulkan (Linux) — without this Chrome may fall back to SwiftShader, a CPU-based software renderer |
+| `#enable-webgpu-developer-features` | Unlocks additional GPU features |
+
+You can verify which GPU is being used at [webgpureport.org](https://webgpureport.org) — if the adapter name shows **SwiftShader**, the real GPU is not being used.
+
+### Firefox
+
+WebGPU must be enabled manually via `about:config`. Search for each preference and set it:
+
+| Preference | Value | What it does |
+|------------|-------|--------------|
+| `dom.webgpu.enabled` | `true` | Enables WebGPU |
+| `dom.webgpu.wgpu-backend` | `vulkan` | Forces the real GPU via Vulkan — without this Firefox may use a software renderer |
+| `gfx.webgpu.ignore-blocklist` | `true` | Bypasses the GPU blocklist |
+
+Note: `dom.webgpu.wgpu-backend` is a **string** preference — click the pencil icon to edit it and type `vulkan`.
+
+Restart Firefox after making changes.
+
+> **Note:** Firefox's WebGPU implementation is incomplete and some routines may not work correctly. Chrome is recommended.
+
 ## Requirements
 
 - Node.js 18+
