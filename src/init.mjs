@@ -15,7 +15,10 @@ export function isBenchmarkEnabled() {
   return _benchmarkEnabled;
 }
 
-export async function init({ powerPreference = "high-performance", benchmark = false } = {}) {
+export async function init({
+  powerPreference = "high-performance",
+  benchmark = false,
+} = {}) {
   if (_device) {
     return _device;
   }
@@ -34,7 +37,9 @@ export async function init({ powerPreference = "high-performance", benchmark = f
     throw new Error("WebGPU not supported in this environment.");
   }
 
-  _adapter = await gpu.requestAdapter({ powerPreference }) ?? await gpu.requestAdapter();
+  _adapter =
+    (await gpu.requestAdapter({ powerPreference })) ??
+    (await gpu.requestAdapter());
   if (!_adapter) {
     throw new Error("No WebGPU adapter found.");
   }

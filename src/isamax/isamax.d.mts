@@ -12,23 +12,23 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 export declare function isamax(
   n: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<{ index: number }>;
 
 export declare function isamax(
   n: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<{ index: number; gpuTimeMs: number }>;
 
 export declare function isamax(
   n: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{ index: number }>;
 
 export declare function isamax(
   n: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{ index: number; gpuTimeMs: number }>;

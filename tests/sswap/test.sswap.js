@@ -13,16 +13,20 @@ const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("sswap");
 
 let device;
-before(async () => { device = await init(); });
-after(() => { cleanup(); });
+before(async () => {
+  device = await init();
+});
+after(() => {
+  cleanup();
+});
 
 test("sswap fixtures", async () => {
   for (const fixture of fixtures) {
-    const n    = fixture.n;
+    const n = fixture.n;
     const incx = fixture.incx;
     const incy = fixture.incy;
-    const x    = new Float32Array(fixture.x);
-    const y    = new Float32Array(fixture.y);
+    const x = new Float32Array(fixture.x);
+    const y = new Float32Array(fixture.y);
     const expectedX = new Float32Array(fixture.expected_x);
     const expectedY = new Float32Array(fixture.expected_y);
 

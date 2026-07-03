@@ -15,7 +15,7 @@ export declare function sdot(
   x: Float32Array,
   incx: number,
   y: Float32Array,
-  incy: number
+  incy: number,
 ): Promise<{ dot: number }>;
 
 export declare function sdot(
@@ -23,7 +23,7 @@ export declare function sdot(
   x: Float32Array,
   incx: number,
   y: Float32Array,
-  incy: number
+  incy: number,
 ): Promise<{ dot: number; gpuTimeMs: number }>;
 
 export declare function sdot(
@@ -31,7 +31,7 @@ export declare function sdot(
   x: GpuVector,
   incx: number,
   y: GpuVector,
-  incy: number
+  incy: number,
 ): Promise<{ dot: number }>;
 
 export declare function sdot(
@@ -39,5 +39,5 @@ export declare function sdot(
   x: GpuVector,
   incx: number,
   y: GpuVector,
-  incy: number
+  incy: number,
 ): Promise<{ dot: number; gpuTimeMs: number }>;

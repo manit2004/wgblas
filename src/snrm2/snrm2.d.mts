@@ -11,23 +11,23 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 export declare function snrm2(
   n: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<{ nrm2: number }>;
 
 export declare function snrm2(
   n: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<{ nrm2: number; gpuTimeMs: number }>;
 
 export declare function snrm2(
   n: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{ nrm2: number }>;
 
 export declare function snrm2(
   n: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{ nrm2: number; gpuTimeMs: number }>;

@@ -6,9 +6,9 @@ import { extractResult } from "../util/result.mjs";
 
 export class GpuVector {
   constructor(buffer, length, dtype = Float32Array) {
-    this._buf    = buffer;
-    this.length  = length;
-    this.dtype   = dtype;
+    this._buf = buffer;
+    this.length = length;
+    this.dtype = dtype;
   }
 
   static from(data) {
@@ -22,7 +22,7 @@ export class GpuVector {
   async read() {
     const device = getDevice();
     const enc = device.createCommandEncoder();
-    const rb  = stageReadback(enc, this._buf);
+    const rb = stageReadback(enc, this._buf);
     device.queue.submit([enc.finish()]);
     return extractResult(rb, this.dtype);
   }

@@ -1,4 +1,9 @@
-import { uploadBuffer, createParamsBuffer, stageReadback, destroyBuffers } from "../util/buffer.mjs";
+import {
+  uploadBuffer,
+  createParamsBuffer,
+  stageReadback,
+  destroyBuffers,
+} from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { runComputePass, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
@@ -8,45 +13,73 @@ import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 export async function scopy(device, n, x, incx, y, incy) {
-    const xIsGpu = x instanceof GpuVector;
-    const yIsGpu = y instanceof GpuVector;
+  const xIsGpu = x instanceof GpuVector;
+  const yIsGpu = y instanceof GpuVector;
 
-    if (!Number.isInteger(n) || !Number.isInteger(incx) || !Number.isInteger(incy)) throw new Error("n, incx, and incy must be integers.");
-    if (incx <= 0 || incy <= 0) throw new Error("incx and incy must be positive.");
-    if (!xIsGpu && !(x instanceof Float32Array)) throw new Error("x must be a Float32Array or GpuVector.");
-    if (!yIsGpu && !(y instanceof Float32Array)) throw new Error("y must be a Float32Array or GpuVector.");
-    if (xIsGpu !== yIsGpu) throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");
-    if (n <= 0) return yIsGpu ? {} : { y };
-    if (x.length < (n - 1) * incx + 1) throw new Error("x does not have enough elements for the given n and incx.");
-    if (y.length < (n - 1) * incy + 1) throw new Error("y does not have enough elements for the given n and incy.");
+  if (
+    !Number.isInteger(n) ||
+    !Number.isInteger(incx) ||
+    !Number.isInteger(incy)
+  )
+    throw new Error("n, incx, and incy must be integers.");
+  if (incx <= 0 || incy <= 0)
+    throw new Error("incx and incy must be positive.");
+  if (!xIsGpu && !(x instanceof Float32Array))
+    throw new Error("x must be a Float32Array or GpuVector.");
+  if (!yIsGpu && !(y instanceof Float32Array))
+    throw new Error("y must be a Float32Array or GpuVector.");
+  if (xIsGpu !== yIsGpu)
+    throw new Error(
+      "x and y must be the same type (both Float32Array or both GpuVector).",
+    );
+  if (n <= 0) return yIsGpu ? {} : { y };
+  if (x.length < (n - 1) * incx + 1)
+    throw new Error(
+      "x does not have enough elements for the given n and incx.",
+    );
+  if (y.length < (n - 1) * incy + 1)
+    throw new Error(
+      "y does not have enough elements for the given n and incy.",
+    );
 
-    const pipeline = await getPipeline(device, "scopy");
+  const pipeline = await getPipeline(device, "scopy");
 
-    const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "scopy-x", false);
-    const yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "scopy-y", true);
-    const paramsBuffer = createParamsBuffer([
-        { value: n,    type: "u32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
-    ], "scopy-params");
+  const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "scopy-x", false);
+  const yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "scopy-y", true);
+  const paramsBuffer = createParamsBuffer(
+    [
+      { value: n, type: "u32" },
+      { value: incx, type: "u32" },
+      { value: incy, type: "u32" },
+    ],
+    "scopy-params",
+  );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [xBuffer, yBuffer, paramsBuffer]);
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, calcWorkgroups(n));
-    const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+  const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    xBuffer,
+    yBuffer,
+    paramsBuffer,
+  ]);
+  const { commandEncoder, ts } = runComputePass(
+    pipeline,
+    bindGroup,
+    calcWorkgroups(n),
+  );
+  const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
-    submit(commandEncoder);
+  submit(commandEncoder);
 
-    const gpuTimeMs = await extractTimestamp(ts);
+  const gpuTimeMs = await extractTimestamp(ts);
 
-    if (yIsGpu && xIsGpu) {
-        destroyBuffers(paramsBuffer);
-        if (gpuTimeMs !== undefined) return { gpuTimeMs };
-        return {};
-    }
+  if (yIsGpu && xIsGpu) {
+    destroyBuffers(paramsBuffer);
+    if (gpuTimeMs !== undefined) return { gpuTimeMs };
+    return {};
+  }
 
-    const result = await extractResult(readBuffer, Float32Array);
-    destroyBuffers(xBuffer, yBuffer, paramsBuffer, readBuffer);
+  const result = await extractResult(readBuffer, Float32Array);
+  destroyBuffers(xBuffer, yBuffer, paramsBuffer, readBuffer);
 
-    if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
-    return { y: result };
+  if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
+  return { y: result };
 }

@@ -1,5 +1,8 @@
 export { GpuVector } from "./src/classes/GpuVector.mjs";
-export { randomFloat32Array, randomFloat64Array } from "./src/random/random.mjs";
+export {
+  randomFloat32Array,
+  randomFloat64Array,
+} from "./src/random/random.mjs";
 export { sscal } from "./src/sscal/sscal.mjs";
 export { sswap } from "./src/sswap/sswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";

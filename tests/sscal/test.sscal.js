@@ -13,8 +13,12 @@ const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("sscal");
 
 let device;
-before(async () => { device = await init(); });
-after(() => { cleanup(); });
+before(async () => {
+  device = await init();
+});
+after(() => {
+  cleanup();
+});
 
 test("sscal fixtures", async () => {
   for (const fixture of fixtures) {

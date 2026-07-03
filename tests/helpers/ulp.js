@@ -27,7 +27,7 @@ export function assertUlp(actual, expected, threshold, label = "") {
     const prefix = label ? `[${label}] ` : "";
     throw new Error(
       `${prefix}max ULP ${max} exceeds threshold ${threshold} at index ${worstIndex} ` +
-      `(actual=${actual[worstIndex]}, expected=${expected[worstIndex]})`
+        `(actual=${actual[worstIndex]}, expected=${expected[worstIndex]})`,
     );
   }
 }

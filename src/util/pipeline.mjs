@@ -33,9 +33,11 @@ export async function loadShader(shaderName) {
   const shaderModule = device.createShaderModule({ label: shaderName, code });
 
   const info = await shaderModule.getCompilationInfo();
-  const errors = info.messages.filter(m => m.type === "error");
+  const errors = info.messages.filter((m) => m.type === "error");
   if (errors.length > 0) {
-    throw new Error(`Shader "${shaderName}" compilation failed:\n${errors.map(m => `  line ${m.lineNum}: ${m.message}`).join("\n")}`);
+    throw new Error(
+      `Shader "${shaderName}" compilation failed:\n${errors.map((m) => `  line ${m.lineNum}: ${m.message}`).join("\n")}`,
+    );
   }
 
   const pipeline = device.createComputePipeline({

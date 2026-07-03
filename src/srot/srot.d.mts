@@ -20,7 +20,7 @@ export declare function srot(
   y: Float32Array,
   incy: number,
   c: number,
-  s: number
+  s: number,
 ): Promise<{ x: Float32Array; y: Float32Array }>;
 
 export declare function srot(
@@ -30,7 +30,7 @@ export declare function srot(
   y: Float32Array,
   incy: number,
   c: number,
-  s: number
+  s: number,
 ): Promise<{ x: Float32Array; y: Float32Array; gpuTimeMs: number }>;
 
 export declare function srot(
@@ -40,7 +40,7 @@ export declare function srot(
   y: GpuVector,
   incy: number,
   c: number,
-  s: number
+  s: number,
 ): Promise<{}>;
 
 export declare function srot(
@@ -50,5 +50,5 @@ export declare function srot(
   y: GpuVector,
   incy: number,
   c: number,
-  s: number
+  s: number,
 ): Promise<{ gpuTimeMs: number }>;

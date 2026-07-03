@@ -19,7 +19,7 @@ export declare function srotm(
   incx: number,
   y: Float32Array,
   incy: number,
-  param: Float32Array
+  param: Float32Array,
 ): Promise<{ x: Float32Array; y: Float32Array }>;
 
 export declare function srotm(
@@ -28,7 +28,7 @@ export declare function srotm(
   incx: number,
   y: Float32Array,
   incy: number,
-  param: Float32Array
+  param: Float32Array,
 ): Promise<{ x: Float32Array; y: Float32Array; gpuTimeMs: number }>;
 
 export declare function srotm(
@@ -37,7 +37,7 @@ export declare function srotm(
   incx: number,
   y: GpuVector,
   incy: number,
-  param: Float32Array
+  param: Float32Array,
 ): Promise<{}>;
 
 export declare function srotm(
@@ -46,5 +46,5 @@ export declare function srotm(
   incx: number,
   y: GpuVector,
   incy: number,
-  param: Float32Array
+  param: Float32Array,
 ): Promise<{ gpuTimeMs: number }>;

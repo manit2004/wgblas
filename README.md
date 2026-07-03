@@ -1,7 +1,9 @@
 # wgblas
-`wgblas` is an initiative to implement all the standard level 1, 2, 3 BLAS functions on the top of webgpu. 
+
+`wgblas` is an initiative to implement all the standard level 1, 2, 3 BLAS functions on the top of webgpu.
 
 ## Available Functions
+
 - [x] sscal
 - [x] sswap
 - [x] saxpy
@@ -59,7 +61,7 @@ const { result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
 console.log(`compute time: ${gpuTimeMs.toFixed(4)} ms`);
 ```
 
-### ```GpuVector``` usage 
+### `GpuVector` usage
 
 `GpuVector` keeps data resident on the GPU between operations — upload once, chain any number of operations, read back once. This eliminates the redundant uploads and readbacks between steps, which are often more expensive than the compute itself.
 
@@ -72,11 +74,11 @@ import { randomFloat32Array } from "wgblas/util/random";
 
 const device = await init();
 
-const n     = 10;
+const n = 10;
 const alpha = 2;
 const scale = 0.5;
-const x     = randomFloat32Array(n, -10, 10);
-const y     = randomFloat32Array(n, -10, 10);
+const x = randomFloat32Array(n, -10, 10);
+const y = randomFloat32Array(n, -10, 10);
 
 const xGpu = GpuVector.from(x);
 const yGpu = GpuVector.from(y);
@@ -96,5 +98,4 @@ xGpu.destroy();
 yGpu.destroy();
 
 cleanup();
-
 ```

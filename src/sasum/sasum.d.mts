@@ -11,23 +11,23 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 export declare function sasum(
   n: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<{ asum: number }>;
 
 export declare function sasum(
   n: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<{ asum: number; gpuTimeMs: number }>;
 
 export declare function sasum(
   n: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{ asum: number }>;
 
 export declare function sasum(
   n: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{ asum: number; gpuTimeMs: number }>;

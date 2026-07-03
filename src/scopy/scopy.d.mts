@@ -15,7 +15,7 @@ export declare function scopy(
   x: Float32Array,
   incx: number,
   y: Float32Array,
-  incy: number
+  incy: number,
 ): Promise<{ y: Float32Array }>;
 
 export declare function scopy(
@@ -23,7 +23,7 @@ export declare function scopy(
   x: Float32Array,
   incx: number,
   y: Float32Array,
-  incy: number
+  incy: number,
 ): Promise<{ y: Float32Array; gpuTimeMs: number }>;
 
 export declare function scopy(
@@ -31,7 +31,7 @@ export declare function scopy(
   x: GpuVector,
   incx: number,
   y: GpuVector,
-  incy: number
+  incy: number,
 ): Promise<{}>;
 
 export declare function scopy(
@@ -39,5 +39,5 @@ export declare function scopy(
   x: GpuVector,
   incx: number,
   y: GpuVector,
-  incy: number
+  incy: number,
 ): Promise<{ gpuTimeMs: number }>;

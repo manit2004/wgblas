@@ -2,15 +2,25 @@ import { init, cleanup } from "wgblas";
 import { srotm } from "wgblas/srotm";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { randomFloat32Array } from "wgblas/random";
-import { median, printHeader, printRow, getGpuModel, saveResults } from "../utils/helpers.mjs";
+import {
+  median,
+  printHeader,
+  printRow,
+  getGpuModel,
+  saveResults,
+} from "../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
-const BENCH_ITERS  = 100;
-const SIZES = [32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216];
+const BENCH_ITERS = 100;
+const SIZES = [
+  32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304,
+  16777216,
+];
 
 const COLS = ["n", "compute_ms", "compute_GBs"];
 
-const powerPreference = process.argv[2] === "low-power" ? "low-power" : "high-performance";
+const powerPreference =
+  process.argv[2] === "low-power" ? "low-power" : "high-performance";
 const device = await init({ benchmark: true, powerPreference });
 
 const gpuModel = getGpuModel();
@@ -40,7 +50,7 @@ for (const n of SIZES) {
 
   const med = median(times);
   const bytes = 4 * n * 4; // x read + x written + y read + y written (param is 5 floats, negligible)
-  const gbs = (bytes / 1e9) / (med / 1e3);
+  const gbs = bytes / 1e9 / (med / 1e3);
   printRow(COLS, [n, med, gbs]);
   records.push({ n, compute_ms: med, compute_GBs: gbs });
 }

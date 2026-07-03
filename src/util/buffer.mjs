@@ -10,7 +10,9 @@ export function uploadBuffer(data, label = "blas-input", readback = false) {
   const maxSize = device.limits.maxStorageBufferBindingSize;
   const byteSize = data.byteLength;
   if (byteSize > maxSize) {
-    throw new Error(`Buffer size ${byteSize} bytes exceeds device limit of ${maxSize} bytes.`);
+    throw new Error(
+      `Buffer size ${byteSize} bytes exceeds device limit of ${maxSize} bytes.`,
+    );
   }
 
   const usage = readback
@@ -58,7 +60,13 @@ export function stageReadback(commandEncoder, sourceBuffer) {
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
   });
 
-  commandEncoder.copyBufferToBuffer(sourceBuffer, 0, readBuffer, 0, sourceBuffer.size);
+  commandEncoder.copyBufferToBuffer(
+    sourceBuffer,
+    0,
+    readBuffer,
+    0,
+    sourceBuffer.size,
+  );
 
   return readBuffer;
 }
@@ -81,7 +89,9 @@ export function createParamsBuffer(params, label = "blas-params") {
     } else if (type === "f32") {
       view.setFloat32(offset, value, true);
     } else {
-      throw new Error(`Unknown param type "${type}". Use "f32", "u32", or "i32".`);
+      throw new Error(
+        `Unknown param type "${type}". Use "f32", "u32", or "i32".`,
+      );
     }
   });
 

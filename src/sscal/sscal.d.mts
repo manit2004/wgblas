@@ -13,26 +13,26 @@ export declare function sscal(
   n: number,
   alpha: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<Float32Array>;
 
 export declare function sscal(
   n: number,
   alpha: number,
   x: Float32Array,
-  incx: number
+  incx: number,
 ): Promise<{ result: Float32Array; gpuTimeMs: number }>;
 
 export declare function sscal(
   n: number,
   alpha: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{}>;
 
 export declare function sscal(
   n: number,
   alpha: number,
   x: GpuVector,
-  incx: number
+  incx: number,
 ): Promise<{ gpuTimeMs: number }>;

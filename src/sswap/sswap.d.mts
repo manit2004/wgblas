@@ -15,7 +15,7 @@ export declare function sswap(
   x: Float32Array,
   incx: number,
   y: Float32Array,
-  incy: number
+  incy: number,
 ): Promise<{ x: Float32Array; y: Float32Array }>;
 
 export declare function sswap(
@@ -23,7 +23,7 @@ export declare function sswap(
   x: Float32Array,
   incx: number,
   y: Float32Array,
-  incy: number
+  incy: number,
 ): Promise<{ x: Float32Array; y: Float32Array; gpuTimeMs: number }>;
 
 export declare function sswap(
@@ -31,7 +31,7 @@ export declare function sswap(
   x: GpuVector,
   incx: number,
   y: GpuVector,
-  incy: number
+  incy: number,
 ): Promise<{}>;
 
 export declare function sswap(
@@ -39,5 +39,5 @@ export declare function sswap(
   x: GpuVector,
   incx: number,
   y: GpuVector,
-  incy: number
+  incy: number,
 ): Promise<{ gpuTimeMs: number }>;

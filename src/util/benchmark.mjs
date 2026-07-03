@@ -2,17 +2,25 @@ import { getDevice, isBenchmarkEnabled } from "../init.mjs";
 
 export function benchmarkMode(adapter, enabled) {
   if (!enabled) return {};
-  if (adapter.features.has("timestamp-query")) return { requiredFeatures: ["timestamp-query"] };
-  console.warn("timestamp-query not supported on this device — benchmark mode disabled.");
+  if (adapter.features.has("timestamp-query"))
+    return { requiredFeatures: ["timestamp-query"] };
+  console.warn(
+    "timestamp-query not supported on this device — benchmark mode disabled.",
+  );
   return {};
 }
 
 export function beginTimestamp() {
-  if (!isBenchmarkEnabled()) return { querySet: null, passDescriptor: undefined };
+  if (!isBenchmarkEnabled())
+    return { querySet: null, passDescriptor: undefined };
   const device = getDevice();
   const querySet = device.createQuerySet({ type: "timestamp", count: 2 });
   const passDescriptor = {
-    timestampWrites: { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 },
+    timestampWrites: {
+      querySet,
+      beginningOfPassWriteIndex: 0,
+      endOfPassWriteIndex: 1,
+    },
   };
   return { querySet, passDescriptor };
 }

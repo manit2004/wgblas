@@ -13,17 +13,21 @@ const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
 const ULP_THRESHOLD = getUlpThreshold("saxpy");
 
 let device;
-before(async () => { device = await init(); });
-after(() => { cleanup(); });
+before(async () => {
+  device = await init();
+});
+after(() => {
+  cleanup();
+});
 
 test("saxpy fixtures", async () => {
   for (const fixture of fixtures) {
-    const n     = fixture.n;
+    const n = fixture.n;
     const alpha = fixture.alpha;
-    const incx  = fixture.incx;
-    const incy  = fixture.incy;
-    const x     = new Float32Array(fixture.x);
-    const y     = new Float32Array(fixture.y);
+    const incx = fixture.incx;
+    const incy = fixture.incy;
+    const x = new Float32Array(fixture.x);
+    const y = new Float32Array(fixture.y);
     const expectedY = new Float32Array(fixture.expected_y);
 
     const { y: resultY } = await saxpy(device, n, alpha, x, incx, y, incy);

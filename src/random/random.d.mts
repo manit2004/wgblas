@@ -5,7 +5,11 @@
  * @param low - lower bound (default: -1)
  * @param high - upper bound (default: 1)
  */
-export declare function randomFloat32Array(n: number, low?: number, high?: number): Float32Array;
+export declare function randomFloat32Array(
+  n: number,
+  low?: number,
+  high?: number,
+): Float32Array;
 
 /**
  * Returns a Float64Array of n random values uniformly sampled from [low, high).
@@ -14,4 +18,8 @@ export declare function randomFloat32Array(n: number, low?: number, high?: numbe
  * @param low - lower bound (default: -1)
  * @param high - upper bound (default: 1)
  */
-export declare function randomFloat64Array(n: number, low?: number, high?: number): Float64Array;
+export declare function randomFloat64Array(
+  n: number,
+  low?: number,
+  high?: number,
+): Float64Array;

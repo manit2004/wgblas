@@ -6,11 +6,11 @@ import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n     = 10;
+const n = 10;
 const alpha = 2;
 const scale = 0.5;
-const x     = randomFloat32Array(n, -10, 10);
-const y     = randomFloat32Array(n, -10, 10);
+const x = randomFloat32Array(n, -10, 10);
+const y = randomFloat32Array(n, -10, 10);
 
 const xGpu = GpuVector.from(x);
 const yGpu = GpuVector.from(y);

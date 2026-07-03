@@ -8,12 +8,18 @@ import { assertUlp } from "../helpers/ulp.js";
 import { getUlpThreshold } from "../helpers/accuracy.js";
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
-const fixtures = JSON.parse(readFileSync(join(thisDir, "fixtures/fixtures.json"), "utf8"));
+const fixtures = JSON.parse(
+  readFileSync(join(thisDir, "fixtures/fixtures.json"), "utf8"),
+);
 const ULP_THRESHOLD = getUlpThreshold("srot");
 
 let device;
-before(async () => { device = await init(); });
-after(() => { cleanup(); });
+before(async () => {
+  device = await init();
+});
+after(() => {
+  cleanup();
+});
 
 test("srot fixtures", async () => {
   for (const fixture of fixtures) {
