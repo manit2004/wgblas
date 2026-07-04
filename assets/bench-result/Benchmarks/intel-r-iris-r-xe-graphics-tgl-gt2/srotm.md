@@ -16,3 +16,7 @@
 | 1048576 | 2.4248 | 6.9189 |
 | 4194304 | 3.4079 | 19.6923 |
 | 16777216 | 14.7456 | 18.2044 |
+
+## See also
+
+- [benchmark.srotm.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/srotm/benchmark.srotm.js) — WebGPU benchmark script

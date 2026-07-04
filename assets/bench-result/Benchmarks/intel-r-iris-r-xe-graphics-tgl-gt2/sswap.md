@@ -16,3 +16,7 @@
 | 1048576 | 1.7695 | 9.4815 |
 | 4194304 | 3.3423 | 20.0784 |
 | 16777216 | 14.6145 | 18.3677 |
+
+## See also
+
+- [benchmark.sswap.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sswap/benchmark.sswap.js) — WebGPU benchmark script

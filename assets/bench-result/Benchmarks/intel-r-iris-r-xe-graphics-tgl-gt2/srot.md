@@ -16,3 +16,7 @@
 | 1048576 | 1.7039 | 9.8462 |
 | 4194304 | 3.3423 | 20.0784 |
 | 16777216 | 14.6801 | 18.2857 |
+
+## See also
+
+- [benchmark.srot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/benchmark.srot.js) — WebGPU benchmark script

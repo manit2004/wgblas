@@ -150,6 +150,9 @@ def main():
             else:
                 cuda = None
 
+            gh = f"https://github.com/{REPO}/blob/{BRANCH}"
+            wgblas_link = f"{gh}/benchmarks/{routine}/benchmark.{routine}.js"
+
             if cuda:
                 table = make_comparison_table(wgblas, cuda)
                 header = f"## {display} — wgblas vs cuBLAS\n\n"
@@ -157,12 +160,22 @@ def main():
                     "\n\n> Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. "
                     "Higher means wgblas is closer to cuBLAS throughput."
                 )
+                cuda_link = f"{gh}/benchmarks/{routine}/cuda/benchmark.c"
+                see_also = (
+                    f"\n\n## See also\n\n"
+                    f"- [benchmark.{routine}.js]({wgblas_link}) — WebGPU benchmark script\n"
+                    f"- [benchmark.c]({cuda_link}) — CUDA / cuBLAS reference script"
+                )
             else:
                 table = make_wgblas_only_table(wgblas)
                 header = f"## {display}\n\n"
                 note = ""
+                see_also = (
+                    f"\n\n## See also\n\n"
+                    f"- [benchmark.{routine}.js]({wgblas_link}) — WebGPU benchmark script"
+                )
 
-            content = f"# {routine}\n\n" + header + table + note + "\n"
+            content = f"# {routine}\n\n" + header + table + note + see_also + "\n"
             out_file = out_gpu_dir / f"{routine}.md"
             out_file.write_text(content)
             print(f"  wrote {out_file.relative_to(ROOT)}")

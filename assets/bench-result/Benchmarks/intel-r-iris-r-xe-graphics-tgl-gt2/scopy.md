@@ -16,3 +16,7 @@
 | 1048576 | 1.2452 | 6.7368 |
 | 4194304 | 2.4904 | 13.4737 |
 | 16777216 | 7.0779 | 18.9630 |
+
+## See also
+
+- [benchmark.scopy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/scopy/benchmark.scopy.js) — WebGPU benchmark script

@@ -18,3 +18,8 @@
 | 16777216 | 1.8843 | 142.4599 | 1.9494 | 137.7033 | 103.5% |
 
 > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.
+
+## See also
+
+- [benchmark.srot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/benchmark.srot.js) — WebGPU benchmark script
+- [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/cuda/benchmark.c) — CUDA / cuBLAS reference script

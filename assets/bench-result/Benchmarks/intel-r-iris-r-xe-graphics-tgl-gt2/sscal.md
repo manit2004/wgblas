@@ -16,3 +16,7 @@
 | 1048576 | 1.2452 | 6.7368 |
 | 4194304 | 1.6384 | 20.4800 |
 | 16777216 | 7.0124 | 19.1402 |
+
+## See also
+
+- [benchmark.sscal.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sscal/benchmark.sscal.js) — WebGPU benchmark script

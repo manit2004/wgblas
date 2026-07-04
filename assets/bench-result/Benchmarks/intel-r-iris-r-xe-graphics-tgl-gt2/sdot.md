@@ -16,3 +16,7 @@
 | 1048576 | 1.3107 | 6.4000 |
 | 4194304 | 2.8836 | 11.6364 |
 | 16777216 | 11.4688 | 11.7029 |
+
+## See also
+
+- [benchmark.sdot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sdot/benchmark.sdot.js) — WebGPU benchmark script

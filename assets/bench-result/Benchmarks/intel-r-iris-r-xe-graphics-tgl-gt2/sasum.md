@@ -16,3 +16,7 @@
 | 1048576 | 1.1141 | 3.7647 |
 | 4194304 | 1.3107 | 12.8000 |
 | 16777216 | 3.9322 | 17.0667 |
+
+## See also
+
+- [benchmark.sasum.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sasum/benchmark.sasum.js) — WebGPU benchmark script

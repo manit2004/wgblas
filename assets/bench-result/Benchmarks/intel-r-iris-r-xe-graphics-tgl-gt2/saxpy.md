@@ -16,3 +16,7 @@
 | 1048576 | 1.3763 | 9.1429 |
 | 4194304 | 2.4576 | 20.4800 |
 | 16777216 | 10.4202 | 19.3208 |
+
+## See also
+
+- [benchmark.saxpy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/saxpy/benchmark.saxpy.js) — WebGPU benchmark script

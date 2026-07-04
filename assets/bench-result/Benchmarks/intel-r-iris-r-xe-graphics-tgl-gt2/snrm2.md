@@ -16,3 +16,7 @@
 | 1048576 | 1.1141 | 3.7647 |
 | 4194304 | 1.4418 | 11.6364 |
 | 16777216 | 3.8666 | 17.3559 |
+
+## See also
+
+- [benchmark.snrm2.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/snrm2/benchmark.snrm2.js) — WebGPU benchmark script
