@@ -14,7 +14,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param incx - stride for x (must be a positive integer)
  * @param y - Float32Array output vector
  * @param incy - stride for y (must be a positive integer)
- * @see [Source code: scopy.mjs](https://github.com/manit2004/wgblas/blob/main/src/scopy/scopy.mjs#L15-L85)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/scopy/scopy.mjs#L15-L85">Source code: scopy.mjs (L15–L85)</a>
  * @category BLAS Level 1
  */
 export declare function scopy(

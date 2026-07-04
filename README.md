@@ -4,16 +4,16 @@
 
 ## Available Functions
 
-- [sscal](https://manit2004.github.io/wgblas/functions/sscal.html)
-- [sswap](https://manit2004.github.io/wgblas/functions/sswap.html)
-- [saxpy](https://manit2004.github.io/wgblas/functions/saxpy.html)
-- [scopy](https://manit2004.github.io/wgblas/functions/scopy.html)
-- [sdot](https://manit2004.github.io/wgblas/functions/sdot.html)
-- [sasum](https://manit2004.github.io/wgblas/functions/sasum.html)
-- [snrm2](https://manit2004.github.io/wgblas/functions/snrm2.html)
-- [isamax](https://manit2004.github.io/wgblas/functions/isamax.html)
-- [srot](https://manit2004.github.io/wgblas/functions/srot.html)
-- [srotm](https://manit2004.github.io/wgblas/functions/srotm.html)
+- [sscal](https://manit2004.github.io/wgblas/functions/index.sscal.html)
+- [sswap](https://manit2004.github.io/wgblas/functions/index.sswap.html)
+- [saxpy](https://manit2004.github.io/wgblas/functions/index.saxpy.html)
+- [scopy](https://manit2004.github.io/wgblas/functions/index.scopy.html)
+- [sdot](https://manit2004.github.io/wgblas/functions/index.sdot.html)
+- [sasum](https://manit2004.github.io/wgblas/functions/index.sasum.html)
+- [snrm2](https://manit2004.github.io/wgblas/functions/index.snrm2.html)
+- [isamax](https://manit2004.github.io/wgblas/functions/index.isamax.html)
+- [srot](https://manit2004.github.io/wgblas/functions/index.srot.html)
+- [srotm](https://manit2004.github.io/wgblas/functions/index.srotm.html)
 
 ## Browser Support
 

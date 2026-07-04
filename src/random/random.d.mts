@@ -20,7 +20,7 @@
  * const x = randomFloat32Array(4, 0, 10);
  * console.log(x);
  * ```
- * @see [Source code: random.mjs](https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1-L5)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1-L5">Source code: random.mjs (L1–L5)</a>
  * @category Utilities
  */
 export declare function randomFloat32Array(
@@ -51,7 +51,7 @@ export declare function randomFloat32Array(
  * const x = randomFloat64Array(4, 0, 10);
  * console.log(x);
  * ```
- * @see [Source code: random.mjs](https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7-L11)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7-L11">Source code: random.mjs (L7–L11)</a>
  * @category Utilities
  */
 export declare function randomFloat64Array(

@@ -18,7 +18,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param incy - stride for y (must be a positive integer)
  * @param c - cosine of rotation angle
  * @param s - sine of rotation angle
- * @see [Source code: srot.mjs](https://github.com/manit2004/wgblas/blob/main/src/srot/srot.mjs#L15-L91)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/srot/srot.mjs#L15-L91">Source code: srot.mjs (L15–L91)</a>
  * @category BLAS Level 1
  */
 export declare function srot(
