@@ -121,29 +121,6 @@ No bundler needed. Load the pre-built browser bundle from the CDN and use `windo
 </html>
 ```
 
-### Benchmark Mode
-
-Pass `{ benchmark: true }` to `init()` to enable GPU timestamp queries — BLAS functions will then return `{ result, gpuTimeMs }` instead of just the result.
-
-**Note:** Here `gpuTimeMs` is only the gpu compute time which doesn't include device to host and host to device transfer time duration.
-
-```js
-import { init, cleanup } from "wgblas";
-import { sscal } from "wgblas/sscal";
-
-const device = await init({ benchmark: true });
-
-const n = 5;
-const alpha = 2.0;
-const x = new Float32Array([1, 2, 3, 4, 5]);
-
-const { result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
-console.log(result);                              // Float32Array [2, 4, 6, 8, 10]
-console.log(`compute time: ${gpuTimeMs.toFixed(4)} ms`);
-
-cleanup();
-```
-
 ### `GpuVector` usage
 
 `GpuVector` keeps data resident on the GPU between operations — upload once, chain any number of operations, read back once. This eliminates the redundant uploads and readbacks between steps, which are often more expensive than the compute itself.
