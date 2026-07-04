@@ -1,9 +1,11 @@
 {
   "entryPoints": ["index.d.mts"],
   "out": "docs",
+  "plugin": ["./assets/typedoc-plugin/hoist-categories.mjs"],
   "navigation": {
     "includeCategories": true,
     "includeGroups": false
   },
-  "customJs": "docs-assets/runner.js"
+  "customJs": "assets/docs/runner.js",
+  "projectDocuments": ["assets/bench-result/**/*.md"]
 }

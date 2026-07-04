@@ -2,7 +2,7 @@ include tests/tests.mk
 include benchmarks/bench.mk
 include examples/examples.mk
 
-.PHONY: check protect-results help
+.PHONY: check protect-results bench-tables help
 
 # ── Help ─────────────────────────────────────────────────────────────────────
 
@@ -27,6 +27,7 @@ help:
 	@echo "  cuda-<name>           Build and run a specific CUDA benchmark (e.g. cuda-sscal)"
 	@echo ""
 	@echo "Results"
+	@echo "  bench-tables          Fetch benchmark JSONs from GitHub and regenerate assets/bench-result/**/*.md"
 	@echo "  protect-results       Prevent benchmark re-runs from dirtying git status (run once after clone)"
 	@echo ""
 	@echo "Examples"
@@ -43,6 +44,9 @@ check:
 	npx tsc --noEmit
 
 # ── Results ──────────────────────────────────────────────────────────────────
+
+bench-tables:
+	python3 scripts/gen-bench-tables.py
 
 protect-results:
 	git ls-files benchmarks/results/ | xargs git update-index --skip-worktree
