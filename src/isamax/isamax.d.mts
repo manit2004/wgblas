@@ -14,7 +14,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param x - Float32Array input vector
  * @param incx - stride for x (must be a positive integer)
  * @returns 0-based index of max |x[i]|
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/isamax/isamax.mjs#L18-L113">Source code: isamax.mjs (L18–L113)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/isamax/isamax.mjsLINEHASHL18-L113">Source code: isamax.mjs (L18–L113)</a>
  * @category BLAS Level 1
  */
 export declare function isamax(
@@ -35,7 +35,7 @@ export declare function isamax(
  * @param x - GpuVector input vector
  * @param incx - stride for x (must be a positive integer)
  * @returns 0-based index of max |x[i]|
- * @see [Source code: isamax.mjs](https://github.com/manit2004/wgblas/blob/main/src/isamax/isamax.mjs)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/isamax/isamax.mjsLINEHASHL18-L113">Source code: isamax.mjs (L18–L113)</a>
  * @category BLAS Level 1
  */
 export declare function isamax(

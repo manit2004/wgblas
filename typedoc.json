@@ -1,7 +1,7 @@
 {
   "entryPoints": ["index.d.mts"],
   "out": "docs",
-  "plugin": ["./assets/typedoc-plugin/hoist-categories.mjs"],
+  "plugin": ["./assets/typedoc-plugin/fix-hash-links.mjs"],
   "navigation": {
     "includeCategories": true,
     "includeGroups": false

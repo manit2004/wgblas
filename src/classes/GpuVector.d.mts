@@ -1,7 +1,7 @@
 /**
  * Represents a Float32Array stored in GPU memory.
  *
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/classes/GpuVector.mjs#L7-L33">Source code: GpuVector.mjs (L7–L33)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/classes/GpuVector.mjsLINEHASHL7-L33">Source code: GpuVector.mjs (L7–L33)</a>
  * @see [MDN: GPUBuffer](https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer)
  * @category Classes
  */

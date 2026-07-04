@@ -1,3 +1,6 @@
+/**
+ * @module docs
+ */
 export { GpuVector } from "./src/classes/GpuVector.mjs";
 export {
   randomFloat32Array,
