@@ -20,7 +20,17 @@ jobs:
       - run: npm ci
 
       - name: Type check
-        run: make check
+        run: make typecheck
 
       - name: Lint
         run: npx eslint .
+
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --exclude-path node_modules "**/*.md" "docs/**/*.html"
+          fail: true

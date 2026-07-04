@@ -2,51 +2,30 @@ include tests/tests.mk
 include benchmarks/bench.mk
 include examples/examples.mk
 
-.PHONY: check protect-results bench-tables help
-
-# ── Help ─────────────────────────────────────────────────────────────────────
+.PHONY: typecheck protect-results bench-tables check-links install-tools help
 
 help:
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "Type checking"
-	@echo "  check                 Verify public API types are aligned (tsc --noEmit)"
-	@echo ""
-	@echo "Tests"
-	@echo "  test                  Run all tests"
-	@echo "  test-<name>           Run tests for a specific function (e.g. test-sscal)"
-	@echo "  fixtures              Regenerate all test fixtures"
-	@echo "  fixtures-<name>       Regenerate fixtures for a specific function (e.g. fixtures-sscal)"
-	@echo ""
-	@echo "Benchmarks (WebGPU)"
-	@echo "  bench                 Run all WebGPU benchmarks"
-	@echo "  bench-<name>          Run a specific WebGPU benchmark (e.g. bench-sscal)"
-	@echo ""
-	@echo "Benchmarks (CUDA)"
-	@echo "  cuda                  Build and run all CUDA benchmarks"
-	@echo "  cuda-<name>           Build and run a specific CUDA benchmark (e.g. cuda-sscal)"
-	@echo ""
-	@echo "Results"
+	@echo "  typecheck             Verify public API types are aligned (tsc --noEmit)"
 	@echo "  bench-tables          Fetch benchmark JSONs from GitHub and regenerate assets/bench-result/**/*.md"
 	@echo "  protect-results       Prevent benchmark re-runs from dirtying git status (run once after clone)"
-	@echo ""
-	@echo "Examples"
-	@echo "  example                      Run all Node examples"
-	@echo "  example-gpuvec               Run all GpuVector Node examples"
-	@echo "  example-<name>               Run a specific Node example (e.g. example-sscal)"
-	@echo "  example-<name>-web           Open a specific example in the browser (e.g. example-sscal-web)"
-	@echo "  example-web                  Open all browser examples via a local Vite server"
-	@echo "  example-gpuvec-<name>        Run a GpuVector Node example (e.g. example-gpuvec-saxpy)"
+	@echo "  check-links           Check all markdown and docs HTML links with lychee"
+	@echo "  install-tools         Install dev tools (lychee)"
 
-# ── Type check ───────────────────────────────────────────────────────────────
 
-check:
+typecheck:
 	npx tsc --noEmit
-
-# ── Results ──────────────────────────────────────────────────────────────────
 
 bench-tables:
 	python3 scripts/gen-bench-tables.py
 
 protect-results:
 	git ls-files benchmarks/results/ | xargs git update-index --skip-worktree
+
+check-links:
+	lychee --exclude-path node_modules "**/*.md" "docs/**/*.html"
+
+install-tools:
+	curl -sSL https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-x86_64-unknown-linux-gnu.tar.gz | tar xz -C /tmp
+	sudo mv /tmp/lychee-x86_64-unknown-linux-gnu/lychee /usr/local/bin/lychee
