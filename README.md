@@ -82,6 +82,45 @@ console.log("after: ", result);
 cleanup();
 ```
 
+### Browser (standalone HTML)
+
+No bundler needed. Load the pre-built browser bundle from the CDN and use `window.wgblas` directly:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>sscal — wgblas browser example</title>
+    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, sscal, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 10;
+        const alpha = 2.0;
+        const x = randomFloat32Array(n, -10, 10);
+
+        const xBefore = Array.from(x).map(v => v.toFixed(4)).join(", ");
+
+        const result = await sscal(device, n, alpha, x, 1);
+
+        document.getElementById("out").textContent =
+          "before: " + xBefore +
+          "\nafter:  " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>
+```
+
 ### Benchmark Mode
 
 Pass `{ benchmark: true }` to `init()` to enable GPU timestamp queries — BLAS functions will then return `{ result, gpuTimeMs }` instead of just the result.
