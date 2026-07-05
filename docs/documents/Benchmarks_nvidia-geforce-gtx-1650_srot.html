@@ -1,0 +1,121 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Benchmarks/nvidia-geforce-gtx-1650/srot | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">wgblas</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">Benchmarks/nvidia-geforce-gtx-1650/srot</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="srot" class="tsd-anchor-link">srot<a href="#srot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="nvidia-geforce-gtx-1650-wgblas-vs-cublas" class="tsd-anchor-link">Nvidia Geforce Gtx 1650 — wgblas vs cuBLAS<a href="#nvidia-geforce-gtx-1650-wgblas-vs-cublas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0070</td>
+<td>0.0731</td>
+<td>0.0061</td>
+<td>0.0833</td>
+<td>87.7%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0071</td>
+<td>0.1441</td>
+<td>0.0102</td>
+<td>0.1000</td>
+<td>144.1%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0071</td>
+<td>0.2876</td>
+<td>0.0104</td>
+<td>0.1969</td>
+<td>146.1%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0073</td>
+<td>1.1228</td>
+<td>0.0101</td>
+<td>0.8114</td>
+<td>138.4%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0074</td>
+<td>2.2165</td>
+<td>0.0103</td>
+<td>1.5901</td>
+<td>139.4%</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0075</td>
+<td>8.7897</td>
+<td>0.0102</td>
+<td>6.4201</td>
+<td>136.9%</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.0082</td>
+<td>32.0000</td>
+<td>0.0102</td>
+<td>25.6000</td>
+<td>125.0%</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.0102</td>
+<td>102.4000</td>
+<td>0.0134</td>
+<td>78.3923</td>
+<td>130.6%</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>0.0344</td>
+<td>122.0978</td>
+<td>0.0344</td>
+<td>121.7575</td>
+<td>100.3%</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>0.1223</td>
+<td>137.2122</td>
+<td>0.1228</td>
+<td>136.6401</td>
+<td>100.4%</td>
+</tr>
+<tr>
+<td>4194304</td>
+<td>0.4719</td>
+<td>142.2232</td>
+<td>0.5083</td>
+<td>132.0251</td>
+<td>107.7%</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>1.8843</td>
+<td>142.4599</td>
+<td>1.9494</td>
+<td>137.7033</td>
+<td>103.5%</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.</p>
+</blockquote>
+<h2 id="see-also" class="tsd-anchor-link">See also<a href="#see-also" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/benchmark.srot.js">benchmark.srot.js</a> — WebGPU benchmark script</li>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/cuda/benchmark.c">benchmark.c</a> — CUDA / cuBLAS reference script</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#srot"><span>srot</span></a><ul><li><a href="#nvidia-geforce-gtx-1650-wgblas-vs-cublas"><span>Nvidia <wbr/>Geforce <wbr/>Gtx 1650 — wgblas vs cu<wbr/>BLAS</span></a></li><li><a href="#see-also"><span>See also</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">wgblas</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
