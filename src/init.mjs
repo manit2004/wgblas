@@ -5,15 +5,8 @@ let _adapter = null;
 let _gpu = null; // eslint-disable-line no-unused-vars
 let _benchmarkEnabled = false;
 
-const _resetCallbacks = [];
 
-export function onCleanup(cb) {
-  _resetCallbacks.push(cb);
-}
-
-export function isBenchmarkEnabled() {
-  return _benchmarkEnabled;
-}
+// ── Public API ───────────────────────────────────────────────────────────────
 
 export async function init({
   powerPreference = "high-performance",
@@ -24,7 +17,10 @@ export async function init({
   }
 
   let gpu;
-  if (typeof window === "undefined" && typeof Deno === "undefined") {
+  // Browser exposes WebGPU natively via navigator.gpu.
+  // Node.js has no navigator, so we polyfill using the "webgpu" npm package which also
+  // injects WebGPU globals (GPUBufferUsage, GPUShaderStage, etc.) into globalThis.
+  if (typeof window === "undefined") {
     const { create, globals } = await import("webgpu");
     Object.assign(globalThis, globals);
     gpu = create([]);
@@ -46,6 +42,8 @@ export async function init({
 
   _benchmarkEnabled = benchmark;
   _device = await _adapter.requestDevice(benchmarkMode(_adapter, benchmark));
+  // Fires for any GPU error not caught by a pushErrorScope/popErrorScope pair — surfaces silent GPU failures to the console.
+  // See: https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/uncapturederror_event
   _device.addEventListener("uncapturederror", (e) => {
     console.error("Uncaptured GPU error:", e.error.message);
   });
@@ -61,21 +59,6 @@ export function cleanup() {
   _adapter = null;
   _gpu = null;
   _benchmarkEnabled = false;
-  _resetCallbacks.forEach((cb) => cb());
-}
-
-export function getDevice() {
-  if (!_device) {
-    throw new Error("WebGPU device not initialized — call init() first.");
-  }
-  return _device;
-}
-
-export function getAdapter() {
-  if (!_adapter) {
-    throw new Error("WebGPU adapter not initialized — call init() first.");
-  }
-  return _adapter;
 }
 
 export function gpuName() {
@@ -88,3 +71,35 @@ export function gpuName() {
     device: device || "unknown",
   };
 }
+
+// ── Library internals (not part of the public API) ───────────────────────────
+
+/** @returns {boolean} whether benchmark mode was enabled in the last `init()` call */
+export function isBenchmarkEnabled() {
+  return _benchmarkEnabled;
+}
+
+/**
+ * Returns the active `GPUDevice`. Throws if `init()` has not been called.
+ * @returns {GPUDevice}
+ * @throws {Error} if the device is not initialized
+ */
+export function getDevice() {
+  if (!_device) {
+    throw new Error("WebGPU device not initialized — call init() first.");
+  }
+  return _device;
+}
+
+/**
+ * Returns the active `GPUAdapter`. Throws if `init()` has not been called.
+ * @returns {GPUAdapter}
+ * @throws {Error} if the adapter is not initialized
+ */
+export function getAdapter() {
+  if (!_adapter) {
+    throw new Error("WebGPU adapter not initialized — call init() first.");
+  }
+  return _adapter;
+}
+

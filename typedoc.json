@@ -1,5 +1,11 @@
 {
-  "entryPoints": ["index.d.mts"],
+  "entryPoints": [
+    "index.d.mts",
+    "src/shaders/index.mjs",
+    "src/util/*.mjs"
+  ],
+  "entryPointStrategy": "expand",
+  "tsconfig": "tsconfig.typedoc.json",
   "out": "docs",
   "plugin": ["./assets/typedoc-plugin/fix-hash-links.mjs"],
   "navigation": {
