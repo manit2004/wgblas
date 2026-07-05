@@ -69,6 +69,9 @@
   ],
   "author": "Manit Roy",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.22.2"
+  },
   "bugs": {
     "url": "https://github.com/manit2004/wgblas/issues"
   },

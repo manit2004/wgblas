@@ -14,7 +14,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
@@ -24,6 +24,9 @@ jobs:
 
       - name: Lint
         run: npx eslint .
+
+      - name: Audit
+        run: npm audit --audit-level=high
 
   check-links:
     runs-on: ubuntu-latest
