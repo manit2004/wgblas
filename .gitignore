@@ -1,3 +1,6 @@
+# Python and Node.js dependencies
 node_modules/
 .venv/
+
+#benchmark binaries
 benchmarks/***/benchmark
