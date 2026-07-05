@@ -13,5 +13,5 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-  "projectDocuments": ["assets/bench-result/**/*.md"]
+  "projectDocuments": ["src/README.md", "assets/bench-result/**/*.md"]
 }
