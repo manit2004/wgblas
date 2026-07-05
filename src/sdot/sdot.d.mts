@@ -15,7 +15,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param y - Float32Array input vector
  * @param incy - stride for y (must be a positive integer)
  * @returns dot product scalar — always a CPU readback, even for GpuVector inputs
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sdot/sdot.mjsLINEHASHL18-L116">Source code: sdot.mjs (L18–L116)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sdot/sdot.mjs#L18-L116">Source code: sdot.mjs (L18–L116)</a>
  * @category BLAS Level 1
  */
 export declare function sdot(
@@ -39,7 +39,7 @@ export declare function sdot(
  * @param y - GpuVector input vector
  * @param incy - stride for y (must be a positive integer)
  * @returns dot product scalar — always a CPU readback, even for GpuVector inputs
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sdot/sdot.mjsLINEHASHL18-L116">Source code: sdot.mjs (L18–L116)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sdot/sdot.mjs#L18-L116">Source code: sdot.mjs (L18–L116)</a>
  * @category BLAS Level 1
  */
 export declare function sdot(

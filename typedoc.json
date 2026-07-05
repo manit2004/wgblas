@@ -8,8 +8,7 @@
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.typedoc.json",
   "out": "docs",
-  "plugin": ["./assets/typedoc-plugin/fix-hash-links.mjs"],
-  "navigation": {
+"navigation": {
     "includeCategories": true,
     "includeGroups": false
   },

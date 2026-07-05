@@ -18,7 +18,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param incy - stride for y (must be a positive integer)
  * @param param - 5-element Float32Array: [flag, h11, h21, h12, h22]
  *   flag = -2: identity (no-op), -1: full H, 0: unit diagonal, 1: unit off-diagonal
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/srotm/srotm.mjsLINEHASHL15-L92">Source code: srotm.mjs (L15–L92)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/srotm/srotm.mjs#L15-L92">Source code: srotm.mjs (L15–L92)</a>
  * @category BLAS Level 1
  */
 export declare function srotm(
@@ -46,7 +46,7 @@ export declare function srotm(
  * @param incy - stride for y (must be a positive integer)
  * @param param - 5-element Float32Array: [flag, h11, h21, h12, h22]
  *   flag = -2: identity (no-op), -1: full H, 0: unit diagonal, 1: unit off-diagonal
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/srotm/srotm.mjsLINEHASHL15-L92">Source code: srotm.mjs (L15–L92)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/srotm/srotm.mjs#L15-L92">Source code: srotm.mjs (L15–L92)</a>
  * @category BLAS Level 1
  */
 export declare function srotm(

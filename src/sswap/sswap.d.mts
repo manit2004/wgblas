@@ -37,7 +37,7 @@ export declare function sswap(
  * @param incx - stride for x (must be a positive integer)
  * @param y - GpuVector second input/output vector (mutated in place)
  * @param incy - stride for y (must be a positive integer)
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjsLINEHASHL15-L88">Source code: sswap.mjs (L15–L88)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sswap/sswap.mjs#L15-L88">Source code: sswap.mjs (L15–L88)</a>
  * @category BLAS Level 1
  */
 export declare function sswap(
