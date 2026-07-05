@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["index.d.mts", "src/**/*.d.mts", "src/util/*.mjs", "src/shaders/index.mjs"],
+  "include": ["index.d.mts", "src/**/*.d.mts", "src/util/*.mjs", "src/shaders/index.mjs", "src/devdocs.mjs"],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": false,

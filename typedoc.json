@@ -1,6 +1,7 @@
 {
   "entryPoints": [
     "index.d.mts",
+    "src/devdocs.mjs",
     "src/shaders/index.mjs",
     "src/util/*.mjs"
   ],
