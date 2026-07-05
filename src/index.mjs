@@ -1,4 +1,4 @@
 /**
  * {@include ./README.md}
- * @module devdocs/routines
+ * @module devdocs/blas-routines
  */
