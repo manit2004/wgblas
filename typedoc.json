@@ -2,6 +2,7 @@
   "entryPoints": [
     "index.d.mts",
     "src/devdocs.mjs",
+    "src/index.mjs",
     "src/shaders/index.mjs",
     "src/util/*.mjs"
   ],
@@ -13,5 +14,5 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-  "projectDocuments": ["src/README.md", "assets/bench-result/**/*.md"]
+  "projectDocuments": ["assets/bench-result/**/*.md"]
 }
