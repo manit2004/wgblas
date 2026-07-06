@@ -8,8 +8,8 @@
 <li><strong>Compile</strong> — the WGSL shader is loaded and compiled into a compute pipeline by name (e.g. <code>getPipeline(device, &quot;saxpy&quot;)</code>)</li>
 <li><strong>Upload</strong> — input <code>Float32Array</code>s are written to GPU storage buffers</li>
 <li><strong>Bind</strong> — buffers are grouped into a bind group so the shader can access them</li>
-<li><strong>Dispatch</strong> — the pipeline runs the shader with enough workgroups to cover all <code>n</code> elements</li>
-<li><strong>Read back</strong> — the result buffer is mapped to CPU memory and copied into a <code>Float32Array</code></li>
+<li><strong>Dispatch</strong> — the pipeline runs the shader with enough workgroups to cover all <code>n</code> elements; if benchmarking was enabled at <code>init()</code> time, a timestamp query is attached to this pass to record GPU start and end times</li>
+<li><strong>Read back</strong> — the result buffer is mapped to CPU memory and copied into a <code>Float32Array</code>; if benchmarking is active, the resolved timestamp query set is read back alongside the result and converted to a duration in milliseconds</li>
 <li><strong>Destroy</strong> — GPU buffers are explicitly freed via <code>destroyBuffers</code> (WebGPU does not garbage-collect them)</li>
 </ol>
 <p>All routines are <code>async</code> because GPU operations — dispatching and mapping — are asynchronous by nature.</p>
