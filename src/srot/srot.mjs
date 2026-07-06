@@ -16,6 +16,8 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
+  if (!(device instanceof GPUDevice))
+    throw new Error("device must be a GPUDevice.");
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -23,6 +25,8 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
   )
     throw new Error("n, incx, and incy must be integers.");
   if (isNaN(c) || isNaN(s)) throw new Error("c and s must not be NaN.");
+  if (!isFinite(c)) throw new Error("c must be finite.");
+  if (!isFinite(s)) throw new Error("s must be finite.");
   if (incx <= 0 || incy <= 0)
     throw new Error("incx and incy must be positive.");
   if (!xIsGpu && !(x instanceof Float32Array))

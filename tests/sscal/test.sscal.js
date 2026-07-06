@@ -4,8 +4,9 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
-import { assertUlp } from "../helpers/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy.js";
+import { assertUlp } from "../helpers/accuracy/ulp.js";
+import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import { loadParam, runValidation } from "../helpers/validation.js";
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const fixturesPath = join(thisDir, "fixtures/fixtures.json");
@@ -18,6 +19,21 @@ before(async () => {
 });
 after(() => {
   cleanup();
+});
+
+const validationSpecs = {
+  device: loadParam("device"),
+  n:      loadParam("n"),
+  incx:   loadParam("incx"),
+  alpha:  loadParam("alpha"),
+  x:      loadParam("x"),
+};
+
+test("sscal validation", async (t) => {
+  await runValidation(t, validationSpecs,
+    (a) => sscal(a.device, a.n, a.alpha, a.x, a.incx),
+    { device },
+  );
 });
 
 test("sscal fixtures", async () => {

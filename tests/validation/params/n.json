@@ -1,0 +1,16 @@
+{
+  "_note": "n is the number of elements.",
+  "invalid": [
+    { "value": 1.5,             "error": "must be integers", "label": "fractional" },
+    { "special": "NaN",         "error": "must be integers", "label": "NaN" },
+    { "special": "Infinity",    "error": "must be integers", "label": "Infinity" },
+    { "special": "string",      "error": "must be integers", "label": "string '100'" },
+    { "special": "null",        "error": "must be integers", "label": "null" },
+    { "special": "undefined",   "error": "must be integers", "label": "undefined" }
+  ],
+  "edge": [
+    { "value": 0,  "label": "n=0 returns early without error",     "behavior": "noop" },
+    { "value": -1, "label": "n<0 treated same as n=0 (BLAS spec)", "behavior": "noop" },
+    { "value": 1,  "label": "n=1 minimum real operation" }
+  ]
+}

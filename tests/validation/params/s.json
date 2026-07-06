@@ -1,0 +1,13 @@
+{
+  "_note": "s is the sine of the rotation angle.",
+  "invalid": [
+    { "special": "NaN",       "error": "c and s must not be NaN", "label": "NaN" },
+    { "special": "Infinity",  "error": "s must be finite",        "label": "Infinity" },
+    { "special": "-Infinity", "error": "s must be finite",        "label": "-Infinity" }
+  ],
+  "edge": [
+    { "value": 0,  "label": "s=0 identity rotation" },
+    { "value": 1,  "label": "s=1 (90 degree rotation)" },
+    { "value": -1, "label": "s=-1 negative rotation" }
+  ]
+}

@@ -18,6 +18,8 @@ const WGS = 64;
 export async function isamax(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
+  if (!(device instanceof GPUDevice))
+    throw new Error("device must be a GPUDevice.");
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
   if (incx <= 0) throw new Error("incx must be positive.");

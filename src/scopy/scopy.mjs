@@ -16,6 +16,8 @@ export async function scopy(device, n, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
+  if (!(device instanceof GPUDevice))
+    throw new Error("device must be a GPUDevice.");
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||

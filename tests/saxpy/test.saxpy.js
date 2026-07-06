@@ -4,8 +4,9 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { saxpy } from "wgblas/saxpy";
-import { assertUlp } from "../helpers/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy.js";
+import { assertUlp } from "../helpers/accuracy/ulp.js";
+import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import { loadParam, runValidation } from "../helpers/validation.js";
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const fixturesPath = join(thisDir, "fixtures/fixtures.json");
@@ -18,6 +19,23 @@ before(async () => {
 });
 after(() => {
   cleanup();
+});
+
+const validationSpecs = {
+  device: loadParam("device"),
+  n:      loadParam("n"),
+  incx:   loadParam("incx"),
+  incy:   loadParam("incy"),
+  alpha:  loadParam("alpha"),
+  x:      loadParam("x"),
+  y:      loadParam("y"),
+};
+
+test("saxpy validation", async (t) => {
+  await runValidation(t, validationSpecs,
+    (a) => saxpy(a.device, a.n, a.alpha, a.x, a.incx, a.y, a.incy),
+    { device },
+  );
 });
 
 test("saxpy fixtures", async () => {

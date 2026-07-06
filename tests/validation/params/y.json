@@ -1,0 +1,14 @@
+{
+  "_note": "y is the input/output vector.",
+  "invalid": [
+    { "special": "null",      "error": "y must be a Float32Array or GpuVector", "label": "null" },
+    { "special": "undefined", "error": "y must be a Float32Array or GpuVector", "label": "undefined" },
+    { "special": "array",     "error": "y must be a Float32Array or GpuVector", "label": "plain Array []" },
+    { "special": "object",    "error": "y must be a Float32Array or GpuVector", "label": "plain object {}" },
+    { "special": "number",    "error": "y must be a Float32Array or GpuVector", "label": "number" },
+    { "scenario": "tooShort", "error": "y does not have enough elements",       "label": "length (n-1)*incy — one short" }
+  ],
+  "edge": [
+    { "scenario": "minimal", "label": "length exactly (n-1)*incy+1 — minimum valid, must not throw" }
+  ]
+}

@@ -4,8 +4,9 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { srotm } from "wgblas/srotm";
-import { assertUlp } from "../helpers/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy.js";
+import { assertUlp } from "../helpers/accuracy/ulp.js";
+import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import { loadParam, runValidation } from "../helpers/validation.js";
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const fixtures = JSON.parse(
@@ -19,6 +20,22 @@ before(async () => {
 });
 after(() => {
   cleanup();
+});
+
+const validationSpecs = {
+  device: loadParam("device"),
+  n:      loadParam("n"),
+  incx:   loadParam("incx"),
+  incy:   loadParam("incy"),
+  x:      loadParam("x"),
+  y:      loadParam("y"),
+};
+
+test("srotm validation", async (t) => {
+  await runValidation(t, validationSpecs,
+    (a) => srotm(a.device, a.n, a.x, a.incx, a.y, a.incy, new Float32Array([0, 1, 0, 0, 1])),
+    { device },
+  );
 });
 
 test("srotm fixtures", async () => {
