@@ -8,8 +8,8 @@ Every routine in this library follows the same structure. Understanding it once 
 1. **Compile** — the WGSL shader is loaded and compiled into a compute pipeline by name (e.g. `getPipeline(device, "saxpy")`)
 2. **Upload** — input `Float32Array`s are written to GPU storage buffers
 3. **Bind** — buffers are grouped into a bind group so the shader can access them
-4. **Dispatch** — the pipeline runs the shader with enough workgroups to cover all `n` elements
-5. **Read back** — the result buffer is mapped to CPU memory and copied into a `Float32Array`
+4. **Dispatch** — the pipeline runs the shader with enough workgroups to cover all `n` elements; if benchmarking was enabled at `init()` time, a timestamp query is attached to this pass to record GPU start and end times
+5. **Read back** — the result buffer is mapped to CPU memory and copied into a `Float32Array`; if benchmarking is active, the resolved timestamp query set is read back alongside the result and converted to a duration in milliseconds
 6. **Destroy** — GPU buffers are explicitly freed via `destroyBuffers` (WebGPU does not garbage-collect them)
 
 All routines are `async` because GPU operations — dispatching and mapping — are asynchronous by nature.
