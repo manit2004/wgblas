@@ -1,6 +1,7 @@
 # BLAS Routine Patterns
 
-Every routine in this library follows the same structure. Understanding it once means you can read any routine file.
+Every routine in this library follows the same structure. Understanding it once means you can read any routine file. BLAS reference spec lives at
+ * [netlib.org/blas](https://www.netlib.org/blas/).
 
 ## The general flow
 
