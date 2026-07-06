@@ -4,7 +4,7 @@ import { dirname, join } from "path";
 
 const accuracyPath = join(
   dirname(fileURLToPath(import.meta.url)),
-  "..",
+  "../..",
   "accuracy.json",
 );
 const accuracy = JSON.parse(readFileSync(accuracyPath, "utf8"));

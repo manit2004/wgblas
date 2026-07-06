@@ -1,0 +1,14 @@
+{
+  "_note": "alpha is the scalar multiplier.",
+  "invalid": [
+    { "special": "NaN",        "error": "alpha must not be NaN",    "label": "NaN" },
+    { "special": "Infinity",   "error": "alpha must be finite",     "label": "Infinity" },
+    { "special": "-Infinity",  "error": "alpha must be finite",     "label": "-Infinity" }
+  ],
+  "edge": [
+    { "value": 0,   "label": "alpha=0 zeros the contribution" },
+    { "value": 1,   "label": "alpha=1 identity" },
+    { "value": -1,  "label": "alpha=-1 negation" },
+    { "value": 0.5, "label": "alpha=0.5 fractional scale" }
+  ]
+}

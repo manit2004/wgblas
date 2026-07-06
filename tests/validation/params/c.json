@@ -1,0 +1,13 @@
+{
+  "_note": "c is the cosine of the rotation angle.",
+  "invalid": [
+    { "special": "NaN",       "error": "c and s must not be NaN", "label": "NaN" },
+    { "special": "Infinity",  "error": "c must be finite",        "label": "Infinity" },
+    { "special": "-Infinity", "error": "c must be finite",        "label": "-Infinity" }
+  ],
+  "edge": [
+    { "value": 0,  "label": "c=0 (90 degree rotation)" },
+    { "value": 1,  "label": "c=1 identity rotation" },
+    { "value": -1, "label": "c=-1 (180 degree rotation)" }
+  ]
+}

@@ -16,6 +16,8 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
+  if (!(device instanceof GPUDevice))
+    throw new Error("device must be a GPUDevice.");
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -23,6 +25,7 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
   )
     throw new Error("n, incx, and incy must be integers.");
   if (isNaN(alpha)) throw new Error("alpha must not be NaN.");
+  if (!isFinite(alpha)) throw new Error("alpha must be finite.");
   if (incx <= 0 || incy <= 0)
     throw new Error("incx and incy must be positive.");
   if (!xIsGpu && !(x instanceof Float32Array))

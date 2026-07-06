@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { isamax } from "wgblas/isamax";
+import { loadParam, runValidation } from "../helpers/validation.js";
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const fixturesPath = join(thisDir, "fixtures/fixtures.json");
@@ -15,6 +16,20 @@ before(async () => {
 });
 after(() => {
   cleanup();
+});
+
+const validationSpecs = {
+  device: loadParam("device"),
+  n:      loadParam("n"),
+  incx:   loadParam("incx"),
+  x:      loadParam("x"),
+};
+
+test("isamax validation", async (t) => {
+  await runValidation(t, validationSpecs,
+    (a) => isamax(a.device, a.n, a.x, a.incx),
+    { device },
+  );
 });
 
 test("isamax fixtures", async () => {

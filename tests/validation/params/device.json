@@ -1,0 +1,10 @@
+{
+  "_note": "device is the GPUDevice returned by init().",
+  "invalid": [
+    { "special": "null",      "error": "device must be a GPUDevice", "label": "null" },
+    { "special": "undefined", "error": "device must be a GPUDevice", "label": "undefined" },
+    { "special": "object",    "error": "device must be a GPUDevice", "label": "plain object {}" },
+    { "special": "string",    "error": "device must be a GPUDevice", "label": "string" },
+    { "special": "number",    "error": "device must be a GPUDevice", "label": "number" }
+  ]
+}

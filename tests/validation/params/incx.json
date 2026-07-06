@@ -1,0 +1,17 @@
+{
+  "_note": "incx is the stride for x.",
+  "invalid": [
+    { "value": 0,            "error": "must be positive", "label": "zero" },
+    { "value": -1,           "error": "must be positive", "label": "negative" },
+    { "value": 1.5,          "error": "must be integers", "label": "fractional" },
+    { "special": "NaN",      "error": "must be integers", "label": "NaN" },
+    { "special": "Infinity", "error": "must be integers", "label": "Infinity" },
+    { "special": "string",   "error": "must be integers", "label": "string '1'" },
+    { "special": "null",     "error": "must be integers", "label": "null" }
+  ],
+  "edge": [
+    { "value": 1, "label": "incx=1 contiguous access (most common)" },
+    { "value": 2, "label": "incx=2 strided — exercises non-unit stride shader path" },
+    { "value": 4, "label": "incx=4 large stride" }
+  ]
+}
