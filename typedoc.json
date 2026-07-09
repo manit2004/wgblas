@@ -4,7 +4,7 @@
     "src/devdocs.mjs",
     "src/index.mjs",
     "src/shaders/index.mjs",
-    "src/tests/index.mjs",
+    "tests/index.js",
     "src/util/*.mjs"
   ],
   "entryPointStrategy": "expand",
