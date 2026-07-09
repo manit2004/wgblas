@@ -1,5 +1,7 @@
 {
   "_note": "incx is the stride for x.",
+  "type": "integer",
+  "range": { "min": 1, "max": 4 },
   "invalid": [
     { "value": 0,            "error": "must be positive", "label": "zero" },
     { "value": -1,           "error": "must be positive", "label": "negative" },

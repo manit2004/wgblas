@@ -3,6 +3,7 @@ const _f32 = new Float32Array(_buf);
 const _u32 = new Uint32Array(_buf);
 
 export function ulpDiff(a, b) {
+  if (Math.abs(a) === 0 && Math.abs(b) === 0) return 0; // https://www.w3.org/TR/WGSL/#floating-point-representation §15.7.1 .GPU may return ±0 interchangeably.
   _f32[0] = a;
   _f32[1] = b;
   return Math.abs(_u32[0] - _u32[1]);

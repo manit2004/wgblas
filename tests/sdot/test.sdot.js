@@ -1,17 +1,15 @@
 import { test, before, after } from "node:test";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { sdot } from "wgblas/sdot";
-import { ulpDiff } from "../helpers/accuracy/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import stdlibSdot from "@stdlib/blas-base-sdot";
 import { loadParam, runValidation } from "../helpers/validation.js";
+import { runFixtures } from "../helpers/fixtures.js";
+// GPU may fuse multiply-add (FMA, one rounding) while CPU stdlib does two separate roundings.
+// Near cancellation raw ULP is unbounded, so we use |err| / (eps * |bound|) instead.
+// https://www.w3.org/TR/WGSL/#fma-builtin §17.5.32, 15.7.2.
+import { forwardFactor } from "./helpers.js";
 
-const thisDir = dirname(fileURLToPath(import.meta.url));
-const fixturesPath = join(thisDir, "fixtures/fixtures.json");
-const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
-const ULP_THRESHOLD = getUlpThreshold("sdot");
+const NUM_RUNS = 100;
 
 let device;
 before(async () => {
@@ -37,20 +35,16 @@ test("sdot validation", async (t) => {
   );
 });
 
-test("sdot fixtures", async () => {
-  for (const fixture of fixtures) {
-    const n = fixture.n;
-    const incx = fixture.incx;
-    const incy = fixture.incy;
-    const x = new Float32Array(fixture.x);
-    const y = new Float32Array(fixture.y);
-
-    const { dot } = await sdot(device, n, x, incx, y, incy);
-    const diff = ulpDiff(dot, fixture.expected_dot);
-    if (diff > ULP_THRESHOLD) {
-      throw new Error(
-        `[sdot] ULP ${diff} exceeds threshold ${ULP_THRESHOLD} (actual=${dot}, expected=${fixture.expected_dot})`,
-      );
-    }
-  }
+test("sdot fixtures", async (t) => {
+  await runFixtures(
+    t,                 // node:test context
+    "sdot",            // routine name — used in the diagnostic label
+    device,            // WebGPU device instance
+    NUM_RUNS,          // 100 random inputs
+    1,                 // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
+    validationSpecs,   // param specs used to generate random inputs
+    async (dev, a) => sdot(dev, a.n, a.x, a.incx, a.y, a.incy),              // GPU call
+    (a) => stdlibSdot(a.n, a.x.slice(), a.incx, a.y.slice(), a.incy),         // CPU reference — slice() to avoid mutating inputs
+    forwardFactor,     // |err| / (eps * |bound|) — see helpers.js
+  );
 });

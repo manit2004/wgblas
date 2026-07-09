@@ -1,17 +1,11 @@
 import { test, before, after } from "node:test";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { sasum } from "wgblas/sasum";
-import { ulpDiff } from "../helpers/accuracy/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import stdlibSasum from "@stdlib/blas-base-sasum";
 import { loadParam, runValidation } from "../helpers/validation.js";
+import { runFixtures, ulpDiff } from "../helpers/fixtures.js";
 
-const thisDir = dirname(fileURLToPath(import.meta.url));
-const fixturesPath = join(thisDir, "fixtures/fixtures.json");
-const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
-const ULP_THRESHOLD = getUlpThreshold("sasum");
+const NUM_RUNS = 100;
 
 let device;
 before(async () => {
@@ -35,18 +29,16 @@ test("sasum validation", async (t) => {
   );
 });
 
-test("sasum fixtures", async () => {
-  for (const fixture of fixtures) {
-    const n = fixture.n;
-    const incx = fixture.incx;
-    const x = new Float32Array(fixture.x);
-
-    const { asum } = await sasum(device, n, x, incx);
-    const diff = ulpDiff(asum, fixture.expected_asum);
-    if (diff > ULP_THRESHOLD) {
-      throw new Error(
-        `[sasum] ULP ${diff} exceeds threshold ${ULP_THRESHOLD} (actual=${asum}, expected=${fixture.expected_asum})`,
-      );
-    }
-  }
+test("sasum fixtures", async (t) => {
+  await runFixtures(
+    t,                 // node:test context
+    "sasum",           // routine name — used in the diagnostic label
+    device,            // WebGPU device instance
+    NUM_RUNS,          // 100 random inputs
+    50,                // threshold 50 ULP — GPU uses tree reduction, CPU is sequential; rounding order differs
+    validationSpecs,   // param specs used to generate random inputs
+    async (dev, a) => sasum(dev, a.n, a.x, a.incx),        // GPU call
+    (a) => stdlibSasum(a.n, a.x.slice(), a.incx),           // CPU reference
+    (gpu, ref) => ulpDiff(gpu.asum, ref),                    // raw ULP difference between results
+  );
 });

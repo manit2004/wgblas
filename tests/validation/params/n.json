@@ -1,5 +1,7 @@
 {
   "_note": "n is the number of elements.",
+  "type": "integer",
+  "range": { "min": 100, "max": 1000 },
   "invalid": [
     { "value": 1.5,             "error": "must be integers", "label": "fractional" },
     { "special": "NaN",         "error": "must be integers", "label": "NaN" },

@@ -1,17 +1,11 @@
 import { test, before, after } from "node:test";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
-import { assertUlp } from "../helpers/accuracy/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import stdlibSscal from "@stdlib/blas-base-sscal";
 import { loadParam, runValidation } from "../helpers/validation.js";
+import { runFixtures, maxUlp } from "../helpers/fixtures.js";
 
-const thisDir = dirname(fileURLToPath(import.meta.url));
-const fixturesPath = join(thisDir, "fixtures/fixtures.json");
-const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
-const ULP_THRESHOLD = getUlpThreshold("sscal");
+const NUM_RUNS = 100;
 
 let device;
 before(async () => {
@@ -36,15 +30,20 @@ test("sscal validation", async (t) => {
   );
 });
 
-test("sscal fixtures", async () => {
-  for (const fixture of fixtures) {
-    const n = fixture.n;
-    const alpha = fixture.alpha;
-    const incx = fixture.incx;
-    const x = new Float32Array(fixture.x);
-    const expected = new Float32Array(fixture.expected);
-
-    const result = await sscal(device, n, alpha, x, incx);
-    assertUlp(result, expected, ULP_THRESHOLD, "sscal");
-  }
+test("sscal fixtures", async (t) => {
+  await runFixtures(
+    t,                 // node:test context
+    "sscal",           // routine name — used in the diagnostic label
+    device,            // WebGPU device instance
+    NUM_RUNS,          // 100 random inputs
+    0,                 // threshold 0 — scalar multiply is exact at f32, output must match bit-for-bit
+    validationSpecs,   // param specs used to generate random inputs
+    async (dev, a) => sscal(dev, a.n, a.alpha, a.x, a.incx),  // GPU call
+    (a) => {                                                     // CPU reference — sscal modifies x in-place so slice() first
+      const x = a.x.slice();
+      stdlibSscal(a.n, a.alpha, x, a.incx);
+      return x;
+    },
+    (gpu, ref) => maxUlp(gpu, ref).max,                         // max ULP across all elements of x
+  );
 });

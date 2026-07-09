@@ -26,6 +26,9 @@ const SPECIALS = {
 
 const SCALAR_DEFAULTS = { n: 100, incx: 1, incy: 1, alpha: 1.0, c: 1.0, s: 0.0 };
 
+// Default valid param for srotm (flag=0, identity-like coefficients)
+const PARAM_DEFAULT = new Float32Array([0, 1, 0, 0, 1]);
+
 function resolveVector(scenario, n, inc) {
   if (scenario === "minimal")
     return new Float32Array((n - 1) * inc + 1).fill(1);
@@ -34,8 +37,19 @@ function resolveVector(scenario, n, inc) {
   throw new Error(`Unknown vector scenario: "${scenario}"`);
 }
 
+function resolveParam(scenario) {
+  if (scenario === "tooShort")  return new Float32Array(4).fill(0);
+  if (scenario === "tooLong")   return new Float32Array(6).fill(0);
+  if (scenario === "identity")  return new Float32Array([-2, 0, 0, 0, 0]);
+  if (scenario === "fullMatrix") return new Float32Array([-1, 0.5, -0.5, 0.5, 0.5]);
+  if (scenario === "diagOne")   return new Float32Array([0, 0, 0.5, -0.5, 0]);
+  if (scenario === "offDiagOne") return new Float32Array([1, 0.5, 0, 0, 0.5]);
+  throw new Error(`Unknown param scenario: "${scenario}"`);
+}
+
 function resolveEntry(entry, paramName, baselines) {
   if ("scenario" in entry) {
+    if (paramName === "param") return resolveParam(entry.scenario);
     const n = baselines.n;
     const inc = paramName === "x" ? baselines.incx : baselines.incy;
     return resolveVector(entry.scenario, n, inc);
@@ -57,6 +71,7 @@ export async function runValidation(t, specs, call, runtimeBaselines = {}) {
   const n = baselines.n ?? 100;
   if ("x" in specs) baselines.x = new Float32Array((n - 1) * 10 + 1).fill(1);
   if ("y" in specs) baselines.y = new Float32Array((n - 1) * 10 + 1).fill(1);
+  if ("param" in specs) baselines.param = PARAM_DEFAULT;
   if ("device" in specs) {
     if (!("device" in runtimeBaselines))
       throw new Error("device spec requires runtimeBaselines.device");

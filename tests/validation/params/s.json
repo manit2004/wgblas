@@ -1,5 +1,7 @@
 {
   "_note": "s is the sine of the rotation angle.",
+  "type": "float",
+  "range": { "min": -1.0, "max": 1.0 },
   "invalid": [
     { "special": "NaN",       "error": "c and s must not be NaN", "label": "NaN" },
     { "special": "Infinity",  "error": "s must be finite",        "label": "Infinity" },
