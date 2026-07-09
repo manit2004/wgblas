@@ -1,4 +1,5 @@
 import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { srot } from "wgblas/srot";
 import stdlibSrot from "@stdlib/blas-base-srot";
@@ -54,4 +55,34 @@ test("srot fixtures", async (t) => {
     },
     forwardFactor,     // |err| / (eps * |bound|) — see helpers.js
   );
+});
+
+test("srot edge cases", async (t) => {
+  await t.test("identity rotation (c=1, s=0) — both vectors unchanged", async () => {
+    const { x: ox, y: oy } = await srot(device, 3, new Float32Array([1, 2, 3]), 1, new Float32Array([4, 5, 6]), 1, 1, 0);
+    assert.deepEqual(ox, new Float32Array([1, 2, 3]));
+    assert.deepEqual(oy, new Float32Array([4, 5, 6]));
+  });
+
+  await t.test("90° rotation (c=0, s=1) — x←y, y←−x", async () => {
+    // x[i] = 0*x[i]+1*y[i] = y[i],  y[i] = 0*y[i]-1*x_orig[i] = -x[i]
+    const { x: ox, y: oy } = await srot(device, 3, new Float32Array([1, 2, 3]), 1, new Float32Array([4, 5, 6]), 1, 0, 1);
+    assert.deepEqual(ox, new Float32Array([4, 5, 6]));
+    assert.deepEqual(oy, new Float32Array([-1, -2, -3]));
+  });
+
+  await t.test("n=1 — single pair", async () => {
+    // c=0, s=1: x←y=3, y←-x_orig=-2
+    const { x: ox, y: oy } = await srot(device, 1, new Float32Array([2]), 1, new Float32Array([3]), 1, 0, 1);
+    assert.deepEqual(ox, new Float32Array([3]));
+    assert.deepEqual(oy, new Float32Array([-2]));
+  });
+
+  await t.test("incx=2, incy=1 — gap elements in x untouched", async () => {
+    // c=0, s=1; reads x[0]=1, x[2]=2; reads y[0]=3, y[1]=4; x[1] must stay 99
+    // new x[0]=3, x[2]=4; new y[0]=-1, y[1]=-2
+    const { x: ox, y: oy } = await srot(device, 2, new Float32Array([1, 99, 2]), 2, new Float32Array([3, 4]), 1, 0, 1);
+    assert.deepEqual(ox, new Float32Array([3, 99, 4]));
+    assert.deepEqual(oy, new Float32Array([-1, -2]));
+  });
 });
