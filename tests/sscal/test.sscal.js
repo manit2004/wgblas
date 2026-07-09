@@ -1,4 +1,5 @@
 import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
 import stdlibSscal from "@stdlib/blas-base-sscal";
@@ -46,4 +47,37 @@ test("sscal fixtures", async (t) => {
     },
     (gpu, ref) => maxUlp(gpu, ref).max,                         // max ULP across all elements of x
   );
+});
+
+test("sscal edge cases", async (t) => {
+  await t.test("alpha=0 — all elements zeroed", async () => {
+    const out = await sscal(device, 3, 0, new Float32Array([1, 2, 3]), 1);
+    assert.deepEqual(out, new Float32Array([0, 0, 0]));
+  });
+
+  await t.test("alpha=1 — x unchanged", async () => {
+    const out = await sscal(device, 3, 1, new Float32Array([1, 2, 3]), 1);
+    assert.deepEqual(out, new Float32Array([1, 2, 3]));
+  });
+
+  await t.test("alpha=-1 — sign flip on every element", async () => {
+    const out = await sscal(device, 3, -1, new Float32Array([1, -2, 3]), 1);
+    assert.deepEqual(out, new Float32Array([-1, 2, -3]));
+  });
+
+  await t.test("all zeros scaled by anything → all zeros", async () => {
+    const out = await sscal(device, 3, 5, new Float32Array([0, 0, 0]), 1);
+    assert.deepEqual(out, new Float32Array([0, 0, 0]));
+  });
+
+  await t.test("incx=2 — gap elements untouched", async () => {
+    // scales x[0]=1, x[2]=2, x[4]=3 by 2; x[1] and x[3] must stay 99
+    const out = await sscal(device, 3, 2, new Float32Array([1, 99, 2, 99, 3]), 2);
+    assert.deepEqual(out, new Float32Array([2, 99, 4, 99, 6]));
+  });
+
+  await t.test("n=1 — single element", async () => {
+    const out = await sscal(device, 1, 3, new Float32Array([5]), 1);
+    assert.deepEqual(out, new Float32Array([15]));
+  });
 });
