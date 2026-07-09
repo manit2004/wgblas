@@ -3,7 +3,4 @@ name = "wgblas"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.14"
-dependencies = [
-    "numpy>=2.4.6",
-    "scipy>=1.17.1",
-]
+dependencies = []
