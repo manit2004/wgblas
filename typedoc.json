@@ -4,7 +4,8 @@
     "src/devdocs.mjs",
     "src/index.mjs",
     "src/shaders/index.mjs",
-    "src/util/*.mjs"
+    "src/util/*.mjs",
+    "tests/index.mjs"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.typedoc.json",
@@ -14,6 +15,6 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-  "projectDocuments": ["assets/bench-result/**/*.md", "tests/index.md"],
+  "projectDocuments": ["assets/bench-result/**/*.md"],
   "sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/main/{path}#L{line}"
 }
