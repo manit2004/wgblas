@@ -1,4 +1,5 @@
 import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { sdot } from "wgblas/sdot";
 import stdlibSdot from "@stdlib/blas-base-sdot";
@@ -47,4 +48,39 @@ test("sdot fixtures", async (t) => {
     (a) => stdlibSdot(a.n, a.x.slice(), a.incx, a.y.slice(), a.incy),         // CPU reference — slice() to avoid mutating inputs
     forwardFactor,     // |err| / (eps * |bound|) — see helpers.js
   );
+});
+
+test("sdot edge cases", async (t) => {
+  await t.test("orthogonal vectors — dot = 0", async () => {
+    const { dot } = await sdot(device, 2, new Float32Array([1, 0]), 1, new Float32Array([0, 1]), 1);
+    assert.strictEqual(dot, 0);
+  });
+
+  await t.test("dot with itself — equals sum of squares", async () => {
+    // [3,4]·[3,4] = 9+16 = 25, always non-negative
+    const { dot } = await sdot(device, 2, new Float32Array([3, 4]), 1, new Float32Array([3, 4]), 1);
+    assert.strictEqual(dot, 25);
+  });
+
+  await t.test("x all zeros — dot = 0 regardless of y", async () => {
+    const { dot } = await sdot(device, 3, new Float32Array([0, 0, 0]), 1, new Float32Array([1, 2, 3]), 1);
+    assert.strictEqual(dot, 0);
+  });
+
+  await t.test("perfect cancellation — signed terms sum to zero", async () => {
+    // 1*5 + (-1)*5 = 0
+    const { dot } = await sdot(device, 2, new Float32Array([1, -1]), 1, new Float32Array([5, 5]), 1);
+    assert.strictEqual(dot, 0);
+  });
+
+  await t.test("incx=2, incy=1 — independent strides", async () => {
+    // reads x[0]=1, x[2]=2; reads y[0]=3, y[1]=4 → 1*3 + 2*4 = 11
+    const { dot } = await sdot(device, 2, new Float32Array([1, 99, 2]), 2, new Float32Array([3, 4]), 1);
+    assert.strictEqual(dot, 11);
+  });
+
+  await t.test("n=1 — single multiply", async () => {
+    const { dot } = await sdot(device, 1, new Float32Array([3]), 1, new Float32Array([4]), 1);
+    assert.strictEqual(dot, 12);
+  });
 });
