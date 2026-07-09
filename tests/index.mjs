@@ -1,7 +1,4 @@
 /**
- * @module tests
- * @packageDocumentation
- *
  * Test suite architecture for wgblas.
  *
  * Each routine has three tests:
@@ -76,6 +73,6 @@
  * | 90° rotation (`c=0, s=1`) — exact integer results | srot |
  * | Pythagorean triple (`[3,4]→5`) — exact result from sqrt | snrm2 |
  * | Flag per value (`-2`/`-1`/`0`/`1` each tested) | srotm |
+ *
+ * @module tests
  */
-
-export {};
