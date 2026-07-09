@@ -1,5 +1,5 @@
 /**
- *  * @module tests
+ * @module tests
  * 
  * Test suite architecture for wgblas
  *
@@ -14,7 +14,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  *
  *   tests/
- *     index.js                  ← this file
+ *     index.mjs                 ← this file
  *     helpers/
  *       ulp.js                  ← ulpDiff, maxUlp, assertUlp
  *       fixtures.js             ← floatArb, runFixtures (re-exports ulp helpers)
