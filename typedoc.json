@@ -14,5 +14,6 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-  "projectDocuments": ["assets/bench-result/**/*.md"]
+  "projectDocuments": ["assets/bench-result/**/*.md"],
+  "sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/main/{path}#L{line}"
 }
