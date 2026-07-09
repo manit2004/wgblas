@@ -1,3 +1,39 @@
+/**
+ * Property-based fixture runner using [fast-check](https://fast-check.dev/).
+ *
+ * Each routine's fixtures test calls `runFixtures` with 100 random inputs,
+ * comparing the GPU result against the CPU stdlib reference using a
+ * routine-specific error metric and threshold.
+ *
+ * ## Input Generation
+ *
+ * `buildArb` constructs a fast-check arbitrary that produces a complete args
+ * object for one test run. Scalar params (`n`, `incx`, `incy`, `alpha`, `c`,
+ * `s`) are generated first; vectors `x` and `y` are then sized to exactly
+ * `(n-1)*inc+1` elements so their length is always consistent with the
+ * generated `n` and stride.
+ *
+ * ## FTZ — Flush to Zero
+ *
+ * WGSL may flush subnormals to zero: *"To flush to zero is to replace a
+ * subnormal value for a floating point type with a zero value of that type."*
+ * ([WGSL §15.7.2](https://www.w3.org/TR/WGSL/#floating-point-evaluation))
+ *
+ * Filtering generated values for subnormals is not enough — the product of two
+ * small-but-normal values can itself land in the subnormal range (e.g.
+ * `F32_MIN_NORMAL * 5.96e-8 ≈ 7e-46`). `floatArb` uses `1e-3` as the minimum
+ * non-zero magnitude, ensuring any pairwise product stays well above
+ * `F32_MIN_NORMAL` (`1e-3 × 1e-3 = 1e-6 >> 1.175e-38`).
+ *
+ * ## Error Metrics and Thresholds
+ *
+ * `runFixtures` accepts a `computeUlp` function and a `threshold`. Each run
+ * passes if `computeUlp(gpuResult, refResult, args) <= threshold`. See
+ * `tests/index.mjs` for the full per-routine table.
+ *
+ * @module tests/helpers/fixtures
+ */
+
 import fc from "fast-check";
 import { ulpDiff, maxUlp } from "./ulp.js";
 
@@ -13,6 +49,10 @@ export { ulpDiff, maxUlp };
 const FLOAT_MIN_MAGNITUDE = 1e-3;
 const isUsable = (v) => v === 0.0 || Math.abs(v) >= FLOAT_MIN_MAGNITUDE;
 
+/**
+ * A fast-check arbitrary for f32 scalars in `[min, max]`, excluding subnormals.
+ * Zero is allowed; any non-zero value has `|v| >= 1e-3`.
+ */
 export function floatArb(min, max) {
   return fc.float({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
 }
@@ -60,6 +100,22 @@ function buildArb(specs, extras = {}) {
   });
 }
 
+/**
+ * Runs `numRuns` property-based random tests comparing the GPU routine against
+ * a CPU reference. Passes if `computeUlp(gpuResult, refResult, args) <= threshold`
+ * for every run. Emits a diagnostic with the maximum observed value.
+ *
+ * @param t - node:test context
+ * @param routineName - used in the diagnostic label
+ * @param device - WebGPU device instance
+ * @param numRuns - number of random inputs to generate (typically 100)
+ * @param threshold - maximum allowed value from `computeUlp`
+ * @param specs - param specs from `loadParam`, used to build the input arbitrary
+ * @param callGpu - async function that calls the GPU routine
+ * @param callRef - function that calls the CPU reference
+ * @param computeUlp - error metric: `(gpuResult, refResult, args) => number`
+ * @param extras - optional extra arbitraries for routine-specific params (e.g. srotm's param)
+ */
 export async function runFixtures(
   t,
   routineName,

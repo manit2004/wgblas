@@ -1,3 +1,41 @@
+/**
+ * Validation test runner driven by JSON param specs.
+ *
+ * Each routine declares its parameters by calling `loadParam(name)` which reads
+ * a JSON file from `tests/validation/params/`. The JSON describes what values
+ * are valid, what values must throw, and boundary cases that must not throw.
+ * `runValidation` iterates those cases automatically.
+ *
+ * ## Param Spec Format
+ *
+ * ```json
+ * {
+ *   "type": "integer" | "float" | "float32array",
+ *   "range": { "min": 1, "max": 4 },
+ *   "invalid": [
+ *     { "value": 0,       "error": "must be positive", "label": "zero" },
+ *     { "special": "NaN", "error": "must be integers", "label": "NaN" },
+ *     { "scenario": "tooShort", "error": "does not have enough elements", "label": "..." }
+ *   ],
+ *   "edge": [
+ *     { "value": 1, "label": "incx=1 contiguous access" }
+ *   ]
+ * }
+ * ```
+ *
+ * Each entry in `invalid` must cause the routine to throw with a message
+ * containing the specified `error` string. Each entry in `edge` must not throw.
+ *
+ * ## How runValidation Works
+ *
+ * A baseline args object is built with safe defaults for every param the routine
+ * uses (e.g. `n=100`, `incx=1`, `x` sized to `(n-1)*10+1`). Then for each test
+ * case, exactly one param is replaced with the invalid or edge value while the
+ * rest stay at baseline — isolating the parameter under test.
+ *
+ * @module tests/helpers/validation
+ */
+
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -8,6 +46,9 @@ const PARAMS_DIR = join(
   "../validation/params",
 );
 
+/**
+ * Reads and parses `tests/validation/params/<name>.json`.
+ */
 export function loadParam(name) {
   return JSON.parse(readFileSync(join(PARAMS_DIR, `${name}.json`), "utf8"));
 }
@@ -63,6 +104,17 @@ function resolveEntry(entry, paramName, baselines) {
   throw new Error(`Cannot resolve entry: ${JSON.stringify(entry)}`);
 }
 
+/**
+ * Runs all invalid and edge cases defined in `specs` against `call`.
+ *
+ * Invalid cases assert that the routine throws with the expected message.
+ * Edge cases assert that the routine does not throw.
+ *
+ * @param t - node:test context
+ * @param specs - object mapping param names to their loaded JSON specs
+ * @param call - function that invokes the routine with an args object
+ * @param runtimeBaselines - values that cannot be defaulted statically (e.g. `device`)
+ */
 export async function runValidation(t, specs, call, runtimeBaselines = {}) {
   const baselines = {};
   for (const name of Object.keys(specs)) {

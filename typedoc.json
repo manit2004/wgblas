@@ -5,7 +5,13 @@
     "src/index.mjs",
     "src/shaders/index.mjs",
     "src/util/*.mjs",
-    "tests/index.mjs"
+    "tests/index.mjs",
+    "tests/helpers/ulp.js",
+    "tests/helpers/fixtures.js",
+    "tests/helpers/validation.js",
+    "tests/validation/index.mjs",
+    "tests/routines/index.mjs",
+    "tests/routines/helpers.mjs"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.typedoc.json",

@@ -1,25 +1,15 @@
 /**
- * Test suite architecture for wgblas.
+ * Test suite for wgblas — 10 BLAS Level 1 routines, each covered by three tests.
  *
- * Each routine has three tests:
+ * **validation** — rejects every class of bad input defined in
+ * `tests/validation/params/*.json`: wrong type, wrong size, out-of-range value.
  *
- * 1. **validation** — rejects bad inputs (wrong type, wrong size, out-of-range)
- * 2. **fixtures** — 100 property-based random runs comparing GPU vs CPU stdlib
- * 3. **edge cases** — deterministic checks for routine-specific behaviour
+ * **fixtures** — 100 property-based random runs via fast-check, comparing the
+ * GPU result against `@stdlib` as the CPU reference. Inputs avoid subnormals
+ * to stay safe under WGSL's flush-to-zero (FTZ) rule.
  *
- * ## Directory Layout
- *
- * ```
- * tests/
- *   helpers/
- *     ulp.js         ulpDiff, maxUlp, assertUlp
- *     fixtures.js    floatArb, runFixtures (re-exports ulp helpers)
- *     validation.js  loadParam, runValidation
- *   validation/params/*.json   shared param specs (invalid + edge cases)
- *   <routine>/
- *     test.<routine>.js   the three tests
- *     helpers.js          forwardFactor (FMA routines only)
- * ```
+ * **edge cases** — deterministic checks for routine-specific behaviour: ties,
+ * strides, identity parameters, exact Pythagorean results, per-flag srotm paths.
  *
  * ## Error Metrics
  *
@@ -35,44 +25,6 @@
  * | sdot    | forwardFactor     | 1         | near cancellation makes raw ULP unbounded even when correct |
  * | srot    | forwardFactor     | 1         | near cancellation makes raw ULP unbounded even when correct |
  * | srotm   | forwardFactor     | 1         | near cancellation makes raw ULP unbounded even when correct |
- *
- * ## Forward Error Factor
- *
- * Used instead of raw ULP for FMA routines (saxpy, sdot, srot, srotm):
- *
- * ```
- * factor = |err| / (eps × |bound|)
- * ```
- *
- * where `bound` is the sum of absolute values of the input terms and
- * `eps = 2^-23` (one f32 machine epsilon). `factor ≤ 1` means the GPU
- * result is within one rounding of the true result regardless of whether
- * the implementation uses FMA or two separate rounds.
- *
- * WGSL §15.7.2 / §17.5.32 permits fused multiply-add, so the GPU may
- * execute `α*x+y` as a single-rounding FMA while the CPU stdlib does two
- * roundings. Near cancellation the raw ULP difference is unbounded even
- * though both results are individually correct.
- *
- * ## FTZ — Flush to Zero
- *
- * WGSL may flush subnormals to zero (§15.7.2). Filtering inputs for
- * subnormals is not enough — products of two small-but-normal values can
- * still land in the subnormal range. `floatArb` uses `1e-3` as the minimum
- * magnitude so any pairwise product stays far above `F32_MIN_NORMAL`
- * (`1e-3 × 1e-3 = 1e-6 >> 1.175e-38`).
- *
- * ## Recurring Edge Case Patterns
- *
- * | Pattern | Routines |
- * |---------|----------|
- * | `n=1` — single-element sanity check | all |
- * | `alpha`/`c`/`s=0` — no-op or identity | saxpy, sscal, srot |
- * | `incx≠incy` — independent strides; catches index-mixing bugs | saxpy, sdot, scopy, sswap, srot, srotm |
- * | Gap elements — 99s at non-strided positions must survive | scopy, sscal, sswap, srot, srotm, saxpy |
- * | 90° rotation (`c=0, s=1`) — exact integer results | srot |
- * | Pythagorean triple (`[3,4]→5`) — exact result from sqrt | snrm2 |
- * | Flag per value (`-2`/`-1`/`0`/`1` each tested) | srotm |
  *
  * @module tests
  */
