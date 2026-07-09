@@ -1,17 +1,15 @@
 import { test, before, after } from "node:test";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { saxpy } from "wgblas/saxpy";
-import { assertUlp } from "../helpers/accuracy/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import stdlibSaxpy from "@stdlib/blas-base-saxpy";
 import { loadParam, runValidation } from "../helpers/validation.js";
+import { runFixtures } from "../helpers/fixtures.js";
+// GPU may fuse multiply-add (FMA, one rounding) while CPU stdlib does two separate roundings.
+// Near cancellation raw ULP is unbounded, so we use |err| / (eps * |bound|) instead.
+// https://www.w3.org/TR/WGSL/#fma-builtin §17.5.32, 15.7.2.
+import { forwardFactor } from "./helpers.js";
 
-const thisDir = dirname(fileURLToPath(import.meta.url));
-const fixturesPath = join(thisDir, "fixtures/fixtures.json");
-const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
-const ULP_THRESHOLD = getUlpThreshold("saxpy");
+const NUM_RUNS = 100;
 
 let device;
 before(async () => {
@@ -38,17 +36,20 @@ test("saxpy validation", async (t) => {
   );
 });
 
-test("saxpy fixtures", async () => {
-  for (const fixture of fixtures) {
-    const n = fixture.n;
-    const alpha = fixture.alpha;
-    const incx = fixture.incx;
-    const incy = fixture.incy;
-    const x = new Float32Array(fixture.x);
-    const y = new Float32Array(fixture.y);
-    const expectedY = new Float32Array(fixture.expected_y);
-
-    const { y: resultY } = await saxpy(device, n, alpha, x, incx, y, incy);
-    assertUlp(resultY, expectedY, ULP_THRESHOLD, "saxpy");
-  }
+test("saxpy fixtures", async (t) => {
+  await runFixtures(
+    t,                 // node:test context
+    "saxpy",           // routine name — used in the diagnostic label
+    device,            // WebGPU device instance
+    NUM_RUNS,          // 100 random inputs
+    1,                 // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
+    validationSpecs,   // param specs used to generate random inputs
+    async (dev, a) => saxpy(dev, a.n, a.alpha, a.x, a.incx, a.y, a.incy),  // GPU call
+    (a) => {                                                                  // CPU reference
+      const y = a.y.slice();
+      stdlibSaxpy(a.n, a.alpha, a.x.slice(), a.incx, y, a.incy);
+      return { y };
+    },
+    forwardFactor,     // |err| / (eps * |bound|) — see helpers.js
+  );
 });

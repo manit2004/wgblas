@@ -1,14 +1,11 @@
 import { test, before, after } from "node:test";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { isamax } from "wgblas/isamax";
+import stdlibIsamax from "@stdlib/blas-base-isamax";
 import { loadParam, runValidation } from "../helpers/validation.js";
+import { runFixtures } from "../helpers/fixtures.js";
 
-const thisDir = dirname(fileURLToPath(import.meta.url));
-const fixturesPath = join(thisDir, "fixtures/fixtures.json");
-const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
+const NUM_RUNS = 100;
 
 let device;
 before(async () => {
@@ -32,17 +29,16 @@ test("isamax validation", async (t) => {
   );
 });
 
-test("isamax fixtures", async () => {
-  for (const fixture of fixtures) {
-    const n = fixture.n;
-    const incx = fixture.incx;
-    const x = new Float32Array(fixture.x);
-
-    const { index } = await isamax(device, n, x, incx);
-    if (index !== fixture.expected_index) {
-      throw new Error(
-        `[isamax] index ${index} !== expected ${fixture.expected_index} (n=${n}, incx=${incx})`,
-      );
-    }
-  }
+test("isamax fixtures", async (t) => {
+  await runFixtures(
+    t,                 // node:test context
+    "isamax",          // routine name — used in the diagnostic label
+    device,            // WebGPU device instance
+    NUM_RUNS,          // 100 random inputs
+    0,                 // threshold 0 — index must match exactly.
+    validationSpecs,   // param specs used to generate random inputs
+    async (dev, a) => isamax(dev, a.n, a.x, a.incx),        // GPU call
+    (a) => stdlibIsamax(a.n, a.x.slice(), a.incx),           // CPU reference
+    (gpu, ref) => (gpu.index === ref ? 0 : 1),                // 0 if correct, 1 if wrong
+  );
 });

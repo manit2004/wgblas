@@ -1,0 +1,23 @@
+{
+  "_note": "param is the 5-element modified Givens descriptor [flag, h11, h21, h12, h22]",
+  "type": "srotm_param",
+  "range": {
+    "flags": [-1, 0, 1],
+    "coeff": { "min": -2.0, "max": 2.0 }
+  },
+  "invalid": [
+    { "special": "null",      "error": "param must be a Float32Array of length 5", "label": "null" },
+    { "special": "undefined", "error": "param must be a Float32Array of length 5", "label": "undefined" },
+    { "special": "array",     "error": "param must be a Float32Array of length 5", "label": "plain Array []" },
+    { "special": "object",    "error": "param must be a Float32Array of length 5", "label": "plain object {}" },
+    { "special": "number",    "error": "param must be a Float32Array of length 5", "label": "number" },
+    { "scenario": "tooShort", "error": "param must be a Float32Array of length 5", "label": "Float32Array length 4" },
+    { "scenario": "tooLong",  "error": "param must be a Float32Array of length 5", "label": "Float32Array length 6" }
+  ],
+  "edge": [
+    { "scenario": "identity",    "label": "flag=-2 (identity, noop — returns x and y unchanged)" },
+    { "scenario": "fullMatrix",  "label": "flag=-1 (full 2x2 h matrix)" },
+    { "scenario": "diagOne",     "label": "flag=0  (h11=h22=1, off-diagonal vary)" },
+    { "scenario": "offDiagOne",  "label": "flag=1  (h12=1, h21=-1, diagonal vary)" }
+  ]
+}

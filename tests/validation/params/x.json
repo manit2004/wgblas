@@ -1,5 +1,7 @@
 {
   "_note": "x is the input vector.",
+  "type": "float32array",
+  "range": { "elementMin": -10.0, "elementMax": 10.0 },
   "invalid": [
     { "special": "null",      "error": "x must be a Float32Array or GpuVector", "label": "null" },
     { "special": "undefined", "error": "x must be a Float32Array or GpuVector", "label": "undefined" },

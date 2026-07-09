@@ -1,17 +1,11 @@
 import { test, before, after } from "node:test";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { init, cleanup } from "wgblas";
 import { snrm2 } from "wgblas/snrm2";
-import { ulpDiff } from "../helpers/accuracy/ulp.js";
-import { getUlpThreshold } from "../helpers/accuracy/accuracy.js";
+import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
 import { loadParam, runValidation } from "../helpers/validation.js";
+import { runFixtures, ulpDiff } from "../helpers/fixtures.js";
 
-const thisDir = dirname(fileURLToPath(import.meta.url));
-const fixturesPath = join(thisDir, "fixtures/fixtures.json");
-const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8"));
-const ULP_THRESHOLD = getUlpThreshold("snrm2");
+const NUM_RUNS = 100;
 
 let device;
 before(async () => {
@@ -35,18 +29,16 @@ test("snrm2 validation", async (t) => {
   );
 });
 
-test("snrm2 fixtures", async () => {
-  for (const fixture of fixtures) {
-    const n = fixture.n;
-    const incx = fixture.incx;
-    const x = new Float32Array(fixture.x);
-
-    const { nrm2 } = await snrm2(device, n, x, incx);
-    const diff = ulpDiff(nrm2, fixture.expected_nrm2);
-    if (diff > ULP_THRESHOLD) {
-      throw new Error(
-        `[snrm2] ULP ${diff} exceeds threshold ${ULP_THRESHOLD} (actual=${nrm2}, expected=${fixture.expected_nrm2})`,
-      );
-    }
-  }
+test("snrm2 fixtures", async (t) => {
+  await runFixtures(
+    t,                 // node:test context
+    "snrm2",           // routine name — used in the diagnostic label
+    device,            // WebGPU device instance
+    NUM_RUNS,          // 100 random inputs
+    50,                // threshold 50 ULP — GPU uses tree reduction, CPU is sequential; rounding order differs
+    validationSpecs,   // param specs used to generate random inputs
+    async (dev, a) => snrm2(dev, a.n, a.x, a.incx),        // GPU call
+    (a) => stdlibSnrm2(a.n, a.x.slice(), a.incx),           // CPU reference 
+    (gpu, ref) => ulpDiff(gpu.nrm2, ref),                    // raw ULP difference between scalar results
+  );
 });
