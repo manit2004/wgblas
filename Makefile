@@ -17,7 +17,7 @@ help:
 
 publish-docs:
 	@git diff --quiet && git diff --cached --quiet || { echo "Error: commit your source changes before building docs"; exit 1; }
-	npx typedoc
+	npm run docs
 	git add docs/
 	git diff --cached --quiet || git commit -m "rebuild docs"
 	git push
