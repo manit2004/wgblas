@@ -1,6 +1,7 @@
 /**
  * @module tests
- * 
+ * @packageDocumentation
+ *
  * Test suite architecture for wgblas
  *
  * Each routine has three tests:
