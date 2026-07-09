@@ -4,7 +4,6 @@
     "src/devdocs.mjs",
     "src/index.mjs",
     "src/shaders/index.mjs",
-    "tests/index.mjs",
     "src/util/*.mjs"
   ],
   "entryPointStrategy": "expand",
@@ -15,6 +14,6 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-  "projectDocuments": ["assets/bench-result/**/*.md"],
+  "projectDocuments": ["assets/bench-result/**/*.md", "tests/index.md"],
   "sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/main/{path}#L{line}"
 }
