@@ -4,7 +4,8 @@
     "src/devdocs.mjs",
     "src/index.mjs",
     "src/shaders/index.mjs",
-    "src/util/*.mjs"
+    "src/util/*.mjs",
+    "tests/index.mjs"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.typedoc.json",
