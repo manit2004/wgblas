@@ -37,7 +37,7 @@ jobs:
           KERNEL="manitroy/wgblas-bench"
           echo "Polling $KERNEL ..."
           while true; do
-            STATUS=$(kaggle kernels status "$KERNEL" 2>&1 | grep -oP '(?<=status )\S+')
+            STATUS=$(kaggle kernels status "$KERNEL" 2>&1 | grep -oP '(?<=status )\S+' | tr -d '"')
             echo "$(date -u +%H:%M:%S)  status: $STATUS"
             case "$STATUS" in
               complete)
