@@ -70,8 +70,14 @@ const SCALAR_DEFAULTS = { n: 100, incx: 1, incy: 1, alpha: 1.0, c: 1.0, s: 0.0 }
 // Default valid param for srotm (flag=0, identity-like coefficients)
 const PARAM_DEFAULT = new Float32Array([0, 1, 0, 0, 1]);
 
-// Builds a Float32Array for a named vector scenario: exact minimum length or one element short.
-function resolveVector(scenario, n, inc) {
+/**
+ * Builds a Float32Array for a named vector scenario.
+ * @param scenario `"minimal"` → exactly `(n-1)*inc+1` elements (minimum valid length);
+ *                 `"tooShort"` → one element short, must cause a length error
+ * @param n baseline value of `n`
+ * @param inc baseline stride (`incx` or `incy`)
+ */
+export function resolveVector(scenario, n, inc) {
   if (scenario === "minimal")
     return new Float32Array((n - 1) * inc + 1).fill(1);
   if (scenario === "tooShort")
@@ -79,8 +85,12 @@ function resolveVector(scenario, n, inc) {
   throw new Error(`Unknown vector scenario: "${scenario}"`);
 }
 
-// Builds a Float32Array for a named srotm param scenario (length or flag-driven content varies).
-function resolveParam(scenario) {
+/**
+ * Builds a Float32Array for a named srotm `param` scenario.
+ * @param scenario one of `"tooShort"` (4 elements), `"tooLong"` (6 elements),
+ *   `"identity"` (flag=−2), `"fullMatrix"` (flag=−1), `"diagOne"` (flag=0), `"offDiagOne"` (flag=1)
+ */
+export function resolveParam(scenario) {
   if (scenario === "tooShort")  return new Float32Array(4).fill(0);
   if (scenario === "tooLong")   return new Float32Array(6).fill(0);
   if (scenario === "identity")  return new Float32Array([-2, 0, 0, 0, 0]);
@@ -90,8 +100,15 @@ function resolveParam(scenario) {
   throw new Error(`Unknown param scenario: "${scenario}"`);
 }
 
-// Dispatches a single JSON spec entry to a concrete value: literal, special, or scenario.
-function resolveEntry(entry, paramName, baselines) {
+/**
+ * Resolves a single JSON spec entry to a concrete JS value.
+ * Dispatches on `entry.value` (literal), `entry.special` (named non-serialisable),
+ * or `entry.scenario` (named construction rule for vectors and `param`).
+ * @param entry one entry from `spec.invalid` or `spec.edge`
+ * @param paramName name of the parameter being tested (used to select vector vs param resolution)
+ * @param baselines current baseline args (needed to size vectors from `n` and stride)
+ */
+export function resolveEntry(entry, paramName, baselines) {
   if ("scenario" in entry) {
     if (paramName === "param") return resolveParam(entry.scenario);
     const n = baselines.n;
