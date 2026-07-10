@@ -70,6 +70,7 @@ const SCALAR_DEFAULTS = { n: 100, incx: 1, incy: 1, alpha: 1.0, c: 1.0, s: 0.0 }
 // Default valid param for srotm (flag=0, identity-like coefficients)
 const PARAM_DEFAULT = new Float32Array([0, 1, 0, 0, 1]);
 
+// Builds a Float32Array for a named vector scenario: exact minimum length or one element short.
 function resolveVector(scenario, n, inc) {
   if (scenario === "minimal")
     return new Float32Array((n - 1) * inc + 1).fill(1);
@@ -78,6 +79,7 @@ function resolveVector(scenario, n, inc) {
   throw new Error(`Unknown vector scenario: "${scenario}"`);
 }
 
+// Builds a Float32Array for a named srotm param scenario (length or flag-driven content varies).
 function resolveParam(scenario) {
   if (scenario === "tooShort")  return new Float32Array(4).fill(0);
   if (scenario === "tooLong")   return new Float32Array(6).fill(0);
@@ -88,6 +90,7 @@ function resolveParam(scenario) {
   throw new Error(`Unknown param scenario: "${scenario}"`);
 }
 
+// Dispatches a single JSON spec entry to a concrete value: literal, special, or scenario.
 function resolveEntry(entry, paramName, baselines) {
   if ("scenario" in entry) {
     if (paramName === "param") return resolveParam(entry.scenario);
