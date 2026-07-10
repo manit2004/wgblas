@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # needed to commit results back
-    env:
-      KAGGLE_API_TOKEN: ${{ secrets.MANITROY }}
 
     steps:
       - uses: actions/checkout@v7
@@ -21,7 +19,13 @@ jobs:
           python-version: "3.x"
 
       - name: Install Kaggle CLI
-        run: pip install kaggle
+        run: pip install "kaggle==1.6.17"
+
+      - name: Write Kaggle credentials
+        run: |
+          mkdir -p ~/.kaggle
+          echo '{"username":"manitroy","key":"${{ secrets.MANITROY }}"}' > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
 
       - name: Push kernel to Kaggle
         run: kaggle kernels push -p benchmarks/kaggle/
