@@ -1,8 +1,23 @@
 /**
- * Shared utilities for wgblas benchmark scripts.
+ * Shared utilities for wgblas benchmark scripts — a JS module and a
+ * parallel C header covering the same operations for the cuBLAS benchmarks.
  *
- * Used by every `benchmarks/<routine>/benchmark.<routine>.js` file for
- * consistent timing output, result persistence, and table formatting.
+ * ## JS — `helpers.mjs`
+ *
+ * Used by every `benchmarks/<routine>/benchmark.<routine>.js` for timing,
+ * result persistence, and table formatting.
+ *
+ * ## C — `helpers.h`
+ *
+ * A header-only C counterpart used by every `benchmarks/<routine>/cuda/benchmark.c`.
+ * All functions are `static` so each translation unit gets its own copy.
+ *
+ * | Function | Signature | What it does |
+ * |---|---|---|
+ * | `get_gpu_model` | `(char *dst, int maxlen) → void` | Fills `dst` with the CUDA device name normalised to the same slug format as `getGpuModel()` |
+ * | `random_float_array` | `(int n, float low, float high) → float*` | Heap-allocates `n` random floats in `[low, high]`; caller must `free()` |
+ * | `median` | `(float *arr, int n) → float` | Returns the median of `arr`; copies before sorting so original is unchanged |
+ * | `save_results` | `(const char *routine, const char *gpu_model, int *sizes, float *med_times, float *gbs_vals, int n) → void` | Writes JSON to `benchmarks/results/<gpu>/cuda/<routine>.json` in the same schema as `saveResults()` |
  *
  * @module benchmarks/utils
  */
