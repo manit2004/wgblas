@@ -26,5 +26,12 @@
  * | srot    | forwardFactor     | 1         | near cancellation makes raw ULP unbounded even when correct |
  * | srotm   | forwardFactor     | 1         | near cancellation makes raw ULP unbounded even when correct |
  *
+ * ## Make Commands
+ *
+ * | Command | What it does |
+ * |---|---|
+ * | `make test` | Runs all 10 routines with the `spec` reporter |
+ * | `make test-<routine>` | Runs one routine, e.g. `make test-saxpy` |
+ *
  * @module tests
  */
