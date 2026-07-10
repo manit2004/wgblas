@@ -30,7 +30,16 @@
  * `.read()` crosses the PCIe bus, avoiding the per-call round-trip cost.
  *
  * ```js
+ * import { init, cleanup } from "wgblas";
+ * import { saxpy } from "wgblas/saxpy";
+ * import { sscal } from "wgblas/sscal";
  * import { GpuVector } from "wgblas/classes/GpuVector";
+ * import { randomFloat32Array } from "wgblas/random";
+ *
+ * const device = await init();
+ * const n = 10, alpha = 2, scale = 0.5;
+ * const x = randomFloat32Array(n, -10, 10);
+ * const y = randomFloat32Array(n, -10, 10);
  *
  * const xGpu = GpuVector.from(x);
  * const yGpu = GpuVector.from(y);
@@ -38,9 +47,12 @@
  * await saxpy(device, n, alpha, xGpu, 1, yGpu, 1);  // stays on GPU
  * await sscal(device, n, scale, yGpu, 1);            // stays on GPU
  * const result = await yGpu.read();                  // one readback
+ * console.log("result:", result);
  *
  * xGpu.destroy();
  * yGpu.destroy();
+ *
+ * if (typeof process !== "undefined") cleanup();
  * ```
  *
  * ## Common Conventions
