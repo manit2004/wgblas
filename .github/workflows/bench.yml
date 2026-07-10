@@ -19,13 +19,13 @@ jobs:
           python-version: "3.x"
 
       - name: Install Kaggle CLI
-        run: pip install "kaggle==1.6.17"
+        run: pip install --upgrade kaggle
 
       - name: Write Kaggle credentials
         run: |
           mkdir -p ~/.kaggle
-          echo '{"username":"manitroy","key":"${{ secrets.MANITROY }}"}' > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
+          echo "${{ secrets.MANITROY }}" > ~/.kaggle/access_token
+          chmod 600 ~/.kaggle/access_token
 
       - name: Push kernel to Kaggle
         run: kaggle kernels push -p benchmarks/kaggle/
