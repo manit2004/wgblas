@@ -1,8 +1,7 @@
 /**
  * Runnable examples for all BLAS Level 1 routines — one plain and one
- * GpuVector variant per routine. Every example works in Node (run it with
- * `make example-<routine>` or `make example-gpuvec-<routine>`) and in
- * the browser via the embedded ▶ Run buttons in these docs.
+ * GpuVector variant per routine. Run locally with `make example-<routine>`
+ * or `make example-gpuvec-<routine>`.
  *
  * ## Common Conventions
  *
