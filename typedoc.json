@@ -13,6 +13,9 @@
     "tests/routines/index.mjs",
     "tests/routines/helpers.mjs",
     "examples/index.mjs",
+    "benchmarks/index.mjs",
+    "benchmarks/utils/helpers.mjs",
+    "benchmarks/bench-result/**/*.mjs",
     "examples/assets/index.mjs",
     "examples/scripts/index.mjs"
   ],
@@ -24,6 +27,5 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-  "projectDocuments": ["assets/bench-result/**/*.md"],
-  "sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/main/{path}#L{line}"
+"sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/main/{path}#L{line}"
 }

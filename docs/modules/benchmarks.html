@@ -1,0 +1,75 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>benchmarks | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">wgblas</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">benchmarks</a></li></ul><h1>Module benchmarks</h1></div><section class="tsd-panel tsd-comment"><div class="tsd-comment tsd-typography"><p>Per-routine GPU benchmarks for wgblas — a WebGPU (JS) benchmark and a
+cuBLAS (C/CUDA) reference benchmark for each of the 10 BLAS Level 1 routines.</p>
+<h2 id="folder-structure" class="tsd-anchor-link">Folder Structure<a href="#folder-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-4">benchmarks</span><span class="hl-1">/</span><br/><span class="hl-1">  &lt;</span><span class="hl-15">routine</span><span class="hl-1">&gt;/</span><br/><span class="hl-1">    </span><span class="hl-4">benchmark</span><span class="hl-1">.&lt;</span><span class="hl-4">routine</span><span class="hl-1">&gt;.</span><span class="hl-4">js</span><span class="hl-1">   — </span><span class="hl-4">wgblas</span><span class="hl-1"> </span><span class="hl-0">benchmark</span><span class="hl-1"> (</span><span class="hl-4">Node</span><span class="hl-1"> + </span><span class="hl-4">WebGPU</span><span class="hl-1">)</span><br/><span class="hl-1">    </span><span class="hl-4">cuda</span><span class="hl-1">/</span><br/><span class="hl-1">      </span><span class="hl-4">benchmark</span><span class="hl-1">.</span><span class="hl-4">c</span><span class="hl-1">            — </span><span class="hl-4">cuBLAS</span><span class="hl-1"> </span><span class="hl-4">reference</span><span class="hl-1"> </span><span class="hl-4">benchmark</span><br/><span class="hl-1">      </span><span class="hl-4">Makefile</span><span class="hl-1">               — </span><span class="hl-4">compiles</span><span class="hl-1"> </span><span class="hl-4">and</span><span class="hl-1"> </span><span class="hl-4">links</span><span class="hl-1"> </span><span class="hl-4">against</span><span class="hl-1"> </span><span class="hl-4">cublas</span><br/><span class="hl-1">  </span><span class="hl-4">utils</span><span class="hl-1">/</span><br/><span class="hl-1">    </span><span class="hl-4">helpers</span><span class="hl-1">.</span><span class="hl-4">mjs</span><span class="hl-1">              — </span><span class="hl-6">JS</span><span class="hl-1"> </span><span class="hl-16">utilities</span><span class="hl-1">: </span><span class="hl-4">median</span><span class="hl-1">, </span><span class="hl-4">saveResults</span><span class="hl-1">, </span><span class="hl-4">printRow</span><span class="hl-1">, </span><span class="hl-4">getGpuModel</span><br/><span class="hl-1">    </span><span class="hl-4">helpers</span><span class="hl-1">.</span><span class="hl-4">h</span><span class="hl-1">                — </span><span class="hl-6">C</span><span class="hl-1"> </span><span class="hl-16">utilities</span><span class="hl-1">: </span><span class="hl-4">median</span><span class="hl-1">, </span><span class="hl-4">save_results</span><span class="hl-1">, </span><span class="hl-4">random_float_array</span><br/><span class="hl-1">  </span><span class="hl-4">results</span><span class="hl-1">/</span><br/><span class="hl-1">    &lt;</span><span class="hl-4">gpu</span><span class="hl-1">-</span><span class="hl-4">model</span><span class="hl-1">-</span><span class="hl-4">slug</span><span class="hl-1">&gt;/</span><br/><span class="hl-1">      </span><span class="hl-4">wgblas</span><span class="hl-1">/&lt;</span><span class="hl-4">routine</span><span class="hl-1">&gt;.</span><span class="hl-4">json</span><span class="hl-1">  — </span><span class="hl-4">recorded</span><span class="hl-1"> </span><span class="hl-4">wgblas</span><span class="hl-1"> </span><span class="hl-4">results</span><br/><span class="hl-1">      </span><span class="hl-4">cuda</span><span class="hl-1">/&lt;</span><span class="hl-4">routine</span><span class="hl-1">&gt;.</span><span class="hl-4">json</span><span class="hl-1">    — </span><span class="hl-4">recorded</span><span class="hl-1"> </span><span class="hl-4">cuBLAS</span><span class="hl-1"> </span><span class="hl-0">results</span><span class="hl-1"> (</span><span class="hl-6">NVIDIA</span><span class="hl-1"> </span><span class="hl-4">only</span><span class="hl-1">)</span>
+</code><button>Copy</button></pre>
+
+<h2 id="benchmarking-pattern" class="tsd-anchor-link">Benchmarking Pattern<a href="#benchmarking-pattern" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Both the wgblas and cuBLAS benchmarks follow the same methodology so results
+are directly comparable:</p>
+<ul>
+<li><strong>Data stays on GPU</strong> — vectors are allocated with <code>GpuVector.from()</code> (JS)
+or <code>cudaMalloc</code> (C) before the timed loop. The measured time is pure
+compute; no host↔device transfer is included.</li>
+<li><strong>Warmup</strong> — 5 un-timed iterations before the loop, to reach steady-state
+clock speed and fill driver/JIT caches.</li>
+<li><strong>100 timed iterations</strong> — each individually timed; the <strong>median</strong> is
+recorded. Median suppresses outliers from OS scheduler preemption better
+than mean.</li>
+<li><strong>Sizes</strong> — <code>[32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216]</code> — the same 12 sizes for both backends.</li>
+<li><strong>Throughput</strong> — <code>bytes / 1e9 / (median_ms / 1e3)</code> where <code>bytes</code> is the
+total memory traffic for the routine (e.g. saxpy reads <code>x</code>, reads and
+writes <code>y</code> → <code>3 × n × 4 bytes</code>).</li>
+<li><strong><code>init({ benchmark: true })</code></strong> — enables WebGPU timestamp queries so the
+JS benchmark measures actual GPU execution time, not the CPU-side await
+overhead.</li>
+</ul>
+<h2 id="make-commands" class="tsd-anchor-link">Make Commands<a href="#make-commands" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>make bench</code></td>
+<td>Runs all wgblas benchmarks in sequence</td>
+</tr>
+<tr>
+<td><code>make bench-&lt;routine&gt;</code></td>
+<td>Runs one wgblas benchmark, e.g. <code>make bench-saxpy</code></td>
+</tr>
+<tr>
+<td><code>make cuda</code></td>
+<td>Compiles and runs all cuBLAS benchmarks (NVIDIA only)</td>
+</tr>
+<tr>
+<td><code>make cuda-&lt;routine&gt;</code></td>
+<td>Compiles and runs one cuBLAS benchmark, e.g. <code>make cuda-saxpy</code></td>
+</tr>
+</tbody>
+</table>
+<p>Pass <code>ARGS=low-power</code> to prefer the integrated GPU on dual-GPU machines:
+<code>make bench-saxpy ARGS=low-power</code>.</p>
+<p>Results are saved automatically to
+<code>benchmarks/results/&lt;gpu-model&gt;/wgblas/&lt;routine&gt;.json</code> (JS) or
+<code>benchmarks/results/&lt;gpu-model&gt;/cuda/&lt;routine&gt;.json</code> (CUDA).</p>
+<h2 id="table-generation-" class="tsd-anchor-link">Table Generation — <code>gen-bench-tables.py</code><a href="#table-generation-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><code>scripts/gen-bench-tables.py</code> reads GPU folder names from the local
+<code>benchmarks/results/</code> directory to discover which GPUs have results, then
+<strong>fetches the JSON files from GitHub</strong> (not local disk) so that
+skip-worktree'd local files are never used.</p>
+<p>For each GPU × routine pair it generates a markdown table at
+<code>benchmarks/bench-result/&lt;gpu&gt;/&lt;routine&gt;.md</code>. On NVIDIA GPUs the
+table includes cuBLAS columns and an efficiency column
+(<code>wgblas GB/s ÷ cuBLAS GB/s × 100</code>); on other GPUs it shows wgblas only.</p>
+<h2 id="contributing-results" class="tsd-anchor-link">Contributing Results<a href="#contributing-results" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ol>
+<li>Run <code>make bench</code> (and <code>make cuda</code> on NVIDIA).</li>
+<li>Commit the generated JSON files under <code>benchmarks/results/</code>.</li>
+<li>Open a pull request — a maintainer will run <code>python3 scripts/gen-bench-tables.py</code>
+and commit the generated files before merging.</li>
+</ol>
+</div></section></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#folder-structure"><span>Folder <wbr/>Structure</span></a><a href="#benchmarking-pattern"><span>Benchmarking <wbr/>Pattern</span></a><a href="#make-commands"><span>Make <wbr/>Commands</span></a><a href="#table-generation-"><span>Table <wbr/>Generation — </span></a><a href="#contributing-results"><span>Contributing <wbr/>Results</span></a></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">wgblas</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

@@ -1,0 +1,29 @@
+/**
+ * Benchmark results for srot on Nvidia Geforce Gtx 1650.
+ *
+ * ## Nvidia Geforce Gtx 1650 — wgblas vs cuBLAS
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 32 | 0.0070 | 0.0731 | 0.0061 | 0.0833 | 87.7% |
+ * | 64 | 0.0071 | 0.1441 | 0.0102 | 0.1000 | 144.1% |
+ * | 128 | 0.0071 | 0.2876 | 0.0104 | 0.1969 | 146.1% |
+ * | 512 | 0.0073 | 1.1228 | 0.0101 | 0.8114 | 138.4% |
+ * | 1024 | 0.0074 | 2.2165 | 0.0103 | 1.5901 | 139.4% |
+ * | 4096 | 0.0075 | 8.7897 | 0.0102 | 6.4201 | 136.9% |
+ * | 16384 | 0.0082 | 32.0000 | 0.0102 | 25.6000 | 125.0% |
+ * | 65536 | 0.0102 | 102.4000 | 0.0134 | 78.3923 | 130.6% |
+ * | 262144 | 0.0344 | 122.0978 | 0.0344 | 121.7575 | 100.3% |
+ * | 1048576 | 0.1223 | 137.2122 | 0.1228 | 136.6401 | 100.4% |
+ * | 4194304 | 0.4719 | 142.2232 | 0.5083 | 132.0251 | 107.7% |
+ * | 16777216 | 1.8843 | 142.4599 | 1.9494 | 137.7033 | 103.5% |
+ *
+ * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.
+ *
+ * ## See also
+ *
+ * - [benchmark.srot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/benchmark.srot.js) — WebGPU benchmark script
+ * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ *
+ * @module benchmarks/nvidia-geforce-gtx-1650/srot
+ */

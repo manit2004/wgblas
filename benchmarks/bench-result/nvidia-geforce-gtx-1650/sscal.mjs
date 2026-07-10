@@ -1,0 +1,29 @@
+/**
+ * Benchmark results for sscal on Nvidia Geforce Gtx 1650.
+ *
+ * ## Nvidia Geforce Gtx 1650 — wgblas vs cuBLAS
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 32 | 0.0065 | 0.0394 | 0.0027 | 0.0952 | 41.4% |
+ * | 64 | 0.0064 | 0.0796 | 0.0026 | 0.2000 | 39.8% |
+ * | 128 | 0.0064 | 0.1600 | 0.0026 | 0.4000 | 40.0% |
+ * | 512 | 0.0064 | 0.6384 | 0.0026 | 1.5802 | 40.4% |
+ * | 1024 | 0.0065 | 1.2673 | 0.0026 | 3.1801 | 39.9% |
+ * | 4096 | 0.0066 | 4.9951 | 0.0027 | 12.1905 | 41.0% |
+ * | 16384 | 0.0074 | 17.8087 | 0.0031 | 42.0103 | 42.4% |
+ * | 65536 | 0.0093 | 56.2058 | 0.0041 | 128.0000 | 43.9% |
+ * | 262144 | 0.0184 | 113.7778 | 0.0103 | 203.8445 | 55.8% |
+ * | 1048576 | 0.0621 | 134.9866 | 0.0520 | 161.3194 | 83.7% |
+ * | 4194304 | 0.2291 | 146.4696 | 0.1998 | 167.9468 | 87.2% |
+ * | 16777216 | 0.8211 | 163.4633 | 0.7869 | 170.5591 | 95.8% |
+ *
+ * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.
+ *
+ * ## See also
+ *
+ * - [benchmark.sscal.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sscal/benchmark.sscal.js) — WebGPU benchmark script
+ * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/sscal/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ *
+ * @module benchmarks/nvidia-geforce-gtx-1650/sscal
+ */
