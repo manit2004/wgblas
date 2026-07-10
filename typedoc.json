@@ -14,6 +14,7 @@
     "tests/routines/helpers.mjs",
     "examples/index.mjs",
     "benchmarks/index.mjs",
+    "benchmarks/utils/helpers.mjs",
     "benchmarks/bench-result/**/*.mjs",
     "examples/assets/index.mjs",
     "examples/scripts/index.mjs"

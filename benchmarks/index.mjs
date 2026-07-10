@@ -74,8 +74,8 @@
  *
  * 1. Run `make bench` (and `make cuda` on NVIDIA).
  * 2. Commit the generated JSON files under `benchmarks/results/`.
- * 3. Open a pull request — CI runs `gen-bench-tables.py` and the tables in
- *    these docs update automatically.
+ * 3. Open a pull request — a maintainer will run `python3 scripts/gen-bench-tables.py`
+ *    and commit the generated files before merging.
  *
  * @module benchmarks
  */
