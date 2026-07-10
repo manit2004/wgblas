@@ -1,0 +1,29 @@
+/**
+ * Benchmark results for isamax on Nvidia Geforce Gtx 1650.
+ *
+ * ## Nvidia Geforce Gtx 1650 — wgblas vs cuBLAS
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 32 | 0.0204 | 0.0063 | 0.0174 | 0.0074 | 84.6% |
+ * | 64 | 0.0206 | 0.0124 | 0.0140 | 0.0183 | 68.0% |
+ * | 128 | 0.0202 | 0.0253 | 0.0133 | 0.0385 | 65.7% |
+ * | 512 | 0.0205 | 0.1000 | 0.0192 | 0.1069 | 93.5% |
+ * | 1024 | 0.0203 | 0.2014 | 0.0185 | 0.2216 | 90.9% |
+ * | 4096 | 0.0203 | 0.8088 | 0.0195 | 0.8387 | 96.4% |
+ * | 16384 | 0.0205 | 3.1900 | 0.0196 | 3.3382 | 95.6% |
+ * | 65536 | 0.0214 | 12.2269 | 0.0195 | 13.4185 | 91.1% |
+ * | 262144 | 0.0336 | 31.2523 | 0.0248 | 42.3086 | 73.9% |
+ * | 1048576 | 0.0709 | 59.1881 | 0.0422 | 99.3722 | 59.6% |
+ * | 4194304 | 0.2254 | 74.4357 | 0.1103 | 152.0777 | 48.9% |
+ * | 16777216 | 0.8809 | 76.1839 | 0.4069 | 164.9223 | 46.2% |
+ *
+ * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.
+ *
+ * ## See also
+ *
+ * - [benchmark.isamax.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/isamax/benchmark.isamax.js) — WebGPU benchmark script
+ * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/isamax/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ *
+ * @module benchmarks/nvidia-geforce-gtx-1650/isamax
+ */

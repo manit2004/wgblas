@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-Fetches benchmark JSONs from GitHub and generates per-GPU per-routine
-markdown comparison tables into benchmarks/bench-result/<gpu>/<routine>.md.
+Fetches benchmark JSONs from GitHub and generates TypeDoc module entry points
+at benchmarks/bench-result/<gpu>/index.mjs and <routine>.mjs, with comparison
+tables embedded in JSDoc so TypeDoc nests them under the 'benchmarks' module:
+
+  M benchmarks
+    └── <gpu-slug>
+        ├── isamax
+        ├── saxpy
+        └── ...
 
 Reads GPU folder names from local benchmarks/results/ to know what to fetch,
 but always pulls JSON content from GitHub (not local disk) so that
-skip-worktree'd local files are not used.
-
-Routines are discovered from the JSON files that exist in any GPU's wgblas/
-subfolder. OUT_DIR is derived by finding Benchmarks.md
-in the assets/ tree and using its sibling Benchmarks/ folder.
+skip-worktree'd local files are not used. Falls back to local disk if the
+fetch fails (e.g. when results have not been pushed yet).
 """
 
 import json
@@ -46,7 +50,7 @@ def already_generated(gpu):
     gpu_out = OUT_DIR / gpu
     if not gpu_out.exists():
         return set()
-    return {f.stem for f in gpu_out.glob("*.md")}
+    return {f.stem for f in gpu_out.glob("*.mjs") if f.stem != "index"}
 
 
 def fetch_json(gpu, backend, routine):
@@ -55,7 +59,12 @@ def fetch_json(gpu, backend, routine):
         with urllib.request.urlopen(url) as r:
             return json.loads(r.read())
     except Exception:
-        return None
+        pass
+    # fallback: read from local disk
+    local = RESULTS_DIR / gpu / backend / f"{routine}.json"
+    if local.exists():
+        return json.loads(local.read_text())
+    return None
 
 
 def fmt_ms(v):
@@ -112,6 +121,19 @@ def gpu_display_name(folder):
     return folder.replace("-", " ").title()
 
 
+def write_mjs(out_file, module_name, description, body):
+    """Write a TypeDoc .mjs module: description first, @module last."""
+    jsdoc_lines = ["/**", f" * {description}"]
+    if body:
+        jsdoc_lines.append(" *")
+        for line in body.split("\n"):
+            jsdoc_lines.append(f" * {line}" if line else " *")
+    jsdoc_lines.append(" *")
+    jsdoc_lines.append(f" * @module {module_name}")
+    jsdoc_lines.append(" */")
+    out_file.write_text("\n".join(jsdoc_lines) + "\n")
+
+
 def main():
     gpu_folders = sorted(p.name for p in RESULTS_DIR.iterdir() if p.is_dir())
     if not gpu_folders:
@@ -120,6 +142,8 @@ def main():
 
     routines = discover_routines()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    gh = f"https://github.com/{REPO}/blob/{BRANCH}"
 
     for gpu in gpu_folders:
         local_gpu = RESULTS_DIR / gpu
@@ -134,50 +158,62 @@ def main():
 
         display = gpu_display_name(gpu)
         to_generate = [r for r in routines if r not in already_generated(gpu)]
-        if not to_generate:
+
+        # always (re)write the GPU index if any routines are being generated
+        if to_generate:
+            index_file = out_gpu_dir / "index.mjs"
+            write_mjs(
+                index_file,
+                f"benchmarks/{gpu}",
+                f"Benchmark results for all routines on {display}.",
+                f"Run `make bench` to generate wgblas results"
+                + (", or `make cuda` for cuBLAS results." if has_cuda else "."),
+            )
+            print(f"  wrote {index_file.relative_to(ROOT)}")
+        else:
             print(f"GPU: {display} — up to date, skipping")
             continue
+
         print(f"GPU: {display}")
 
         for routine in to_generate:
             wgblas = fetch_json(gpu, "wgblas", routine)
             if wgblas is None:
-                print(f"  skip {routine} (no wgblas data on GitHub)")
+                print(f"  skip {routine} (no wgblas data)")
                 continue
 
-            if has_cuda:
-                cuda = fetch_json(gpu, "cuda", routine)
-            else:
-                cuda = None
+            cuda = fetch_json(gpu, "cuda", routine) if has_cuda else None
 
-            gh = f"https://github.com/{REPO}/blob/{BRANCH}"
             wgblas_link = f"{gh}/benchmarks/{routine}/benchmark.{routine}.js"
 
             if cuda:
                 table = make_comparison_table(wgblas, cuda)
-                header = f"## {display} — wgblas vs cuBLAS\n\n"
-                note = (
-                    "\n\n> Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. "
-                    "Higher means wgblas is closer to cuBLAS throughput."
-                )
                 cuda_link = f"{gh}/benchmarks/{routine}/cuda/benchmark.c"
-                see_also = (
-                    f"\n\n## See also\n\n"
+                body = (
+                    f"## {display} — wgblas vs cuBLAS\n\n"
+                    + table
+                    + "\n\n> Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. "
+                    "Higher means wgblas is closer to cuBLAS throughput.\n\n"
+                    "## See also\n\n"
                     f"- [benchmark.{routine}.js]({wgblas_link}) — WebGPU benchmark script\n"
                     f"- [benchmark.c]({cuda_link}) — CUDA / cuBLAS reference script"
                 )
             else:
                 table = make_wgblas_only_table(wgblas)
-                header = f"## {display}\n\n"
-                note = ""
-                see_also = (
-                    f"\n\n## See also\n\n"
+                body = (
+                    f"## {display}\n\n"
+                    + table
+                    + "\n\n## See also\n\n"
                     f"- [benchmark.{routine}.js]({wgblas_link}) — WebGPU benchmark script"
                 )
 
-            content = f"# {routine}\n\n" + header + table + note + see_also + "\n"
-            out_file = out_gpu_dir / f"{routine}.md"
-            out_file.write_text(content)
+            out_file = out_gpu_dir / f"{routine}.mjs"
+            write_mjs(
+                out_file,
+                f"benchmarks/{gpu}/{routine}",
+                f"Benchmark results for {routine} on {display}.",
+                body,
+            )
             print(f"  wrote {out_file.relative_to(ROOT)}")
 
     print("Done.")
