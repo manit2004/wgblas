@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # needed to commit results back
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
 
     steps:
       - uses: actions/checkout@v7
@@ -21,20 +23,12 @@ jobs:
       - name: Install Kaggle CLI
         run: pip install kaggle
 
-      - name: Write Kaggle credentials
-        run: |
-          mkdir -p ~/.kaggle
-          printf '{"username":"%s","key":"%s"}\n' \
-            "${{ secrets.KAGGLE_USERNAME }}" "${{ secrets.KAGGLE_KEY }}" \
-            > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
-
       - name: Push kernel to Kaggle
         run: kaggle kernels push -p benchmarks/kaggle/
 
       - name: Wait for kernel to complete
         run: |
-          KERNEL="${{ secrets.KAGGLE_USERNAME }}/wgblas-bench"
+          KERNEL="manitroy/wgblas-bench"
           echo "Polling $KERNEL ..."
           while true; do
             STATUS=$(kaggle kernels status "$KERNEL" 2>&1 | grep -oP '(?<=status )\S+')
@@ -52,7 +46,7 @@ jobs:
 
       - name: Download kernel output
         run: |
-          kaggle kernels output "${{ secrets.KAGGLE_USERNAME }}/wgblas-bench" \
+          kaggle kernels output "manitroy/wgblas-bench" \
             -p /tmp/bench-output
           echo "Output files:"
           find /tmp/bench-output -type f

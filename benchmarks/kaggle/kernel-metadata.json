@@ -1,5 +1,5 @@
 {
-  "id": "manit2004/wgblas-bench",
+  "id": "manitroy/wgblas-bench",
   "title": "wgblas-bench",
   "code_file": "kernel.py",
   "language": "python",
