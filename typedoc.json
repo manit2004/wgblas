@@ -12,7 +12,9 @@
     "tests/validation/index.mjs",
     "tests/routines/index.mjs",
     "tests/routines/helpers.mjs",
-    "examples/index.mjs"
+    "examples/index.mjs",
+    "examples/assets/index.mjs",
+    "examples/scripts/index.mjs"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.typedoc.json",

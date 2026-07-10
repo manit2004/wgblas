@@ -77,30 +77,6 @@
  * it would destroy the shared device that the page's ▶ Run buttons reuse, so
  * the guard skips it there.
  *
- * ## Running in the Browser — `runner.js`
- *
- * The docs site bundles `assets/docs/runner.js` as a custom JS file via TypeDoc.
- * On page load it scans every `<pre>` block that contains an `import` statement
- * and injects a **▶ Run** button. When clicked, it:
- *
- * 1. Transforms `import { a, b } from "wgblas/..."` into
- *    `const { a, b } = window.wgblas;` — pointing at the IIFE bundle below.
- * 2. Wraps the transformed source in an `async` IIFE and runs it via `eval`.
- * 3. Redirects `console.log`, `console.warn`, and `console.error` to an output
- *    panel injected below the code block.
- *
- * ## Browser Bundle — `build-browser.mjs`
- *
- * `scripts/build-browser.mjs` uses [esbuild](https://esbuild.github.io/) to
- * produce a self-contained browser bundle:
- *
- * - **Entry point**: `src/index.mjs` (re-exports every routine and utility)
- * - **Format**: IIFE (`format: "iife"`, `globalName: "wgblas"`)
- * - **Output**: `docs/wgblas.browser.js` (minified, loaded by `<script>` in the docs)
- *
- * The bundle assigns the entire library to `window.wgblas`, which is why the
- * import transform in `runner.js` destructures from that name.
- *
  * ## Per-Routine HTML Stubs
  *
  * Each routine has a `examples/<routine>/web/<routine>.html` file — a minimal
