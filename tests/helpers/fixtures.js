@@ -57,12 +57,15 @@ export function floatArb(min, max) {
   return fc.float({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
 }
 
+// Picks integers or floats depending on spec.type (e.g. n and incx are integers, alpha is float).
 function scalarArb(spec) {
   const { min, max } = spec.range;
   if (spec.type === "integer") return fc.integer({ min, max });
   return floatArb(min, max);
 }
 
+// Generates a Float32Array of exactly `len` elements, each drawn from floatArb.
+// len is always (n-1)*inc+1, computed by buildArb from the already-generated scalars.
 function vectorArb(spec, len) {
   const { elementMin: min, elementMax: max } = spec.range;
   return fc
