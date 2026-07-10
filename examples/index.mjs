@@ -108,5 +108,16 @@
  * inline. These stubs are used by the docs site to host the live playground for
  * each routine.
  *
+ * ## Make Commands
+ *
+ * | Command | What it does |
+ * |---|---|
+ * | `make example` | Runs the plain `<routine>.js` for all routines in sequence |
+ * | `make example-<routine>` | Runs the plain example for one routine, e.g. `make example-saxpy` |
+ * | `make example-gpuvec` | Runs `gpuvec.<routine>.js` for all routines in sequence |
+ * | `make example-gpuvec-<routine>` | Runs the GpuVector example for one routine, e.g. `make example-gpuvec-saxpy` |
+ * | `make example-<routine>-web` | Opens one routine's HTML stub in Vite dev server |
+ * | `make example-web` | Starts Vite on port 5173 and opens all routine HTML stubs at once |
+ *
  * @module examples
  */
