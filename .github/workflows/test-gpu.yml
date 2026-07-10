@@ -1,0 +1,55 @@
+name: GPU Tests (Kaggle)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-gpu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Kaggle CLI
+        run: pip install "kaggle==1.6.17"
+
+      - name: Write Kaggle credentials
+        env:
+          KAGGLE_KEY: ${{ secrets.MANITROY }}
+        run: |
+          mkdir -p ~/.kaggle
+          printf '{"username":"manitroy","key":"%s"}' "$KAGGLE_KEY" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+
+      - name: Push test kernel to Kaggle
+        run: kaggle kernels push -p tests/kaggle/
+
+      - name: Wait for kernel to complete
+        run: |
+          KERNEL="manitroy/wgblas-test"
+          echo "Polling $KERNEL ..."
+          while true; do
+            STATUS=$(kaggle kernels status "$KERNEL" 2>&1 | grep -oP '(?<=status )\S+' | tr -d '"')
+            echo "$(date -u +%H:%M:%S)  status: $STATUS"
+            case "$STATUS" in
+              complete)
+                echo "Kernel finished — tests passed."
+                break ;;
+              error|cancelAcknowledged|cancelled)
+                echo "Kernel stopped with: $STATUS — tests failed or kernel errored."
+                exit 1 ;;
+            esac
+            sleep 60
+          done
+
+      - name: Download test output
+        run: |
+          kaggle kernels output "manitroy/wgblas-test" -p /tmp/test-output
+          echo "--- Test output ---"
+          cat /tmp/test-output/test-output.txt || echo "(no output file found)"
