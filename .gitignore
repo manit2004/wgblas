@@ -2,5 +2,8 @@
 node_modules/
 .venv/
 
-#benchmark binaries
+# benchmark binaries
 benchmarks/***/benchmark
+
+# Kaggle API credentials
+kaggle.json
