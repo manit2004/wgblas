@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Fetches benchmark JSONs from GitHub and generates per-GPU per-routine
-markdown comparison tables into assets/bench-result/Benchmarks/<gpu>/<routine>.md.
+markdown comparison tables into benchmarks/bench-result/<gpu>/<routine>.md.
 
 Reads GPU folder names from local benchmarks/results/ to know what to fetch,
 but always pulls JSON content from GitHub (not local disk) so that
@@ -23,7 +23,7 @@ BASE_URL = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/benchmarks/result
 
 ROOT = Path(__file__).parent.parent
 RESULTS_DIR = ROOT / "benchmarks" / "results"
-OUT_DIR = ROOT / "assets" / "bench-result" / "Benchmarks"
+OUT_DIR = ROOT / "benchmarks" / "bench-result"
 
 
 def discover_routines():

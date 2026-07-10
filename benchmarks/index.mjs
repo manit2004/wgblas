@@ -66,7 +66,7 @@
  * skip-worktree'd local files are never used.
  *
  * For each GPU × routine pair it generates a markdown table at
- * `assets/bench-result/Benchmarks/<gpu>/<routine>.md`. On NVIDIA GPUs the
+ * `benchmarks/bench-result/<gpu>/<routine>.md`. On NVIDIA GPUs the
  * table includes cuBLAS columns and an efficiency column
  * (`wgblas GB/s ÷ cuBLAS GB/s × 100`); on other GPUs it shows wgblas only.
  *
