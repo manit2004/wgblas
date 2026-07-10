@@ -52,6 +52,8 @@ const isUsable = (v) => v === 0.0 || Math.abs(v) >= FLOAT_MIN_MAGNITUDE;
 /**
  * A fast-check arbitrary for f32 scalars in `[min, max]`, excluding subnormals.
  * Zero is allowed; any non-zero value has `|v| >= 1e-3`.
+ * @returns fast-check arbitrary that generates usable f32 scalars
+ * @public
  */
 export function floatArb(min, max) {
   return fc.float({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
@@ -60,6 +62,8 @@ export function floatArb(min, max) {
 /**
  * Arbitrary for a single scalar param — integers for `n`/`incx`/`incy`, floats for `alpha`/`c`/`s`.
  * @param spec loaded JSON param spec; `spec.type` selects integer vs float, `spec.range` gives bounds
+ * @returns fast-check arbitrary that generates a single scalar matching the param spec
+ * @internal
  */
 export function scalarArb(spec) {
   const { min, max } = spec.range;
@@ -71,6 +75,8 @@ export function scalarArb(spec) {
  * Arbitrary for a Float32Array of exactly `len` elements drawn from `floatArb`.
  * @param spec loaded JSON param spec; `spec.range.elementMin/elementMax` give element bounds
  * @param len exact array length — always `(n-1)*inc+1`, computed by `buildArb` after generating `n` and `inc`
+ * @returns fast-check arbitrary that generates a Float32Array of exactly `len` elements
+ * @internal
  */
 export function vectorArb(spec, len) {
   const { elementMin: min, elementMax: max } = spec.range;
@@ -86,6 +92,8 @@ export function vectorArb(spec, len) {
  * with the generated `n` and stride.
  * @param specs record of param specs keyed by param name, from `loadParam`
  * @param extras optional additional arbitraries for routine-specific params (e.g. srotm's `param`)
+ * @returns fast-check arbitrary that generates a complete args object ready to pass to `callGpu` and `callRef`
+ * @internal
  */
 export function buildArb(specs, extras = {}) {
   const scalarOrder = ["n", "incx", "incy", "alpha", "c", "s"];
@@ -128,6 +136,8 @@ export function buildArb(specs, extras = {}) {
  * @param callRef - function that calls the CPU reference
  * @param computeUlp - error metric: `(gpuResult, refResult, args) => number`
  * @param extras - optional extra arbitraries for routine-specific params (e.g. srotm's param)
+ * @returns promise that resolves when all runs pass, or rejects on the first failing run
+ * @public
  */
 export async function runFixtures(
   t,
