@@ -48,6 +48,7 @@ const PARAMS_DIR = join(
 
 /**
  * Reads and parses `tests/validation/params/<name>.json`.
+ * @returns the parsed param spec object with `type`, `range`, `invalid`, and `edge` fields
  * @public
  */
 export function loadParam(name) {
@@ -77,6 +78,7 @@ const PARAM_DEFAULT = new Float32Array([0, 1, 0, 0, 1]);
  *                 `"tooShort"` → one element short, must cause a length error
  * @param n baseline value of `n`
  * @param inc baseline stride (`incx` or `incy`)
+ * @returns Float32Array sized and filled according to the scenario
  */
 export function resolveVector(scenario, n, inc) {
   if (scenario === "minimal")
@@ -90,6 +92,7 @@ export function resolveVector(scenario, n, inc) {
  * Builds a Float32Array for a named srotm `param` scenario.
  * @param scenario one of `"tooShort"` (4 elements), `"tooLong"` (6 elements),
  *   `"identity"` (flag=−2), `"fullMatrix"` (flag=−1), `"diagOne"` (flag=0), `"offDiagOne"` (flag=1)
+ * @returns Float32Array of length 5 with the appropriate flag and coefficients
  */
 export function resolveParam(scenario) {
   if (scenario === "tooShort")  return new Float32Array(4).fill(0);
@@ -108,6 +111,7 @@ export function resolveParam(scenario) {
  * @param entry one entry from `spec.invalid` or `spec.edge`
  * @param paramName name of the parameter being tested (used to select vector vs param resolution)
  * @param baselines current baseline args (needed to size vectors from `n` and stride)
+ * @returns the concrete JS value to substitute for the param under test
  */
 export function resolveEntry(entry, paramName, baselines) {
   if ("scenario" in entry) {
@@ -135,6 +139,7 @@ export function resolveEntry(entry, paramName, baselines) {
  * @param specs - object mapping param names to their loaded JSON specs
  * @param call - function that invokes the routine with an args object
  * @param runtimeBaselines - values that cannot be defaulted statically (e.g. `device`)
+ * @returns promise that resolves when all cases pass, or rejects on the first assertion failure
  * @public
  */
 export async function runValidation(t, specs, call, runtimeBaselines = {}) {

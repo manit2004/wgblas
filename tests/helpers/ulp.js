@@ -37,6 +37,7 @@ const _u32 = new Uint32Array(_buf);
 /**
  * ULP distance between two f32 scalars.
  * Returns 0 if both have absolute value 0 (±0 are interchangeable in WGSL §15.7.1).
+ * @returns integer ULP distance between `a` and `b`
  * @public
  */
 export function ulpDiff(a, b) {
@@ -48,7 +49,7 @@ export function ulpDiff(a, b) {
 
 /**
  * Maximum ULP distance across all elements of two Float32Arrays.
- * Returns `{ max, worstIndex }` — the largest distance and where it occurred.
+ * @returns `{ max, worstIndex }` — the largest ULP distance and the index where it occurred
  * @public
  */
 export function maxUlp(actual, expected) {
@@ -66,6 +67,7 @@ export function maxUlp(actual, expected) {
 
 /**
  * Throws if the maximum ULP distance between `actual` and `expected` exceeds `threshold`.
+ * @returns void — throws `Error` with element index and values if the threshold is exceeded
  * @public
  */
 export function assertUlp(actual, expected, threshold, label = "") {
