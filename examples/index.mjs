@@ -4,57 +4,6 @@
  * `make example-<routine>` or `make example-gpuvec-<routine>`) and in
  * the browser via the embedded ▶ Run buttons in these docs.
  *
- * ## Two Patterns
- *
- * **Plain Float32Array** — allocate on CPU, pass to the routine, read the
- * result from the returned object. Simple and stateless; the library handles
- * the GPU upload and download internally.
- *
- * ```js
- * import { init, cleanup } from "wgblas";
- * import { saxpy } from "wgblas/saxpy";
- * import { randomFloat32Array } from "wgblas/random";
- *
- * const device = await init();
- * const n = 10, alpha = 2;
- * const x = randomFloat32Array(n, -10, 10);
- * const y = randomFloat32Array(n, -10, 10);
- * const { y: result } = await saxpy(device, n, alpha, x, 1, y, 1);
- * console.log("y = αx + y:", result);
- *
- * if (typeof process !== "undefined") cleanup();
- * ```
- *
- * **GpuVector** — wrap arrays in `GpuVector.from()` so the data stays on the
- * GPU between calls. Use this when chaining multiple operations; only the final
- * `.read()` crosses the PCIe bus, avoiding the per-call round-trip cost.
- *
- * ```js
- * import { init, cleanup } from "wgblas";
- * import { saxpy } from "wgblas/saxpy";
- * import { sscal } from "wgblas/sscal";
- * import { GpuVector } from "wgblas/classes/GpuVector";
- * import { randomFloat32Array } from "wgblas/random";
- *
- * const device = await init();
- * const n = 10, alpha = 2, scale = 0.5;
- * const x = randomFloat32Array(n, -10, 10);
- * const y = randomFloat32Array(n, -10, 10);
- *
- * const xGpu = GpuVector.from(x);
- * const yGpu = GpuVector.from(y);
- *
- * await saxpy(device, n, alpha, xGpu, 1, yGpu, 1);  // stays on GPU
- * await sscal(device, n, scale, yGpu, 1);            // stays on GPU
- * const result = await yGpu.read();                  // one readback
- * console.log("result:", result);
- *
- * xGpu.destroy();
- * yGpu.destroy();
- *
- * if (typeof process !== "undefined") cleanup();
- * ```
- *
  * ## Common Conventions
  *
  * All examples share the same parameter choices so they are easy to compare:
