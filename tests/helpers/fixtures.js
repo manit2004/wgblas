@@ -52,6 +52,7 @@ const isUsable = (v) => v === 0.0 || Math.abs(v) >= FLOAT_MIN_MAGNITUDE;
 /**
  * A fast-check arbitrary for f32 scalars in `[min, max]`, excluding subnormals.
  * Zero is allowed; any non-zero value has `|v| >= 1e-3`.
+ * @public
  */
 export function floatArb(min, max) {
   return fc.float({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
@@ -128,6 +129,7 @@ export function buildArb(specs, extras = {}) {
  * @param callRef - function that calls the CPU reference
  * @param computeUlp - error metric: `(gpuResult, refResult, args) => number`
  * @param extras - optional extra arbitraries for routine-specific params (e.g. srotm's param)
+ * @public
  */
 export async function runFixtures(
   t,

@@ -48,6 +48,7 @@ const PARAMS_DIR = join(
 
 /**
  * Reads and parses `tests/validation/params/<name>.json`.
+ * @public
  */
 export function loadParam(name) {
   return JSON.parse(readFileSync(join(PARAMS_DIR, `${name}.json`), "utf8"));
@@ -134,6 +135,7 @@ export function resolveEntry(entry, paramName, baselines) {
  * @param specs - object mapping param names to their loaded JSON specs
  * @param call - function that invokes the routine with an args object
  * @param runtimeBaselines - values that cannot be defaulted statically (e.g. `device`)
+ * @public
  */
 export async function runValidation(t, specs, call, runtimeBaselines = {}) {
   const baselines = {};
