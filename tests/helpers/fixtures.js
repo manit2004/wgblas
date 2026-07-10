@@ -57,27 +57,37 @@ export function floatArb(min, max) {
   return fc.float({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
 }
 
-// Picks integers or floats depending on spec.type (e.g. n and incx are integers, alpha is float).
-function scalarArb(spec) {
+/**
+ * Arbitrary for a single scalar param — integers for `n`/`incx`/`incy`, floats for `alpha`/`c`/`s`.
+ * @param spec loaded JSON param spec; `spec.type` selects integer vs float, `spec.range` gives bounds
+ */
+export function scalarArb(spec) {
   const { min, max } = spec.range;
   if (spec.type === "integer") return fc.integer({ min, max });
   return floatArb(min, max);
 }
 
-// Generates a Float32Array of exactly `len` elements, each drawn from floatArb.
-// len is always (n-1)*inc+1, computed by buildArb from the already-generated scalars.
-function vectorArb(spec, len) {
+/**
+ * Arbitrary for a Float32Array of exactly `len` elements drawn from `floatArb`.
+ * @param spec loaded JSON param spec; `spec.range.elementMin/elementMax` give element bounds
+ * @param len exact array length — always `(n-1)*inc+1`, computed by `buildArb` after generating `n` and `inc`
+ */
+export function vectorArb(spec, len) {
   const { elementMin: min, elementMax: max } = spec.range;
   return fc
     .array(floatArb(min, max), { minLength: len, maxLength: len })
     .map((a) => new Float32Array(a));
 }
 
-// Builds a fast-check arbitrary that produces a complete args object.
-// Scalar params (n, incx, incy, alpha, c, s) are generated first; vectors
-// x and y are then sized from (n-1)*inc+1 so lengths are always consistent.
-// extras: { name: fc.Arbitrary } for routine-specific args not in the param JSONs.
-function buildArb(specs, extras = {}) {
+/**
+ * Builds a fast-check arbitrary that produces a complete args object for one test run.
+ * Scalar params (`n`, `incx`, `incy`, `alpha`, `c`, `s`) are generated first; vectors
+ * `x` and `y` are then sized to `(n-1)*inc+1` so their lengths are always consistent
+ * with the generated `n` and stride.
+ * @param specs record of param specs keyed by param name, from `loadParam`
+ * @param extras optional additional arbitraries for routine-specific params (e.g. srotm's `param`)
+ */
+export function buildArb(specs, extras = {}) {
   const scalarOrder = ["n", "incx", "incy", "alpha", "c", "s"];
   const present = scalarOrder.filter((k) => specs[k]);
 
