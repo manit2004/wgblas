@@ -13,6 +13,7 @@
     "tests/routines/index.mjs",
     "tests/routines/helpers.mjs",
     "examples/index.mjs",
+    "benchmarks/index.mjs",
     "examples/assets/index.mjs",
     "examples/scripts/index.mjs"
   ],
