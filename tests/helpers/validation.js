@@ -79,6 +79,7 @@ const PARAM_DEFAULT = new Float32Array([0, 1, 0, 0, 1]);
  * @param n baseline value of `n`
  * @param inc baseline stride (`incx` or `incy`)
  * @returns Float32Array sized and filled according to the scenario
+ * @internal
  */
 export function resolveVector(scenario, n, inc) {
   if (scenario === "minimal")
@@ -93,6 +94,7 @@ export function resolveVector(scenario, n, inc) {
  * @param scenario one of `"tooShort"` (4 elements), `"tooLong"` (6 elements),
  *   `"identity"` (flag=−2), `"fullMatrix"` (flag=−1), `"diagOne"` (flag=0), `"offDiagOne"` (flag=1)
  * @returns Float32Array of length 5 with the appropriate flag and coefficients
+ * @internal
  */
 export function resolveParam(scenario) {
   if (scenario === "tooShort")  return new Float32Array(4).fill(0);
@@ -112,6 +114,7 @@ export function resolveParam(scenario) {
  * @param paramName name of the parameter being tested (used to select vector vs param resolution)
  * @param baselines current baseline args (needed to size vectors from `n` and stride)
  * @returns the concrete JS value to substitute for the param under test
+ * @internal
  */
 export function resolveEntry(entry, paramName, baselines) {
   if ("scenario" in entry) {

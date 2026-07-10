@@ -63,6 +63,7 @@ export function floatArb(min, max) {
  * Arbitrary for a single scalar param — integers for `n`/`incx`/`incy`, floats for `alpha`/`c`/`s`.
  * @param spec loaded JSON param spec; `spec.type` selects integer vs float, `spec.range` gives bounds
  * @returns fast-check arbitrary that generates a single scalar matching the param spec
+ * @internal
  */
 export function scalarArb(spec) {
   const { min, max } = spec.range;
@@ -75,6 +76,7 @@ export function scalarArb(spec) {
  * @param spec loaded JSON param spec; `spec.range.elementMin/elementMax` give element bounds
  * @param len exact array length — always `(n-1)*inc+1`, computed by `buildArb` after generating `n` and `inc`
  * @returns fast-check arbitrary that generates a Float32Array of exactly `len` elements
+ * @internal
  */
 export function vectorArb(spec, len) {
   const { elementMin: min, elementMax: max } = spec.range;
@@ -91,6 +93,7 @@ export function vectorArb(spec, len) {
  * @param specs record of param specs keyed by param name, from `loadParam`
  * @param extras optional additional arbitraries for routine-specific params (e.g. srotm's `param`)
  * @returns fast-check arbitrary that generates a complete args object ready to pass to `callGpu` and `callRef`
+ * @internal
  */
 export function buildArb(specs, extras = {}) {
   const scalarOrder = ["n", "incx", "incy", "alpha", "c", "s"];
