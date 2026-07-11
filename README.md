@@ -51,24 +51,21 @@ Restart Firefox after making changes.
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 22+
 
-## Example usage
-
-This package is not yet published to npm. Clone the repo and install it locally in your project:
+## Installation
 
 ```sh
-git clone https://github.com/manit2004/wgblas.git
-cd your-project
-npm install /path/to/wgblas
+npm install wgblas
 ```
+
+## Example usage
 
 ### Example Code Snippet
 
 ```js
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { sscal } from "wgblas/sscal";
-import { randomFloat32Array } from "wgblas/util/random";
 
 const device = await init();
 
@@ -92,7 +89,7 @@ No bundler needed. Load the pre-built browser bundle from the CDN and use `windo
   <head>
     <meta charset="UTF-8" />
     <title>sscal — wgblas browser example</title>
-    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
   </head>
   <body>
     <pre id="out">Running…</pre>
@@ -126,11 +123,10 @@ No bundler needed. Load the pre-built browser bundle from the CDN and use `windo
 `GpuVector` keeps data resident on the GPU between operations — upload once, chain any number of operations, read back once. This eliminates the redundant uploads and readbacks between steps, which are often more expensive than the compute itself.
 
 ```js
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { saxpy } from "wgblas/saxpy";
 import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/util/random";
 
 const device = await init();
 
