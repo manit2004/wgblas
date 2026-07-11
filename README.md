@@ -123,11 +123,10 @@ No bundler needed. Load the pre-built browser bundle from the CDN and use `windo
 `GpuVector` keeps data resident on the GPU between operations — upload once, chain any number of operations, read back once. This eliminates the redundant uploads and readbacks between steps, which are often more expensive than the compute itself.
 
 ```js
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { saxpy } from "wgblas/saxpy";
 import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/util/random";
 
 const device = await init();
 
