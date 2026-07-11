@@ -1,7 +1,7 @@
 .PHONY: example example-gpuvec example-web
 
 example:
-	@for d in examples/*/; do node $${d}$$(basename $$d).js; done
+	@for d in examples/*/; do r=$$(basename $$d); [ -f "$${d}$${r}.js" ] && node "$${d}$${r}.js" || true; done
 
 example-%:
 	node examples/$*/$*.js

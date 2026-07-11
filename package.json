@@ -1,6 +1,6 @@
 {
   "name": "wgblas",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "BLAS on WebGPU",
   "type": "module",
   "main": "index.mjs",
@@ -10,6 +10,7 @@
       "import": "./index.mjs",
       "types": "./index.d.mts"
     },
+    "./browser": "./dist/wgblas.browser.js",
     "./classes/GpuVector": {
       "import": "./src/classes/GpuVector.mjs",
       "types": "./src/classes/GpuVector.d.mts"
@@ -59,6 +60,14 @@
       "types": "./src/srotm/srotm.d.mts"
     }
   },
+  "files": [
+    "index.mjs",
+    "index.d.mts",
+    "src/**/*.mjs",
+    "src/**/*.d.mts",
+    "src/**/*.wgsl",
+    "dist/wgblas.browser.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/manit2004/wgblas.git"
@@ -107,7 +116,8 @@
   "scripts": {
     "prepare": "husky",
     "build:browser": "node scripts/build-browser.mjs",
-    "docs": "npx typedoc && npm run build:browser"
+    "docs": "npx typedoc && npm run build:browser",
+    "prepublishOnly": "npm run build:browser"
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [
