@@ -1,6 +1,6 @@
 {
   "name": "wgblas",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "BLAS on WebGPU",
   "type": "module",
   "main": "index.mjs",
