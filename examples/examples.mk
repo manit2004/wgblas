@@ -15,12 +15,12 @@ example-web:
 	sleep 1 && \
 	for d in examples/*/; do \
 		r=$$(basename $$d); \
-		xdg-open "http://localhost:5173/examples/$$r/web/$$r.html"; \
+		[ -f "examples/$$r/web/$$r.html" ] && xdg-open "http://localhost:5173/examples/$$r/web/$$r.html" || true; \
 	done; \
 	wait $$VPID
 
 example-gpuvec:
-	@for d in examples/*/; do node $${d}gpuvec.$$(basename $$d).js; done
+	@for d in examples/*/; do r=$$(basename $$d); [ -f "$${d}gpuvec.$${r}.js" ] && node "$${d}gpuvec.$${r}.js" || true; done
 
 example-gpuvec-%:
 	node examples/$*/gpuvec.$*.js
