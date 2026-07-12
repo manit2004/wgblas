@@ -10,6 +10,8 @@ import snrm2 from "./snrm2.wgsl";
 import srot from "./srot.wgsl";
 import srotm from "./srotm.wgsl";
 import isamax from "./isamax.wgsl";
+import sgemv_n from "./sgemv_n.wgsl";
+import sgemv_t from "./sgemv_t.wgsl";
 
 export const shaderSources = {
   "reduction/argmax": argmax,
@@ -24,4 +26,6 @@ export const shaderSources = {
   srot,
   srotm,
   isamax,
+  sgemv_n,
+  sgemv_t,
 };
