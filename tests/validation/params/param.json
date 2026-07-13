@@ -1,6 +1,7 @@
 {
   "_note": "param is the 5-element modified Givens descriptor [flag, h11, h21, h12, h22]",
   "type": "srotm_param",
+  "baseline": [0, 1, 0, 0, 1],
   "range": {
     "flags": [-1, 0, 1],
     "coeff": { "min": -2.0, "max": 2.0 }

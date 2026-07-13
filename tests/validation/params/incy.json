@@ -1,6 +1,7 @@
 {
   "_note": "incy is the stride for y.",
   "type": "integer",
+  "baseline": 1,
   "range": { "min": 1, "max": 4 },
   "invalid": [
     { "value": 0,            "error": "must be positive", "label": "zero" },

@@ -17,12 +17,12 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
-  const isNoTrans = trans === "N" || trans === "n";
+  const isNoTrans = trans === "no-transpose";
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
-  if (!isNoTrans && trans !== "T" && trans !== "t")
-    throw new Error("trans must be 'N' or 'T'.");
+  if (!isNoTrans && trans !== "transpose")
+    throw new Error("trans must be 'no-transpose' or 'transpose'.");
   if (
     !Number.isInteger(m) ||
     !Number.isInteger(n) ||

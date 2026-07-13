@@ -1,0 +1,17 @@
+{
+  "_note": "A is the input matrix — a Float32Array in row-major order with at least (m-1)*lda+n elements.",
+  "type": "float32array",
+  "dependsOn": ["m", "n", "lda"],
+  "range": { "elementMin": -10.0, "elementMax": 10.0 },
+  "invalid": [
+    { "special": "null",      "error": "A must be a Float32Array or GpuMatrix", "label": "null" },
+    { "special": "undefined", "error": "A must be a Float32Array or GpuMatrix", "label": "undefined" },
+    { "special": "array",     "error": "A must be a Float32Array or GpuMatrix", "label": "plain Array []" },
+    { "special": "object",    "error": "A must be a Float32Array or GpuMatrix", "label": "plain object {}" },
+    { "special": "number",    "error": "A must be a Float32Array or GpuMatrix", "label": "number" },
+    { "scenario": "tooShort", "error": "A does not have enough elements", "label": "(m-1)*lda+n-1 elements — one short" }
+  ],
+  "edge": [
+    { "scenario": "minimal", "label": "exactly (m-1)*lda+n elements — minimum valid" }
+  ]
+}

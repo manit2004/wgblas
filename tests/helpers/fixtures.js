@@ -36,6 +36,7 @@
 
 import fc from "fast-check";
 import { ulpDiff, maxUlp } from "./ulp.js";
+import { ndArrayLen } from "./validation.js";
 
 export { ulpDiff, maxUlp };
 
@@ -63,7 +64,7 @@ export function floatArb(min, max) {
  * Arbitrary for a single scalar param — integers for `n`/`incx`/`incy`, floats for `alpha`/`c`/`s`.
  * @param spec loaded JSON param spec; `spec.type` selects integer vs float, `spec.range` gives bounds
  * @returns fast-check arbitrary that generates a single scalar matching the param spec
- * @internal
+ * @public
  */
 export function scalarArb(spec) {
   const { min, max } = spec.range;
@@ -71,14 +72,24 @@ export function scalarArb(spec) {
   return floatArb(min, max);
 }
 
+// Generates a single param value for any scalar type: integer, float, or string enum.
+// Returns null for non-scalar types (float32array, device, etc.) so callers can skip them.
+function paramArb(spec) {
+  if (spec.type === "integer") return fc.integer(spec.range);
+  if (spec.type === "float")   return floatArb(spec.range.min, spec.range.max);
+  if (spec.type === "string")  return fc.constantFrom(...spec.values);
+  return null;
+}
+
 /**
- * Arbitrary for a Float32Array of exactly `len` elements drawn from `floatArb`.
+ * Arbitrary for a Float32Array of exactly `len` elements — works for both vectors and matrices.
+ * Callers compute `len` from dimensions: `(n-1)*inc+1` for vectors, `(m-1)*lda+n` for matrices.
  * @param spec loaded JSON param spec; `spec.range.elementMin/elementMax` give element bounds
- * @param len exact array length — always `(n-1)*inc+1`, computed by `buildArb` after generating `n` and `inc`
+ * @param len exact number of elements to generate
  * @returns fast-check arbitrary that generates a Float32Array of exactly `len` elements
- * @internal
+ * @public
  */
-export function vectorArb(spec, len) {
+export function ndArrayArb(spec, len) {
   const { elementMin: min, elementMax: max } = spec.range;
   return fc
     .array(floatArb(min, max), { minLength: len, maxLength: len })
@@ -87,36 +98,42 @@ export function vectorArb(spec, len) {
 
 /**
  * Builds a fast-check arbitrary that produces a complete args object for one test run.
- * Scalar params (`n`, `incx`, `incy`, `alpha`, `c`, `s`) are generated first; vectors
- * `x` and `y` are then sized to `(n-1)*inc+1` so their lengths are always consistent
- * with the generated `n` and stride.
+ *
+ * Scalar params are generated first from their spec types (integer, float, string).
+ * For L2 routines (`specs` includes `A`), `lda` is chained after `n` to enforce `lda >= n`.
+ * All `float32array` params are then sized via `ndArrayLen` which reads each spec's
+ * `dependsOn` — the same formula used in validation's `resolveNdArray`.
+ *
  * @param specs record of param specs keyed by param name, from `loadParam`
  * @param extras optional additional arbitraries for routine-specific params (e.g. srotm's `param`)
- * @returns fast-check arbitrary that generates a complete args object ready to pass to `callGpu` and `callRef`
- * @internal
+ * @returns fast-check arbitrary that generates a complete args object
+ * @public
  */
 export function buildArb(specs, extras = {}) {
-  const scalarOrder = ["n", "incx", "incy", "alpha", "c", "s"];
-  const present = scalarOrder.filter((k) => specs[k]);
+  const isL2 = "A" in specs;
 
+  // Generate all scalar params; for L2, skip lda here — it's chained off n below.
+  const scalarEntries = Object.entries(specs)
+    .filter(([k, s]) => paramArb(s) !== null && !(isL2 && k === "lda"));
   const scalarRec = fc.record(
-    Object.fromEntries(present.map((k) => [k, scalarArb(specs[k])]))
+    Object.fromEntries(scalarEntries.map(([k, s]) => [k, paramArb(s)]))
   );
 
-  return scalarRec.chain((s) => {
-    const fields = Object.fromEntries(present.map((k) => [k, fc.constant(s[k])]));
+  // For L2, chain lda in [n, n + ldaPad] so lda >= n is always satisfied.
+  const dimsArb = isL2 && specs.lda
+    ? scalarRec.chain((s) => {
+        const ldaPad = specs.lda.range.max - specs.lda.range.min;
+        return fc.integer({ min: s.n, max: s.n + ldaPad }).map((lda) => ({ ...s, lda }));
+      })
+    : scalarRec;
 
-    if (specs.x) {
-      const len = (s.n - 1) * (s.incx ?? 1) + 1;
-      fields.x = vectorArb(specs.x, len);
+  // Chain array generation — each array sized via ndArrayLen reading spec.dependsOn.
+  return dimsArb.chain((dims) => {
+    const fields = Object.fromEntries(Object.keys(dims).map((k) => [k, fc.constant(dims[k])]));
+    for (const [name, spec] of Object.entries(specs)) {
+      if (spec.type === "float32array") fields[name] = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
     }
-    if (specs.y) {
-      const len = (s.n - 1) * (s.incy ?? s.incx ?? 1) + 1;
-      fields.y = vectorArb(specs.y, len);
-    }
-
     for (const [k, arb] of Object.entries(extras)) fields[k] = arb;
-
     return fc.record(fields);
   });
 }
@@ -145,16 +162,19 @@ export async function runFixtures(
   device,
   numRuns,
   threshold,
-  specs,
+  specsOrArb,   // either a specs object (L1: uses buildArb) or a pre-built fc arbitrary (L2)
   callGpu,
   callRef,
   computeUlp,
   extras = {}
 ) {
+  const arb = typeof specsOrArb?.generate === "function"
+    ? specsOrArb
+    : buildArb(specsOrArb, extras);
   let maxObserved = 0;
 
   await fc.assert(
-    fc.asyncProperty(buildArb(specs, extras), async (args) => {
+    fc.asyncProperty(arb, async (args) => {
       const gpuResult = await callGpu(device, args);
       const refResult = callRef(args);
       const diff = computeUlp(gpuResult, refResult, args);

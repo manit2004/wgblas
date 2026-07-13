@@ -1,6 +1,7 @@
 {
   "_note": "alpha is the scalar multiplier.",
   "type": "float",
+  "baseline": 1.0,
   "range": { "min": -10.0, "max": 10.0 },
   "invalid": [
     { "special": "NaN",        "error": "alpha must not be NaN",    "label": "NaN" },

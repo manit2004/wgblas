@@ -4,8 +4,8 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 /**
  * Performs the matrix-vector operation y = alpha * op(A) * x + beta * y
  *
- * - `trans='N'`: op(A) = A,   x is length n, y is length m
- * - `trans='T'`: op(A) = A^T, x is length m, y is length n
+ * - `trans='no-transpose'`: op(A) = A,   x is length n, y is length m
+ * - `trans='transpose'`:    op(A) = A^T, x is length m, y is length n
  *
  * A is an m×n matrix stored in row-major order. `lda` is the leading dimension
  * (number of floats between the start of consecutive rows — must be >= n).
@@ -16,7 +16,7 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * {@includeCode ../../examples/sgemv/web/sgemv.html}
  *
  * @param device - GPUDevice from `init()`
- * @param trans  - `'N'` for A, `'T'` for A^T
+ * @param trans  - `'no-transpose'` for A, `'transpose'` for A^T
  * @param m      - number of rows in A
  * @param n      - number of columns in A
  * @param alpha  - scalar multiplier for op(A)*x
@@ -32,7 +32,7 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  */
 export declare function sgemv(
   device: GPUDevice,
-  trans: 'N' | 'n' | 'T' | 't',
+  trans: 'no-transpose' | 'transpose',
   m: number,
   n: number,
   alpha: number,
@@ -53,7 +53,7 @@ export declare function sgemv(
  * {@includeCode ../../examples/sgemv/gpuvec.sgemv.js}
  *
  * @param device - GPUDevice from `init()`
- * @param trans  - `'N'` for A, `'T'` for A^T
+ * @param trans  - `'no-transpose'` for A, `'transpose'` for A^T
  * @param m      - number of rows in A
  * @param n      - number of columns in A
  * @param alpha  - scalar multiplier for op(A)*x
@@ -69,7 +69,7 @@ export declare function sgemv(
  */
 export declare function sgemv(
   device: GPUDevice,
-  trans: 'N' | 'n' | 'T' | 't',
+  trans: 'no-transpose' | 'transpose',
   m: number,
   n: number,
   alpha: number,

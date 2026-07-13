@@ -1,6 +1,7 @@
 {
   "_note": "c is the cosine of the rotation angle.",
   "type": "float",
+  "baseline": 1.0,
   "range": { "min": -1.0, "max": 1.0 },
   "invalid": [
     { "special": "NaN",       "error": "c and s must not be NaN", "label": "NaN" },
