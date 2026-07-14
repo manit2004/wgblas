@@ -1,10 +1,17 @@
 // Forward error factor for sgemv.
 //
 // Each output element y[i] = alpha * dot(A[i,:], x) + beta * y_in[i].
-// The dot product of n (or m) terms accumulates n rounding errors, so the
-// combined bound per element is:
 //
-//   nTerms * eps * |alpha| * Σ_j |A[i,j]| * |x[j]|  +  eps * |beta| * |y_in[i]|
+// The GPU accumulates the dot product using FMA (one rounding per term), while
+// the CPU reference may compute alpha*A[j]*x[j] left-to-right — scaling A before
+// multiplying x. These two orderings add an extra eps*|alpha|*|A[j]*x[j]| of
+// discrepancy per term beyond what the naive nTerms*eps bound covers.
+// The final alpha*acc+beta*y step may also use FMA on the GPU, contributing
+// one more eps*(|alpha|*dotBound + |beta|*|y_in|) of discrepancy.
+//
+// The bound that correctly accounts for all these sources is:
+//
+//   (nTerms + 1) * eps * |alpha| * Σ_j |A[i,j]| * |x[j]|  +  eps * |beta| * |y_in[i]|
 const eps = 2 ** -23;
 
 export function forwardFactor(gpu, ref, a) {
@@ -26,7 +33,7 @@ export function forwardFactor(gpu, ref, a) {
         dotBound += Math.abs(A[j * lda + i]) * Math.abs(x[j * incx]);
     }
 
-    const bound = eps * (nTerms * Math.abs(alpha) * dotBound + Math.abs(beta) * Math.abs(y[i * incy]));
+    const bound = eps * ((nTerms + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * Math.abs(y[i * incy]));
     if (bound > 0) maxFactor = Math.max(maxFactor, err / bound);
   }
   return maxFactor;

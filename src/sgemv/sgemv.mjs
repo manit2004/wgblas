@@ -100,13 +100,12 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     paramsBuffer,
   ]);
 
-  // NoTrans dispatches on m (one thread per output row)
-  // Trans   dispatches on n (one thread per output column)
-  const { commandEncoder, ts } = runComputePass(
-    pipeline,
-    bindGroup,
-    calcWorkgroups(yLen),
-  );
+  // NoTrans: one workgroup per row (64 threads reduce the dot product) → dispatch m
+  // Trans:   one thread per output column → dispatch ceil(n/64)
+  const wgCount = isNoTrans
+    ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
+    : calcWorkgroups(yLen);
+  const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
   const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
   submit(commandEncoder);
