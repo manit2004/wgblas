@@ -9,9 +9,9 @@ const WORKGROUP_SIZE_2D = 8;
  * Calculates the number of workgroups to dispatch, clamped to the device's
  * `maxComputeWorkgroupsPerDimension` limit (default 65535 across most devices).
  *
- * - 1D (pass only `dim1`): returns a single count for `dispatchWorkgroups(n)`.
- * - 2D (pass both `dim1` and `dim2`): returns `{ x, y }` for `dispatchWorkgroups(x, y)`.
- *   `dim1` maps to rows (y) and `dim2` maps to columns (x).
+ * - 1D (pass only `rows`): returns a single count for `dispatchWorkgroups(n)`.
+ * - 2D (pass both `rows` and `cols`): returns `{ x, y }` for `dispatchWorkgroups(x, y)`.
+ *   `rows` maps to the y dimension and `cols` maps to the x dimension.
  *
  * @param {number} rows - row count (1D: element count)
  * @param {number} [cols] - column count; omit for a 1D dispatch
