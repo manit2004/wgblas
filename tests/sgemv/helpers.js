@@ -34,7 +34,8 @@ export function forwardFactor(gpu, ref, a) {
     }
 
     const bound = eps * ((nTerms + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * Math.abs(y[i * incy]));
-    if (bound > 0) maxFactor = Math.max(maxFactor, err / bound);
+    if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
+    else maxFactor = Math.max(maxFactor, err / bound);
   }
   return maxFactor;
 }

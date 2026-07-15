@@ -49,12 +49,14 @@ for (const size of SIZES) {
     const { gpuTimeMs } = await sgemv(
       device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1,
     );
-    times.push(gpuTimeMs);
+    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
 
   AGpu.destroy();
   xGpu.destroy();
   yGpu.destroy();
+
+  if (times.length === 0) continue;
 
   const med = median(times);
   // 2*m*n multiply-adds for the dot products, plus 2*m for the alpha/beta step

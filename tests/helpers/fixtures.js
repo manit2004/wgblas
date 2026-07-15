@@ -168,7 +168,8 @@ export async function runFixtures(
   computeUlp,
   extras = {}
 ) {
-  const arb = typeof specsOrArb?.generate === "function"
+  // fc arbitraries have both generate and filter; plain spec objects have neither.
+  const arb = typeof specsOrArb?.generate === "function" && typeof specsOrArb?.filter === "function"
     ? specsOrArb
     : buildArb(specsOrArb, extras);
   let maxObserved = 0;

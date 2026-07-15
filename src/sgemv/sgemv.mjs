@@ -54,6 +54,8 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     );
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
+  if (AIsGpu && (A.rows < m || A.cols < n))
+    throw new Error("A is too small for the given m and n.");
   if (m <= 0 || n <= 0) return yIsGpu ? {} : { y };
 
   // NoTrans: x has n elements, y has m elements
@@ -93,35 +95,42 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     "sgemv-params",
   );
 
-  const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
-    ABuffer,
-    xBuffer,
-    yBuffer,
-    paramsBuffer,
-  ]);
+  let readBuffer = null;
+  try {
+    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+      ABuffer,
+      xBuffer,
+      yBuffer,
+      paramsBuffer,
+    ]);
 
-  // NoTrans: one workgroup per row (64 threads reduce the dot product) → dispatch m
-  // Trans:   one thread per output column → dispatch ceil(n/64)
-  const wgCount = isNoTrans
-    ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
-    : calcWorkgroups(yLen);
-  const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-  const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    // NoTrans: one workgroup per row (64 threads reduce the dot product) → dispatch m
+    // Trans:   one thread per output column → dispatch ceil(n/64)
+    if (isNoTrans && m > device.limits.maxComputeWorkgroupsPerDimension)
+      throw new Error(
+        `m (${m}) exceeds device limit maxComputeWorkgroupsPerDimension (${device.limits.maxComputeWorkgroupsPerDimension}).`,
+      );
+    const wgCount = isNoTrans ? m : calcWorkgroups(yLen);
+    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
+    readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
-  submit(commandEncoder);
+    submit(commandEncoder);
 
-  const gpuTimeMs = await extractTimestamp(ts);
+    const gpuTimeMs = await extractTimestamp(ts);
 
-  if (yIsGpu && xIsGpu) {
+    if (yIsGpu) {
+      if (gpuTimeMs !== undefined) return { gpuTimeMs };
+      return {};
+    }
+
+    const result = await extractResult(readBuffer, Float32Array);
+    if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
+    return { y: result };
+  } finally {
+    if (!AIsGpu) destroyBuffers(ABuffer);
+    if (!xIsGpu) destroyBuffers(xBuffer);
+    if (!yIsGpu) destroyBuffers(yBuffer);
     destroyBuffers(paramsBuffer);
-    if (gpuTimeMs !== undefined) return { gpuTimeMs };
-    return {};
+    if (readBuffer) destroyBuffers(readBuffer);
   }
-
-  const result = await extractResult(readBuffer, Float32Array);
-  if (!AIsGpu) destroyBuffers(ABuffer);
-  destroyBuffers(xBuffer, yBuffer, paramsBuffer, readBuffer);
-
-  if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
-  return { y: result };
 }

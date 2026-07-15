@@ -1,8 +1,8 @@
 import repl from "node:repl";
 import {
   init, cleanup,
-  GpuVector,
-  sscal, sswap, saxpy, scopy, sdot, sasum, snrm2, isamax, srot, srotm,
+  GpuVector, GpuMatrix,
+  sscal, sswap, saxpy, scopy, sdot, sasum, snrm2, isamax, srot, srotm, sgemv,
 } from "wgblas";
 
 const device = await init();
@@ -11,9 +11,9 @@ console.log("\nwgblas\n");
 const r = repl.start("wgblas> ");
 Object.assign(r.context, {
   device,
-  GpuVector,
+  GpuVector, GpuMatrix,
   Float32Array,
-  sscal, sswap, saxpy, scopy, sdot, sasum, snrm2, isamax, srot, srotm,
+  sscal, sswap, saxpy, scopy, sdot, sasum, snrm2, isamax, srot, srotm, sgemv,
 });
 
 r.defineCommand("help", {
@@ -31,8 +31,10 @@ r.defineCommand("help", {
   isamax(device, n, x, incx)
   srot  (device, n, x, incx, y, incy, c, s)
   srotm (device, n, x, incx, y, incy, param)
+  sgemv (device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy)
 
-  GpuVector.from(Float32Array)  v.read()  v.destroy()
+  GpuVector.from(Float32Array)   v.read()  v.destroy()
+  GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()
 
   .exit  .save <file>  .load <file>  .editor
 `);

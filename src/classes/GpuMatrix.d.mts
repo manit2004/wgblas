@@ -10,6 +10,8 @@
  * @category Classes
  */
 export declare class GpuMatrix {
+  private constructor();
+
   /** @internal */
   readonly _buf: GPUBuffer;
 

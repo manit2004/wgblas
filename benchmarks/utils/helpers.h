@@ -5,6 +5,25 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
+
+#define CUDA_CHECK(call) do { \
+    cudaError_t _e = (call); \
+    if (_e != cudaSuccess) { \
+        fprintf(stderr, "CUDA error at %s:%d — %s\n", \
+                __FILE__, __LINE__, cudaGetErrorString(_e)); \
+        exit(1); \
+    } \
+} while (0)
+
+#define CUBLAS_CHECK(call) do { \
+    cublasStatus_t _s = (call); \
+    if (_s != CUBLAS_STATUS_SUCCESS) { \
+        fprintf(stderr, "cuBLAS error at %s:%d — status %d\n", \
+                __FILE__, __LINE__, (int)_s); \
+        exit(1); \
+    } \
+} while (0)
 
 /**
  * Fills `dst` with the current device's name normalised to a filesystem-safe

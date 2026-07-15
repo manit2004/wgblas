@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
-#include <cublas_v2.h>
 #include "../../utils/helpers.h"
 
 #define WARMUP_ITERS 5
@@ -12,7 +10,7 @@ int main(void) {
     get_gpu_model(gpu_model, sizeof(gpu_model));
 
     cublasHandle_t handle;
-    cublasCreate(&handle);
+    CUBLAS_CHECK(cublasCreate(&handle));
 
     int sizes[] = { 32, 64, 128, 256, 512, 1024, 1280 , 2048, 4096 };
     int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
@@ -39,12 +37,12 @@ int main(void) {
         float *h_y = random_float_array(m, -1.0f, 1.0f);
 
         float *d_A, *d_x, *d_y;
-        cudaMalloc((void **)&d_A, (size_t)m * n * sizeof(float));
-        cudaMalloc((void **)&d_x, n * sizeof(float));
-        cudaMalloc((void **)&d_y, m * sizeof(float));
-        cudaMemcpy(d_A, h_A, (size_t)m * n * sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_y, h_y, m * sizeof(float), cudaMemcpyHostToDevice);
+        CUDA_CHECK(cudaMalloc((void **)&d_A, (size_t)m * n * sizeof(float)));
+        CUDA_CHECK(cudaMalloc((void **)&d_x, n * sizeof(float)));
+        CUDA_CHECK(cudaMalloc((void **)&d_y, m * sizeof(float)));
+        CUDA_CHECK(cudaMemcpy(d_A, h_A, (size_t)m * n * sizeof(float), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(d_y, h_y, m * sizeof(float), cudaMemcpyHostToDevice));
 
         cudaEvent_t start, stop;
         cudaEventCreate(&start);
@@ -101,6 +99,7 @@ int main(void) {
     mkdir(gpu_dir, 0755);
     mkdir(out_dir, 0755);
     FILE *fp = fopen(file_path, "w");
+    if (!fp) { perror(file_path); return 1; }
     fprintf(fp, "[\n");
     for (int i = 0; i < num_sizes; i++) {
         fprintf(fp,

@@ -43,7 +43,42 @@ export declare function sgemv(
   beta: number,
   y: Float32Array,
   incy: number,
-): Promise<{ y: Float32Array } | { y: Float32Array; gpuTimeMs: number }>;
+): Promise<{ y: Float32Array; gpuTimeMs?: number }>;
+
+/**
+ * Performs the matrix-vector operation y = alpha * op(A) * x + beta * y
+ *
+ * A is kept GPU-resident; x and y are CPU Float32Arrays.
+ *
+ * @param device - GPUDevice from `init()`
+ * @param trans  - `'no-transpose'` for A, `'transpose'` for A^T
+ * @param m      - number of rows in A
+ * @param n      - number of columns in A
+ * @param alpha  - scalar multiplier for op(A)*x
+ * @param A      - GpuMatrix, row-major, GPU-resident
+ * @param lda    - leading dimension of A (must equal A.lda)
+ * @param x      - Float32Array input vector
+ * @param incx   - stride for x (must be a positive integer)
+ * @param beta   - scalar multiplier for y
+ * @param y      - Float32Array input/output vector
+ * @param incy   - stride for y (must be a positive integer)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sgemv/sgemv.mjs#L16">Source code: sgemv.mjs (L16)</a>
+ * @category BLAS Level 2
+ */
+export declare function sgemv(
+  device: GPUDevice,
+  trans: 'no-transpose' | 'transpose',
+  m: number,
+  n: number,
+  alpha: number,
+  A: GpuMatrix,
+  lda: number,
+  x: Float32Array,
+  incx: number,
+  beta: number,
+  y: Float32Array,
+  incy: number,
+): Promise<{ y: Float32Array; gpuTimeMs?: number }>;
 
 /**
  * Performs the matrix-vector operation y = alpha * op(A) * x + beta * y
@@ -80,4 +115,4 @@ export declare function sgemv(
   beta: number,
   y: GpuVector,
   incy: number,
-): Promise<{} | { gpuTimeMs: number }>;
+): Promise<{ gpuTimeMs?: number }>;
