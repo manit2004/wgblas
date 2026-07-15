@@ -14,6 +14,7 @@
 - [isamax](https://manit2004.github.io/wgblas/functions/docs.isamax.html)
 - [srot](https://manit2004.github.io/wgblas/functions/docs.srot.html)
 - [srotm](https://manit2004.github.io/wgblas/functions/docs.srotm.html)
+- [sgemv](https://manit2004.github.io/wgblas/functions/docs.sgemv.html)
 
 ## Browser Support
 
