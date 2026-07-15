@@ -103,13 +103,12 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
       paramsBuffer,
     ]);
 
-    // NoTrans: one workgroup per row (64 threads reduce the dot product) → dispatch m
+    // NoTrans: one workgroup per row; clamped to device limit — the shader's
+    // grid-stride loop handles remaining rows when m > dispatch count.
     // Trans:   one thread per output column → dispatch ceil(n/64)
-    if (isNoTrans && m > device.limits.maxComputeWorkgroupsPerDimension)
-      throw new Error(
-        `m (${m}) exceeds device limit maxComputeWorkgroupsPerDimension (${device.limits.maxComputeWorkgroupsPerDimension}).`,
-      );
-    const wgCount = isNoTrans ? m : calcWorkgroups(yLen);
+    const wgCount = isNoTrans
+      ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
+      : calcWorkgroups(yLen);
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
     const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
