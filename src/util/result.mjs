@@ -12,9 +12,12 @@
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer/unmap GPUBuffer.unmap()}
  */
 export async function extractResult(readBuffer, readbackType = Float32Array) {
-  await readBuffer.mapAsync(GPUMapMode.READ);
-  const result = new readbackType(readBuffer.getMappedRange().slice());
-  readBuffer.unmap();
-  readBuffer.destroy();
-  return result;
+  try {
+    await readBuffer.mapAsync(GPUMapMode.READ);
+    const result = new readbackType(readBuffer.getMappedRange().slice());
+    readBuffer.unmap();
+    return result;
+  } finally {
+    readBuffer.destroy();
+  }
 }
