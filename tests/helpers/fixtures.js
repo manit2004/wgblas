@@ -148,7 +148,7 @@ export function buildArb(specs, extras = {}) {
  * @param device - WebGPU device instance
  * @param numRuns - number of random inputs to generate (typically 100)
  * @param threshold - maximum allowed value from `computeUlp`
- * @param specs - param specs from `loadParam`, used to build the input arbitrary
+ * @param specsOrArb - param specs from `loadParam`, or a pre-built fc arbitrary
  * @param callGpu - async function that calls the GPU routine
  * @param callRef - function that calls the CPU reference
  * @param computeUlp - error metric: `(gpuResult, refResult, args) => number`
