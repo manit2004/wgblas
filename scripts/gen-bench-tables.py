@@ -119,6 +119,8 @@ def _build_chart_svg(wgblas_rows, cuda_series, all_ns, xp,
     all_y = [r[y_key] for r in wgblas_rows] + [r[y_key] for r in cuda_series]
     step = _tick_step(max(all_y))
     y_max = math.ceil(max(all_y) / step) * step
+    if y_max == 0:
+        y_max = step
     yticks = [step * i for i in range(int(round(y_max / step)) + 1)]
 
     def yp(v):
@@ -249,6 +251,8 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
 
     lx_min = math.log10(all_ns[0])
     lx_max = math.log10(all_ns[-1])
+    if lx_max == lx_min:
+        lx_max = lx_min + 1
     W, ML, MR = 600, 58, 16
     PW = W - ML - MR
 
