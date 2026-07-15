@@ -1,6 +1,7 @@
 {
   "_note": "y is the input/output vector.",
   "type": "float32array",
+  "dependsOn": ["trans", "m", "n", "incy"],
   "range": { "elementMin": -10.0, "elementMax": 10.0 },
   "invalid": [
     { "special": "null",      "error": "y must be a Float32Array or GpuVector", "label": "null" },
@@ -8,9 +9,9 @@
     { "special": "array",     "error": "y must be a Float32Array or GpuVector", "label": "plain Array []" },
     { "special": "object",    "error": "y must be a Float32Array or GpuVector", "label": "plain object {}" },
     { "special": "number",    "error": "y must be a Float32Array or GpuVector", "label": "number" },
-    { "scenario": "tooShort", "error": "y does not have enough elements",       "label": "length (n-1)*incy — one short" }
+    { "scenario": "tooShort", "error": "y does not have enough elements", "label": "one element short for the active vector length" }
   ],
   "edge": [
-    { "scenario": "minimal", "label": "length exactly (n-1)*incy+1 — minimum valid, must not throw" }
+    { "scenario": "minimal", "label": "exactly the minimum valid length — must not throw" }
   ]
 }

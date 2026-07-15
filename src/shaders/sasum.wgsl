@@ -21,11 +21,25 @@ fn main(
   @builtin(workgroup_id)         wgid:   vec3u,
   @builtin(num_workgroups)       num_wg: vec3u,
 ) {
-  var acc: f32 = 0.0;
-  for (var id = gid.x; id < params.n; id += num_wg.x * WGS) {
-    acc += abs(x[id * params.x_inc]);
+  var acc0: f32 = 0.0;
+  var acc1: f32 = 0.0;
+  var acc2: f32 = 0.0;
+  var acc3: f32 = 0.0;
+
+  let stride   = num_wg.x * WGS;
+  let n4_floor = (params.n / (4u * stride)) * (4u * stride);
+
+  for (var id = gid.x; id < n4_floor; id += 4u * stride) {
+    acc0 += abs(x[ id                * params.x_inc]);
+    acc1 += abs(x[(id +      stride) * params.x_inc]);
+    acc2 += abs(x[(id + 2u * stride) * params.x_inc]);
+    acc3 += abs(x[(id + 3u * stride) * params.x_inc]);
   }
-  tile[lid.x] = acc;
+  for (var id = n4_floor + gid.x; id < params.n; id += stride) {
+    acc0 += abs(x[id * params.x_inc]);
+  }
+
+  tile[lid.x] = acc0 + acc1 + acc2 + acc3;
   workgroupBarrier();
 
   for (var s = WGS / 2u; s > 0u; s >>= 1u) {

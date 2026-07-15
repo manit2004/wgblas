@@ -7,6 +7,7 @@
     "paths": {
       "wgblas": ["./index.d.mts"],
       "wgblas/classes/GpuVector": ["./src/classes/GpuVector.d.mts"],
+      "wgblas/classes/GpuMatrix": ["./src/classes/GpuMatrix.d.mts"],
       "wgblas/random": ["./src/random/random.d.mts"],
       "wgblas/sscal": ["./src/sscal/sscal.d.mts"],
       "wgblas/sswap": ["./src/sswap/sswap.d.mts"],
@@ -17,7 +18,8 @@
       "wgblas/snrm2": ["./src/snrm2/snrm2.d.mts"],
       "wgblas/isamax": ["./src/isamax/isamax.d.mts"],
       "wgblas/srot": ["./src/srot/srot.d.mts"],
-      "wgblas/srotm": ["./src/srotm/srotm.d.mts"]
+      "wgblas/srotm": ["./src/srotm/srotm.d.mts"],
+      "wgblas/sgemv": ["./src/sgemv/sgemv.d.mts"]
     }
   }
 }

@@ -79,7 +79,7 @@ export async function sasum(device, n, x, incx) {
 
   // asum is always a scalar readback — both paths return { asum }
   if (xIsGpu) {
-    destroyBuffers(partialsBuffer, resultBuffer, paramsBuffer, readBuffer);
+    destroyBuffers(partialsBuffer, resultBuffer, paramsBuffer);
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { asum: asumArr[0], gpuTimeMs: gpuTime1 + gpuTime2 };
     return { asum: asumArr[0] };

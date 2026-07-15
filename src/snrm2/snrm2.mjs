@@ -81,7 +81,7 @@ export async function snrm2(device, n, x, incx) {
   const nrm2 = Math.sqrt(sqsumArr[0]);
 
   if (xIsGpu) {
-    destroyBuffers(partialsBuffer, resultBuffer, paramsBuffer, readBuffer);
+    destroyBuffers(partialsBuffer, resultBuffer, paramsBuffer);
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { nrm2, gpuTimeMs: gpuTime1 + gpuTime2 };
     return { nrm2 };

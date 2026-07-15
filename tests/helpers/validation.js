@@ -11,11 +11,13 @@
  * ```json
  * {
  *   "type": "integer" | "float" | "float32array",
+ *   "baseline": 1,
+ *   "dependsOn": ["n"],
  *   "range": { "min": 1, "max": 4 },
  *   "invalid": [
- *     { "value": 0,       "error": "must be positive", "label": "zero" },
- *     { "special": "NaN", "error": "must be integers", "label": "NaN" },
- *     { "scenario": "tooShort", "error": "does not have enough elements", "label": "..." }
+ *     { "value": 0,            "error": "must be positive",           "label": "zero" },
+ *     { "special": "NaN",      "error": "must be integers",           "label": "NaN" },
+ *     { "scenario": "tooShort","error": "does not have enough elements","label": "..." }
  *   ],
  *   "edge": [
  *     { "value": 1, "label": "incx=1 contiguous access" }
@@ -28,10 +30,11 @@
  *
  * ## How runValidation Works
  *
- * A baseline args object is built with safe defaults for every param the routine
- * uses (e.g. `n=100`, `incx=1`, `x` sized to `(n-1)*10+1`). Then for each test
- * case, exactly one param is replaced with the invalid or edge value while the
- * rest stay at baseline — isolating the parameter under test.
+ * A baseline args object is built from each spec's `"baseline"` field (scalars
+ * used as-is, arrays wrapped as `Float32Array`). `float32array` params without a
+ * baseline are sized automatically via `resolveNdArray` using `dependsOn`.
+ * Then for each test case, exactly one param is replaced with the invalid or edge
+ * value while the rest stay at baseline — isolating the parameter under test.
  *
  * @module tests/helpers/validation
  */
@@ -47,11 +50,13 @@ const PARAMS_DIR = join(
 );
 
 /**
- * Reads and parses `tests/validation/params/<name>.json`.
- * @returns the parsed param spec object with `type`, `range`, `invalid`, and `edge` fields
+ * Reads and parses one or more param specs from `tests/validation/params/`.
+ * Pass a string to get one spec; pass an array to get a record keyed by name.
  * @public
  */
 export function loadParam(name) {
+  if (Array.isArray(name))
+    return Object.fromEntries(name.map((n) => [n, loadParam(n)]));
   return JSON.parse(readFileSync(join(PARAMS_DIR, `${name}.json`), "utf8"));
 }
 
@@ -67,26 +72,53 @@ const SPECIALS = {
   number: 42,
 };
 
-const SCALAR_DEFAULTS = { n: 100, incx: 1, incy: 1, alpha: 1.0, c: 1.0, s: 0.0 };
-
-// Default valid param for srotm (flag=0, identity-like coefficients)
-const PARAM_DEFAULT = new Float32Array([0, 1, 0, 0, 1]);
 
 /**
- * Builds a Float32Array for a named vector scenario.
- * @param scenario `"minimal"` → exactly `(n-1)*inc+1` elements (minimum valid length);
- *                 `"tooShort"` → one element short, must cause a length error
- * @param n baseline value of `n`
- * @param inc baseline stride (`incx` or `incy`)
- * @returns Float32Array sized and filled according to the scenario
+ * Computes the minimum valid Float32Array length for a param from its `dependsOn` and `dims`.
+ *
+ * - `dependsOn` contains `"lda"` → matrix: `(m-1)*lda+n`
+ * - `dependsOn` contains `"trans"` (and `m` is in dims) → L2 vector: size from `dims.trans`
+ * - otherwise → L1 vector: `(n-1)*inc+1`
+ *
+ * Shared by `resolveNdArray` (validation) and `buildArb` (fixtures) to keep formulas in sync.
+ * @public
+ */
+export function ndArrayLen(dependsOn, dims) {
+  const deps = new Set(dependsOn ?? []);
+  if (deps.has("lda") && deps.has("m") && deps.has("n"))
+    return (dims.m - 1) * dims.lda + dims.n;
+  if (deps.has("trans") && deps.has("m") && deps.has("n") && "m" in dims) {
+    const isNoTrans = (dims.trans ?? "no-transpose") === "no-transpose";
+    const dim = deps.has("incx")
+      ? (isNoTrans ? dims.n : dims.m)
+      : (isNoTrans ? dims.m : dims.n);
+    const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
+    return (dim - 1) * inc + 1;
+  }
+  const n = dims.n ?? 4;
+  const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
+  return (n - 1) * inc + 1;
+}
+
+/**
+ * Builds a Float32Array for a test scenario using `ndArrayLen` for the normal path,
+ * or `xN`/`yN` with pre-patched strides for the oversize baseline-building path.
  * @internal
  */
-export function resolveVector(scenario, n, inc) {
-  if (scenario === "minimal")
-    return new Float32Array((n - 1) * inc + 1).fill(1);
-  if (scenario === "tooShort")
-    return new Float32Array(Math.max(0, (n - 1) * inc)).fill(1);
-  throw new Error(`Unknown vector scenario: "${scenario}"`);
+function resolveNdArray(scenario, dependsOn, baselines, oversize = false) {
+  const deps = new Set(dependsOn ?? []);
+  let minLen;
+  if (oversize && deps.has("trans") && deps.has("m") && deps.has("n") && "m" in baselines) {
+    const dim = deps.has("incx") ? (baselines.xN ?? baselines.n) : (baselines.yN ?? baselines.n);
+    const inc = deps.has("incx") ? (baselines.incx ?? 1) : (baselines.incy ?? 1);
+    minLen = (dim - 1) * inc + 1;
+  } else {
+    minLen = ndArrayLen(dependsOn, baselines);
+  }
+
+  if (scenario === "minimal")  return new Float32Array(minLen).fill(1);
+  if (scenario === "tooShort") return new Float32Array(Math.max(0, minLen - 1)).fill(1);
+  throw new Error(`Unknown array scenario: "${scenario}"`);
 }
 
 /**
@@ -109,19 +141,18 @@ export function resolveParam(scenario) {
 /**
  * Resolves a single JSON spec entry to a concrete JS value.
  * Dispatches on `entry.value` (literal), `entry.special` (named non-serialisable),
- * or `entry.scenario` (named construction rule for vectors and `param`).
+ * or `entry.scenario` (named construction rule for arrays and `param`).
  * @param entry one entry from `spec.invalid` or `spec.edge`
- * @param paramName name of the parameter being tested (used to select vector vs param resolution)
- * @param baselines current baseline args (needed to size vectors from `n` and stride)
+ * @param paramName name of the parameter being tested (selects `resolveParam` vs `resolveNdArray`)
+ * @param baselines current baseline args (needed to size arrays from dimensions and stride)
+ * @param dependsOn `spec.dependsOn` array for the param under test — passed to `resolveNdArray`
  * @returns the concrete JS value to substitute for the param under test
  * @internal
  */
-export function resolveEntry(entry, paramName, baselines) {
+export function resolveEntry(entry, paramName, baselines, dependsOn) {
   if ("scenario" in entry) {
     if (paramName === "param") return resolveParam(entry.scenario);
-    const n = baselines.n;
-    const inc = paramName === "x" ? baselines.incx : baselines.incy;
-    return resolveVector(entry.scenario, n, inc);
+    return resolveNdArray(entry.scenario, dependsOn, baselines);
   }
   if ("value" in entry) return entry.value;
   if ("special" in entry) {
@@ -133,45 +164,95 @@ export function resolveEntry(entry, paramName, baselines) {
 }
 
 /**
+ * Builds baseline Float32Arrays for all `float32array` specs that lack a static baseline.
+ * Matrix params (`dependsOn` includes `"lda"`) are sized with `lda = lda.range.max` so
+ * the baseline array survives lda edge cases without triggering a length error.
+ * @param specs record of param specs keyed by param name
+ * @param baselines baseline args object — mutated in place
+ * @internal
+ */
+function buildArrayBaselines(specs, baselines) {
+  for (const [name, spec] of Object.entries(specs)) {
+    if (spec.type !== "float32array" || baselines[name]) continue;
+    const deps = new Set(spec.dependsOn ?? []);
+    if (deps.has("lda")) {
+      const ldaMax = specs.lda?.range?.max ?? baselines.lda ?? baselines.n ?? 4;
+      baselines[name] = resolveNdArray("minimal", spec.dependsOn, { ...baselines, lda: ldaMax }, true);
+    } else {
+      // Patch incx/incy to range max so the baseline array survives stride edge cases.
+      const patched = { ...baselines };
+      if (deps.has("incx") && specs.incx?.range?.max) patched.incx = specs.incx.range.max;
+      if (deps.has("incy") && specs.incy?.range?.max) patched.incy = specs.incy.range.max;
+      baselines[name] = resolveNdArray("minimal", spec.dependsOn, patched, true);
+    }
+  }
+}
+
+/**
+ * For L2 routines, sets `baselines.xN` and `baselines.yN` to `max(m, n)` so
+ * baseline x/y are long enough for both trans orientations during edge-case testing.
+ * No-ops for L1 routines (no spec declares `dependsOn` containing `"trans"`).
+ * @param specs record of param specs keyed by param name
+ * @param baselines baseline args object — mutated in place
+ * @internal
+ */
+function applyTransBaselines(specs, baselines) {
+  if (!Object.values(specs).some((s) => s.dependsOn?.includes("trans"))) return;
+  if (!("m" in baselines) || !("n" in baselines)) return;
+  const maxDim = Math.max(baselines.m, baselines.n);
+  if (!baselines.xN) baselines.xN = maxDim;
+  if (!baselines.yN) baselines.yN = maxDim;
+}
+
+/**
  * Runs all invalid and edge cases defined in `specs` against `call`.
  *
  * Invalid cases assert that the routine throws with the expected message.
  * Edge cases assert that the routine does not throw.
  *
- * @param t - node:test context
- * @param specs - object mapping param names to their loaded JSON specs
- * @param call - function that invokes the routine with an args object
- * @param runtimeBaselines - values that cannot be defaulted statically (e.g. `device`)
- * @returns promise that resolves when all cases pass, or rejects on the first assertion failure
+ * @param t node:test context
+ * @param specs record mapping param names to their loaded JSON specs
+ * @param call function that invokes the routine under test with an args object
+ * @param runtimeBaselines values that cannot be defaulted statically (e.g. `{ device }`)
+ * @returns promise that resolves when all cases pass
  * @public
  */
 export async function runValidation(t, specs, call, runtimeBaselines = {}) {
   const baselines = {};
-  for (const name of Object.keys(specs)) {
-    if (name in SCALAR_DEFAULTS) baselines[name] = SCALAR_DEFAULTS[name];
+  for (const [name, spec] of Object.entries(specs)) {
+    if ("baseline" in spec)
+      baselines[name] = Array.isArray(spec.baseline)
+        ? new Float32Array(spec.baseline)
+        : spec.baseline;
   }
-  const n = baselines.n ?? 100;
-  if ("x" in specs) baselines.x = new Float32Array((n - 1) * 10 + 1).fill(1);
-  if ("y" in specs) baselines.y = new Float32Array((n - 1) * 10 + 1).fill(1);
-  if ("param" in specs) baselines.param = PARAM_DEFAULT;
-  if ("device" in specs) {
-    if (!("device" in runtimeBaselines))
-      throw new Error("device spec requires runtimeBaselines.device");
-    baselines.device = runtimeBaselines.device;
-  }
+  Object.assign(baselines, runtimeBaselines);
 
+  if ("device" in specs && !baselines.device)
+    throw new Error("device spec requires runtimeBaselines.device");
+
+  applyTransBaselines(specs, baselines);
+  buildArrayBaselines(specs, baselines);
+  
+  await runInvalidCases(t, specs, baselines, call);
+  await runEdgeCases(t, specs, baselines, call);
+}
+
+/**
+ * Substitutes each invalid value in turn and asserts the routine throws with the expected message.
+ * @internal
+ */
+async function runInvalidCases(t, specs, baselines, call) {
   for (const [paramName, spec] of Object.entries(specs)) {
-    for (const invalidCase of spec.invalid ?? []) {
-      const label = invalidCase.label ?? JSON.stringify(invalidCase);
+    for (const entry of spec.invalid ?? []) {
+      const label = entry.label ?? JSON.stringify(entry);
       await t.test(`${paramName} invalid: ${label}`, async () => {
-        const args = { ...baselines };
-        args[paramName] = resolveEntry(invalidCase, paramName, baselines);
+        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn) };
         await assert.rejects(
           () => call(args),
           (err) => {
             assert.ok(
-              err.message.includes(invalidCase.error),
-              `Expected error containing "${invalidCase.error}", got: "${err.message}"`,
+              err.message.includes(entry.error),
+              `Expected error containing "${entry.error}", got: "${err.message}"`,
             );
             return true;
           },
@@ -179,13 +260,18 @@ export async function runValidation(t, specs, call, runtimeBaselines = {}) {
       });
     }
   }
+}
 
+/**
+ * Substitutes each boundary value in turn and asserts the routine does not throw.
+ * @internal
+ */
+async function runEdgeCases(t, specs, baselines, call) {
   for (const [paramName, spec] of Object.entries(specs)) {
-    for (const edgeCase of spec.edge ?? []) {
-      const label = edgeCase.label ?? JSON.stringify(edgeCase);
+    for (const entry of spec.edge ?? []) {
+      const label = entry.label ?? JSON.stringify(entry);
       await t.test(`${paramName} edge: ${label}`, async () => {
-        const args = { ...baselines };
-        args[paramName] = resolveEntry(edgeCase, paramName, baselines);
+        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn) };
         await call(args);
       });
     }

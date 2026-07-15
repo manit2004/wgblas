@@ -83,7 +83,7 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
   }
 
   const result = await extractResult(readBuffer, Float32Array);
-  destroyBuffers(xBuffer, yBuffer, paramsBuffer, readBuffer);
+  destroyBuffers(xBuffer, yBuffer, paramsBuffer);
 
   if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
   return { y: result };

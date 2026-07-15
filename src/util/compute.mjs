@@ -2,6 +2,9 @@
 import { getDevice } from "../init.mjs";
 import { beginTimestamp, resolveTimestamp } from "./benchmark.mjs";
 
+// Anchors the pass encoder to its command encoder to prevent premature GC.
+const _passEncoders = new WeakMap();
+
 /**
  * Finalises `commandEncoder` into a command buffer and submits it to the GPU queue.
  * @param {GPUCommandEncoder} commandEncoder
@@ -46,7 +49,7 @@ export function runComputePass(pipeline, bindGroup, workgroups) {
 
   const ts = resolveTimestamp(commandEncoder, querySet);
 
-  commandEncoder._passEncoder = passEncoder; // anchor — GC'd passEncoder may crash native encoder
+  _passEncoders.set(commandEncoder, passEncoder);
 
   return { commandEncoder, ts };
 }

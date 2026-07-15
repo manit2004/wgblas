@@ -98,7 +98,7 @@ export async function sdot(device, n, x, incx, y, incy) {
 
   // dot is always a scalar readback — both paths return { dot }
   if (xIsGpu && yIsGpu) {
-    destroyBuffers(partialsBuffer, resultBuffer, paramsBuffer, readBuffer);
+    destroyBuffers(partialsBuffer, resultBuffer, paramsBuffer);
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { dot: dotArr[0], gpuTimeMs: gpuTime1 + gpuTime2 };
     return { dot: dotArr[0] };

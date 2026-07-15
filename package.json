@@ -15,6 +15,10 @@
       "import": "./src/classes/GpuVector.mjs",
       "types": "./src/classes/GpuVector.d.mts"
     },
+    "./classes/GpuMatrix": {
+      "import": "./src/classes/GpuMatrix.mjs",
+      "types": "./src/classes/GpuMatrix.d.mts"
+    },
     "./random": {
       "import": "./src/random/random.mjs",
       "types": "./src/random/random.d.mts"
@@ -58,6 +62,10 @@
     "./srotm": {
       "import": "./src/srotm/srotm.mjs",
       "types": "./src/srotm/srotm.d.mts"
+    },
+    "./sgemv": {
+      "import": "./src/sgemv/sgemv.mjs",
+      "types": "./src/sgemv/sgemv.d.mts"
     }
   },
   "files": [
@@ -95,6 +103,7 @@
     "@stdlib/blas-base-saxpy": "^0.3.1",
     "@stdlib/blas-base-scopy": "^0.3.1",
     "@stdlib/blas-base-sdot": "^0.3.1",
+    "@stdlib/blas-base-sgemv": "^0.1.1",
     "@stdlib/blas-base-snrm2": "^0.3.1",
     "@stdlib/blas-base-srot": "^0.2.1",
     "@stdlib/blas-base-srotm": "^0.2.1",

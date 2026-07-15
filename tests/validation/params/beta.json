@@ -1,0 +1,16 @@
+{
+  "_note": "beta is the scalar multiplier for y.",
+  "type": "float",
+  "baseline": 0,
+  "range": { "min": -10.0, "max": 10.0 },
+  "invalid": [
+    { "special": "NaN",       "error": "beta must not be NaN",  "label": "NaN" },
+    { "special": "Infinity",  "error": "beta must be finite",   "label": "Infinity" },
+    { "special": "-Infinity", "error": "beta must be finite",   "label": "-Infinity" }
+  ],
+  "edge": [
+    { "value": 0,  "label": "beta=0 clears y contribution" },
+    { "value": 1,  "label": "beta=1 accumulates onto y" },
+    { "value": -1, "label": "beta=-1 subtracts y" }
+  ]
+}

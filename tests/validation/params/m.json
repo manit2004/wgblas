@@ -1,0 +1,17 @@
+{
+  "_note": "m is the number of rows in A.",
+  "type": "integer",
+  "baseline": 3,
+  "range": { "min": 1, "max": 200 },
+  "invalid": [
+    { "value": 1.5,           "error": "must be integers", "label": "fractional" },
+    { "special": "NaN",       "error": "must be integers", "label": "NaN" },
+    { "special": "Infinity",  "error": "must be integers", "label": "Infinity" },
+    { "special": "string",    "error": "must be integers", "label": "string '100'" },
+    { "special": "null",      "error": "must be integers", "label": "null" }
+  ],
+  "edge": [
+    { "value": 0, "label": "m=0 returns early without error", "behavior": "noop" },
+    { "value": 1, "label": "m=1 single row" }
+  ]
+}

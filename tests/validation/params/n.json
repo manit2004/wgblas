@@ -1,7 +1,8 @@
 {
-  "_note": "n is the number of elements.",
+  "_note": "n is the number of elements (L1) or matrix columns (L2).",
   "type": "integer",
-  "range": { "min": 100, "max": 1000 },
+  "baseline": 4,
+  "range": { "min": 1, "max": 1000 },
   "invalid": [
     { "value": 1.5,             "error": "must be integers", "label": "fractional" },
     { "special": "NaN",         "error": "must be integers", "label": "NaN" },

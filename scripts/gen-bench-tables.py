@@ -16,6 +16,7 @@ skip-worktree'd local files are not used. Falls back to local disk if the
 fetch fails (e.g. when results have not been pushed yet).
 """
 
+import argparse
 import json
 import sys
 import urllib.request
@@ -53,14 +54,14 @@ def already_generated(gpu):
     return {f.stem for f in gpu_out.glob("*.mjs") if f.stem != "index"}
 
 
-def fetch_json(gpu, backend, routine):
-    url = f"{BASE_URL}/{gpu}/{backend}/{routine}.json"
-    try:
-        with urllib.request.urlopen(url) as r:
-            return json.loads(r.read())
-    except Exception:
-        pass
-    # fallback: read from local disk
+def fetch_json(gpu, backend, routine, local_only=False):
+    if not local_only:
+        url = f"{BASE_URL}/{gpu}/{backend}/{routine}.json"
+        try:
+            with urllib.request.urlopen(url) as r:
+                return json.loads(r.read())
+        except Exception:
+            pass
     local = RESULTS_DIR / gpu / backend / f"{routine}.json"
     if local.exists():
         return json.loads(local.read_text())
@@ -135,6 +136,15 @@ def write_mjs(out_file, module_name, description, body):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Generate bench-result .mjs files.")
+    parser.add_argument("--local", action="store_true",
+                        help="Read JSON from local disk instead of GitHub")
+    parser.add_argument("--force", action="store_true",
+                        help="Regenerate .mjs files even if they already exist")
+    parser.add_argument("--routine", metavar="NAME",
+                        help="Only regenerate this routine (implies --force for that routine)")
+    args = parser.parse_args()
+
     gpu_folders = sorted(p.name for p in RESULTS_DIR.iterdir() if p.is_dir())
     if not gpu_folders:
         print("No GPU folders found in benchmarks/results/", file=sys.stderr)
@@ -157,7 +167,13 @@ def main():
         out_gpu_dir.mkdir(parents=True, exist_ok=True)
 
         display = gpu_display_name(gpu)
-        to_generate = [r for r in routines if r not in already_generated(gpu)]
+        if args.routine:
+            if args.routine not in routines:
+                parser.error(f"Unknown routine '{args.routine}'. Known routines: {', '.join(routines)}")
+            to_generate = [args.routine]
+        else:
+            skip = set() if args.force else already_generated(gpu)
+            to_generate = [r for r in routines if r not in skip]
 
         # always (re)write the GPU index if any routines are being generated
         if to_generate:
@@ -177,12 +193,12 @@ def main():
         print(f"GPU: {display}")
 
         for routine in to_generate:
-            wgblas = fetch_json(gpu, "wgblas", routine)
+            wgblas = fetch_json(gpu, "wgblas", routine, local_only=args.local)
             if wgblas is None:
                 print(f"  skip {routine} (no wgblas data)")
                 continue
 
-            cuda = fetch_json(gpu, "cuda", routine) if has_cuda else None
+            cuda = fetch_json(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
 
             wgblas_link = f"{gh}/benchmarks/{routine}/benchmark.{routine}.js"
 

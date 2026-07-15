@@ -1,0 +1,18 @@
+{
+  "_note": "lda is the leading dimension of A — stride between row starts, must be >= n.",
+  "type": "integer",
+  "baseline": 4,
+  "dependsOn": ["n"],
+  "range": { "min": 4, "max": 8 },
+  "invalid": [
+    { "value": 3,             "error": "lda must be >= n", "label": "lda < n (baseline n=4)" },
+    { "value": 1.5,           "error": "must be integers", "label": "fractional" },
+    { "special": "NaN",       "error": "must be integers", "label": "NaN" },
+    { "special": "Infinity",  "error": "must be integers", "label": "Infinity" },
+    { "special": "null",      "error": "must be integers", "label": "null" }
+  ],
+  "edge": [
+    { "value": 4, "label": "lda=n dense, no padding" },
+    { "value": 6, "label": "lda=n+2 padded rows" }
+  ]
+}

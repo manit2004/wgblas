@@ -25,19 +25,42 @@ fn main(
 ) {
   // -1.0 is a safe sentinel: any |x[i]| >= 0 beats it,
   // so workgroups with no elements lose gracefully in the epilogue.
-  var best_val: f32 = -1.0;
-  var best_idx: u32 = 0u;
+  var best_val0: f32 = -1.0; var best_idx0: u32 = 0u;
+  var best_val1: f32 = -1.0; var best_idx1: u32 = 0u;
+  var best_val2: f32 = -1.0; var best_idx2: u32 = 0u;
+  var best_val3: f32 = -1.0; var best_idx3: u32 = 0u;
 
-  for (var id = gid.x; id < params.n; id += num_wg.x * WGS) {
+  let stride   = num_wg.x * WGS;
+  let n4_floor = (params.n / (4u * stride)) * (4u * stride);
+
+  for (var id = gid.x; id < n4_floor; id += 4u * stride) {
+    let v0 = abs(x[ id                * params.x_inc]);
+    let v1 = abs(x[(id +      stride) * params.x_inc]);
+    let v2 = abs(x[(id + 2u * stride) * params.x_inc]);
+    let v3 = abs(x[(id + 3u * stride) * params.x_inc]);
+    if (v0 > best_val0) { best_val0 = v0; best_idx0 = id; }
+    if (v1 > best_val1) { best_val1 = v1; best_idx1 = id +      stride; }
+    if (v2 > best_val2) { best_val2 = v2; best_idx2 = id + 2u * stride; }
+    if (v3 > best_val3) { best_val3 = v3; best_idx3 = id + 3u * stride; }
+  }
+  for (var id = n4_floor + gid.x; id < params.n; id += stride) {
     let v = abs(x[id * params.x_inc]);
-    if (v > best_val) {
-      best_val = v;
-      best_idx = id;
-    }
+    if (v > best_val0) { best_val0 = v; best_idx0 = id; }
   }
 
-  tile_val[lid.x] = best_val;
-  tile_idx[lid.x] = best_idx;
+  // merge 4 independent lanes; prefer lower index on tie (first occurrence wins)
+  if (best_val1 > best_val0 || (best_val1 == best_val0 && best_idx1 < best_idx0)) {
+    best_val0 = best_val1; best_idx0 = best_idx1;
+  }
+  if (best_val2 > best_val0 || (best_val2 == best_val0 && best_idx2 < best_idx0)) {
+    best_val0 = best_val2; best_idx0 = best_idx2;
+  }
+  if (best_val3 > best_val0 || (best_val3 == best_val0 && best_idx3 < best_idx0)) {
+    best_val0 = best_val3; best_idx0 = best_idx3;
+  }
+
+  tile_val[lid.x] = best_val0;
+  tile_idx[lid.x] = best_idx0;
   workgroupBarrier();
 
   for (var s = WGS / 2u; s > 0u; s >>= 1u) {

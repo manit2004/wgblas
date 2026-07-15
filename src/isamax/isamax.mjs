@@ -94,7 +94,6 @@ export async function isamax(device, n, x, incx) {
       partialsIdxBuffer,
       resultBuffer,
       paramsBuffer,
-      readBuffer,
     );
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { index, gpuTimeMs: gpuTime1 + gpuTime2 };

@@ -2,6 +2,7 @@
  * @module docs
  */
 export { GpuVector } from "./src/classes/GpuVector.mjs";
+export { GpuMatrix } from "./src/classes/GpuMatrix.mjs";
 export {
   randomFloat32Array,
   randomFloat64Array,
@@ -16,6 +17,7 @@ export { snrm2 } from "./src/snrm2/snrm2.mjs";
 export { isamax } from "./src/isamax/isamax.mjs";
 export { srot } from "./src/srot/srot.mjs";
 export { srotm } from "./src/srotm/srotm.mjs";
+export { sgemv } from "./src/sgemv/sgemv.mjs";
 
 /**
  * Initializes the WebGPU device.
