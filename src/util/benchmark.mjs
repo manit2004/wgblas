@@ -99,5 +99,5 @@ export async function extractTimestamp(ts) {
   tsReadBuffer.destroy();
   resolveBuffer.destroy(); // never mapped — no unmap() needed
   querySet.destroy();
-  return Number(timestamps[1] - timestamps[0]) / 1e6;
+  return Math.max(0, Number(timestamps[1] - timestamps[0])) / 1e6;
 }

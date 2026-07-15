@@ -29,8 +29,8 @@ export async function getPipeline(device, shaderName) {
  * @returns {Promise<string>}
  */
 async function loadCode(shaderName) {
-  // typeof guards against ReferenceError in Node.js — accessing window directly throws if it doesn't exist.
-  if (typeof window !== "undefined") {
+  // Check for Node.js explicitly — `window` is undefined in Web Workers too, so it's not a reliable signal.
+  if (typeof process === "undefined" || !process.versions?.node) {
     const { shaderSources } = await import("../shaders/browser-shaders.mjs");
     const src = shaderSources[shaderName];
     if (!src) throw new Error(`Shader "${shaderName}" not found in browser bundle.`);

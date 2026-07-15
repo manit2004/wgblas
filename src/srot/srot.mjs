@@ -88,7 +88,7 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
     extractResult(readX, Float32Array),
     extractResult(readY, Float32Array),
   ]);
-  destroyBuffers(xBuffer, yBuffer, paramsBuffer, readX, readY);
+  destroyBuffers(xBuffer, yBuffer, paramsBuffer);
 
   if (gpuTimeMs !== undefined) return { x: xResult, y: yResult, gpuTimeMs };
   return { x: xResult, y: yResult };

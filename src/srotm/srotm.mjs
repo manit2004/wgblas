@@ -87,7 +87,7 @@ export async function srotm(device, n, x, incx, y, incy, param) {
     extractResult(readX, Float32Array),
     extractResult(readY, Float32Array),
   ]);
-  destroyBuffers(xBuffer, yBuffer, paramBuffer, paramsBuffer, readX, readY);
+  destroyBuffers(xBuffer, yBuffer, paramBuffer, paramsBuffer);
 
   if (gpuTimeMs !== undefined) return { x: xResult, y: yResult, gpuTimeMs };
   return { x: xResult, y: yResult };

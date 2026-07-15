@@ -83,7 +83,7 @@ export async function sswap(device, n, x, incx, y, incy) {
   const resultX = await extractResult(xReadBuffer, Float32Array);
   const resultY = await extractResult(yReadBuffer, Float32Array);
 
-  destroyBuffers(xBuffer, xReadBuffer, yBuffer, yReadBuffer, paramsBuffer);
+  destroyBuffers(xBuffer, yBuffer, paramsBuffer);
 
   if (gpuTimeMs !== undefined) return { x: resultX, y: resultY, gpuTimeMs };
   return { x: resultX, y: resultY };

@@ -131,6 +131,6 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     if (!xIsGpu) destroyBuffers(xBuffer);
     if (!yIsGpu) destroyBuffers(yBuffer);
     destroyBuffers(paramsBuffer);
-    if (readBuffer) destroyBuffers(readBuffer);
+
   }
 }
