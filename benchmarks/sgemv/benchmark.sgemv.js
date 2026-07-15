@@ -17,7 +17,7 @@ const BENCH_ITERS = 100;
 // Max 4096 gives 4096²=16,777,216 total matrix elements ≈ 16.8M.
 const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
 
-const COLS = ["m", "n", "compute_ms", "compute_GFLOPs", "compute_GBs"];
+const COLS = ["m", "n", "compute_ms", "compute_GBs"];
 
 const powerPreference =
   process.argv[2] === "low-power" ? "low-power" : "high-performance";
@@ -59,14 +59,11 @@ for (const size of SIZES) {
   if (times.length === 0) continue;
 
   const med = median(times);
-  // 2*m*n multiply-adds for the dot products, plus 2*m for the alpha/beta step
-  const flops = 2 * m * n + 2 * m;
   // A read + x read + y read + y write
   const bytes = (m * n + n + 2 * m) * 4;
-  const gflops = flops / 1e9 / (med / 1e3);
   const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [m, n, med, gflops, gbs]);
-  records.push({ m, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+  printRow(COLS, [m, n, med, gbs]);
+  records.push({ m, n, compute_ms: med, compute_GBs: gbs });
 }
 
 saveResults("sgemv", gpuModel, records);
