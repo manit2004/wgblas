@@ -38,11 +38,12 @@ for (const n of SIZES) {
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await isamax(device, n, xGpu, 1);
-    times.push(gpuTimeMs);
+    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
 
   xGpu.destroy();
 
+  if (times.length === 0) continue;
   const med = median(times);
   const bytes = n * 4; // x read only
   const gbs = bytes / 1e9 / (med / 1e3);

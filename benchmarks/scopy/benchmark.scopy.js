@@ -41,12 +41,13 @@ for (const n of SIZES) {
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await scopy(device, n, xGpu, 1, yGpu, 1);
-    times.push(gpuTimeMs);
+    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
 
   xGpu.destroy();
   yGpu.destroy();
 
+  if (times.length === 0) continue;
   const med = median(times);
   const bytes = 2 * n * 4; // x read + y written
   const gbs = bytes / 1e9 / (med / 1e3);

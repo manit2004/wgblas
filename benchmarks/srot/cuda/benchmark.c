@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <math.h>
-#include <cublas_v2.h>
 #include "../../utils/helpers.h"
 
 #define WARMUP_ITERS 5
@@ -11,7 +10,7 @@ int main(void) {
     get_gpu_model(gpu_model, sizeof(gpu_model));
 
     cublasHandle_t handle;
-    cublasCreate(&handle);
+    CUBLAS_CHECK(cublasCreate(&handle));
 
     int bench_ns[] = { 32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216 };
     int num_ns = (int)(sizeof(bench_ns) / sizeof(bench_ns[0]));
@@ -33,29 +32,28 @@ int main(void) {
         float *h_y = random_float_array(n, -1.0f, 1.0f);
 
         float *d_x, *d_y;
-        cudaMalloc((void **)&d_x, n * sizeof(float));
-        cudaMalloc((void **)&d_y, n * sizeof(float));
-        cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_y, h_y, n * sizeof(float), cudaMemcpyHostToDevice);
+        CUDA_CHECK(cudaMalloc((void **)&d_x, n * sizeof(float)));
+        CUDA_CHECK(cudaMalloc((void **)&d_y, n * sizeof(float)));
+        CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(d_y, h_y, n * sizeof(float), cudaMemcpyHostToDevice));
 
         cudaEvent_t start, stop;
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
+        CUDA_CHECK(cudaEventCreate(&start));
+        CUDA_CHECK(cudaEventCreate(&stop));
 
         // warm up
         for (int i = 0; i < WARMUP_ITERS; i++) {
-            cublasSrot(handle, n, d_x, 1, d_y, 1, &c, &s);
+            CUBLAS_CHECK(cublasSrot(handle, n, d_x, 1, d_y, 1, &c, &s));
         }
-        cudaDeviceSynchronize();
+        CUDA_CHECK(cudaDeviceSynchronize());
 
-        // compute-only: data already on GPU
         float compute_times[BENCH_ITERS];
         for (int i = 0; i < BENCH_ITERS; i++) {
-            cudaEventRecord(start, 0);
-            cublasSrot(handle, n, d_x, 1, d_y, 1, &c, &s);
-            cudaEventRecord(stop, 0);
-            cudaEventSynchronize(stop);
-            cudaEventElapsedTime(&compute_times[i], start, stop);
+            CUDA_CHECK(cudaEventRecord(start, 0));
+            CUBLAS_CHECK(cublasSrot(handle, n, d_x, 1, d_y, 1, &c, &s));
+            CUDA_CHECK(cudaEventRecord(stop, 0));
+            CUDA_CHECK(cudaEventSynchronize(stop));
+            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
         }
 
         float med_compute = median(compute_times, BENCH_ITERS);
@@ -68,8 +66,8 @@ int main(void) {
         med_times[si] = med_compute;
         gbs_vals[si]  = compute_gbs;
 
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
+        CUDA_CHECK(cudaEventDestroy(start));
+        CUDA_CHECK(cudaEventDestroy(stop));
         cudaFree(d_x);
         cudaFree(d_y);
         free(h_x);
