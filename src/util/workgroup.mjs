@@ -13,8 +13,8 @@ const WORKGROUP_SIZE_2D = 8;
  * - 2D (pass both `dim1` and `dim2`): returns `{ x, y }` for `dispatchWorkgroups(x, y)`.
  *   `dim1` maps to rows (y) and `dim2` maps to columns (x).
  *
- * @param {number} dim1 - row count (1D: element count)
- * @param {number} [dim2] - column count; omit for a 1D dispatch
+ * @param {number} rows - row count (1D: element count)
+ * @param {number} [cols] - column count; omit for a 1D dispatch
  * @returns {number | { x: number, y: number }}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits GPUSupportedLimits} (`maxComputeWorkgroupsPerDimension`)
  */
