@@ -6,6 +6,6 @@ export function forwardFactor(gpu, ref, a) {
     sumAbsProd += Math.abs(a.x[i * a.incx] * a.y[i * a.incy]);
   }
   const bound = a.n * eps * sumAbsProd;
-  if (bound === 0) return 0;
+  if (bound === 0) return gpu.dot === ref ? 0 : Infinity;
   return Math.abs(gpu.dot - ref) / bound;
 }

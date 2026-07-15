@@ -66,6 +66,6 @@ export async function sscal(device, n, alpha, x, incx) {
   const result = await extractResult(readBuffer, Float32Array);
   destroyBuffers(xBuffer, paramsBuffer);
 
-  if (gpuTimeMs !== undefined) return { result, gpuTimeMs };
+  if (gpuTimeMs !== undefined) return { x: result, gpuTimeMs };
   return result;
 }
