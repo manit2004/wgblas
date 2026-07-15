@@ -8,6 +8,7 @@ export function forwardFactor(gpu, ref, a) {
     const bound = eps * (Math.abs(a.alpha * xi) + Math.abs(yi));
     const err = Math.abs(gpu.y[i * a.incy] - ref.y[i * a.incy]);
     if (bound > 0) maxFactor = Math.max(maxFactor, err / bound);
+    else if (err !== 0) maxFactor = Infinity;
   }
   return maxFactor;
 }
