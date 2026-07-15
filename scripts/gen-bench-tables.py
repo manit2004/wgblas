@@ -98,64 +98,47 @@ def _fmt_axis_gbs(v):
     return f"{v:.2f}"
 
 
-def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
-    """Return an inline SVG line chart of GB/s vs n (log-x scale).
+def _fmt_axis_ms(v):
+    if v == 0:
+        return "0"
+    if v >= 1:
+        return f"{v:.2f}"
+    if v >= 0.1:
+        return f"{v:.3f}"
+    return f"{v:.4f}"
 
-    Two series when cuda_rows is provided; single series otherwise.
-    All CSS is scoped to the chart's unique id so styles don't leak into the page.
-    """
+
+def _build_chart_svg(wgblas_rows, cuda_series, all_ns, xp,
+                     y_key, y_label, y_fmt_fn, cid, show_legend):
+    """Render one SVG panel. xp(n) maps n → x pixel; caller owns filtering."""
     W, H = 600, 260
     ML, MR, MT, MB = 58, 16, 20, 40
     PW = W - ML - MR
-    PH = H - MT - MB  # 200
+    PH = H - MT - MB
 
-    # Drop rows where compute_GBs is None (zero compute_ms → division by zero in benchmark)
-    wgblas_rows = [r for r in wgblas_rows if r.get("compute_GBs") is not None]
-    cuda_rows = [r for r in cuda_rows if r.get("compute_GBs") is not None] if cuda_rows else []
-
-    cuda_by_n = {r["n"]: r for r in cuda_rows}
-    all_ns = sorted(r["n"] for r in wgblas_rows)
-    if not all_ns:
-        return ""
-
-    lx_min = math.log10(all_ns[0])
-    lx_max = math.log10(all_ns[-1])
-
-    def xp(n):
-        return ML + (math.log10(n) - lx_min) / (lx_max - lx_min) * PW
-
-    wgblas_ns = {r["n"] for r in wgblas_rows}
-    all_gbs = [r["compute_GBs"] for r in wgblas_rows]
-    if cuda_rows:
-        all_gbs += [r["compute_GBs"] for r in cuda_rows if r["n"] in wgblas_ns]
-    step = _tick_step(max(all_gbs))
-    y_max = math.ceil(max(all_gbs) / step) * step
+    all_y = [r[y_key] for r in wgblas_rows] + [r[y_key] for r in cuda_series]
+    step = _tick_step(max(all_y))
+    y_max = math.ceil(max(all_y) / step) * step
     yticks = [step * i for i in range(int(round(y_max / step)) + 1)]
 
-    def yp(gbs):
-        return MT + PH * (1.0 - gbs / y_max)
+    def yp(v):
+        return MT + PH * (1.0 - v / y_max)
 
-    # X-axis label positions: at most 7 labels to avoid crowding
     stride = max(1, len(all_ns) // 7)
     x_label_ns = all_ns[::stride]
     if all_ns[-1] not in x_label_ns:
         x_label_ns.append(all_ns[-1])
 
-    # Chart id scopes all CSS so rules don't leak into the TypeDoc page
-    cid = f"bc-{routine}-{gpu_slug.replace('-', '_')}"
-
     # Palette slots 1 (blue) and 2 (green) — pre-validated adjacent pair,
     # CVD ΔE 9.1 light / 8.4 dark (OKLab ×100, ≥8 target). palette.md §Categorical.
-    css_lines = [
+    css = "".join([
         f"#{cid} .bg{{fill:#fcfcfb}}",
         f"#{cid} .gr{{stroke:#e1e0d9;stroke-width:1;fill:none}}",
         f"#{cid} .ax{{stroke:#c3c2b7;stroke-width:1;fill:none}}",
         f"#{cid} .at{{fill:#898781;font:11px/1 system-ui,sans-serif}}",
         f"#{cid} .lt{{fill:#52514e;font:11px/1 system-ui,sans-serif}}",
-        # series 1 — wgblas (blue slot 1)
         f"#{cid} .ln1{{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}}",
         f"#{cid} .mk1{{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}}",
-        # series 2 — cuBLAS (green slot 2)
         f"#{cid} .ln2{{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}}",
         f"#{cid} .mk2{{fill:#008300;stroke:#fcfcfb;stroke-width:2}}",
         "@media(prefers-color-scheme:dark){",
@@ -169,7 +152,6 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
         f"#{cid} .ln2{{stroke:#008300}}",
         f"#{cid} .mk2{{fill:#008300;stroke:#1a1a19}}",
         "}",
-        # TypeDoc theme toggle stamps data-theme on <html>
         f":root[data-theme=dark] #{cid} .bg{{fill:#1a1a19}}",
         f":root[data-theme=dark] #{cid} .gr{{stroke:#2c2c2a}}",
         f":root[data-theme=dark] #{cid} .ax{{stroke:#383835}}",
@@ -177,39 +159,35 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
         f":root[data-theme=dark] #{cid} .ln1{{stroke:#3987e5}}",
         f":root[data-theme=dark] #{cid} .mk1{{fill:#3987e5;stroke:#1a1a19}}",
         f":root[data-theme=dark] #{cid} .mk2{{stroke:#1a1a19}}",
-    ]
+    ])
 
     out = [
         f'<svg id="{cid}" xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
-        f'role="img" aria-label="GB/s vs n for {routine}">',
-        f'<style>{"".join(css_lines)}</style>',
+        f'role="img" aria-label="{y_label} vs n">',
+        f'<style>{css}</style>',
         f'<rect class="bg" width="{W}" height="{H}"/>',
     ]
 
-    # Horizontal gridlines
     for y in yticks:
         yy = yp(y)
         out.append(f'<line class="gr" x1="{ML}" y1="{yy:.1f}" x2="{ML+PW}" y2="{yy:.1f}"/>')
 
-    # Axes
     out.append(f'<line class="ax" x1="{ML}" y1="{MT}" x2="{ML}" y2="{MT+PH}"/>')
     out.append(f'<line class="ax" x1="{ML}" y1="{MT+PH}" x2="{ML+PW}" y2="{MT+PH}"/>')
 
-    # Y-axis labels and title
     for y in yticks:
         yy = yp(y)
         out.append(
             f'<text class="at" x="{ML-6}" y="{yy+4:.1f}" text-anchor="end">'
-            f'{_fmt_axis_gbs(y)}</text>'
+            f'{y_fmt_fn(y)}</text>'
         )
     cy = MT + PH / 2
     out.append(
         f'<text class="lt" x="12" y="{cy:.1f}" text-anchor="middle" '
-        f'transform="rotate(-90 12 {cy:.1f})">GB/s</text>'
+        f'transform="rotate(-90 12 {cy:.1f})">{y_label}</text>'
     )
 
-    # X-axis labels
     for n in x_label_ns:
         xx = xp(n)
         out.append(
@@ -217,38 +195,78 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
             f'{_fmt_n(n)}</text>'
         )
 
-    # Polylines (lines drawn before dots so dots sit on top)
     def pts(rows):
-        return " ".join(f"{xp(r['n']):.1f},{yp(r['compute_GBs']):.1f}" for r in rows)
+        return " ".join(f"{xp(r['n']):.1f},{yp(r[y_key]):.1f}" for r in rows)
 
     out.append(f'<polyline class="ln1" points="{pts(wgblas_rows)}"/>')
-
-    cuda_series = [cuda_by_n[r["n"]] for r in wgblas_rows if r["n"] in cuda_by_n]
     if cuda_series:
         out.append(f'<polyline class="ln2" points="{pts(cuda_series)}"/>')
 
-    # Dots — r=4 (≥8px diameter per mark spec), 2px surface ring
     for row in wgblas_rows:
-        xx, yy = xp(row["n"]), yp(row["compute_GBs"])
+        xx, yy = xp(row["n"]), yp(row[y_key])
         out.append(f'<circle class="mk1" cx="{xx:.1f}" cy="{yy:.1f}" r="4"/>')
     for row in cuda_series:
-        xx, yy = xp(row["n"]), yp(row["compute_GBs"])
+        xx, yy = xp(row["n"]), yp(row[y_key])
         out.append(f'<circle class="mk2" cx="{xx:.1f}" cy="{yy:.1f}" r="4"/>')
 
-    # Legend (single series → no legend box; ≥2 series → always present)
-    if cuda_series:
+    if show_legend and cuda_series:
         leg_y = MT + PH + 32
-        # wgblas entry: line-key + dot + label (text uses text token, not series color)
         out.append(f'<line class="ln1" x1="{ML}" y1="{leg_y}" x2="{ML+16}" y2="{leg_y}"/>')
         out.append(f'<circle class="mk1" cx="{ML+8}" cy="{leg_y}" r="4"/>')
         out.append(f'<text class="lt" x="{ML+22}" y="{leg_y+4}">wgblas</text>')
-        # cuBLAS entry
         out.append(f'<line class="ln2" x1="{ML+74}" y1="{leg_y}" x2="{ML+90}" y2="{leg_y}"/>')
         out.append(f'<circle class="mk2" cx="{ML+82}" cy="{leg_y}" r="4"/>')
         out.append(f'<text class="lt" x="{ML+96}" y="{leg_y+4}">cuBLAS</text>')
 
     out.append("</svg>")
     return "\n".join(out)
+
+
+def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
+    """Return two stacked SVG charts (GB/s then ms) separated by a spacer.
+
+    Filters out rows with null compute_GBs or compute_ms before charting.
+    """
+    slug = gpu_slug.replace("-", "_")
+
+    # Filter rows that have valid values for both metrics so both charts share
+    # the same x-axis points
+    wgblas_rows = [
+        r for r in wgblas_rows
+        if r.get("compute_GBs") is not None and r.get("compute_ms") not in (None, 0)
+    ]
+    cuda_rows = [
+        r for r in cuda_rows
+        if r.get("compute_GBs") is not None and r.get("compute_ms") not in (None, 0)
+    ] if cuda_rows else []
+
+    all_ns = sorted(r["n"] for r in wgblas_rows)
+    if not all_ns:
+        return ""
+
+    cuda_by_n = {r["n"]: r for r in cuda_rows}
+    cuda_series = [cuda_by_n[r["n"]] for r in wgblas_rows if r["n"] in cuda_by_n]
+
+    lx_min = math.log10(all_ns[0])
+    lx_max = math.log10(all_ns[-1])
+    W, ML, MR = 600, 58, 16
+    PW = W - ML - MR
+
+    def xp(n):
+        return ML + (math.log10(n) - lx_min) / (lx_max - lx_min) * PW
+
+    gbs_svg = _build_chart_svg(
+        wgblas_rows, cuda_series, all_ns, xp,
+        "compute_GBs", "GB/s", _fmt_axis_gbs,
+        f"bc-{routine}-{slug}-gbs", show_legend=True,
+    )
+    ms_svg = _build_chart_svg(
+        wgblas_rows, cuda_series, all_ns, xp,
+        "compute_ms", "ms", _fmt_axis_ms,
+        f"bc-{routine}-{slug}-ms", show_legend=False,
+    )
+
+    return gbs_svg + "\n\n<br>\n\n" + ms_svg
 
 
 def fmt_ms(v):
