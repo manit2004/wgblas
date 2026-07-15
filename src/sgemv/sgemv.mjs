@@ -95,7 +95,6 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     "sgemv-params",
   );
 
-  let readBuffer = null;
   try {
     const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
       ABuffer,
@@ -112,7 +111,7 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
       );
     const wgCount = isNoTrans ? m : calcWorkgroups(yLen);
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
     submit(commandEncoder);
 
