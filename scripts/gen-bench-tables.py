@@ -168,7 +168,9 @@ def main():
 
         display = gpu_display_name(gpu)
         if args.routine:
-            to_generate = [args.routine] if args.routine in routines else []
+            if args.routine not in routines:
+                parser.error(f"Unknown routine '{args.routine}'. Known routines: {', '.join(routines)}")
+            to_generate = [args.routine]
         else:
             skip = set() if args.force else already_generated(gpu)
             to_generate = [r for r in routines if r not in skip]

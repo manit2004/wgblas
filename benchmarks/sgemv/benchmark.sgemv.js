@@ -14,7 +14,7 @@ import {
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
 // Square matrices m=n; covers sub-tile (m<64), tiled (m>=64) paths.
-// Max 1280 gives 1280²=1,638,400 total matrix elements ≈ 1.6M.
+// Max 4096 gives 4096²=16,777,216 total matrix elements ≈ 16.8M.
 const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
 
 const COLS = ["m", "n", "compute_ms", "compute_GFLOPs", "compute_GBs"];

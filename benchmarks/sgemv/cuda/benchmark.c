@@ -45,24 +45,24 @@ int main(void) {
         CUDA_CHECK(cudaMemcpy(d_y, h_y, m * sizeof(float), cudaMemcpyHostToDevice));
 
         cudaEvent_t start, stop;
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
+        CUDA_CHECK(cudaEventCreate(&start));
+        CUDA_CHECK(cudaEventCreate(&stop));
 
         // warm up
         for (int i = 0; i < WARMUP_ITERS; i++) {
             // h_A is row-major m×n; CUBLAS is column-major, so pass as column-major
             // n×m with CUBLAS_OP_T to compute y = alpha * A_rowmajor * x + beta * y.
-            cublasSgemv(handle, CUBLAS_OP_T, n, m, &alpha, d_A, n, d_x, 1, &beta, d_y, 1);
+            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_T, n, m, &alpha, d_A, n, d_x, 1, &beta, d_y, 1));
         }
-        cudaDeviceSynchronize();
+        CUDA_CHECK(cudaDeviceSynchronize());
 
         float compute_times[BENCH_ITERS];
         for (int i = 0; i < BENCH_ITERS; i++) {
-            cudaEventRecord(start, 0);
-            cublasSgemv(handle, CUBLAS_OP_T, n, m, &alpha, d_A, n, d_x, 1, &beta, d_y, 1);
-            cudaEventRecord(stop, 0);
-            cudaEventSynchronize(stop);
-            cudaEventElapsedTime(&compute_times[i], start, stop);
+            CUDA_CHECK(cudaEventRecord(start, 0));
+            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_T, n, m, &alpha, d_A, n, d_x, 1, &beta, d_y, 1));
+            CUDA_CHECK(cudaEventRecord(stop, 0));
+            CUDA_CHECK(cudaEventSynchronize(stop));
+            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
         }
 
         float med = median(compute_times, BENCH_ITERS);
@@ -80,8 +80,8 @@ int main(void) {
         printf("%-10d  %-10d  %-12.4f  %-14.4f  %-12.4f\n",
                m, n, med, gflops, gbs);
 
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
+        CUDA_CHECK(cudaEventDestroy(start));
+        CUDA_CHECK(cudaEventDestroy(stop));
         cudaFree(d_A);
         cudaFree(d_x);
         cudaFree(d_y);
