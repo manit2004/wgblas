@@ -87,6 +87,9 @@ export function ndArrayLen(dependsOn, dims) {
   const deps = new Set(dependsOn ?? []);
   if (deps.has("lda") && deps.has("m") && deps.has("n"))
     return (dims.m - 1) * dims.lda + dims.n;
+  // Symmetric matrix (ssymv): square n×n, no separate m
+  if (deps.has("lda") && deps.has("n") && !deps.has("m"))
+    return (dims.n - 1) * dims.lda + dims.n;
   if (deps.has("trans") && deps.has("m") && deps.has("n") && "m" in dims) {
     const isNoTrans = (dims.trans ?? "no-transpose") === "no-transpose";
     const dim = deps.has("incx")

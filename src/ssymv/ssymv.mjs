@@ -54,10 +54,6 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     throw new Error("A is too small for the given n.");
   if (n < 0) throw new Error("n must be non-negative.");
   if (n === 0) return yIsGpu ? {} : { y };
-  if (n === 0) return yIsGpu ? {} : { y };
-    throw new Error("A is too small for the given n.");
-  if (n < 0) throw new Error("n must be non-negative.");
-  if (n === 0) return yIsGpu ? {} : { y };
 
   if (!AIsGpu && A.length < (n - 1) * lda + n)
     throw new Error(
