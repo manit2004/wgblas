@@ -16,3 +16,4 @@ export { isamax } from "./src/isamax/isamax.mjs";
 export { srot } from "./src/srot/srot.mjs";
 export { srotm } from "./src/srotm/srotm.mjs";
 export { sgemv } from "./src/sgemv/sgemv.mjs";
+export { ssymv } from "./src/ssymv/ssymv.mjs";

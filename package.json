@@ -66,6 +66,10 @@
     "./sgemv": {
       "import": "./src/sgemv/sgemv.mjs",
       "types": "./src/sgemv/sgemv.d.mts"
+    },
+    "./ssymv": {
+      "import": "./src/ssymv/ssymv.mjs",
+      "types": "./src/ssymv/ssymv.d.mts"
     }
   },
   "files": [

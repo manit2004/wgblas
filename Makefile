@@ -2,11 +2,15 @@ include tests/tests.mk
 include benchmarks/bench.mk
 include examples/examples.mk
 
-.PHONY: typecheck protect-results bench-tables check-links install-tools publish-docs help
+.PHONY: typecheck protect-results bench-tables check-links install-tools publish-docs repl help
+
+repl:
+	node repl.mjs
 
 help:
 	@echo "Usage: make <target>"
 	@echo ""
+	@echo "  repl                  Start interactive REPL with all BLAS functions pre-bound"
 	@echo "  typecheck             Verify public API types are aligned (tsc --noEmit)"
 	@echo "  bench-tables          Fetch benchmark JSONs from GitHub and regenerate assets/bench-result/**/*.md"
 	@echo "  protect-results       Prevent benchmark re-runs from dirtying git status (run once after clone)"

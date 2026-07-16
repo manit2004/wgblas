@@ -19,7 +19,8 @@
       "wgblas/isamax": ["./src/isamax/isamax.d.mts"],
       "wgblas/srot": ["./src/srot/srot.d.mts"],
       "wgblas/srotm": ["./src/srotm/srotm.d.mts"],
-      "wgblas/sgemv": ["./src/sgemv/sgemv.d.mts"]
+      "wgblas/sgemv": ["./src/sgemv/sgemv.d.mts"],
+      "wgblas/ssymv": ["./src/ssymv/ssymv.d.mts"]
     }
   }
 }
