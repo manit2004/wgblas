@@ -48,6 +48,24 @@ export declare class GpuMatrix {
   static from(data: Float32Array, rows: number, cols: number, lda?: number): GpuMatrix;
 
   /**
+   * Downloads the matrix from GPU memory and returns a dense row-major
+   * `Float32Array` of shape `rows × cols`. If `lda > cols`, the
+   * leading-dimension padding is stripped so the returned array is always
+   * tightly packed.
+   *
+   * @example
+   * ```js
+   * import { init, GpuMatrix } from "wgblas";
+   *
+   * await init();
+   * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
+   * const data = await mat.read();
+   * console.log(data); // Float32Array [1, 2, 3, 4, 5, 6]
+   * ```
+   */
+  read(): Promise<Float32Array>;
+
+  /**
    * Destroys the underlying GPU buffer. Call when the matrix is no longer
    * needed to free GPU memory.
    *
