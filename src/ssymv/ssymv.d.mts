@@ -7,6 +7,11 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * A is an n×n symmetric matrix stored in row-major order. Only the triangle
  * specified by `uplo` is referenced; the other triangle is inferred by symmetry.
  *
+ * {@includeCode ../../examples/ssymv/ssymv.js}
+ *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/ssymv/web/ssymv.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
  * @param n      - order of the matrix A (number of rows and columns)
@@ -72,6 +77,8 @@ export declare function ssymv(
  * Performs the symmetric matrix-vector operation y = alpha * A * x + beta * y
  *
  * x and y are kept resident on the GPU. A must be a GpuMatrix.
+ *
+ * {@includeCode ../../examples/ssymv/gpuvec.ssymv.js}
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
