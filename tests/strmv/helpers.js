@@ -1,5 +1,42 @@
+import stdlibStrmv from "@stdlib/blas-base-strmv";
+import { loadParam } from "../helpers/validation.js";
+
+// Shared param specs — used by both test.strmv.js (Float32Array API) and
+// gpustorage.strmv.js (GpuMatrix/GpuVector API) so the two stay in lockstep.
+const nSpec = loadParam("n");
+export const validationSpecs = {
+  device: loadParam("device"),
+  uplo:   loadParam("uplo"),
+  trans:  loadParam("trans"),
+  diag:   loadParam("diag"),
+  n: {
+    ...nSpec,
+    edge:    nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [...nSpec.invalid, { value: -1, error: "n must be non-negative", label: "negative" }],
+  },
+  A:      { ...loadParam("A"), dependsOn: ["n", "lda"] },
+  lda:    loadParam("lda"),
+  x:      { ...loadParam("x"), dependsOn: ["n", "incx"] },
+  incx:   loadParam("incx"),
+  y:      { ...loadParam("y"), dependsOn: ["n", "incy"] },
+  incy:   loadParam("incy"),
+};
+
+export const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
+
 // Forward error bound for strmv
 const eps = 2 ** -23;
+
+// stdlib's strmv solves in place on x (no separate y, no incy) — this remaps
+// its result into the shape wgblas's API returns: a y-sized array where only
+// y[i*incy] for i in [0,n) is overwritten, everything else stays as it was in a.y.
+export function stdlibReference(a) {
+  const xCopy = a.x.slice();
+  stdlibStrmv("row-major", a.uplo, a.trans, a.diag, a.n, a.A.slice(), a.lda, xCopy, a.incx);
+  const out = new Float32Array(a.y);
+  for (let i = 0; i < a.n; i++) out[i * a.incy] = xCopy[i * a.incx];
+  return { y: out };
+}
 
 export function forwardFactor(gpu, ref, a) {
   const { uplo, trans, diag, n, A, lda, x, incx, incy } = a;
