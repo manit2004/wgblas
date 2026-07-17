@@ -56,7 +56,7 @@ export declare function strmv(
  * @param incx   - stride for x (must be a positive integer)
  * @param y      - Float32Array output vector
  * @param incy   - stride for y (must be a positive integer)
- * @see <a href="https://github.com/manit2004/wgblas/blob/develop/src/strmv/strmv.mjs#L15">Source code: strmv.mjs (L15)</a>
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/strmv/strmv.mjs#L15">Source code: strmv.mjs (L15)</a>
  * @category BLAS Level 2
  */
 export declare function strmv(
