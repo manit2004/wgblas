@@ -70,6 +70,10 @@
     "./ssymv": {
       "import": "./src/ssymv/ssymv.mjs",
       "types": "./src/ssymv/ssymv.d.mts"
+    },
+    "./strmv": {
+      "import": "./src/strmv/strmv.mjs",
+      "types": "./src/strmv/strmv.d.mts"
     }
   },
   "files": [
@@ -98,7 +102,6 @@
   },
   "homepage": "https://github.com/manit2004/wgblas#readme",
   "dependencies": {
-    "@stdlib/blas-base-ssymv": "^0.1.1",
     "webgpu": "^0.4.0"
   },
   "devDependencies": {
@@ -114,6 +117,8 @@
     "@stdlib/blas-base-srotm": "^0.2.1",
     "@stdlib/blas-base-sscal": "^0.3.1",
     "@stdlib/blas-base-sswap": "^0.3.1",
+    "@stdlib/blas-base-ssymv": "^0.1.1",
+    "@stdlib/blas-base-strmv": "^0.1.0",
     "@stdlib/random-array-uniform": "^0.2.2",
     "@stdlib/random-base-uniform": "^0.2.3",
     "esbuild": "^0.28.1",
