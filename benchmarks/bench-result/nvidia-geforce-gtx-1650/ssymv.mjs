@@ -119,8 +119,8 @@
  *
  * ## See also
  *
- * - [benchmark.ssymv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/benchmark.ssymv.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [benchmark.ssymv.js](https://github.com/manit2004/wgblas/blob/develop/benchmarks/ssymv/benchmark.ssymv.js) — WebGPU benchmark script
+ * - [benchmark.c](https://github.com/manit2004/wgblas/blob/develop/benchmarks/ssymv/cuda/benchmark.c) — CUDA / cuBLAS reference script
  *
  * @module benchmarks/nvidia-geforce-gtx-1650/ssymv
  */

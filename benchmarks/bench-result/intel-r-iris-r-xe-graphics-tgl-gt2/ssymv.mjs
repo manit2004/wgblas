@@ -101,7 +101,7 @@
  *
  * ## See also
  *
- * - [benchmark.ssymv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/benchmark.ssymv.js) — WebGPU benchmark script
+ * - [benchmark.ssymv.js](https://github.com/manit2004/wgblas/blob/develop/benchmarks/ssymv/benchmark.ssymv.js) — WebGPU benchmark script
  *
  * @module benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/ssymv
  */
