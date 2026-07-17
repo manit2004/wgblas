@@ -29,10 +29,14 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     !Number.isInteger(lda)
   )
     throw new Error("n, incx, incy, and lda must be integers.");
-  if (isNaN(alpha)) throw new Error("alpha must not be NaN.");
-  if (!isFinite(alpha)) throw new Error("alpha must be finite.");
-  if (isNaN(beta)) throw new Error("beta must not be NaN.");
-  if (!isFinite(beta)) throw new Error("beta must be finite.");
+  if (typeof alpha !== "number")
+    throw new Error("alpha must be a number.");
+  if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
+  if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
+  if (typeof beta !== "number")
+    throw new Error("beta must be a number.");
+  if (Number.isNaN(beta)) throw new Error("beta must not be NaN.");
+  if (!Number.isFinite(beta)) throw new Error("beta must be finite.");
   if (incx <= 0 || incy <= 0)
     throw new Error("incx and incy must be positive.");
   if (lda < n) throw new Error("lda must be >= n.");
@@ -48,6 +52,8 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     );
   if (xIsGpu && !AIsGpu)
     throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
+  if (xIsGpu && x === y)
+    throw new Error("x and y must not reference the same object when both are GpuVectors.");
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
   if (AIsGpu && (A.rows < n || A.cols < n))

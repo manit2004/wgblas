@@ -167,7 +167,9 @@ fn main(
     // Write result: thread (lr, 0) for each row writes y[r0+lr].
     if (lc == 0u) & (global_row < params.n) {
       let yi = global_row * params.incy;
-      y[yi] = params.alpha * scratch[lid.x] + params.beta * y[yi];
+      let A_contrib = select(0.0f, params.alpha * scratch[lid.x], params.alpha != 0.0f);
+      let B_contrib = select(0.0f, params.beta * y[yi], params.beta != 0.0f);
+      y[yi] = A_contrib + B_contrib;
     }
   }
 }
