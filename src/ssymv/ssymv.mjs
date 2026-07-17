@@ -99,7 +99,7 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
       paramsBuffer,
     ]);
 
-    const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
+    const wgCount = Math.min(Math.ceil(n / 16), device.limits.maxComputeWorkgroupsPerDimension);
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
     const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
