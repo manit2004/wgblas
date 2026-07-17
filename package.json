@@ -66,6 +66,10 @@
     "./sgemv": {
       "import": "./src/sgemv/sgemv.mjs",
       "types": "./src/sgemv/sgemv.d.mts"
+    },
+    "./ssymv": {
+      "import": "./src/ssymv/ssymv.mjs",
+      "types": "./src/ssymv/ssymv.d.mts"
     }
   },
   "files": [
@@ -94,6 +98,7 @@
   },
   "homepage": "https://github.com/manit2004/wgblas#readme",
   "dependencies": {
+    "@stdlib/blas-base-ssymv": "^0.1.1",
     "webgpu": "^0.4.0"
   },
   "devDependencies": {

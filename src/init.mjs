@@ -41,7 +41,9 @@ export async function init({
   }
 
   _benchmarkEnabled = benchmark;
-  _device = await _adapter.requestDevice(benchmarkMode(_adapter, benchmark));
+  const bmConfig = benchmarkMode(_adapter, benchmark);
+  const features = [...(bmConfig.requiredFeatures ?? [])];
+  _device = await _adapter.requestDevice({ requiredFeatures: features });
   // Fires for any GPU error not caught by a pushErrorScope/popErrorScope pair — surfaces silent GPU failures to the console.
   // See: https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/uncapturederror_event
   _device.addEventListener("uncapturederror", (e) => {

@@ -1,0 +1,17 @@
+{
+  "_note": "uplo specifies which triangle of A is stored: 'lower' or 'upper'.",
+  "type": "string",
+  "values": ["lower", "upper"],
+  "baseline": "lower",
+  "invalid": [
+    { "value": "L",                  "error": "uplo must be 'lower' or 'upper'", "label": "shorthand 'L'" },
+    { "value": "upper-triangular",   "error": "uplo must be 'lower' or 'upper'", "label": "expanded string" },
+    { "special": "null",             "error": "uplo must be 'lower' or 'upper'", "label": "null" },
+    { "special": "undefined",        "error": "uplo must be 'lower' or 'upper'", "label": "undefined" },
+    { "special": "number",           "error": "uplo must be 'lower' or 'upper'", "label": "number 42" }
+  ],
+  "edge": [
+    { "value": "lower", "label": "lower triangular storage" },
+    { "value": "upper", "label": "upper triangular storage" }
+  ]
+}

@@ -50,14 +50,22 @@ test("sgemv validation", async (t) => {
   );
 });
 
+// Cap m and n for fixtures — validationSpecs allows up to 200×1000 matrices which makes
+// property tests prohibitively slow. Keep validation coverage wide, fixtures fast.
+const fixtureSpecs = {
+  ...validationSpecs,
+  m: { ...validationSpecs.m, range: { min: 1, max: 50 } },
+  n: { ...validationSpecs.n, range: { min: 1, max: 50 } },
+};
+
 test("sgemv fixtures", async (t) => {
   await runFixtures(
     t,                   // node:test context
     "sgemv",             // routine name — used in failure labels
     device,              // GPUDevice from before()
     NUM_RUNS,            // number of fast-check runs
-    THRESHOLD,   // max allowed forward error factor
-    validationSpecs,     // param specs used to generate random inputs
+    THRESHOLD,           // max allowed forward error factor
+    fixtureSpecs,        // param specs used to generate random inputs (m, n capped at 50 for speed)
     async (dev, a) => sgemv(dev, a.trans, a.m, a.n, a.alpha, a.A, a.lda, a.x, a.incx, a.beta, a.y, a.incy), // GPU impl
     (a) => {             // CPU reference
       const out = a.y.slice();

@@ -1,4 +1,6 @@
-import { uploadBuffer } from "../util/buffer.mjs";
+import { getDevice } from "../init.mjs";
+import { uploadBuffer, stageReadback } from "../util/buffer.mjs";
+import { extractResult } from "../util/result.mjs";
 
 export class GpuMatrix {
   constructor(buffer, rows, cols, lda) {
@@ -26,8 +28,21 @@ export class GpuMatrix {
       throw new Error(
         "data does not have enough elements for the given rows and lda.",
       );
-    const buf = uploadBuffer(data.subarray(0, rows * lda), "gpu-matrix", false);
+    const buf = uploadBuffer(data.subarray(0, rows * lda), "gpu-matrix", true);
     return new GpuMatrix(buf, rows, cols, lda);
+  }
+  
+  async read() {
+    const device = getDevice();
+    const enc = device.createCommandEncoder();
+    const rb = stageReadback(enc, this._buf);
+    device.queue.submit([enc.finish()]);
+    const raw = await extractResult(rb, Float32Array);
+    if (this.lda === this.cols) return raw;
+    const out = new Float32Array(this.rows * this.cols);
+    for (let r = 0; r < this.rows; r++)
+      out.set(raw.subarray(r * this.lda, r * this.lda + this.cols), r * this.cols);
+    return out;
   }
 
   destroy() {
