@@ -31,10 +31,14 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     !Number.isInteger(lda)
   )
     throw new Error("m, n, incx, incy, and lda must be integers.");
-  if (isNaN(alpha)) throw new Error("alpha must not be NaN.");
-  if (!isFinite(alpha)) throw new Error("alpha must be finite.");
-  if (isNaN(beta)) throw new Error("beta must not be NaN.");
-  if (!isFinite(beta)) throw new Error("beta must be finite.");
+  if (typeof alpha !== "number")
+    throw new Error("alpha must be a number.");
+  if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
+  if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
+  if (typeof beta !== "number")
+    throw new Error("beta must be a number.");
+  if (Number.isNaN(beta)) throw new Error("beta must not be NaN.");
+  if (!Number.isFinite(beta)) throw new Error("beta must be finite.");
   if (incx <= 0 || incy <= 0)
     throw new Error("incx and incy must be positive.");
   if (lda < n) throw new Error("lda must be >= n.");

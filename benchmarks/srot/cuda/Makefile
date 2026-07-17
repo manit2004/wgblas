@@ -4,7 +4,7 @@ SRC = benchmark.c
 
 all: $(TARGET)
 
-$(TARGET): $(SRC)
+$(TARGET): $(SRC) ../../utils/helpers.h
 	$(CC) $(SRC) -o $(TARGET) -lcublas -lm
 
 clean:
