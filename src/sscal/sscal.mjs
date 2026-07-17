@@ -19,8 +19,10 @@ export async function sscal(device, n, alpha, x, incx) {
     throw new Error("device must be a GPUDevice.");
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
-  if (isNaN(alpha)) throw new Error("alpha must not be NaN.");
-  if (!isFinite(alpha)) throw new Error("alpha must be finite.");
+  if (typeof alpha !== "number")
+    throw new Error("alpha must be a number.");
+  if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
+  if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
   if (incx <= 0) throw new Error("incx must be positive.");
   if (!(x instanceof Float32Array) && !(x instanceof GpuVector))
     throw new Error("x must be a Float32Array or GpuVector.");
