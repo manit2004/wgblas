@@ -76,28 +76,7 @@ int main(void) {
         free(h_x);
     }
 
-    // write JSON results
-    char *gpu_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&out_dir,   "%s/cuda",               gpu_dir);
-    asprintf(&file_path, "%s/strmv.json",          out_dir);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    if (!fp) { perror(file_path); return 1; }
-    fprintf(fp, "[\n");
-    for (int i = 0; i < num_sizes; i++) {
-        fprintf(fp,
-            "  { \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            sizes[i], med_times[i], gbs_vals[i],
-            i < num_sizes - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(out_dir);
-    free(file_path);
+    save_results("strmv", gpu_model, sizes, med_times, gbs_vals, num_sizes);
 
     CUBLAS_CHECK(cublasDestroy(handle));
     return 0;

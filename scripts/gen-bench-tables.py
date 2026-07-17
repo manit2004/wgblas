@@ -414,7 +414,7 @@ def main():
                     f"## {display} — wgblas vs cuBLAS\n\n"
                     + table
                     + "\n\n> Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. "
-                    "Higher means wgblas is closer to cuBLAS throughput.\n\n"
+                    "100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.\n\n"
                     + make_svg_chart(wgblas, cuda, routine, gpu) + "\n\n"
                     "## See also\n\n"
                     f"- [benchmark.{routine}.js]({wgblas_link}) — WebGPU benchmark script\n"
