@@ -73,9 +73,9 @@ int main(void) {
 
         CUDA_CHECK(cudaEventDestroy(start));
         CUDA_CHECK(cudaEventDestroy(stop));
-        cudaFree(d_A);
-        cudaFree(d_x);
-        cudaFree(d_y);
+        CUDA_CHECK(cudaFree(d_A));
+        CUDA_CHECK(cudaFree(d_x));
+        CUDA_CHECK(cudaFree(d_y));
         free(h_A);
         free(h_x);
         free(h_y);
@@ -104,6 +104,6 @@ int main(void) {
     free(out_dir);
     free(file_path);
 
-    cublasDestroy(handle);
+    CUBLAS_CHECK(cublasDestroy(handle));
     return 0;
 }

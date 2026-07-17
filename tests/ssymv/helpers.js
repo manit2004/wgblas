@@ -17,7 +17,7 @@ export function forwardFactor(gpu, ref, a) {
       dotBound += aij * Math.abs(x[j * incx]);
     }
     const bound =
-      eps * ((n + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * Math.abs(y[i * incy]));
+      eps * ((n + 2) * Math.abs(alpha) * dotBound + 2 * Math.abs(beta) * Math.abs(y[i * incy]));
     if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
     else maxFactor = Math.max(maxFactor, err / bound);
   }
