@@ -24,6 +24,8 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
     !Number.isInteger(incy)
   )
     throw new Error("n, incx, and incy must be integers.");
+  if (typeof c !== "number") throw new Error("c must be a number.");
+  if (typeof s !== "number") throw new Error("s must be a number.");
   if (Number.isNaN(c) || Number.isNaN(s)) throw new Error("c and s must not be NaN.");
   if (!Number.isFinite(c)) throw new Error("c must be finite.");
   if (!Number.isFinite(s)) throw new Error("s must be finite.");

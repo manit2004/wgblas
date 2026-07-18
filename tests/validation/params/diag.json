@@ -1,0 +1,17 @@
+{
+  "_note": "diag specifies whether A's diagonal is unit (assumed 1, not read) or non-unit (read from A).",
+  "type": "string",
+  "values": ["unit", "non-unit"],
+  "baseline": "non-unit",
+  "invalid": [
+    { "value": "U",                  "error": "diag must be 'unit' or 'non-unit'", "label": "shorthand 'U'" },
+    { "value": "unit-triangular",    "error": "diag must be 'unit' or 'non-unit'", "label": "expanded string" },
+    { "special": "null",             "error": "diag must be 'unit' or 'non-unit'", "label": "null" },
+    { "special": "undefined",        "error": "diag must be 'unit' or 'non-unit'", "label": "undefined" },
+    { "special": "number",           "error": "diag must be 'unit' or 'non-unit'", "label": "number 42" }
+  ],
+  "edge": [
+    { "value": "unit",     "label": "unit diagonal" },
+    { "value": "non-unit", "label": "non-unit diagonal" }
+  ]
+}

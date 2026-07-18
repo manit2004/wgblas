@@ -17,3 +17,4 @@ export { srot } from "./src/srot/srot.mjs";
 export { srotm } from "./src/srotm/srotm.mjs";
 export { sgemv } from "./src/sgemv/sgemv.mjs";
 export { ssymv } from "./src/ssymv/ssymv.mjs";
+export { strmv } from "./src/strmv/strmv.mjs";
