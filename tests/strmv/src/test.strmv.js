@@ -4,7 +4,7 @@ import { init, cleanup } from "wgblas";
 import { strmv } from "wgblas/strmv";
 import { runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
-import { forwardFactor, stdlibReference, validationSpecs, fixtureSpecs } from "../helpers.js";
+import { forwardFactor, stdlibReference, validationSpecs, fixtureSpecs, makeY } from "../helpers.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
@@ -50,7 +50,7 @@ test("strmv edge cases", async (t) => {
         uplo: c.uplo, trans: c.trans, diag: c.diag, n: c.n,
         A: new Float32Array(c.A), lda: c.lda,
         x: new Float32Array(c.x), incx: c.incx,
-        y: new Float32Array(c.y), incy: c.incy,
+        y: makeY(c.n, c.incy), incy: c.incy,
       };
       const { y: got } = await strmv(device, a.uplo, a.trans, a.diag, a.n, a.A, a.lda, a.x, a.incx, a.y, a.incy); // GPU result
       const { y: expected } = stdlibReference(a); // stdlib result

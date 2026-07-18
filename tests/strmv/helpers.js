@@ -1,4 +1,6 @@
 import stdlibStrmv from "@stdlib/blas-base-strmv";
+import { GpuMatrix, GpuVector } from "wgblas";
+import { strmv } from "wgblas/strmv";
 import { loadParam } from "../helpers/validation.js";
 
 // Shared param specs — used by both test.strmv.js (Float32Array API) and
@@ -23,6 +25,36 @@ export const validationSpecs = {
 };
 
 export const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
+
+// Builds a correctly-sized y buffer for an edge case from n/incy alone, filled
+// with a sentinel (99) at every position — strmv only ever writes y[i*incy]
+// for i in [0,n), so a distinctive fill value makes both "the right positions
+// got overwritten with real values" and "the gap positions were left alone" observable.
+export function makeY(n, incy) {
+  return new Float32Array((n - 1) * incy + 1).fill(99);
+}
+
+// GPU-resident adapter — A/x/y stay on the GPU across the call, result read back
+// once at the end. GpuMatrix.from requires the full n*lda elements; a's A is only
+// sized to the Float32Array API's minimum (n-1)*lda+n, which is shorter whenever
+// lda > n, so zero-pad first (the extra padding columns are never read by the
+// shader either way).
+export async function callGpuResident(dev, a) {
+  const paddedA = new Float32Array(a.n * a.lda);
+  paddedA.set(a.A);
+  const AGpu = GpuMatrix.from(paddedA, a.n, a.n, a.lda);
+  const xGpu = GpuVector.from(a.x);
+  const yGpu = GpuVector.from(a.y);
+  try {
+    await strmv(dev, a.uplo, a.trans, a.diag, a.n, AGpu, a.lda, xGpu, a.incx, yGpu, a.incy);
+    const y = await yGpu.read();
+    return { y };
+  } finally {
+    AGpu.destroy();
+    xGpu.destroy();
+    yGpu.destroy();
+  }
+}
 
 // Forward error bound for strmv
 const eps = 2 ** -23;
