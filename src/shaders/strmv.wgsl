@@ -29,22 +29,33 @@ fn main(
   @builtin(local_invocation_id) lid:  vec3u,
   @builtin(num_workgroups)      nwg:  vec3u,
 ) {
-  for (var row = wgid.x; row < params.n; row += nwg.x) {
-    let rb = row * params.lda;
+  for (var i = wgid.x; i < params.n; i += nwg.x) {
     var acc = 0.0f;
 
     if params.trans == 0u {
       // No-transpose: y[i] = Σ_j A[i,j] * x[j]
       if params.uplo == 0u {
         // Lower: A[i,j] stored at A[i*lda+j] for j ≤ i
-        for (var j = lid.x; j <= row; j += WGS) {
-          let aVal = select(A[rb + j], 1.0, params.diag == 1u && j == row);
+        for (var j = lid.x; j <= i; j += WGS) {
+          var aVal: f32;
+          // unit diagonal: use 1 instead of A's actual diagonal value
+          if params.diag == 1u && j == i {
+            aVal = 1.0;
+          } else {
+            aVal = A[i * params.lda + j];
+          }
           acc += aVal * x[j * params.incx];
         }
       } else {
         // Upper: A[i,j] stored at A[i*lda+j] for j ≥ i
-        for (var j = row + lid.x; j < params.n; j += WGS) {
-          let aVal = select(A[rb + j], 1.0, params.diag == 1u && j == row);
+        for (var j = i + lid.x; j < params.n; j += WGS) {
+          var aVal: f32;
+          // unit diagonal: use 1 instead of A's actual diagonal value
+          if params.diag == 1u && j == i {
+            aVal = 1.0;
+          } else {
+            aVal = A[i * params.lda + j];
+          }
           acc += aVal * x[j * params.incx];
         }
       }
@@ -52,14 +63,26 @@ fn main(
       // Transpose: y[i] = Σ_j A[j,i] * x[j]
       if params.uplo == 0u {
         // Lower: A[j,i] stored at A[j*lda+i] for j ≥ i
-        for (var j = row + lid.x; j < params.n; j += WGS) {
-          let aVal = select(A[j * params.lda + row], 1.0, params.diag == 1u && j == row);
+        for (var j = i + lid.x; j < params.n; j += WGS) {
+          var aVal: f32;
+          // unit diagonal: use 1 instead of A's actual diagonal value
+          if params.diag == 1u && j == i {
+            aVal = 1.0;
+          } else {
+            aVal = A[j * params.lda + i];
+          }
           acc += aVal * x[j * params.incx];
         }
       } else {
         // Upper: A[j,i] stored at A[j*lda+i] for j ≤ i
-        for (var j = lid.x; j <= row; j += WGS) {
-          let aVal = select(A[j * params.lda + row], 1.0, params.diag == 1u && j == row);
+        for (var j = lid.x; j <= i; j += WGS) {
+          var aVal: f32;
+          // unit diagonal: use 1 instead of A's actual diagonal value
+          if params.diag == 1u && j == i {
+            aVal = 1.0;
+          } else {
+            aVal = A[j * params.lda + i];
+          }
           acc += aVal * x[j * params.incx];
         }
       }
@@ -74,9 +97,7 @@ fn main(
     }
 
     if lid.x == 0u {
-      let yi = row * params.incy;
-      y[yi] = scratch[0];
+      y[ i * params.incy ] = scratch[0];
     }
-    workgroupBarrier();
   }
 }
