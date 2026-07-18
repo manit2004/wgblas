@@ -44,9 +44,9 @@
   {
     "label": "incy=2 lower no-transpose",
     "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
-    "n": 1, "A": [5], "lda": 1,
-    "x": [2], "incx": 1,
-    "y": [0, 99], "incy": 2
+    "n": 2, "A": [1, 0, 2, 3], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "y": [0, 99, 0], "incy": 2
   },
   {
     "label": "unit diag lower no-transpose",
