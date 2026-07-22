@@ -48,47 +48,57 @@ export async function srotm(device, n, x, incx, y, incy, param) {
 
   const pipeline = await getPipeline(device, "srotm");
 
-  const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "srotm-x", true);
-  const yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "srotm-y", true);
-  const paramBuffer = uploadBuffer(param, "srotm-param", false);
-  const paramsBuffer = createParamsBuffer(
-    [
-      { value: n, type: "u32" },
-      { value: incx, type: "u32" },
-      { value: incy, type: "u32" },
-    ],
-    "srotm-params",
-  );
+  let xBuffer = null;
+  let yBuffer = null;
+  let paramBuffer = null;
+  let paramsBuffer = null;
 
-  const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
-    xBuffer,
-    yBuffer,
-    paramBuffer,
-    paramsBuffer,
-  ]);
-  const { commandEncoder, ts } = runComputePass(
-    pipeline,
-    bindGroup,
-    calcWorkgroups(n),
-  );
-  const readX = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
-  const readY = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
-  submit(commandEncoder);
+  try {
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "srotm-x", true);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "srotm-y", true);
+    paramBuffer = uploadBuffer(param, "srotm-param", false);
+    paramsBuffer = createParamsBuffer(
+      [
+        { value: n, type: "u32" },
+        { value: incx, type: "u32" },
+        { value: incy, type: "u32" },
+      ],
+      "srotm-params",
+    );
 
-  const gpuTimeMs = await extractTimestamp(ts);
+    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+      xBuffer,
+      yBuffer,
+      paramBuffer,
+      paramsBuffer,
+    ]);
+    const { commandEncoder, ts } = runComputePass(
+      pipeline,
+      bindGroup,
+      calcWorkgroups(n),
+    );
+    const readX = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
+    const readY = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    submit(commandEncoder);
 
-  if (xIsGpu && yIsGpu) {
-    destroyBuffers(paramBuffer, paramsBuffer);
-    if (gpuTimeMs !== undefined) return { gpuTimeMs };
-    return {};
+    const gpuTimeMs = await extractTimestamp(ts);
+
+    if (xIsGpu && yIsGpu) {
+      if (gpuTimeMs !== undefined) return { gpuTimeMs };
+      return {};
+    }
+
+    const [xResult, yResult] = await Promise.all([
+      extractResult(readX, Float32Array),
+      extractResult(readY, Float32Array),
+    ]);
+
+    if (gpuTimeMs !== undefined) return { x: xResult, y: yResult, gpuTimeMs };
+    return { x: xResult, y: yResult };
+  } finally {
+    if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
+    if (paramBuffer) destroyBuffers(paramBuffer);
+    if (paramsBuffer) destroyBuffers(paramsBuffer);
   }
-
-  const [xResult, yResult] = await Promise.all([
-    extractResult(readX, Float32Array),
-    extractResult(readY, Float32Array),
-  ]);
-  destroyBuffers(xBuffer, yBuffer, paramBuffer, paramsBuffer);
-
-  if (gpuTimeMs !== undefined) return { x: xResult, y: yResult, gpuTimeMs };
-  return { x: xResult, y: yResult };
 }

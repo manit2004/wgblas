@@ -34,81 +34,75 @@ export async function isamax(device, n, x, incx) {
   const pipelineMain = await getPipeline(device, "isamax");
   const pipelineReduce = await getPipeline(device, "reduction/argmax");
 
-  const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "isamax-x", false);
-  const partialsValBuffer = createStorageBuffer(
-    2 * WGS * 4,
-    "isamax-partials-val",
-  ); //to hold 2*WGS partial max values of f32
-  const partialsIdxBuffer = createStorageBuffer(
-    2 * WGS * 4,
-    "isamax-partials-idx",
-  ); //to hold 2*WGS partial max indices of u32
-  const resultBuffer = createResultBuffer(4, "isamax-result"); // u32 index
-  const paramsBuffer = createParamsBuffer(
-    [
-      { value: n, type: "u32" },
-      { value: incx, type: "u32" },
-    ],
-    "isamax-params",
-  );
+  let xBuffer = null;
+  let partialsValBuffer = null;
+  let partialsIdxBuffer = null;
+  let resultBuffer = null;
+  let paramsBuffer = null;
 
-  const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [
-    xBuffer,
-    partialsValBuffer,
-    partialsIdxBuffer,
-    paramsBuffer,
-  ]);
-  const { commandEncoder: enc1, ts: ts1 } = runComputePass(
-    pipelineMain,
-    bgMain,
-    2 * WGS,
-  ); //dispatch 2*WGS workgroups
+  try {
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "isamax-x", false);
+    partialsValBuffer = createStorageBuffer(
+      2 * WGS * 4,
+      "isamax-partials-val",
+    ); //to hold 2*WGS partial max values of f32
+    partialsIdxBuffer = createStorageBuffer(
+      2 * WGS * 4,
+      "isamax-partials-idx",
+    ); //to hold 2*WGS partial max indices of u32
+    resultBuffer = createResultBuffer(4, "isamax-result"); // u32 index
+    paramsBuffer = createParamsBuffer(
+      [
+        { value: n, type: "u32" },
+        { value: incx, type: "u32" },
+      ],
+      "isamax-params",
+    );
 
-  submit(enc1);
+    const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [
+      xBuffer,
+      partialsValBuffer,
+      partialsIdxBuffer,
+      paramsBuffer,
+    ]);
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+      pipelineMain,
+      bgMain,
+      2 * WGS,
+    ); //dispatch 2*WGS workgroups
 
-  const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [
-    partialsValBuffer,
-    partialsIdxBuffer,
-    resultBuffer,
-  ]);
-  const { commandEncoder: enc2, ts: ts2 } = runComputePass(
-    pipelineReduce,
-    bgReduce,
-    1,
-  ); // dispatch 1 workgroup to reduce the partial sums to a single result
-  const readBuffer = stageReadback(enc2, resultBuffer);
+    submit(enc1);
 
-  submit(enc2);
-
-  const [gpuTime1, gpuTime2, idxArr] = await Promise.all([
-    extractTimestamp(ts1),
-    extractTimestamp(ts2),
-    extractResult(readBuffer, Uint32Array),
-  ]);
-
-  const index = idxArr[0];
-
-  if (xIsGpu) {
-    destroyBuffers(
+    const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [
       partialsValBuffer,
       partialsIdxBuffer,
       resultBuffer,
-      paramsBuffer,
-    );
+    ]);
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+      pipelineReduce,
+      bgReduce,
+      1,
+    ); // dispatch 1 workgroup to reduce the partial sums to a single result
+    const readBuffer = stageReadback(enc2, resultBuffer);
+
+    submit(enc2);
+
+    const [gpuTime1, gpuTime2, idxArr] = await Promise.all([
+      extractTimestamp(ts1),
+      extractTimestamp(ts2),
+      extractResult(readBuffer, Uint32Array),
+    ]);
+
+    const index = idxArr[0];
+
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { index, gpuTimeMs: gpuTime1 + gpuTime2 };
     return { index };
+  } finally {
+    if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    if (partialsValBuffer) destroyBuffers(partialsValBuffer);
+    if (partialsIdxBuffer) destroyBuffers(partialsIdxBuffer);
+    if (resultBuffer) destroyBuffers(resultBuffer);
+    if (paramsBuffer) destroyBuffers(paramsBuffer);
   }
-
-  destroyBuffers(
-    xBuffer,
-    partialsValBuffer,
-    partialsIdxBuffer,
-    resultBuffer,
-    paramsBuffer,
-    readBuffer,
-  );
-  if (gpuTime1 !== undefined && gpuTime2 !== undefined)
-    return { index, gpuTimeMs: gpuTime1 + gpuTime2 };
-  return { index };
 }

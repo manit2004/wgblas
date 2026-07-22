@@ -34,65 +34,63 @@ export async function sasum(device, n, x, incx) {
   const pipelineMain = await getPipeline(device, "sasum");
   const pipelineReduce = await getPipeline(device, "reduction/sum");
 
-  const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sasum-x", false);
-  const partialsBuffer = createStorageBuffer(2 * WGS * 4, "sasum-partials"); // 2*WGS partial sums of f32
-  const resultBuffer = createResultBuffer(4, "sasum-result"); // final f32 scalar
-  const paramsBuffer = createParamsBuffer(
-    [
-      { value: n, type: "u32" },
-      { value: incx, type: "u32" },
-    ],
-    "sasum-params",
-  );
+  let xBuffer = null;
+  let partialsBuffer = null;
+  let resultBuffer = null;
+  let paramsBuffer = null;
 
-  const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [
-    xBuffer,
-    partialsBuffer,
-    paramsBuffer,
-  ]);
-  const { commandEncoder: enc1, ts: ts1 } = runComputePass(
-    pipelineMain,
-    bgMain,
-    2 * WGS,
-  ); // dispatch 2*WGS workgroups
+  try {
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sasum-x", false);
+    partialsBuffer = createStorageBuffer(2 * WGS * 4, "sasum-partials"); // 2*WGS partial sums of f32
+    resultBuffer = createResultBuffer(4, "sasum-result"); // final f32 scalar
+    paramsBuffer = createParamsBuffer(
+      [
+        { value: n, type: "u32" },
+        { value: incx, type: "u32" },
+      ],
+      "sasum-params",
+    );
 
-  submit(enc1);
+    const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [
+      xBuffer,
+      partialsBuffer,
+      paramsBuffer,
+    ]);
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+      pipelineMain,
+      bgMain,
+      2 * WGS,
+    ); // dispatch 2*WGS workgroups
 
-  const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [
-    partialsBuffer,
-    resultBuffer,
-  ]);
-  const { commandEncoder: enc2, ts: ts2 } = runComputePass(
-    pipelineReduce,
-    bgReduce,
-    1,
-  ); // dispatch 1 workgroup to reduce the partial sums to a single result
-  const readBuffer = stageReadback(enc2, resultBuffer);
+    submit(enc1);
 
-  submit(enc2);
+    const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [
+      partialsBuffer,
+      resultBuffer,
+    ]);
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+      pipelineReduce,
+      bgReduce,
+      1,
+    ); // dispatch 1 workgroup to reduce the partial sums to a single result
+    const readBuffer = stageReadback(enc2, resultBuffer);
 
-  const [gpuTime1, gpuTime2, asumArr] = await Promise.all([
-    extractTimestamp(ts1),
-    extractTimestamp(ts2),
-    extractResult(readBuffer, Float32Array),
-  ]);
+    submit(enc2);
 
-  // asum is always a scalar readback — both paths return { asum }
-  if (xIsGpu) {
-    destroyBuffers(partialsBuffer, resultBuffer, paramsBuffer);
+    const [gpuTime1, gpuTime2, asumArr] = await Promise.all([
+      extractTimestamp(ts1),
+      extractTimestamp(ts2),
+      extractResult(readBuffer, Float32Array),
+    ]);
+
+    // asum is always a scalar readback — both paths return { asum }
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { asum: asumArr[0], gpuTimeMs: gpuTime1 + gpuTime2 };
     return { asum: asumArr[0] };
+  } finally {
+    if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    if (partialsBuffer) destroyBuffers(partialsBuffer);
+    if (resultBuffer) destroyBuffers(resultBuffer);
+    if (paramsBuffer) destroyBuffers(paramsBuffer);
   }
-
-  destroyBuffers(
-    xBuffer,
-    partialsBuffer,
-    resultBuffer,
-    paramsBuffer,
-    readBuffer,
-  );
-  if (gpuTime1 !== undefined && gpuTime2 !== undefined)
-    return { asum: asumArr[0], gpuTimeMs: gpuTime1 + gpuTime2 };
-  return { asum: asumArr[0] };
 }

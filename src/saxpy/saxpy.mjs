@@ -50,43 +50,50 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
 
   const pipeline = await getPipeline(device, "saxpy");
 
-  const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "saxpy-x", false);
-  const yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "saxpy-y", true);
-  const paramsBuffer = createParamsBuffer(
-    [
-      { value: n, type: "u32" },
-      { value: alpha, type: "f32" },
-      { value: incx, type: "u32" },
-      { value: incy, type: "u32" },
-    ],
-    "saxpy-params",
-  );
+  let xBuffer = null;
+  let yBuffer = null;
+  let paramsBuffer = null;
 
-  const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
-    xBuffer,
-    yBuffer,
-    paramsBuffer,
-  ]);
-  const { commandEncoder, ts } = runComputePass(
-    pipeline,
-    bindGroup,
-    calcWorkgroups(n),
-  );
-  const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+  try {
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "saxpy-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "saxpy-y", true);
+    paramsBuffer = createParamsBuffer(
+      [
+        { value: n, type: "u32" },
+        { value: alpha, type: "f32" },
+        { value: incx, type: "u32" },
+        { value: incy, type: "u32" },
+      ],
+      "saxpy-params",
+    );
 
-  submit(commandEncoder);
+    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+      xBuffer,
+      yBuffer,
+      paramsBuffer,
+    ]);
+    const { commandEncoder, ts } = runComputePass(
+      pipeline,
+      bindGroup,
+      calcWorkgroups(n),
+    );
+    const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
-  const gpuTimeMs = await extractTimestamp(ts);
+    submit(commandEncoder);
 
-  if (yIsGpu && xIsGpu) {
-    destroyBuffers(paramsBuffer);
-    if (gpuTimeMs !== undefined) return { gpuTimeMs };
-    return {};
+    const gpuTimeMs = await extractTimestamp(ts);
+
+    if (yIsGpu && xIsGpu) {
+      if (gpuTimeMs !== undefined) return { gpuTimeMs };
+      return {};
+    }
+
+    const result = await extractResult(readBuffer, Float32Array);
+    if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
+    return { y: result };
+  } finally {
+    if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
+    if (paramsBuffer) destroyBuffers(paramsBuffer);
   }
-
-  const result = await extractResult(readBuffer, Float32Array);
-  destroyBuffers(xBuffer, yBuffer, paramsBuffer);
-
-  if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
-  return { y: result };
 }
