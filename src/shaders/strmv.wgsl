@@ -41,7 +41,7 @@ fn main(
           // unit diagonal: use 1 instead of A's actual diagonal value
           if params.diag == 1u && j == i {
             aVal = 1.0;
-          } else {
+          } else if ( j <= i ) {
             aVal = A[i * params.lda + j];
           }
           acc += aVal * x[j * params.incx];
@@ -53,7 +53,7 @@ fn main(
           // unit diagonal: use 1 instead of A's actual diagonal value
           if params.diag == 1u && j == i {
             aVal = 1.0;
-          } else {
+          } else if ( j >= i ) {
             aVal = A[i * params.lda + j];
           }
           acc += aVal * x[j * params.incx];
@@ -68,7 +68,7 @@ fn main(
           // unit diagonal: use 1 instead of A's actual diagonal value
           if params.diag == 1u && j == i {
             aVal = 1.0;
-          } else {
+          } else if ( j >= i ) {
             aVal = A[j * params.lda + i];
           }
           acc += aVal * x[j * params.incx];
@@ -80,7 +80,7 @@ fn main(
           // unit diagonal: use 1 instead of A's actual diagonal value
           if params.diag == 1u && j == i {
             aVal = 1.0;
-          } else {
+          } else if ( j <= i ) {
             aVal = A[j * params.lda + i];
           }
           acc += aVal * x[j * params.incx];

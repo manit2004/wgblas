@@ -1,0 +1,8 @@
+[
+  { "label": "Pythagorean triple — exact integer result", "n": 2, "x": [3, 4], "incx": 1 },
+  { "label": "all negatives — same result as positives", "n": 2, "x": [-3, -4], "incx": 1 },
+  { "label": "unit vector — norm = 1", "n": 3, "x": [1, 0, 0], "incx": 1 },
+  { "label": "all zeros — norm = 0", "n": 3, "x": [0, 0, 0], "incx": 1 },
+  { "label": "n=1 negative element — norm is non-negative", "n": 1, "x": [-5], "incx": 1 },
+  { "label": "incx=2 — Pythagorean triple on strided elements", "n": 2, "x": [3, 99, 4], "incx": 2 }
+]

@@ -40,6 +40,20 @@ import { ndArrayLen } from "./validation.js";
 
 export { ulpDiff, maxUlp };
 
+/**
+ * Builds a correctly-sized vector for an edge case from n/inc alone, filled
+ * with a sentinel (99) at every position. A routine that only ever touches
+ * `vec[i*inc]` for i in [0,n) — whether overwriting it or accumulating into
+ * it — leaves every other position exactly as it started, so a uniform
+ * sentinel fill makes "the right positions changed" and "the gap positions
+ * were left alone" both observable, without hand-typing a buffer sized to
+ * match n/inc.
+ * @public
+ */
+export function makeVec(n, inc, sentinel = 99) {
+  return new Float32Array((n - 1) * inc + 1).fill(sentinel);
+}
+
 // WGSL may flush subnormals to zero (FTZ): "To flush to zero is to replace a subnormal value
 // for a floating point type with a zero value of that type."
 // https://www.w3.org/TR/WGSL/#floating-point-evaluation §15.7.2
