@@ -1,0 +1,7 @@
+[
+  { "label": "incx=2, incy=1 — independent strides", "n": 3, "x": [1, 99, 2, 99, 3], "incx": 2, "y": [0, 0, 0], "incy": 1 },
+  { "label": "incx=1, incy=2 — odd y slots untouched", "n": 3, "x": [1, 2, 3], "incx": 1, "y": [0, 99, 0, 99, 0], "incy": 2 },
+  { "label": "y elements beyond n are untouched", "n": 2, "x": [7, 8], "incx": 1, "y": [1, 2, 3, 4, 5], "incy": 1 },
+  { "label": "negative values preserved — bitwise copy", "n": 3, "x": [-1, -2, -3], "incx": 1, "y": [0, 0, 0], "incy": 1 },
+  { "label": "n=1 — single element", "n": 1, "x": [5], "incx": 1, "y": [0], "incy": 1 }
+]

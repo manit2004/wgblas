@@ -1,0 +1,8 @@
+[
+  { "label": "alpha=0 — all elements zeroed", "n": 3, "alpha": 0, "x": [1, 2, 3], "incx": 1 },
+  { "label": "alpha=1 — x unchanged", "n": 3, "alpha": 1, "x": [1, 2, 3], "incx": 1 },
+  { "label": "alpha=-1 — sign flip on every element", "n": 3, "alpha": -1, "x": [1, -2, 3], "incx": 1 },
+  { "label": "all zeros scaled by anything → all zeros", "n": 3, "alpha": 5, "x": [0, 0, 0], "incx": 1 },
+  { "label": "incx=2 — gap elements untouched", "n": 3, "alpha": 2, "x": [1, 99, 2, 99, 3], "incx": 2 },
+  { "label": "n=1 — single element", "n": 1, "alpha": 3, "x": [5], "incx": 1 }
+]

@@ -2,9 +2,9 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { strmv } from "wgblas/strmv";
-import { runValidation } from "../../helpers/validation.js";
-import { runFixtures } from "../../helpers/fixtures.js";
-import { forwardFactor, stdlibReference, validationSpecs, fixtureSpecs, makeY } from "../helpers.js";
+import { loadParam, runValidation } from "../../helpers/validation.js";
+import { runFixtures, makeVec } from "../../helpers/fixtures.js";
+import { forwardFactor, stdlibReference } from "../helpers.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
@@ -17,6 +17,28 @@ before(async () => {
 after(() => {
   cleanup();
 });
+
+const nSpec = loadParam("n");
+const validationSpecs = {
+  device: loadParam("device"),
+  uplo:   loadParam("uplo"),
+  trans:  loadParam("trans"),
+  diag:   loadParam("diag"),
+  n: {
+    ...nSpec,
+    edge:    nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [...nSpec.invalid, { value: -1, error: "n must be non-negative", label: "negative" }],
+  },
+  A:      { ...loadParam("A"), dependsOn: ["n", "lda"] },
+  lda:    loadParam("lda"),
+  x:      { ...loadParam("x"), dependsOn: ["n", "incx"] },
+  incx:   loadParam("incx"),
+  y:      { ...loadParam("y"), dependsOn: ["n", "incy"] },
+  incy:   loadParam("incy"),
+};
+
+// Cap n for fixtures — validationSpecs allows up to 1000, which makes property tests slow.
+const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
 
 test("strmv validation", async (t) => {
   await runValidation(
@@ -46,13 +68,31 @@ test("strmv fixtures", async (t) => {
 test("strmv edge cases", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
-      const a = { // case params, JSON arrays converted to typed arrays
-        uplo: c.uplo, trans: c.trans, diag: c.diag, n: c.n,
-        A: new Float32Array(c.A), lda: c.lda,
-        x: new Float32Array(c.x), incx: c.incx,
-        y: makeY(c.n, c.incy), incy: c.incy,
+      const a = {
+        uplo: c.uplo,                 // which triangle of A is stored
+        trans: c.trans,               // whether to use A or Aᵀ
+        diag: c.diag,                 // unit (diagonal implicitly 1) or non-unit (read from A)
+        n: c.n,                       // matrix dimension (n×n)
+        A: new Float32Array(c.A),     // matrix, row-major, size n*lda
+        lda: c.lda,                   // leading dimension (row stride) of A
+        x: new Float32Array(c.x),     // input vector
+        incx: c.incx,                 // stride through x
+        y: makeVec(c.n, c.incy),      // output vector — only y[i*incy] for i in [0,n) is written
+        incy: c.incy,                 // stride through y
       };
-      const { y: got } = await strmv(device, a.uplo, a.trans, a.diag, a.n, a.A, a.lda, a.x, a.incx, a.y, a.incy); // GPU result
+      const { y: got } = await strmv(
+        device,   // GPU device
+        a.uplo,   // which triangle of A is stored
+        a.trans,  // whether to use A or Aᵀ
+        a.diag,   // unit (diagonal implicitly 1) or non-unit (read from A)
+        a.n,      // matrix dimension (n×n)
+        a.A,      // matrix, row-major, size n*lda
+        a.lda,    // leading dimension (row stride) of A
+        a.x,      // input vector
+        a.incx,   // stride through x
+        a.y,      // output vector
+        a.incy,   // stride through y
+      ); // GPU result
       const { y: expected } = stdlibReference(a); // stdlib result
       assert.deepEqual(got, expected);
     });

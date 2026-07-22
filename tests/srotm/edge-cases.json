@@ -1,0 +1,7 @@
+[
+  { "label": "flag=-2 — identity, both vectors unchanged", "n": 3, "x": [1, 2, 3], "incx": 1, "y": [4, 5, 6], "incy": 1, "param": [-2, 99, 99, 99, 99] },
+  { "label": "flag=-1 — full matrix, diagonal scaling", "n": 2, "x": [1, 2], "incx": 1, "y": [3, 4], "incy": 1, "param": [-1, 2, 0, 0, 3] },
+  { "label": "flag=0 — h11=h22=1 implied; x[i]+=y[i], y unchanged", "n": 2, "x": [1, 2], "incx": 1, "y": [3, 4], "incy": 1, "param": [0, 99, 0, 1, 99] },
+  { "label": "flag=1 — h12=1, h21=-1 implied; x[i]+=y[i], y[i]-=x_orig[i]", "n": 2, "x": [1, 2], "incx": 1, "y": [3, 4], "incy": 1, "param": [1, 1, 99, 99, 1] },
+  { "label": "flag=-1, incx=2 incy=1 — gap elements in x untouched", "n": 2, "x": [1, 99, 2], "incx": 2, "y": [3, 4], "incy": 1, "param": [-1, 2, 0, 0, 3] }
+]
