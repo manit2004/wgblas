@@ -74,6 +74,10 @@
     "./strmv": {
       "import": "./src/strmv/strmv.mjs",
       "types": "./src/strmv/strmv.d.mts"
+    },
+    "./strsv": {
+      "import": "./src/strsv/strsv.mjs",
+      "types": "./src/strsv/strsv.d.mts"
     }
   },
   "files": [
