@@ -1,6 +1,6 @@
 .PHONY: bench cuda
 
-NVCC ?= $(shell which nvcc 2>/dev/null || echo /usr/local/cuda/bin/nvcc)
+NVCC ?= $(shell command -v nvcc 2>/dev/null || echo /usr/local/cuda/bin/nvcc)
 bench:
 	@for f in benchmarks/*/benchmark.*.js; do node $$f $(ARGS); done
 
