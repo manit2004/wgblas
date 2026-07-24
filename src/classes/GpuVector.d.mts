@@ -12,12 +12,13 @@ export declare class GpuVector {
   /** Number of elements in the vector. */
   readonly length: number;
 
-  // TODO: widen to Float32ArrayConstructor | Float64ArrayConstructor when Float64 support is added
   /** Typed array constructor used when reading data back from the GPU. */
-  readonly dtype: Float32ArrayConstructor;
+  readonly dtype: Float32ArrayConstructor | Float64ArrayConstructor;
 
   /**
-   * Uploads a Float32Array to GPU memory.
+   * Uploads a Float32Array or Float64Array to GPU memory. A Float64Array is
+   * packed as two f32s per element (WGSL has no f64 type) and stored across
+   * two GPU buffers internally; `read()` reassembles the original doubles.
    *
    * @param data - input vector data
    * @returns GpuVector backed by a GPU buffer
@@ -29,15 +30,18 @@ export declare class GpuVector {
    * await init();
    * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
    * console.log("length:", vec.length, "dtype:", vec.dtype.name);
+   *
+   * const dvec = GpuVector.from(new Float64Array([1.1, 2.2, 3.3]));
+   * console.log("dtype:", dvec.dtype.name); // Float64Array
    * ```
    */
-  static from(data: Float32Array): GpuVector;
+  static from(data: Float32Array | Float64Array): GpuVector;
 
-  // TODO: return type will widen to Promise<Float32Array | Float64Array> when Float64 support is added
   /**
    * Reads the vector data back from GPU memory.
    *
-   * @returns vector data as a Float32Array
+   * @returns vector data as a Float32Array, or a Float64Array if this vector
+   * was created from one
    *
    * @example
    * ```js
@@ -49,7 +53,7 @@ export declare class GpuVector {
    * console.log(data);
    * ```
    */
-  read(): Promise<Float32Array>;
+  read(): Promise<Float32Array | Float64Array>;
 
   /**
    * Destroys the underlying GPU buffer. Call when the vector is no longer needed

@@ -25,7 +25,10 @@ export declare class GpuMatrix {
   readonly lda: number;
 
   /**
-   * Uploads a row-major Float32Array matrix to GPU memory.
+   * Uploads a row-major Float32Array or Float64Array matrix to GPU memory. A
+   * Float64Array is packed as two f32s per element (WGSL has no f64 type)
+   * and stored across two GPU buffers internally; `read()` reassembles the
+   * original doubles.
    *
    * `lda` defaults to `cols` (dense, no padding between rows).
    * `data` must have at least `rows * lda` elements.
@@ -45,13 +48,13 @@ export declare class GpuMatrix {
    * console.log(mat.rows, mat.cols, mat.lda); // 2 3 3
    * ```
    */
-  static from(data: Float32Array, rows: number, cols: number, lda?: number): GpuMatrix;
+  static from(data: Float32Array | Float64Array, rows: number, cols: number, lda?: number): GpuMatrix;
 
   /**
    * Downloads the matrix from GPU memory and returns a dense row-major
-   * `Float32Array` of shape `rows × cols`. If `lda > cols`, the
-   * leading-dimension padding is stripped so the returned array is always
-   * tightly packed.
+   * array of shape `rows × cols` — a `Float32Array`, or a `Float64Array` if
+   * this matrix was created from one. If `lda > cols`, the leading-dimension
+   * padding is stripped so the returned array is always tightly packed.
    *
    * @example
    * ```js
@@ -63,7 +66,7 @@ export declare class GpuMatrix {
    * console.log(data); // Float32Array [1, 2, 3, 4, 5, 6]
    * ```
    */
-  read(): Promise<Float32Array>;
+  read(): Promise<Float32Array | Float64Array>;
 
   /**
    * Destroys the underlying GPU buffer. Call when the matrix is no longer

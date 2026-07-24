@@ -47,6 +47,10 @@
       "import": "./src/sasum/sasum.mjs",
       "types": "./src/sasum/sasum.d.mts"
     },
+    "./dasum": {
+      "import": "./src/dasum/dasum.mjs",
+      "types": "./src/dasum/dasum.d.mts"
+    },
     "./snrm2": {
       "import": "./src/snrm2/snrm2.mjs",
       "types": "./src/snrm2/snrm2.d.mts"
