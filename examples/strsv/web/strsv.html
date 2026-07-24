@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>strsv — wgblas browser example</title>
+    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, strsv, randomFloat32Array, randomTriangularFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 4, lda = n;
+        const A = randomTriangularFloat32Array(n, lda, "lower", -10, 10);
+        const b = randomFloat32Array(n, -10, 10);
+
+        const { x } = await strsv(device, "lower", "no-transpose", "non-unit", n, A, lda, Float32Array.from(b), 1);
+
+        document.getElementById("out").textContent =
+          "A (lower triangle): " + Array.from(A).map(v => v.toFixed(4)).join(", ") +
+          "\nb: " + Array.from(b).map(v => v.toFixed(4)).join(", ") +
+          "\nx (solves A*x = b): " + Array.from(x).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>
