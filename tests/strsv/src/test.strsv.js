@@ -31,7 +31,11 @@ const validationSpecs = {
     invalid: [...nSpec.invalid, { value: -1, error: "n must be non-negative", label: "negative" }],
   },
   // triangular: true keeps buildArb's diagonal well away from 0 — strsv divides by it.
-  A:      { ...loadParam("A"), dependsOn: ["n", "lda"], triangular: true },
+  // range is also tightened to [-1,1]: with diag="unit" the diagonal is implicitly 1
+  // (the triangular patch above doesn't apply), so an off-diagonal magnitude near the
+  // default ±10 compounds across a long dependency chain (n up to 50) and overflows
+  // float32 to Infinity/NaN — a pathological fixture, not a real accuracy bug.
+  A:      { ...loadParam("A"), dependsOn: ["n", "lda"], triangular: true, range: { elementMin: -1.0, elementMax: 1.0 } },
   lda:    loadParam("lda"),
   x:      { ...loadParam("x"), dependsOn: ["n", "incx"] },
   incx:   loadParam("incx"),
