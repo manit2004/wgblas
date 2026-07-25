@@ -8,7 +8,8 @@
     { "special": "NaN",       "error": "must be integers", "label": "NaN" },
     { "special": "Infinity",  "error": "must be integers", "label": "Infinity" },
     { "special": "string",    "error": "must be integers", "label": "string '100'" },
-    { "special": "null",      "error": "must be integers", "label": "null" }
+    { "special": "null",      "error": "must be integers", "label": "null" },
+    { "value": -1,            "error": "must be non-negative", "label": "negative" }
   ],
   "edge": [
     { "value": 0, "label": "m=0 returns early without error", "behavior": "noop" },

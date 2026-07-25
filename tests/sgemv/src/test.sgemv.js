@@ -24,11 +24,16 @@ after(() => {
 });
 
 
+const nSpec = loadParam("n");
 const validationSpecs = {
   device: loadParam("device"),
   trans:  loadParam("trans"),
   m:      loadParam("m"),
-  n:      loadParam("n"),
+  n: {
+    ...nSpec,
+    edge:    nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [...nSpec.invalid, { value: -1, error: "n must be non-negative", label: "negative" }],
+  },
   alpha:  loadParam("alpha"),
   beta:   loadParam("beta"),
   lda:    loadParam("lda"),

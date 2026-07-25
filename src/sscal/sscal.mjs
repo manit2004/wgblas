@@ -34,40 +34,49 @@ export async function sscal(device, n, alpha, x, incx) {
 
   const pipeline = await getPipeline(device, "sscal");
 
-  const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sscal-x", true);
-  const paramsBuffer = createParamsBuffer(
-    [
-      { value: n, type: "u32" },
-      { value: alpha, type: "f32" },
-      { value: incx, type: "u32" },
-    ],
-    "sscal-params",
-  );
+  let xBuffer = null;
+  let paramsBuffer = null;
+  let readBuffer = null;
 
-  const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
-    xBuffer,
-    paramsBuffer,
-  ]);
-  const { commandEncoder, ts } = runComputePass(
-    pipeline,
-    bindGroup,
-    calcWorkgroups(n),
-  );
-  const readBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
+  try {
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sscal-x", true);
+    paramsBuffer = createParamsBuffer(
+      [
+        { value: n, type: "u32" },
+        { value: alpha, type: "f32" },
+        { value: incx, type: "u32" },
+      ],
+      "sscal-params",
+    );
 
-  submit(commandEncoder);
+    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+      xBuffer,
+      paramsBuffer,
+    ]);
+    const { commandEncoder, ts } = runComputePass(
+      pipeline,
+      bindGroup,
+      calcWorkgroups(n),
+    );
+    readBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
 
-  const gpuTimeMs = await extractTimestamp(ts);
+    submit(commandEncoder);
 
-  if (xIsGpu) {
-    destroyBuffers(paramsBuffer);
-    if (gpuTimeMs !== undefined) return { gpuTimeMs };
-    return {};
+    const gpuTimeMs = await extractTimestamp(ts);
+
+    if (xIsGpu) {
+      if (gpuTimeMs !== undefined) return { gpuTimeMs };
+      return {};
+    }
+
+    const result = await extractResult(readBuffer, Float32Array);
+    readBuffer = null; // extractResult already destroyed it
+    if (gpuTimeMs !== undefined) return { x: result, gpuTimeMs };
+    return result;
+  } finally {
+    if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if extractTimestamp threw before extractResult ran.
+    if (readBuffer) destroyBuffers(readBuffer);
   }
-
-  const result = await extractResult(readBuffer, Float32Array);
-  destroyBuffers(xBuffer, paramsBuffer);
-
-  if (gpuTimeMs !== undefined) return { x: result, gpuTimeMs };
-  return result;
 }

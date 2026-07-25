@@ -56,11 +56,14 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     throw new Error(
       "A must be a GpuMatrix when x and y are GpuVectors.",
     );
+  if (xIsGpu && x._buf === y._buf)
+    throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
   if (AIsGpu && (A.rows < m || A.cols < n))
     throw new Error("A is too small for the given m and n.");
-  if (m <= 0 || n <= 0) return yIsGpu ? {} : { y };
+  if (m < 0 || n < 0) throw new Error("m and n must be non-negative.");
+  if (m === 0 || n === 0) return yIsGpu ? {} : { y };
 
   // NoTrans: x has n elements, y has m elements
   // Trans:   x has m elements, y has n elements
