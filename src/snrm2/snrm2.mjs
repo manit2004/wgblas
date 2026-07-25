@@ -38,6 +38,7 @@ export async function snrm2(device, n, x, incx) {
   let partialsBuffer = null;
   let resultBuffer = null;
   let paramsBuffer = null;
+  let readBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "snrm2-x", false);
@@ -73,14 +74,17 @@ export async function snrm2(device, n, x, incx) {
       bgReduce,
       1,
     ); // reduce partials to single result
-    const readBuffer = stageReadback(enc2, resultBuffer);
+    readBuffer = stageReadback(enc2, resultBuffer);
 
     submit(enc2);
+
+    const resultPromise = extractResult(readBuffer, Float32Array);
+    readBuffer = null; // ownership transferred — extractResult's own finally destroys it
 
     const [gpuTime1, gpuTime2, sqsumArr] = await Promise.all([
       extractTimestamp(ts1),
       extractTimestamp(ts2),
-      extractResult(readBuffer, Float32Array),
+      resultPromise,
     ]);
 
     // sqrt is taken on CPU after the GPU sum-of-squares reduction
@@ -94,5 +98,7 @@ export async function snrm2(device, n, x, incx) {
     if (partialsBuffer) destroyBuffers(partialsBuffer);
     if (resultBuffer) destroyBuffers(resultBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if submit(enc2) threw before ownership was transferred above.
+    if (readBuffer) destroyBuffers(readBuffer);
   }
 }

@@ -52,6 +52,8 @@ export async function srotm(device, n, x, incx, y, incy, param) {
   let yBuffer = null;
   let paramBuffer = null;
   let paramsBuffer = null;
+  let readX = null;
+  let readY = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "srotm-x", true);
@@ -77,8 +79,8 @@ export async function srotm(device, n, x, incx, y, incy, param) {
       bindGroup,
       calcWorkgroups(n),
     );
-    const readX = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
-    const readY = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    readX = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
+    readY = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
     submit(commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
@@ -88,10 +90,11 @@ export async function srotm(device, n, x, incx, y, incy, param) {
       return {};
     }
 
-    const [xResult, yResult] = await Promise.all([
-      extractResult(readX, Float32Array),
-      extractResult(readY, Float32Array),
-    ]);
+    const xPromise = extractResult(readX, Float32Array);
+    const yPromise = extractResult(readY, Float32Array);
+    readX = null; // ownership transferred — extractResult's own finally destroys it
+    readY = null;
+    const [xResult, yResult] = await Promise.all([xPromise, yPromise]);
 
     if (gpuTimeMs !== undefined) return { x: xResult, y: yResult, gpuTimeMs };
     return { x: xResult, y: yResult };
@@ -100,5 +103,8 @@ export async function srotm(device, n, x, incx, y, incy, param) {
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (paramBuffer) destroyBuffers(paramBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if extractTimestamp threw before ownership was transferred above.
+    if (readX) destroyBuffers(readX);
+    if (readY) destroyBuffers(readY);
   }
 }

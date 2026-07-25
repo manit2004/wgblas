@@ -5,13 +5,13 @@
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
- * | 32 | 0.0342 | 0.0693 | 0.0099 | 0.2399 | 28.9% |
- * | 64 | 0.0620 | 0.1425 | 0.0115 | 0.7677 | 18.6% |
- * | 128 | 0.1284 | 0.2651 | 0.0149 | 2.2784 | 11.6% |
- * | 256 | 0.2876 | 0.4646 | 0.0225 | 5.9445 | 7.8% |
- * | 512 | 0.7203 | 0.7350 | 0.0369 | 14.3611 | 5.1% |
- * | 1024 | 3.3138 | 0.6359 | 0.0744 | 28.3130 | 2.2% |
- * | 2048 | 11.3970 | 0.7378 | 0.1545 | 54.4348 | 1.4% |
+ * | 32 | 0.0434 | 0.0546 | 0.0099 | 0.2399 | 22.7% |
+ * | 64 | 0.0799 | 0.1105 | 0.0115 | 0.7677 | 14.4% |
+ * | 128 | 0.1650 | 0.2064 | 0.0149 | 2.2784 | 9.1% |
+ * | 256 | 0.3724 | 0.3589 | 0.0225 | 5.9445 | 6.0% |
+ * | 512 | 0.9339 | 0.5669 | 0.0369 | 14.3611 | 3.9% |
+ * | 1024 | 3.3149 | 0.6357 | 0.0744 | 28.3130 | 2.2% |
+ * | 2048 | 11.4140 | 0.7367 | 0.1545 | 54.4348 | 1.4% |
  *
  * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.
  *
@@ -42,13 +42,13 @@
  * <text class="at" x="408.7" y="236" text-anchor="middle">512</text>
  * <text class="at" x="496.3" y="236" text-anchor="middle">1.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">2.0K</text>
- * <polyline class="ln1" points="58.0,219.8 145.7,219.5 233.3,219.1 321.0,218.5 408.7,217.6 496.3,217.9 584.0,217.5"/>
+ * <polyline class="ln1" points="58.0,219.8 145.7,219.6 233.3,219.3 321.0,218.8 408.7,218.1 496.3,217.9 584.0,217.5"/>
  * <polyline class="ln2" points="58.0,219.2 145.7,217.4 233.3,212.4 321.0,200.2 408.7,172.1 496.3,125.6 584.0,38.6"/>
  * <circle class="mk1" cx="58.0" cy="219.8" r="4"/>
- * <circle class="mk1" cx="145.7" cy="219.5" r="4"/>
- * <circle class="mk1" cx="233.3" cy="219.1" r="4"/>
- * <circle class="mk1" cx="321.0" cy="218.5" r="4"/>
- * <circle class="mk1" cx="408.7" cy="217.6" r="4"/>
+ * <circle class="mk1" cx="145.7" cy="219.6" r="4"/>
+ * <circle class="mk1" cx="233.3" cy="219.3" r="4"/>
+ * <circle class="mk1" cx="321.0" cy="218.8" r="4"/>
+ * <circle class="mk1" cx="408.7" cy="218.1" r="4"/>
  * <circle class="mk1" cx="496.3" cy="217.9" r="4"/>
  * <circle class="mk1" cx="584.0" cy="217.5" r="4"/>
  * <circle class="mk2" cx="58.0" cy="219.2" r="4"/>
@@ -95,15 +95,15 @@
  * <text class="at" x="408.7" y="236" text-anchor="middle">512</text>
  * <text class="at" x="496.3" y="236" text-anchor="middle">1.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">2.0K</text>
- * <polyline class="ln1" points="58.0,219.4 145.7,219.0 233.3,217.9 321.0,215.2 408.7,208.0 496.3,164.8 584.0,30.1"/>
+ * <polyline class="ln1" points="58.0,219.3 145.7,218.7 233.3,217.3 321.0,213.8 408.7,204.4 496.3,164.8 584.0,29.8"/>
  * <polyline class="ln2" points="58.0,219.8 145.7,219.8 233.3,219.8 321.0,219.6 408.7,219.4 496.3,218.8 584.0,217.4"/>
- * <circle class="mk1" cx="58.0" cy="219.4" r="4"/>
- * <circle class="mk1" cx="145.7" cy="219.0" r="4"/>
- * <circle class="mk1" cx="233.3" cy="217.9" r="4"/>
- * <circle class="mk1" cx="321.0" cy="215.2" r="4"/>
- * <circle class="mk1" cx="408.7" cy="208.0" r="4"/>
+ * <circle class="mk1" cx="58.0" cy="219.3" r="4"/>
+ * <circle class="mk1" cx="145.7" cy="218.7" r="4"/>
+ * <circle class="mk1" cx="233.3" cy="217.3" r="4"/>
+ * <circle class="mk1" cx="321.0" cy="213.8" r="4"/>
+ * <circle class="mk1" cx="408.7" cy="204.4" r="4"/>
  * <circle class="mk1" cx="496.3" cy="164.8" r="4"/>
- * <circle class="mk1" cx="584.0" cy="30.1" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="29.8" r="4"/>
  * <circle class="mk2" cx="58.0" cy="219.8" r="4"/>
  * <circle class="mk2" cx="145.7" cy="219.8" r="4"/>
  * <circle class="mk2" cx="233.3" cy="219.8" r="4"/>

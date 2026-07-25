@@ -39,6 +39,7 @@ export async function isamax(device, n, x, incx) {
   let partialsIdxBuffer = null;
   let resultBuffer = null;
   let paramsBuffer = null;
+  let readBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "isamax-x", false);
@@ -83,14 +84,17 @@ export async function isamax(device, n, x, incx) {
       bgReduce,
       1,
     ); // dispatch 1 workgroup to reduce the partial sums to a single result
-    const readBuffer = stageReadback(enc2, resultBuffer);
+    readBuffer = stageReadback(enc2, resultBuffer);
 
     submit(enc2);
+
+    const resultPromise = extractResult(readBuffer, Uint32Array);
+    readBuffer = null; // ownership transferred — extractResult's own finally destroys it
 
     const [gpuTime1, gpuTime2, idxArr] = await Promise.all([
       extractTimestamp(ts1),
       extractTimestamp(ts2),
-      extractResult(readBuffer, Uint32Array),
+      resultPromise,
     ]);
 
     const index = idxArr[0];
@@ -104,5 +108,7 @@ export async function isamax(device, n, x, incx) {
     if (partialsIdxBuffer) destroyBuffers(partialsIdxBuffer);
     if (resultBuffer) destroyBuffers(resultBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if submit(enc2) threw before ownership was transferred above.
+    if (readBuffer) destroyBuffers(readBuffer);
   }
 }

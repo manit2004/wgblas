@@ -36,6 +36,7 @@ export async function sscal(device, n, alpha, x, incx) {
 
   let xBuffer = null;
   let paramsBuffer = null;
+  let readBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sscal-x", true);
@@ -57,7 +58,7 @@ export async function sscal(device, n, alpha, x, incx) {
       bindGroup,
       calcWorkgroups(n),
     );
-    const readBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
+    readBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
 
     submit(commandEncoder);
 
@@ -69,10 +70,13 @@ export async function sscal(device, n, alpha, x, incx) {
     }
 
     const result = await extractResult(readBuffer, Float32Array);
+    readBuffer = null; // extractResult already destroyed it
     if (gpuTimeMs !== undefined) return { x: result, gpuTimeMs };
     return result;
   } finally {
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if extractTimestamp threw before extractResult ran.
+    if (readBuffer) destroyBuffers(readBuffer);
   }
 }

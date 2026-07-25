@@ -49,6 +49,8 @@ export async function sswap(device, n, x, incx, y, incy) {
   let xBuffer = null;
   let yBuffer = null;
   let paramsBuffer = null;
+  let xReadBuffer = null;
+  let yReadBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sswap-x", true);
@@ -72,8 +74,8 @@ export async function sswap(device, n, x, incx, y, incy) {
       bindGroup,
       calcWorkgroups(n),
     );
-    const xReadBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
-    const yReadBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    xReadBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
+    yReadBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
     submit(commandEncoder);
 
@@ -85,7 +87,9 @@ export async function sswap(device, n, x, incx, y, incy) {
     }
 
     const resultX = await extractResult(xReadBuffer, Float32Array);
+    xReadBuffer = null; // extractResult already destroyed it
     const resultY = await extractResult(yReadBuffer, Float32Array);
+    yReadBuffer = null; // extractResult already destroyed it
 
     if (gpuTimeMs !== undefined) return { x: resultX, y: resultY, gpuTimeMs };
     return { x: resultX, y: resultY };
@@ -93,5 +97,9 @@ export async function sswap(device, n, x, incx, y, incy) {
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if extractTimestamp or extractResult threw before
+    // clearing these — on the success path they're already null.
+    if (xReadBuffer) destroyBuffers(xReadBuffer);
+    if (yReadBuffer) destroyBuffers(yReadBuffer);
   }
 }
