@@ -70,7 +70,7 @@ export declare function randomFloat64Array(
  * in the other triangle is 0.
  *
  * @param n - matrix order (rows/cols read by the triangular routine)
- * @param lda - leading dimension (>= n)
+ * @param lda - leading dimension; throws if `lda < n`
  * @param uplo - `'lower'` to fill the lower triangle, `'upper'` to fill the upper triangle (default: `'lower'`)
  * @param low - lower bound for off-diagonal entries (default: -1)
  * @param high - upper bound for off-diagonal entries (default: 1)
