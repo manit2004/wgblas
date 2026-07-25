@@ -37,15 +37,27 @@ for (const size of SIZES) {
 
   // Well-conditioned diagonal (away from 0) — strsv divides by it.
   const AGpu = GpuMatrix.from(randomTriangularFloat32Array(n, lda, "lower"), n, n, lda);
-  const xGpu = GpuVector.from(randomFloat32Array(n));
+  const b = randomFloat32Array(n);
+
+  // strsv solves in place, so reset x to b before every call, or later
+  // iterations solve using drifted-toward-0 leftovers from earlier ones.
+  // GpuVector has no COPY_DST usage, so writeBuffer can't target it —
+  // destroy+recreate instead, before the timed strsv call.
+  let xGpu = null;
+  const resetX = () => {
+    if (xGpu) xGpu.destroy();
+    xGpu = GpuVector.from(b);
+  };
 
   // warm up
   for (let i = 0; i < WARMUP_ITERS; i++) {
+    resetX();
     await strsv(device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1);
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
+    resetX();
     const { gpuTimeMs } = await strsv(
       device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1,
     );
