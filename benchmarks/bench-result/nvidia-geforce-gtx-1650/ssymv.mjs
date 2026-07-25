@@ -15,7 +15,7 @@
  * | 2048 | 0.2288 | 36.7940 | 0.1452 | 57.9639 | 63.5% |
  * | 4096 | 0.7899 | 42.5543 | 0.5489 | 61.2388 | 69.5% |
  *
- * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.
+ * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.
  *
  * <svg id="bc-ssymv-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
  * <style>#bc-ssymv-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-ssymv-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-ssymv-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-ssymv-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-ssymv-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-ssymv-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-ssymv-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-ssymv-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-ssymv-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-ssymv-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
@@ -119,8 +119,8 @@
  *
  * ## See also
  *
- * - [benchmark.ssymv.js](https://github.com/manit2004/wgblas/blob/develop/benchmarks/ssymv/benchmark.ssymv.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/develop/benchmarks/ssymv/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [benchmark.ssymv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/benchmark.ssymv.js) — WebGPU benchmark script
+ * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/cuda/benchmark.c) — CUDA / cuBLAS reference script
  *
  * @module benchmarks/nvidia-geforce-gtx-1650/ssymv
  */

@@ -14,120 +14,124 @@
 <tbody>
 <tr>
 <td>32</td>
-<td>0.0060</td>
-<td>0.0849</td>
-<td>0.0029</td>
-<td>0.1739</td>
-<td>48.8%</td>
+<td>0.0076</td>
+<td>0.0678</td>
+<td>0.0040</td>
+<td>0.1280</td>
+<td>53.0%</td>
 </tr>
 <tr>
 <td>64</td>
-<td>0.0061</td>
-<td>0.1667</td>
-<td>0.0028</td>
-<td>0.3596</td>
-<td>46.3%</td>
+<td>0.0074</td>
+<td>0.1391</td>
+<td>0.0039</td>
+<td>0.2623</td>
+<td>53.0%</td>
 </tr>
 <tr>
 <td>128</td>
-<td>0.0061</td>
-<td>0.3351</td>
-<td>0.0030</td>
-<td>0.6919</td>
-<td>48.4%</td>
+<td>0.0076</td>
+<td>0.2712</td>
+<td>0.0038</td>
+<td>0.5378</td>
+<td>50.4%</td>
 </tr>
 <tr>
 <td>512</td>
-<td>0.0060</td>
-<td>1.3617</td>
-<td>0.0030</td>
-<td>2.7527</td>
-<td>49.5%</td>
+<td>0.0076</td>
+<td>1.0734</td>
+<td>0.0038</td>
+<td>2.1333</td>
+<td>50.3%</td>
 </tr>
 <tr>
 <td>1024</td>
-<td>0.0061</td>
-<td>2.6667</td>
-<td>0.0030</td>
-<td>5.5351</td>
-<td>48.2%</td>
+<td>0.0076</td>
+<td>2.1649</td>
+<td>0.0039</td>
+<td>4.1967</td>
+<td>51.6%</td>
 </tr>
 <tr>
 <td>4096</td>
-<td>0.0061</td>
-<td>10.6667</td>
-<td>0.0032</td>
-<td>20.5829</td>
-<td>51.8%</td>
+<td>0.0077</td>
+<td>8.5511</td>
+<td>0.0040</td>
+<td>16.3840</td>
+<td>52.2%</td>
 </tr>
 <tr>
 <td>16384</td>
-<td>0.0067</td>
-<td>39.0095</td>
-<td>0.0039</td>
-<td>66.8735</td>
-<td>58.3%</td>
+<td>0.0083</td>
+<td>31.6293</td>
+<td>0.0047</td>
+<td>55.9181</td>
+<td>56.6%</td>
 </tr>
 <tr>
 <td>65536</td>
-<td>0.0084</td>
-<td>125.5479</td>
-<td>0.0066</td>
-<td>158.2995</td>
-<td>79.3%</td>
+<td>0.0105</td>
+<td>99.7504</td>
+<td>0.0087</td>
+<td>120.4706</td>
+<td>82.8%</td>
 </tr>
 <tr>
 <td>262144</td>
-<td>0.0287</td>
-<td>146.0412</td>
-<td>0.0275</td>
-<td>152.4093</td>
-<td>95.8%</td>
+<td>0.0349</td>
+<td>120.1944</td>
+<td>0.0329</td>
+<td>127.3162</td>
+<td>94.4%</td>
 </tr>
 <tr>
 <td>1048576</td>
-<td>0.1024</td>
-<td>163.8400</td>
-<td>0.1008</td>
-<td>166.3878</td>
-<td>98.5%</td>
+<td>0.1229</td>
+<td>136.5333</td>
+<td>0.1206</td>
+<td>139.0869</td>
+<td>98.2%</td>
 </tr>
 <tr>
 <td>4194304</td>
-<td>0.3960</td>
-<td>169.4874</td>
-<td>0.3959</td>
-<td>169.5216</td>
-<td>100.0%</td>
+<td>0.4739</td>
+<td>141.6229</td>
+<td>0.4751</td>
+<td>141.2414</td>
+<td>100.3%</td>
 </tr>
 <tr>
 <td>16777216</td>
-<td>1.5499</td>
-<td>173.1985</td>
-<td>1.5644</td>
-<td>171.5848</td>
-<td>100.9%</td>
+<td>1.9046</td>
+<td>140.9376</td>
+<td>1.8631</td>
+<td>144.0784</td>
+<td>97.8%</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p>Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.</p>
+<p>Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.</p>
 </blockquote>
 <svg id="bc-srotm-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
 <style>#bc-srotm-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-srotm-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-srotm-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-srotm-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-srotm-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-srotm-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-srotm-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-srotm-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-srotm-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-srotm-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-srotm-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-srotm-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-srotm-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-srotm-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-srotm-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-srotm-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-srotm-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-srotm-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-srotm-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-srotm-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-srotm-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-srotm-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-srotm-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-srotm-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-srotm-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
 <rect class="bg" width="600" height="260"/>
 <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
-<line class="gr" x1="58" y1="170.0" x2="584" y2="170.0"/>
+<line class="gr" x1="58" y1="186.7" x2="584" y2="186.7"/>
+<line class="gr" x1="58" y1="153.3" x2="584" y2="153.3"/>
 <line class="gr" x1="58" y1="120.0" x2="584" y2="120.0"/>
-<line class="gr" x1="58" y1="70.0" x2="584" y2="70.0"/>
+<line class="gr" x1="58" y1="86.7" x2="584" y2="86.7"/>
+<line class="gr" x1="58" y1="53.3" x2="584" y2="53.3"/>
 <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
 <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
 <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
 <text class="at" x="52" y="224.0" text-anchor="end">0</text>
-<text class="at" x="52" y="174.0" text-anchor="end">50</text>
-<text class="at" x="52" y="124.0" text-anchor="end">100</text>
-<text class="at" x="52" y="74.0" text-anchor="end">150</text>
-<text class="at" x="52" y="24.0" text-anchor="end">200</text>
+<text class="at" x="52" y="190.7" text-anchor="end">25</text>
+<text class="at" x="52" y="157.3" text-anchor="end">50</text>
+<text class="at" x="52" y="124.0" text-anchor="end">75</text>
+<text class="at" x="52" y="90.7" text-anchor="end">100</text>
+<text class="at" x="52" y="57.3" text-anchor="end">125</text>
+<text class="at" x="52" y="24.0" text-anchor="end">150</text>
 <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">GB/s</text>
 <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
 <text class="at" x="85.7" y="236" text-anchor="middle">64</text>
@@ -141,32 +145,32 @@
 <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
 <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
-<polyline class="ln1" points="58.0,219.9 85.7,219.8 113.4,219.7 168.7,218.6 196.4,217.3 251.8,209.3 307.2,181.0 362.5,94.5 417.9,74.0 473.3,56.2 528.6,50.5 584.0,46.8"/>
-<polyline class="ln2" points="58.0,219.8 85.7,219.6 113.4,219.3 168.7,217.2 196.4,214.5 251.8,199.4 307.2,153.1 362.5,61.7 417.9,67.6 473.3,53.6 528.6,50.5 584.0,48.4"/>
+<polyline class="ln1" points="58.0,219.9 85.7,219.8 113.4,219.6 168.7,218.6 196.4,217.1 251.8,208.6 307.2,177.8 362.5,87.0 417.9,59.7 473.3,38.0 528.6,31.2 584.0,32.1"/>
+<polyline class="ln2" points="58.0,219.8 85.7,219.7 113.4,219.3 168.7,217.2 196.4,214.4 251.8,198.2 307.2,145.4 362.5,59.4 417.9,50.2 473.3,34.6 528.6,31.7 584.0,27.9"/>
 <circle class="mk1" cx="58.0" cy="219.9" r="4"/>
 <circle class="mk1" cx="85.7" cy="219.8" r="4"/>
-<circle class="mk1" cx="113.4" cy="219.7" r="4"/>
+<circle class="mk1" cx="113.4" cy="219.6" r="4"/>
 <circle class="mk1" cx="168.7" cy="218.6" r="4"/>
-<circle class="mk1" cx="196.4" cy="217.3" r="4"/>
-<circle class="mk1" cx="251.8" cy="209.3" r="4"/>
-<circle class="mk1" cx="307.2" cy="181.0" r="4"/>
-<circle class="mk1" cx="362.5" cy="94.5" r="4"/>
-<circle class="mk1" cx="417.9" cy="74.0" r="4"/>
-<circle class="mk1" cx="473.3" cy="56.2" r="4"/>
-<circle class="mk1" cx="528.6" cy="50.5" r="4"/>
-<circle class="mk1" cx="584.0" cy="46.8" r="4"/>
+<circle class="mk1" cx="196.4" cy="217.1" r="4"/>
+<circle class="mk1" cx="251.8" cy="208.6" r="4"/>
+<circle class="mk1" cx="307.2" cy="177.8" r="4"/>
+<circle class="mk1" cx="362.5" cy="87.0" r="4"/>
+<circle class="mk1" cx="417.9" cy="59.7" r="4"/>
+<circle class="mk1" cx="473.3" cy="38.0" r="4"/>
+<circle class="mk1" cx="528.6" cy="31.2" r="4"/>
+<circle class="mk1" cx="584.0" cy="32.1" r="4"/>
 <circle class="mk2" cx="58.0" cy="219.8" r="4"/>
-<circle class="mk2" cx="85.7" cy="219.6" r="4"/>
+<circle class="mk2" cx="85.7" cy="219.7" r="4"/>
 <circle class="mk2" cx="113.4" cy="219.3" r="4"/>
 <circle class="mk2" cx="168.7" cy="217.2" r="4"/>
-<circle class="mk2" cx="196.4" cy="214.5" r="4"/>
-<circle class="mk2" cx="251.8" cy="199.4" r="4"/>
-<circle class="mk2" cx="307.2" cy="153.1" r="4"/>
-<circle class="mk2" cx="362.5" cy="61.7" r="4"/>
-<circle class="mk2" cx="417.9" cy="67.6" r="4"/>
-<circle class="mk2" cx="473.3" cy="53.6" r="4"/>
-<circle class="mk2" cx="528.6" cy="50.5" r="4"/>
-<circle class="mk2" cx="584.0" cy="48.4" r="4"/>
+<circle class="mk2" cx="196.4" cy="214.4" r="4"/>
+<circle class="mk2" cx="251.8" cy="198.2" r="4"/>
+<circle class="mk2" cx="307.2" cy="145.4" r="4"/>
+<circle class="mk2" cx="362.5" cy="59.4" r="4"/>
+<circle class="mk2" cx="417.9" cy="50.2" r="4"/>
+<circle class="mk2" cx="473.3" cy="34.6" r="4"/>
+<circle class="mk2" cx="528.6" cy="31.7" r="4"/>
+<circle class="mk2" cx="584.0" cy="27.9" r="4"/>
 <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
 <circle class="mk1" cx="66" cy="252" r="4"/>
 <text class="lt" x="80" y="256">wgblas</text>
@@ -203,32 +207,32 @@
 <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
 <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
-<polyline class="ln1" points="58.0,219.4 85.7,219.4 113.4,219.4 168.7,219.4 196.4,219.4 251.8,219.4 307.2,219.3 362.5,219.2 417.9,217.1 473.3,209.8 528.6,180.4 584.0,65.0"/>
-<polyline class="ln2" points="58.0,219.7 85.7,219.7 113.4,219.7 168.7,219.7 196.4,219.7 251.8,219.7 307.2,219.6 362.5,219.3 417.9,217.2 473.3,209.9 528.6,180.4 584.0,63.6"/>
-<circle class="mk1" cx="58.0" cy="219.4" r="4"/>
-<circle class="mk1" cx="85.7" cy="219.4" r="4"/>
-<circle class="mk1" cx="113.4" cy="219.4" r="4"/>
-<circle class="mk1" cx="168.7" cy="219.4" r="4"/>
-<circle class="mk1" cx="196.4" cy="219.4" r="4"/>
-<circle class="mk1" cx="251.8" cy="219.4" r="4"/>
-<circle class="mk1" cx="307.2" cy="219.3" r="4"/>
-<circle class="mk1" cx="362.5" cy="219.2" r="4"/>
-<circle class="mk1" cx="417.9" cy="217.1" r="4"/>
-<circle class="mk1" cx="473.3" cy="209.8" r="4"/>
-<circle class="mk1" cx="528.6" cy="180.4" r="4"/>
-<circle class="mk1" cx="584.0" cy="65.0" r="4"/>
-<circle class="mk2" cx="58.0" cy="219.7" r="4"/>
-<circle class="mk2" cx="85.7" cy="219.7" r="4"/>
-<circle class="mk2" cx="113.4" cy="219.7" r="4"/>
-<circle class="mk2" cx="168.7" cy="219.7" r="4"/>
-<circle class="mk2" cx="196.4" cy="219.7" r="4"/>
-<circle class="mk2" cx="251.8" cy="219.7" r="4"/>
-<circle class="mk2" cx="307.2" cy="219.6" r="4"/>
-<circle class="mk2" cx="362.5" cy="219.3" r="4"/>
-<circle class="mk2" cx="417.9" cy="217.2" r="4"/>
-<circle class="mk2" cx="473.3" cy="209.9" r="4"/>
-<circle class="mk2" cx="528.6" cy="180.4" r="4"/>
-<circle class="mk2" cx="584.0" cy="63.6" r="4"/>
+<polyline class="ln1" points="58.0,219.2 85.7,219.3 113.4,219.2 168.7,219.2 196.4,219.2 251.8,219.2 307.2,219.2 362.5,218.9 417.9,216.5 473.3,207.7 528.6,172.6 584.0,29.5"/>
+<polyline class="ln2" points="58.0,219.6 85.7,219.6 113.4,219.6 168.7,219.6 196.4,219.6 251.8,219.6 307.2,219.5 362.5,219.1 417.9,216.7 473.3,207.9 528.6,172.5 584.0,33.7"/>
+<circle class="mk1" cx="58.0" cy="219.2" r="4"/>
+<circle class="mk1" cx="85.7" cy="219.3" r="4"/>
+<circle class="mk1" cx="113.4" cy="219.2" r="4"/>
+<circle class="mk1" cx="168.7" cy="219.2" r="4"/>
+<circle class="mk1" cx="196.4" cy="219.2" r="4"/>
+<circle class="mk1" cx="251.8" cy="219.2" r="4"/>
+<circle class="mk1" cx="307.2" cy="219.2" r="4"/>
+<circle class="mk1" cx="362.5" cy="218.9" r="4"/>
+<circle class="mk1" cx="417.9" cy="216.5" r="4"/>
+<circle class="mk1" cx="473.3" cy="207.7" r="4"/>
+<circle class="mk1" cx="528.6" cy="172.6" r="4"/>
+<circle class="mk1" cx="584.0" cy="29.5" r="4"/>
+<circle class="mk2" cx="58.0" cy="219.6" r="4"/>
+<circle class="mk2" cx="85.7" cy="219.6" r="4"/>
+<circle class="mk2" cx="113.4" cy="219.6" r="4"/>
+<circle class="mk2" cx="168.7" cy="219.6" r="4"/>
+<circle class="mk2" cx="196.4" cy="219.6" r="4"/>
+<circle class="mk2" cx="251.8" cy="219.6" r="4"/>
+<circle class="mk2" cx="307.2" cy="219.5" r="4"/>
+<circle class="mk2" cx="362.5" cy="219.1" r="4"/>
+<circle class="mk2" cx="417.9" cy="216.7" r="4"/>
+<circle class="mk2" cx="473.3" cy="207.9" r="4"/>
+<circle class="mk2" cx="528.6" cy="172.5" r="4"/>
+<circle class="mk2" cx="584.0" cy="33.7" r="4"/>
 </svg>
 <h2 id="see-also" class="tsd-anchor-link">See also<a href="#see-also" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <ul>
