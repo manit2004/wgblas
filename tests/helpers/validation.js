@@ -10,7 +10,7 @@
  *
  * ```json
  * {
- *   "type": "integer" | "float" | "float32array",
+ *   "type": "integer" | "float" | "float32array" | "float64array",
  *   "baseline": 1,
  *   "dependsOn": ["n"],
  *   "range": { "min": 1, "max": 4 },
@@ -52,12 +52,38 @@ const PARAMS_DIR = join(
 /**
  * Reads and parses one or more param specs from `tests/validation/params/`.
  * Pass a string to get one spec; pass an array to get a record keyed by name.
+ * A name ending in `64` (e.g. `"x64"`) derives a Float64Array variant of the
+ * base spec (`"x"`) on the fly, rather than requiring a hand-duplicated file —
+ * see `derive64`.
  * @public
  */
 export function loadParam(name) {
   if (Array.isArray(name))
     return Object.fromEntries(name.map((n) => [n, loadParam(n)]));
+  if (name.endsWith("64")) return derive64(loadParam(name.slice(0, -2)));
   return JSON.parse(readFileSync(join(PARAMS_DIR, `${name}.json`), "utf8"));
+}
+
+/**
+ * Derives a Float64Array param spec from its Float32Array base (e.g. `"x"` →
+ * `"x64"`), for routines that emulate f64 on the GPU (e.g. dasum). Only
+ * `type` and the `"FloatNNArray"` substring in each `invalid.error` message
+ * actually differ between the two — everything else (dependsOn, range,
+ * scenarios) is identical, so this rewrites just those rather than
+ * maintaining a whole second spec file per array param.
+ * @internal
+ */
+function derive64(base) {
+  return {
+    ...base,
+    type: "float64array",
+    invalid: base.invalid?.map((entry) => ({
+      ...entry,
+      error: typeof entry.error === "string"
+        ? entry.error.replace("Float32Array", "Float64Array")
+        : entry.error,
+    })),
+  };
 }
 
 const SPECIALS = {
@@ -104,11 +130,13 @@ export function ndArrayLen(dependsOn, dims) {
 }
 
 /**
- * Builds a Float32Array for a test scenario using `ndArrayLen` for the normal path,
+ * Builds a typed array for a test scenario using `ndArrayLen` for the normal path,
  * or `xN`/`yN` with pre-patched strides for the oversize baseline-building path.
+ * `type: "float64array"` builds a Float64Array (e.g. dasum's x); everything else
+ * (including the default) builds a Float32Array.
  * @internal
  */
-function resolveNdArray(scenario, dependsOn, baselines, oversize = false) {
+function resolveNdArray(scenario, dependsOn, baselines, oversize = false, type = "float32array") {
   const deps = new Set(dependsOn ?? []);
   let minLen;
   if (oversize && deps.has("trans") && deps.has("m") && deps.has("n") && "m" in baselines) {
@@ -119,8 +147,9 @@ function resolveNdArray(scenario, dependsOn, baselines, oversize = false) {
     minLen = ndArrayLen(dependsOn, baselines);
   }
 
-  if (scenario === "minimal")  return new Float32Array(minLen).fill(1);
-  if (scenario === "tooShort") return new Float32Array(Math.max(0, minLen - 1)).fill(1);
+  const Ctor = type === "float64array" ? Float64Array : Float32Array;
+  if (scenario === "minimal")  return new Ctor(minLen).fill(1);
+  if (scenario === "tooShort") return new Ctor(Math.max(0, minLen - 1)).fill(1);
   throw new Error(`Unknown array scenario: "${scenario}"`);
 }
 
@@ -149,13 +178,14 @@ export function resolveParam(scenario) {
  * @param paramName name of the parameter being tested (selects `resolveParam` vs `resolveNdArray`)
  * @param baselines current baseline args (needed to size arrays from dimensions and stride)
  * @param dependsOn `spec.dependsOn` array for the param under test — passed to `resolveNdArray`
+ * @param type `spec.type` for the param under test — `"float64array"` builds a Float64Array
  * @returns the concrete JS value to substitute for the param under test
  * @internal
  */
-export function resolveEntry(entry, paramName, baselines, dependsOn) {
+export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
   if ("scenario" in entry) {
     if (paramName === "param") return resolveParam(entry.scenario);
-    return resolveNdArray(entry.scenario, dependsOn, baselines);
+    return resolveNdArray(entry.scenario, dependsOn, baselines, false, type);
   }
   if ("value" in entry) return entry.value;
   if ("special" in entry) {
@@ -166,27 +196,30 @@ export function resolveEntry(entry, paramName, baselines, dependsOn) {
   throw new Error(`Cannot resolve entry: ${JSON.stringify(entry)}`);
 }
 
+const ARRAY_TYPES = new Set(["float32array", "float64array"]);
+
 /**
- * Builds baseline Float32Arrays for all `float32array` specs that lack a static baseline.
- * Matrix params (`dependsOn` includes `"lda"`) are sized with `lda = lda.range.max` so
- * the baseline array survives lda edge cases without triggering a length error.
+ * Builds baseline typed arrays for all `float32array`/`float64array` specs that
+ * lack a static baseline. Matrix params (`dependsOn` includes `"lda"`) are sized
+ * with `lda = lda.range.max` so the baseline array survives lda edge cases
+ * without triggering a length error.
  * @param specs record of param specs keyed by param name
  * @param baselines baseline args object — mutated in place
  * @internal
  */
 function buildArrayBaselines(specs, baselines) {
   for (const [name, spec] of Object.entries(specs)) {
-    if (spec.type !== "float32array" || baselines[name]) continue;
+    if (!ARRAY_TYPES.has(spec.type) || baselines[name]) continue;
     const deps = new Set(spec.dependsOn ?? []);
     if (deps.has("lda")) {
       const ldaMax = specs.lda?.range?.max ?? baselines.lda ?? baselines.n ?? 4;
-      baselines[name] = resolveNdArray("minimal", spec.dependsOn, { ...baselines, lda: ldaMax }, true);
+      baselines[name] = resolveNdArray("minimal", spec.dependsOn, { ...baselines, lda: ldaMax }, true, spec.type);
     } else {
       // Patch incx/incy to range max so the baseline array survives stride edge cases.
       const patched = { ...baselines };
       if (deps.has("incx") && specs.incx?.range?.max) patched.incx = specs.incx.range.max;
       if (deps.has("incy") && specs.incy?.range?.max) patched.incy = specs.incy.range.max;
-      baselines[name] = resolveNdArray("minimal", spec.dependsOn, patched, true);
+      baselines[name] = resolveNdArray("minimal", spec.dependsOn, patched, true, spec.type);
     }
   }
 }
@@ -223,10 +256,14 @@ function applyTransBaselines(specs, baselines) {
 export async function runValidation(t, specs, call, runtimeBaselines = {}) {
   const baselines = {};
   for (const [name, spec] of Object.entries(specs)) {
-    if ("baseline" in spec)
-      baselines[name] = Array.isArray(spec.baseline)
-        ? new Float32Array(spec.baseline)
-        : spec.baseline;
+    if ("baseline" in spec) {
+      if (Array.isArray(spec.baseline)) {
+        const Ctor = spec.type === "float64array" ? Float64Array : Float32Array;
+        baselines[name] = new Ctor(spec.baseline);
+      } else {
+        baselines[name] = spec.baseline;
+      }
+    }
   }
   Object.assign(baselines, runtimeBaselines);
 
@@ -249,7 +286,7 @@ async function runInvalidCases(t, specs, baselines, call) {
     for (const entry of spec.invalid ?? []) {
       const label = entry.label ?? JSON.stringify(entry);
       await t.test(`${paramName} invalid: ${label}`, async () => {
-        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn) };
+        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn, spec.type) };
         await assert.rejects(
           () => call(args),
           (err) => {
@@ -274,7 +311,7 @@ async function runEdgeCases(t, specs, baselines, call) {
     for (const entry of spec.edge ?? []) {
       const label = entry.label ?? JSON.stringify(entry);
       await t.test(`${paramName} edge: ${label}`, async () => {
-        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn) };
+        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn, spec.type) };
         await call(args);
       });
     }

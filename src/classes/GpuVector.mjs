@@ -6,9 +6,6 @@ import { packF64, unpackF64 } from "../util/f64pack.mjs";
 export class GpuVector {
   constructor(buffer, length, dtype = Float32Array, auxBuffer = null) {
     this._buf = buffer;
-    // Non-null only for Float64Array-backed vectors: WGSL has no f64 type, so
-    // each element is packed into two f32s (packF64) — _buf holds the "main"
-    // half of every element, _auxBuf the "aux" half.
     this._auxBuf = auxBuffer;
     this.length = length;
     this.dtype = dtype;
@@ -17,7 +14,7 @@ export class GpuVector {
   static from(data) {
     if (data instanceof Float64Array) {
       const main = new Float32Array(data.length);
-      const aux = new Float32Array(data.length);
+      const aux = new Uint32Array(data.length);
       for (let i = 0; i < data.length; i++) {
         const packed = packF64(data[i]);
         main[i] = packed[0];
@@ -48,7 +45,7 @@ export class GpuVector {
 
     const [main, aux] = await Promise.all([
       extractResult(rb, Float32Array),
-      extractResult(rbAux, Float32Array),
+      extractResult(rbAux, Uint32Array),
     ]);
     const out = new Float64Array(this.length);
     for (let i = 0; i < this.length; i++) out[i] = unpackF64(main[i], aux[i]);

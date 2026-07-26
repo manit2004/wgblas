@@ -1,7 +1,7 @@
-// f64add: adds two doubles, each packed as a [main, aux] f32 pair (see
-// src/util/f64pack.mjs — decode()/encode() below are the WGSL mirror of that
-// file's packedToFields()/fieldsToPacked()), producing the sum as another
-// [main, aux] pair.
+// f64add: adds two doubles, each packed as a [main, aux] pair (main: f32
+// value, aux: raw u32 bits — see src/util/f64pack.mjs; decode()/encode()
+// below are the WGSL mirror of that file's packedToFields()/fieldsToPacked()),
+// producing the sum as another [main, aux] pair.
 //
 // Implements IEEE-754 binary64 addition (align, add/subtract significands,
 // normalize, round-to-nearest-even) using only u32 bitwise/integer
@@ -10,8 +10,16 @@
 // (hi, lo) pair, widened by 3 bits at the bottom to hold guard/round/sticky
 // information while aligning exponents.
 
-@group(0) @binding(0) var<storage, read> input: array<f32, 4>; // [mainA, auxA, mainB, auxB]
-@group(0) @binding(1) var<storage, read_write> output: array<f32, 2>; // [mainSum, auxSum]
+// mainInput/mainOutput hold real f32 values; auxInput/auxOutput hold raw u32
+// bits and must NEVER be declared as array<f32> — aux's bit pattern can land
+// on a NaN/Infinity exponent for perfectly ordinary doubles (not just unusual
+// inputs — see f64pack.mjs's comment above fieldsToPacked), and an f32-typed
+// storage slot canonicalizes (quiets) a NaN bit pattern on any round trip,
+// silently corrupting it. aux is only ever bitcast, never used as a float.
+@group(0) @binding(0) var<storage, read>       mainInput:  array<f32, 2>; // [mainA, mainB]
+@group(0) @binding(1) var<storage, read>       auxInput:   array<u32, 2>; // [auxA, auxB]
+@group(0) @binding(2) var<storage, read_write> mainOutput: array<f32, 1>; // [mainSum]
+@group(0) @binding(3) var<storage, read_write> auxOutput:  array<u32, 1>; // [auxSum]
 
 const EXP_ALL_ONES: u32 = 0x7ffu;
 const BIAS: i32 = 1023;
@@ -22,6 +30,12 @@ struct Fields {
   rawExp: u32,
   mantissaHi: u32, // 20 bits
   lo: u32,         // 32 bits
+}
+
+// A packed [main, aux] result — aux stays a raw u32 (see binding comment above).
+struct Packed {
+  main: f32,
+  aux:  u32,
 }
 
 // Mirrors packedToFields() in f64pack.mjs.
@@ -46,7 +60,7 @@ fn decode(mainBits: u32, auxBits: u32) -> Fields {
 }
 
 // Mirrors fieldsToPacked() in f64pack.mjs.
-fn encode(sign: u32, rawExp: u32, mantissaHi: u32, lo: u32) -> vec2<f32> {
+fn encode(sign: u32, rawExp: u32, mantissaHi: u32, lo: u32) -> Packed {
   let expMain = rawExp >> 3u;
   let expExtra = rawExp & 0x7u;
 
@@ -64,7 +78,7 @@ fn encode(sign: u32, rawExp: u32, mantissaHi: u32, lo: u32) -> vec2<f32> {
 
   let auxBits = (auxSign << 31u) | (auxExp8 << 23u) | auxMant23;
 
-  return vec2<f32>(bitcast<f32>(mainBits), bitcast<f32>(auxBits));
+  return Packed(bitcast<f32>(mainBits), auxBits);
 }
 
 struct Pair { hi: u32, lo: u32 }
@@ -133,7 +147,7 @@ fn ge64(aHi: u32, aLo: u32, bHi: u32, bLo: u32) -> bool {
   return aHi > bHi || (aHi == bHi && aLo >= bLo);
 }
 
-fn computeSum(a: Fields, b: Fields) -> vec2<f32> {
+fn computeSum(a: Fields, b: Fields) -> Packed {
   let aIsNaN = a.rawExp == EXP_ALL_ONES && (a.mantissaHi != 0u || a.lo != 0u);
   let bIsNaN = b.rawExp == EXP_ALL_ONES && (b.mantissaHi != 0u || b.lo != 0u);
   if (aIsNaN || bIsNaN) {
@@ -262,9 +276,9 @@ fn computeSum(a: Fields, b: Fields) -> vec2<f32> {
 
 @compute @workgroup_size(1)
 fn main() {
-  let a = decode(bitcast<u32>(input[0]), bitcast<u32>(input[1]));
-  let b = decode(bitcast<u32>(input[2]), bitcast<u32>(input[3]));
+  let a = decode(bitcast<u32>(mainInput[0]), auxInput[0]);
+  let b = decode(bitcast<u32>(mainInput[1]), auxInput[1]);
   let result = computeSum(a, b);
-  output[0] = result.x;
-  output[1] = result.y;
+  mainOutput[0] = result.main;
+  auxOutput[0] = result.aux;
 }

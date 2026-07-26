@@ -12,7 +12,11 @@ export function destroyBuffers(...buffers) {
 
 /**
  * Creates a GPU storage buffer and uploads `data` into it via mapped-at-creation.
- * @param {Float32Array} data
+ * The mapped view is constructed from `data`'s own typed-array constructor, so
+ * bits are copied as-is regardless of element type (e.g. a Uint32Array's raw
+ * bit patterns are preserved — critical for dasum's aux half, which must
+ * never pass through a Float32Array view and risk NaN-bit-pattern canonicalization).
+ * @param {Float32Array|Uint32Array|Int32Array} data
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
  * @param {boolean} [readback=false] - add `COPY_SRC` so the buffer can be copied to a readback buffer
  * @throws {Error} if `data.byteLength` exceeds the device's `maxStorageBufferBindingSize`
@@ -45,7 +49,8 @@ export function uploadBuffer(data, label = "blas-input", readback = false) {
     mappedAtCreation: true,
   });
 
-  const mappedArray = new Float32Array(buffer.getMappedRange());
+  const ViewCtor = data.constructor;
+  const mappedArray = new ViewCtor(buffer.getMappedRange());
   mappedArray.set(data);
   buffer.unmap();
 

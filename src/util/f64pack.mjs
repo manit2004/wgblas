@@ -22,13 +22,28 @@ function f32ToU32(f) {
 }
 
 // Shared bit-scramble between an f64's raw fields (sign, 11-bit exponent,
-// mantissa split as a 20-bit hi word + 32-bit lo word) and a [main, aux] f32
+// mantissa split as a 20-bit hi word + 32-bit lo word) and a [main, aux]
 // pair. f64 has exactly 3 more exponent bits and 29 more mantissa bits than
 // f32 — 3 + 29 = 32, i.e. exactly one f32's worth of bits, all of which fit
 // in `aux`:
 //   aux.sign + aux.exponent[7:6]  (3 bits) = f64's low 3 exponent bits
 //   aux.exponent[5:0]             (6 bits) = top 6 of f64's low 29 mantissa bits
 //   aux.mantissa                  (23 bits) = bottom 23 of f64's low 29 mantissa bits
+//
+// `aux` is deliberately kept as a raw u32 integer, never converted to an
+// actual float32 value (unlike `main`, which genuinely is a float32 for
+// reuse in float-typed math like abs()). Any combination of the source bits
+// above can land on aux.exponent === 0xff — i.e. aux's bit pattern reads as
+// a NaN or Infinity if it's ever treated as a real float — and this can
+// happen not just for unusual inputs but for the RESULT of an ordinary
+// addition (see f64add.wgsl's computeSum), so it can't be filtered out at
+// the input boundary. A JS engine or GPU canonicalizes a NaN bit pattern
+// (sets its mantissa's quiet bit) the moment it passes through an actual
+// Float32Array or f32-typed GPU buffer/register as a VALUE — silently
+// corrupting the payload. Since aux never needs float semantics anywhere
+// (WGSL only ever bitcasts it back to u32 for decode()), storing/uploading/
+// reading it exclusively as Uint32Array bits (see GpuVector, buffer.mjs)
+// sidesteps the whole class of corruption rather than working around it.
 function fieldsToPacked(sign, rawExp, mantissaHi, lo) {
   const expMain = rawExp >>> 3; // top 8 bits -> main's exponent
   const expExtra = rawExp & 0x7; // bottom 3 bits -> stashed in aux
@@ -45,14 +60,14 @@ function fieldsToPacked(sign, rawExp, mantissaHi, lo) {
   const auxMant23 = mantExtra29 & 0x7fffff; // bottom 23 of the 29
   const auxExp8 = (auxExpTop2 << 6) | auxExpBot6;
 
-  const auxBits = (auxSign << 31) | (auxExp8 << 23) | auxMant23;
+  const auxBits = ((auxSign << 31) | (auxExp8 << 23) | auxMant23) >>> 0;
 
-  return [u32ToF32(mainBits), u32ToF32(auxBits)];
+  return [u32ToF32(mainBits), auxBits];
 }
 
-function packedToFields(main, aux) {
+function packedToFields(main, auxBits) {
   const mainBits = f32ToU32(main);
-  const auxBits = f32ToU32(aux);
+  auxBits = auxBits >>> 0;
 
   const sign = mainBits >>> 31;
   const expMain = (mainBits >>> 23) & 0xff;
@@ -75,12 +90,16 @@ function packedToFields(main, aux) {
 }
 
 /**
- * Packs a double into two float32 bit-patterns for storage/transfer where only
- * f32 is available (e.g. WGSL, which has no f64 type). This is a raw bit
- * repacking, not a value-preserving numeric split — `aux` is not a meaningful
- * float on its own; only `unpackF64(main, aux)` reconstructs the original value.
+ * Packs a double into a [main, aux] pair for storage/transfer where only f32
+ * is available (e.g. WGSL, which has no f64 type). This is a raw bit
+ * repacking, not a value-preserving numeric split — neither half is a
+ * meaningful float on its own; only `unpackF64(main, aux)` reconstructs the
+ * original value.
  * @param {number} value
- * @returns {[number, number]} [main, aux] — two float32 values
+ * @returns {[number, number]} `[main, aux]` — main is a float32 value, aux is
+ *   a raw uint32 bit pattern (0 to 2^32-1). Store/transport aux exclusively
+ *   via Uint32Array/`array<u32>` — never as an actual float value — see the
+ *   comment above `fieldsToPacked`.
  */
 export function packF64(value) {
   dv8.setFloat64(0, value, false);
@@ -97,8 +116,8 @@ export function packF64(value) {
 /**
  * Reconstructs the original double from the [main, aux] pair produced by
  * `packF64`. Bit-exact inverse.
- * @param {number} main
- * @param {number} aux
+ * @param {number} main - float32 value
+ * @param {number} aux - raw uint32 bit pattern (as read from a Uint32Array/`array<u32>`)
  * @returns {number}
  */
 export function unpackF64(main, aux) {

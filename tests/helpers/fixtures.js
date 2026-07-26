@@ -75,6 +75,20 @@ export function floatArb(min, max) {
 }
 
 /**
+ * A fast-check arbitrary for f64 scalars in `[min, max]`, excluding subnormals.
+ * Used for dasum's x (Float64Array): the emulated-f64 kernel still packs each
+ * double's "aux" half into a real f32 GPU buffer, so the same FTZ-safety floor
+ * as `floatArb` applies. (aux's bits are transported as raw u32, never an
+ * actual float value, so unlike an earlier version of this function, no
+ * NaN-bit-pattern filter is needed here — see f64pack.mjs.)
+ * @returns fast-check arbitrary that generates usable f64 scalars
+ * @public
+ */
+export function float64Arb(min, max) {
+  return fc.double({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
+}
+
+/**
  * Arbitrary for a single scalar param — integers for `n`/`incx`/`incy`, floats for `alpha`/`c`/`s`.
  * @param spec loaded JSON param spec; `spec.type` selects integer vs float, `spec.range` gives bounds
  * @returns fast-check arbitrary that generates a single scalar matching the param spec
@@ -96,18 +110,23 @@ function paramArb(spec) {
 }
 
 /**
- * Arbitrary for a Float32Array of exactly `len` elements — works for both vectors and matrices.
+ * Arbitrary for a typed array of exactly `len` elements — works for both vectors and matrices.
  * Callers compute `len` from dimensions: `(n-1)*inc+1` for vectors, `(m-1)*lda+n` for matrices.
+ * `spec.type === "float64array"` (e.g. dasum's x) builds a Float64Array; everything else
+ * (including the default) builds a Float32Array.
  * @param spec loaded JSON param spec; `spec.range.elementMin/elementMax` give element bounds
  * @param len exact number of elements to generate
- * @returns fast-check arbitrary that generates a Float32Array of exactly `len` elements
+ * @returns fast-check arbitrary that generates a typed array of exactly `len` elements
  * @public
  */
 export function ndArrayArb(spec, len) {
   const { elementMin: min, elementMax: max } = spec.range;
+  const isF64 = spec.type === "float64array";
+  const arb = isF64 ? float64Arb(min, max) : floatArb(min, max);
+  const Ctor = isF64 ? Float64Array : Float32Array;
   return fc
-    .array(floatArb(min, max), { minLength: len, maxLength: len })
-    .map((a) => new Float32Array(a));
+    .array(arb, { minLength: len, maxLength: len })
+    .map((a) => new Ctor(a));
 }
 
 /**
@@ -115,8 +134,8 @@ export function ndArrayArb(spec, len) {
  *
  * Scalar params are generated first from their spec types (integer, float, string).
  * For L2 routines (`specs` includes `A`), `lda` is chained after `n` to enforce `lda >= n`.
- * All `float32array` params are then sized via `ndArrayLen` which reads each spec's
- * `dependsOn` — the same formula used in validation's `resolveNdArray`.
+ * All `float32array`/`float64array` params are then sized via `ndArrayLen` which reads
+ * each spec's `dependsOn` — the same formula used in validation's `resolveNdArray`.
  *
  * @param specs record of param specs keyed by param name, from `loadParam`
  * @param extras optional additional arbitraries for routine-specific params (e.g. srotm's `param`)
@@ -145,7 +164,8 @@ export function buildArb(specs, extras = {}) {
   return dimsArb.chain((dims) => {
     const fields = Object.fromEntries(Object.keys(dims).map((k) => [k, fc.constant(dims[k])]));
     for (const [name, spec] of Object.entries(specs)) {
-      if (spec.type === "float32array") fields[name] = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
+      if (spec.type === "float32array" || spec.type === "float64array")
+        fields[name] = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
     }
     for (const [k, arb] of Object.entries(extras)) fields[k] = arb;
     return fc.record(fields);

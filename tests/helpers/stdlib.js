@@ -14,6 +14,7 @@ import stdlibSaxpy from "@stdlib/blas-base-saxpy";
 import stdlibScopy from "@stdlib/blas-base-scopy";
 import stdlibSdot from "@stdlib/blas-base-sdot";
 import stdlibSasum from "@stdlib/blas-base-sasum";
+import stdlibDasum from "@stdlib/blas-base-dasum";
 import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
 import stdlibIsamax from "@stdlib/blas-base-isamax";
 import stdlibSrot from "@stdlib/blas-base-srot";
@@ -80,6 +81,7 @@ export const scopyReference = makeYReference(stdlibScopy);
 
 export const sdotReference = makeDotReference(stdlibSdot);
 export const sasumReference = makeReducerReference(stdlibSasum);
+export const dasumReference = makeReducerReference(stdlibDasum);
 export const snrm2Reference = makeReducerReference(stdlibSnrm2);
 export const isamaxReference = makeReducerReference(stdlibIsamax);
 

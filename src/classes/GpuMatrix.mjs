@@ -7,7 +7,8 @@ export class GpuMatrix {
   constructor(buffer, rows, cols, lda, auxBuffer = null) {
     this._buf = buffer;
     // Non-null only for Float64Array-backed matrices — see GpuVector for why
-    // (packF64 splits each element into a "main"/_buf and "aux"/_auxBuf f32).
+    // (packF64 splits each element into a "main"/_buf f32 and "aux"/_auxBuf
+    // raw u32 — never a Float32Array, see f64pack.mjs).
     this._auxBuf = auxBuffer;
     this.rows = rows;
     this.cols = cols;
@@ -36,7 +37,7 @@ export class GpuMatrix {
     if (data instanceof Float64Array) {
       const n = rows * lda;
       const main = new Float32Array(n);
-      const aux = new Float32Array(n);
+      const aux = new Uint32Array(n);
       for (let i = 0; i < n; i++) {
         const packed = packF64(data[i]);
         main[i] = packed[0];
@@ -64,7 +65,7 @@ export class GpuMatrix {
 
       const [main, aux] = await Promise.all([
         extractResult(rb, Float32Array),
-        extractResult(rbAux, Float32Array),
+        extractResult(rbAux, Uint32Array),
       ]);
       const raw = new Float64Array(this.rows * this.lda);
       for (let i = 0; i < raw.length; i++) raw[i] = unpackF64(main[i], aux[i]);
