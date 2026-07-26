@@ -1,4 +1,4 @@
-var wgblas=(()=>{var gr=Object.create;var Z=Object.defineProperty;var br=Object.getOwnPropertyDescriptor;var xr=Object.getOwnPropertyNames;var wr=Object.getPrototypeOf,hr=Object.prototype.hasOwnProperty;var Y=(t=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(t,{get:(r,e)=>(typeof require<"u"?require:r)[e]}):t)(function(t){if(typeof require<"u")return require.apply(this,arguments);throw Error('Dynamic require of "'+t+'" is not supported')});var F=(t,r,e)=>()=>{if(e)throw e[0];try{return t&&(r=t(t=0)),r}catch(i){throw e=[i],i}};var te=(t,r)=>{for(var e in r)Z(t,e,{get:r[e],enumerable:!0})},ae=(t,r,e,i)=>{if(r&&typeof r=="object"||typeof r=="function")for(let a of xr(r))!hr.call(t,a)&&a!==e&&Z(t,a,{get:()=>r[a],enumerable:!(i=br(r,a))||i.enumerable});return t};var $=(t,r,e)=>(e=t!=null?gr(wr(t)):{},ae(r||!t||!t.__esModule?Z(e,"default",{value:t,enumerable:!0}):e,t)),vr=t=>ae(Z({},"__esModule",{value:!0}),t);var ge,de=F(()=>{ge=`// amax reduction: collapses 2*WGS (value, index) pairs into one index.
+var wgblas=(()=>{var Ae=Object.create;var Z=Object.defineProperty;var Be=Object.getOwnPropertyDescriptor;var Pe=Object.getOwnPropertyNames;var ke=Object.getPrototypeOf,Se=Object.prototype.hasOwnProperty;var K=(t=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(t,{get:(r,e)=>(typeof require<"u"?require:r)[e]}):t)(function(t){if(typeof require<"u")return require.apply(this,arguments);throw Error('Dynamic require of "'+t+'" is not supported')});var W=(t,r,e)=>()=>{if(e)throw e[0];try{return t&&(r=t(t=0)),r}catch(i){throw e=[i],i}};var nr=(t,r)=>{for(var e in r)Z(t,e,{get:r[e],enumerable:!0})},sr=(t,r,e,i)=>{if(r&&typeof r=="object"||typeof r=="function")for(let a of Pe(r))!Se.call(t,a)&&a!==e&&Z(t,a,{get:()=>r[a],enumerable:!(i=Be(r,a))||i.enumerable});return t};var J=(t,r,e)=>(e=t!=null?Ae(ke(t)):{},sr(r||!t||!t.__esModule?Z(e,"default",{value:t,enumerable:!0}):e,t)),Fe=t=>sr(Z({},"__esModule",{value:!0}),t);var _r,vr=W(()=>{_r=`// amax reduction: collapses 2*WGS (value, index) pairs into one index.
 // dispatch: 1 workgroup of WGS threads.
 // partials_val and partials_idx must have exactly 2*WGS entries.
 
@@ -41,7 +41,7 @@ fn reduce(
 
   if (i == 0u) { result[0] = tile_idx[0]; }
 }
-`});var xe,be=F(()=>{xe=`// sum reduction: collapses 2*WGS partials into one scalar.
+`});var Gr,Er=W(()=>{Gr=`// sum reduction: collapses 2*WGS partials into one scalar.
 // dispatch: 1 workgroup of WGS threads.
 // partials must have exactly 2*WGS entries.
 
@@ -67,7 +67,55 @@ fn reduce(
 
   if (i == 0u) { result[0] = tile[0]; }
 }
-`});var he,we=F(()=>{he=`// sscal: x = alpha * x
+`});var Br,Ar=W(()=>{Br=`// sum reduction (f64): collapses 2*WGS partial [main, aux] pairs into one,
+// using computeSum instead of plain f32 \`+\` (see reduction/sum.wgsl for the
+// f32 original this mirrors).
+// dispatch: 1 workgroup of WGS threads. partialsMain/partialsAux must have
+// exactly 2*WGS entries each.
+//
+// Concatenated after f64add.wgsl by getPipeline (WGSL has no #include),
+// reusing its decode/encode/computeSum and Packed struct \u2014 bindings here
+// start at 4 (f64add.wgsl already has 0-3) and the entry point is
+// \`reduce_f64\` (f64add.wgsl already has \`fn main\`).
+//
+// partialsAux/result's aux slot are array<u32>, not array<f32> \u2014 aux's bits
+// must never pass through an f32-typed storage slot (NaN-bit-pattern
+// corruption risk, see f64pack.mjs and f64add.wgsl's binding comment).
+
+@group(0) @binding(4) var<storage, read>       partialsMain: array<f32>;
+@group(0) @binding(5) var<storage, read>       partialsAux:  array<u32>;
+@group(0) @binding(6) var<storage, read_write> resultMain:   array<f32, 1>;
+@group(0) @binding(7) var<storage, read_write> resultAux:    array<u32, 1>;
+
+const WGS: u32 = 64;
+
+var<workgroup> tile: array<Packed, 64>;
+
+fn addPair(a: Packed, b: Packed) -> Packed {
+  return computeSum(decode(bitcast<u32>(a.main), a.aux), decode(bitcast<u32>(b.main), b.aux));
+}
+
+@compute @workgroup_size(64)
+fn reduce_f64(
+  @builtin(local_invocation_id) lid: vec3u,
+) {
+  let i = lid.x;
+  let a = Packed(partialsMain[i], partialsAux[i]);
+  let b = Packed(partialsMain[i + WGS], partialsAux[i + WGS]);
+  tile[i] = addPair(a, b);
+  workgroupBarrier();
+
+  for (var s = WGS / 2u; s > 0u; s >>= 1u) {
+    if (i < s) { tile[i] = addPair(tile[i], tile[i + s]); }
+    workgroupBarrier();
+  }
+
+  if (i == 0u) {
+    resultMain[0] = tile[0].main;
+    resultAux[0] = tile[0].aux;
+  }
+}
+`});var kr,Pr=W(()=>{kr=`// sscal: x = alpha * x
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 
@@ -90,7 +138,7 @@ fn main(
     x[id * params.x_inc] = params.alpha * x[id * params.x_inc];
   }
 }
-`});var ye,ve=F(()=>{ye=`// sswap: x <-> y
+`});var Fr,Sr=W(()=>{Fr=`// sswap: x <-> y
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -116,7 +164,7 @@ fn main(
     y[id * params.y_inc] = temp;
   }
 }
-`});var Ee,_e=F(()=>{Ee=`// saxpy: y = alpha * x + y
+`});var Lr,Nr=W(()=>{Lr=`// saxpy: y = alpha * x + y
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -141,7 +189,7 @@ fn main(
     y[id * params.y_inc] = params.alpha * x[id * params.x_inc] + y[id * params.y_inc];
   }
 }
-`});var Ae,Be=F(()=>{Ae=`// scopy: y = x
+`});var Wr,Ir=W(()=>{Wr=`// scopy: y = x
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -165,7 +213,7 @@ fn main(
     y[id * params.y_inc] = x[id * params.x_inc];
   }
 }
-`});var Pe,Ge=F(()=>{Pe=`// sdot: result = sum(x[i] * y[i])
+`});var Mr,jr=W(()=>{Mr=`// sdot: result = sum(x[i] * y[i])
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/sum.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:        array<f32>;
@@ -218,7 +266,7 @@ fn main(
 
   if (lid.x == 0u) { partials[wgid.x] = tile[0]; }
 }
-`});var ke,Le=F(()=>{ke=`// sasum: result = sum(|x[i]|)
+`});var Tr,Ur=W(()=>{Tr=`// sasum: result = sum(|x[i]|)
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/abssum.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:        array<f32>;
@@ -269,7 +317,7 @@ fn main(
 
   if (lid.x == 0u) { partials[wgid.x] = tile[0]; }
 }
-`});var He,Se=F(()=>{He=`// snrm2: result = sqrt(sum(x[i] * x[i]))
+`});var Hr,Vr=W(()=>{Hr=`// snrm2: result = sqrt(sum(x[i] * x[i]))
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/sqsum.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:        array<f32>;
@@ -325,7 +373,7 @@ fn main(
 
   if (lid.x == 0u) { partials[wgid.x] = tile[0]; }
 }
-`});var Ne,Ie=F(()=>{Ne=`// srot: x = c*x + s*y,  y = -s*x + c*y
+`});var Dr,Rr=W(()=>{Dr=`// srot: x = c*x + s*y,  y = -s*x + c*y
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -354,7 +402,7 @@ fn main(
     y[id * params.y_inc] = -params.s * xi + params.c * yi;
   }
 }
-`});var je,Fe=F(()=>{je=`// srotm: applies modified Givens rotation H to vectors x and y.
+`});var Or,Cr=W(()=>{Or=`// srotm: applies modified Givens rotation H to vectors x and y.
 // param[0] = flag: -1 (full H), 0 (unit diagonal), 1 (unit off-diagonal)
 // param = [ flag, h11, h21, h12, h22 ]
 // flag == -2 (identity/no-op) is handled in JS before dispatch reaches here.
@@ -404,7 +452,7 @@ fn main(
     y[id * params.y_inc] = h21 * xi + h22 * yi;
   }
 }
-`});var We,Me=F(()=>{We=`// isamax: returns index of element with largest absolute value
+`});var Qr,zr=W(()=>{Qr=`// isamax: returns index of element with largest absolute value
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/argmax.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:            array<f32>;
@@ -486,7 +534,7 @@ fn main(
     partials_idx[wgid.x] = tile_idx[0];
   }
 }
-`});var Ue,Te=F(()=>{Ue=`// sgemv_n: y = alpha * A * x + beta * y  (A is m\xD7n row-major, no-transpose)
+`});var Xr,qr=W(()=>{Xr=`// sgemv_n: y = alpha * A * x + beta * y  (A is m\xD7n row-major, no-transpose)
 //
 // One workgroup per output row, with a grid-stride outer loop so the shader
 // still covers all rows when m exceeds maxComputeWorkgroupsPerDimension.
@@ -561,7 +609,7 @@ fn main(
     workgroupBarrier();
   }
 }
-`});var Re,Ve=F(()=>{Re=`// sgemv_t: y = alpha * A^T * x + beta * y  (A is m\xD7n row-major, transposed)
+`});var Yr,$r=W(()=>{Yr=`// sgemv_t: y = alpha * A^T * x + beta * y  (A is m\xD7n row-major, transposed)
 // each thread owns one column of A \u2192 one element of y (length n)
 // tiles over x (length m) using shared memory; four independent accumulators
 // let the GPU pipeline A reads across j within each tile (ILP=4)
@@ -626,7 +674,7 @@ fn main(
     y[yi] = params.alpha * (acc0 + acc1 + acc2 + acc3) + params.beta * y[yi];
   }
 }
-`});var De,Qe=F(()=>{De=`// ssymv: y = alpha * A * x + beta * y
+`});var Kr,Zr=W(()=>{Kr=`// ssymv: y = alpha * A * x + beta * y
 // A is n\xD7n symmetric, lower (uplo=0) or upper (uplo=1) triangle stored.
 // The logical matrix is fully dense (symmetric), so each row's dot product
 // sums over all n columns; entries on the unstored side of the diagonal are
@@ -695,7 +743,7 @@ fn main(
     }
   }
 }
-`});var Ce,Oe=F(()=>{Ce=`// strmv: y = op(A) * x
+`});var re,Jr=W(()=>{re=`// strmv: y = op(A) * x
 // A is n\xD7n triangular, lower (uplo=0) or upper (uplo=1) triangle stored.
 // op(A) is A (trans=0) or A^T (trans=1).
 // diag=1 (unit) treats the diagonal as 1 without reading A's diagonal values.
@@ -798,10 +846,10 @@ fn main(
     }
   }
 }
-`});var qe,ze=F(()=>{qe=`// f64add: adds two doubles, each packed as a [main, aux] f32 pair (see
-// src/util/f64pack.mjs \u2014 decode()/encode() below are the WGSL mirror of that
-// file's packedToFields()/fieldsToPacked()), producing the sum as another
-// [main, aux] pair.
+`});var ae,ee=W(()=>{ae=`// f64add: adds two doubles, each packed as a [main, aux] pair (main: f32
+// value, aux: raw u32 bits \u2014 see src/util/f64pack.mjs; decode()/encode()
+// below are the WGSL mirror of that file's packedToFields()/fieldsToPacked()),
+// producing the sum as another [main, aux] pair.
 //
 // Implements IEEE-754 binary64 addition (align, add/subtract significands,
 // normalize, round-to-nearest-even) using only u32 bitwise/integer
@@ -810,8 +858,16 @@ fn main(
 // (hi, lo) pair, widened by 3 bits at the bottom to hold guard/round/sticky
 // information while aligning exponents.
 
-@group(0) @binding(0) var<storage, read> input: array<f32, 4>; // [mainA, auxA, mainB, auxB]
-@group(0) @binding(1) var<storage, read_write> output: array<f32, 2>; // [mainSum, auxSum]
+// mainInput/mainOutput hold real f32 values; auxInput/auxOutput hold raw u32
+// bits and must NEVER be declared as array<f32> \u2014 aux's bit pattern can land
+// on a NaN/Infinity exponent for perfectly ordinary doubles (not just unusual
+// inputs \u2014 see f64pack.mjs's comment above fieldsToPacked), and an f32-typed
+// storage slot canonicalizes (quiets) a NaN bit pattern on any round trip,
+// silently corrupting it. aux is only ever bitcast, never used as a float.
+@group(0) @binding(0) var<storage, read>       mainInput:  array<f32, 2>; // [mainA, mainB]
+@group(0) @binding(1) var<storage, read>       auxInput:   array<u32, 2>; // [auxA, auxB]
+@group(0) @binding(2) var<storage, read_write> mainOutput: array<f32, 1>; // [mainSum]
+@group(0) @binding(3) var<storage, read_write> auxOutput:  array<u32, 1>; // [auxSum]
 
 const EXP_ALL_ONES: u32 = 0x7ffu;
 const BIAS: i32 = 1023;
@@ -822,6 +878,12 @@ struct Fields {
   rawExp: u32,
   mantissaHi: u32, // 20 bits
   lo: u32,         // 32 bits
+}
+
+// A packed [main, aux] result \u2014 aux stays a raw u32 (see binding comment above).
+struct Packed {
+  main: f32,
+  aux:  u32,
 }
 
 // Mirrors packedToFields() in f64pack.mjs.
@@ -846,7 +908,7 @@ fn decode(mainBits: u32, auxBits: u32) -> Fields {
 }
 
 // Mirrors fieldsToPacked() in f64pack.mjs.
-fn encode(sign: u32, rawExp: u32, mantissaHi: u32, lo: u32) -> vec2<f32> {
+fn encode(sign: u32, rawExp: u32, mantissaHi: u32, lo: u32) -> Packed {
   let expMain = rawExp >> 3u;
   let expExtra = rawExp & 0x7u;
 
@@ -864,7 +926,7 @@ fn encode(sign: u32, rawExp: u32, mantissaHi: u32, lo: u32) -> vec2<f32> {
 
   let auxBits = (auxSign << 31u) | (auxExp8 << 23u) | auxMant23;
 
-  return vec2<f32>(bitcast<f32>(mainBits), bitcast<f32>(auxBits));
+  return Packed(bitcast<f32>(mainBits), auxBits);
 }
 
 struct Pair { hi: u32, lo: u32 }
@@ -933,7 +995,7 @@ fn ge64(aHi: u32, aLo: u32, bHi: u32, bLo: u32) -> bool {
   return aHi > bHi || (aHi == bHi && aLo >= bLo);
 }
 
-fn computeSum(a: Fields, b: Fields) -> vec2<f32> {
+fn computeSum(a: Fields, b: Fields) -> Packed {
   let aIsNaN = a.rawExp == EXP_ALL_ONES && (a.mantissaHi != 0u || a.lo != 0u);
   let bIsNaN = b.rawExp == EXP_ALL_ONES && (b.mantissaHi != 0u || b.lo != 0u);
   if (aIsNaN || bIsNaN) {
@@ -1062,282 +1124,91 @@ fn computeSum(a: Fields, b: Fields) -> vec2<f32> {
 
 @compute @workgroup_size(1)
 fn main() {
-  let a = decode(bitcast<u32>(input[0]), bitcast<u32>(input[1]));
-  let b = decode(bitcast<u32>(input[2]), bitcast<u32>(input[3]));
+  let a = decode(bitcast<u32>(mainInput[0]), auxInput[0]);
+  let b = decode(bitcast<u32>(mainInput[1]), auxInput[1]);
   let result = computeSum(a, b);
-  output[0] = result.x;
-  output[1] = result.y;
+  mainOutput[0] = result.main;
+  auxOutput[0] = result.aux;
 }
-`});var Ze,Xe=F(()=>{Ze=`// dasum: result = sum(|x[i]|) computed in double precision, for a vector of
-// doubles each packed as a [main, aux] f32 pair (see src/util/f64pack.mjs).
-// Test/demo shader only \u2014 single-threaded, sequential accumulation, not a
-// parallel-reduction production routine like sasum.wgsl.
+`});var ie,te=W(()=>{ie=`// dasum: result = sum(|x[i]|)
+// pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/sumF64.wgsl.
+// Same structure as sasum.wgsl \u2014 every value is now a [main, aux] pair
+// (see src/util/f64pack.mjs) and every \`+\`/\`+=\` is computeSum via addPair
+// instead of plain f32 addition. Concatenated after f64add.wgsl by
+// getPipeline (WGSL has no #include), reusing its decode/encode/computeSum
+// and Packed struct \u2014 so bindings here start at 4 (f64add.wgsl already has
+// 0-3) and the entry point is \`dasum_main\` (f64add.wgsl already has \`fn main\`).
 //
-// decode()/encode()/computeSum() below are copied verbatim from
-// f64add.wgsl \u2014 WGSL has no #include (see TODO.md's "WGSL Preprocessor"
-// entry), so every shader must be self-contained until that's built.
-//
-// |x| for a packed double is just abs(main) with aux left untouched: only
-// main's sign bit carries the double's actual sign (aux's sign bit is part
-// of the packed exponent overflow, unrelated to the value's sign) \u2014 see
-// fieldsToPacked()/packedToFields() in f64pack.mjs.
+// xAux/partialsAux are array<u32>, not array<f32> \u2014 aux's bits must never
+// pass through an f32-typed storage slot (NaN-bit-pattern corruption risk,
+// see f64pack.mjs and f64add.wgsl's binding comment); Packed (from
+// f64add.wgsl) keeps aux as u32 in registers/workgroup memory too.
 
-@group(0) @binding(0) var<storage, read> mainArr: array<f32>;
-@group(0) @binding(1) var<storage, read> auxArr: array<f32>;
-@group(0) @binding(2) var<storage, read_write> output: array<f32, 2>; // [main, aux] of the sum
+@group(0) @binding(4) var<storage, read>       xMain:        array<f32>;
+@group(0) @binding(5) var<storage, read>       xAux:         array<u32>;
+@group(0) @binding(6) var<storage, read_write> partialsMain: array<f32>;
+@group(0) @binding(7) var<storage, read_write> partialsAux:  array<u32>;
+@group(0) @binding(8) var<uniform>             params:       Params;
 
 struct Params {
-  n: u32,
-}
-@group(0) @binding(3) var<uniform> params: Params;
-
-const EXP_ALL_ONES: u32 = 0x7ffu;
-const BIAS: i32 = 1023;
-const QUIET_NAN_MANTISSA_HI: u32 = 1u << 19u; // bit51 of the 52-bit mantissa -> canonical quiet NaN
-
-struct Fields {
-  sign: u32,
-  rawExp: u32,
-  mantissaHi: u32, // 20 bits
-  lo: u32,         // 32 bits
+  n:     u32,
+  x_inc: u32,
 }
 
-fn decode(mainBits: u32, auxBits: u32) -> Fields {
-  let sign = mainBits >> 31u;
-  let expMain = (mainBits >> 23u) & 0xffu;
-  let mantMain = mainBits & 0x7fffffu;
+const WGS: u32 = 64;
 
-  let auxSign = auxBits >> 31u;
-  let auxExp8 = (auxBits >> 23u) & 0xffu;
-  let auxMant23 = auxBits & 0x7fffffu;
+var<workgroup> tile: array<Packed, 64>;
 
-  let expExtra = (auxSign << 2u) | (auxExp8 >> 6u);
-  let mantExtra29 = ((auxExp8 & 0x3fu) << 23u) | auxMant23;
-
-  let rawExp = (expMain << 3u) | expExtra;
-  let mantissaHi = mantMain >> 3u;
-  let mantTop3 = mantMain & 0x7u;
-  let lo = (mantTop3 << 29u) | mantExtra29;
-
-  return Fields(sign, rawExp, mantissaHi, lo);
+// a + b, where a/b are [main, aux] pairs \u2014 computeSum takes decoded Fields.
+fn addPair(a: Packed, b: Packed) -> Packed {
+  return computeSum(decode(bitcast<u32>(a.main), a.aux), decode(bitcast<u32>(b.main), b.aux));
 }
 
-fn encode(sign: u32, rawExp: u32, mantissaHi: u32, lo: u32) -> vec2<f32> {
-  let expMain = rawExp >> 3u;
-  let expExtra = rawExp & 0x7u;
-
-  let mantTop3 = lo >> 29u;
-  let mantMain = (mantissaHi << 3u) | mantTop3;
-  let mantExtra29 = lo & 0x1fffffffu;
-
-  let mainBits = (sign << 31u) | (expMain << 23u) | mantMain;
-
-  let auxSign = (expExtra >> 2u) & 0x1u;
-  let auxExpTop2 = expExtra & 0x3u;
-  let auxExpBot6 = mantExtra29 >> 23u;
-  let auxMant23 = mantExtra29 & 0x7fffffu;
-  let auxExp8 = (auxExpTop2 << 6u) | auxExpBot6;
-
-  let auxBits = (auxSign << 31u) | (auxExp8 << 23u) | auxMant23;
-
-  return vec2<f32>(bitcast<f32>(mainBits), bitcast<f32>(auxBits));
+// |x| for a packed double is abs(main) with aux untouched \u2014 only main's
+// sign bit carries the double's sign (see fieldsToPacked() in f64pack.mjs).
+fn absPair(idx: u32) -> Packed {
+  return Packed(abs(xMain[idx]), xAux[idx]);
 }
 
-struct Pair { hi: u32, lo: u32 }
-struct Shifted { hi: u32, lo: u32, sticky: u32 }
+@compute @workgroup_size(64)
+fn dasum_main(
+  @builtin(global_invocation_id) gid:    vec3u,
+  @builtin(local_invocation_id)  lid:    vec3u,
+  @builtin(workgroup_id)         wgid:   vec3u,
+  @builtin(num_workgroups)       num_wg: vec3u,
+) {
+  var acc0: Packed = Packed(0.0, 0u);
+  var acc1: Packed = Packed(0.0, 0u);
+  var acc2: Packed = Packed(0.0, 0u);
+  var acc3: Packed = Packed(0.0, 0u);
 
-fn shr_sticky(hi: u32, lo: u32, n: u32) -> Shifted {
-  if (n == 0u) {
-    return Shifted(hi, lo, 0u);
+  let stride   = num_wg.x * WGS;
+  let n4_floor = (params.n / (4u * stride)) * (4u * stride);
+
+  for (var id = gid.x; id < n4_floor; id += 4u * stride) {
+    acc0 = addPair(acc0, absPair( id                * params.x_inc));
+    acc1 = addPair(acc1, absPair((id +      stride) * params.x_inc));
+    acc2 = addPair(acc2, absPair((id + 2u * stride) * params.x_inc));
+    acc3 = addPair(acc3, absPair((id + 3u * stride) * params.x_inc));
   }
-  if (n >= 64u) {
-    return Shifted(0u, 0u, select(0u, 1u, hi != 0u || lo != 0u));
+  for (var id = n4_floor + gid.x; id < params.n; id += stride) {
+    acc0 = addPair(acc0, absPair(id * params.x_inc));
   }
-  if (n < 32u) {
-    let stickyBits = lo & ((1u << n) - 1u);
-    let newLo = (lo >> n) | (hi << (32u - n));
-    let newHi = hi >> n;
-    return Shifted(newHi, newLo, select(0u, 1u, stickyBits != 0u));
+
+  tile[lid.x] = addPair(addPair(acc0, acc1), addPair(acc2, acc3));
+  workgroupBarrier();
+
+  for (var s = WGS / 2u; s > 0u; s >>= 1u) {
+    if (lid.x < s) { tile[lid.x] = addPair(tile[lid.x], tile[lid.x + s]); }
+    workgroupBarrier();
   }
-  if (n == 32u) {
-    return Shifted(0u, hi, select(0u, 1u, lo != 0u));
+
+  if (lid.x == 0u) {
+    partialsMain[wgid.x] = tile[0].main;
+    partialsAux[wgid.x] = tile[0].aux;
   }
-  let m = n - 32u;
-  let stickyBits = lo | (hi & ((1u << m) - 1u));
-  let newLo = hi >> m;
-  return Shifted(0u, newLo, select(0u, 1u, stickyBits != 0u));
 }
-
-fn shl(hi: u32, lo: u32, n: u32) -> Pair {
-  if (n == 0u) {
-    return Pair(hi, lo);
-  }
-  if (n < 32u) {
-    let newHi = (hi << n) | (lo >> (32u - n));
-    let newLo = lo << n;
-    return Pair(newHi, newLo);
-  }
-  if (n == 32u) {
-    return Pair(lo, 0u);
-  }
-  let m = n - 32u;
-  return Pair(lo << m, 0u);
-}
-
-fn add64(aHi: u32, aLo: u32, bHi: u32, bLo: u32) -> Pair {
-  let sumLo = aLo + bLo;
-  let carry = select(0u, 1u, sumLo < aLo);
-  let sumHi = aHi + bHi + carry;
-  return Pair(sumHi, sumLo);
-}
-
-fn sub64(aHi: u32, aLo: u32, bHi: u32, bLo: u32) -> Pair {
-  let borrow = select(0u, 1u, aLo < bLo);
-  let diffLo = aLo - bLo;
-  let diffHi = aHi - bHi - borrow;
-  return Pair(diffHi, diffLo);
-}
-
-fn ge64(aHi: u32, aLo: u32, bHi: u32, bLo: u32) -> bool {
-  return aHi > bHi || (aHi == bHi && aLo >= bLo);
-}
-
-fn computeSum(a: Fields, b: Fields) -> vec2<f32> {
-  let aIsNaN = a.rawExp == EXP_ALL_ONES && (a.mantissaHi != 0u || a.lo != 0u);
-  let bIsNaN = b.rawExp == EXP_ALL_ONES && (b.mantissaHi != 0u || b.lo != 0u);
-  if (aIsNaN || bIsNaN) {
-    return encode(0u, EXP_ALL_ONES, QUIET_NAN_MANTISSA_HI, 0u);
-  }
-
-  let aIsInf = a.rawExp == EXP_ALL_ONES;
-  let bIsInf = b.rawExp == EXP_ALL_ONES;
-  if (aIsInf && bIsInf) {
-    if (a.sign != b.sign) {
-      return encode(0u, EXP_ALL_ONES, QUIET_NAN_MANTISSA_HI, 0u);
-    }
-    return encode(a.sign, EXP_ALL_ONES, 0u, 0u);
-  }
-  if (aIsInf) { return encode(a.sign, EXP_ALL_ONES, 0u, 0u); }
-  if (bIsInf) { return encode(b.sign, EXP_ALL_ONES, 0u, 0u); }
-
-  let aIsZero = a.rawExp == 0u && a.mantissaHi == 0u && a.lo == 0u;
-  let bIsZero = b.rawExp == 0u && b.mantissaHi == 0u && b.lo == 0u;
-  if (aIsZero && bIsZero) {
-    return encode(a.sign & b.sign, 0u, 0u, 0u);
-  }
-  if (aIsZero) { return encode(b.sign, b.rawExp, b.mantissaHi, b.lo); }
-  if (bIsZero) { return encode(a.sign, a.rawExp, a.mantissaHi, a.lo); }
-
-  var expA = i32(a.rawExp) - BIAS;
-  if (a.rawExp == 0u) { expA = 1 - BIAS; }
-  var expB = i32(b.rawExp) - BIAS;
-  if (b.rawExp == 0u) { expB = 1 - BIAS; }
-
-  let implicitA = select(0u, 1u, a.rawExp != 0u);
-  let implicitB = select(0u, 1u, b.rawExp != 0u);
-
-  let sigHiA = (implicitA << 23u) | (a.mantissaHi << 3u) | (a.lo >> 29u);
-  let sigLoA = a.lo << 3u;
-  let sigHiB = (implicitB << 23u) | (b.mantissaHi << 3u) | (b.lo >> 29u);
-  let sigLoB = b.lo << 3u;
-
-  var signP: u32; var expP: i32; var sigHiP: u32; var sigLoP: u32;
-  var signQ: u32; var expQ: i32; var sigHiQ: u32; var sigLoQ: u32;
-  if (expA > expB || (expA == expB && ge64(sigHiA, sigLoA, sigHiB, sigLoB))) {
-    signP = a.sign; expP = expA; sigHiP = sigHiA; sigLoP = sigLoA;
-    signQ = b.sign; expQ = expB; sigHiQ = sigHiB; sigLoQ = sigLoB;
-  } else {
-    signP = b.sign; expP = expB; sigHiP = sigHiB; sigLoP = sigLoB;
-    signQ = a.sign; expQ = expA; sigHiQ = sigHiA; sigLoQ = sigLoA;
-  }
-
-  let diff = u32(expP - expQ);
-  let shiftedQ = shr_sticky(sigHiQ, sigLoQ, diff);
-  let alignedHiQ = shiftedQ.hi;
-  let alignedLoQ = shiftedQ.lo | shiftedQ.sticky;
-
-  var sumHi: u32; var sumLo: u32;
-  if (signP == signQ) {
-    let s = add64(sigHiP, sigLoP, alignedHiQ, alignedLoQ);
-    sumHi = s.hi; sumLo = s.lo;
-  } else {
-    let s = sub64(sigHiP, sigLoP, alignedHiQ, alignedLoQ);
-    sumHi = s.hi; sumLo = s.lo;
-  }
-
-  if (sumHi == 0u && sumLo == 0u) {
-    return encode(0u, 0u, 0u, 0u);
-  }
-
-  let commonExp2 = expP - 55;
-
-  var leadPos: i32;
-  if (sumHi != 0u) {
-    leadPos = 32 + i32(31u - countLeadingZeros(sumHi));
-  } else {
-    leadPos = i32(31u - countLeadingZeros(sumLo));
-  }
-  let tentativeExp = leadPos + commonExp2;
-  var targetLSBScale = tentativeExp - 52;
-  if (tentativeExp < -1022) { targetLSBScale = -1074; }
-  let shiftAmt = targetLSBScale - commonExp2;
-
-  var keepHi: u32; var keepLo: u32;
-  if (shiftAmt <= 0) {
-    let sh = shl(sumHi, sumLo, u32(-shiftAmt));
-    keepHi = sh.hi; keepLo = sh.lo;
-  } else {
-    let n = u32(shiftAmt);
-    let remainder = sumLo & ((1u << n) - 1u);
-    let halfway = 1u << (n - 1u);
-    let sh = shr_sticky(sumHi, sumLo, n);
-    keepHi = sh.hi; keepLo = sh.lo;
-    if (remainder > halfway || (remainder == halfway && (keepLo & 1u) != 0u)) {
-      let inc = add64(keepHi, keepLo, 0u, 1u);
-      keepHi = inc.hi; keepLo = inc.lo;
-    }
-  }
-
-  var resultExpBase = targetLSBScale;
-  if ((keepHi & (1u << 21u)) != 0u) {
-    let sh = shr_sticky(keepHi, keepLo, 1u);
-    keepHi = sh.hi; keepLo = sh.lo;
-    resultExpBase = resultExpBase + 1;
-  }
-
-  let resultSign = signP;
-  if ((keepHi & (1u << 20u)) != 0u) {
-    let unbiasedExp = 52 + resultExpBase;
-    let rawExpFinal = unbiasedExp + BIAS;
-    if (rawExpFinal >= 2047) {
-      return encode(resultSign, EXP_ALL_ONES, 0u, 0u);
-    }
-    return encode(resultSign, u32(rawExpFinal), keepHi & 0xfffffu, keepLo);
-  }
-  return encode(resultSign, 0u, keepHi & 0xfffffu, keepLo);
-}
-
-fn accumulateAbs(sumMain: f32, sumAux: f32, mainBits: u32, auxBits: u32) -> vec2<f32> {
-  let absMain = abs(bitcast<f32>(mainBits));
-  let elem = decode(bitcast<u32>(absMain), auxBits);
-  let sum = decode(bitcast<u32>(sumMain), bitcast<u32>(sumAux));
-  return computeSum(sum, elem);
-}
-
-@compute @workgroup_size(1)
-fn main() {
-  var sumMain: f32 = 0.0;
-  var sumAux: f32 = 0.0;
-
-  for (var i = 0u; i < params.n; i++) {
-    let r = accumulateAbs(sumMain, sumAux, bitcast<u32>(mainArr[i]), bitcast<u32>(auxArr[i]));
-    sumMain = r.x;
-    sumAux = r.y;
-  }
-
-  output[0] = sumMain;
-  output[1] = sumAux;
-}
-`});var Ye={};te(Ye,{shaderSources:()=>Vr});var Vr,$e=F(()=>{de();be();we();ve();_e();Be();Ge();Le();Se();Ie();Fe();Me();Te();Ve();Qe();Oe();ze();Xe();Vr={"reduction/argmax":ge,"reduction/sum":xe,sscal:he,sswap:ye,saxpy:Ee,scopy:Ae,sdot:Pe,sasum:ke,snrm2:He,srot:Ne,srotm:je,isamax:We,sgemv_n:Ue,sgemv_t:Re,ssymv:De,strmv:Ce,f64add:qe,dasum:Ze}});var Cr={};te(Cr,{GpuMatrix:()=>T,GpuVector:()=>b,cleanup:()=>fe,gpuName:()=>me,init:()=>le,isamax:()=>lr,randomFloat32Array:()=>pe,randomFloat64Array:()=>ce,sasum:()=>nr,saxpy:()=>rr,scopy:()=>tr,sdot:()=>ir,sgemv:()=>pr,snrm2:()=>ur,srot:()=>fr,srotm:()=>mr,sscal:()=>Je,sswap:()=>er,ssymv:()=>cr,strmv:()=>dr});function ie(t,r){return r?t.features.has("timestamp-query")?{requiredFeatures:["timestamp-query"]}:(console.warn("timestamp-query not supported on this device \u2014 benchmark mode disabled."),{}):{}}function oe(){if(!se())return{querySet:null,passDescriptor:void 0};let r=N().createQuerySet({type:"timestamp",count:2});return{querySet:r,passDescriptor:{timestampWrites:{querySet:r,beginningOfPassWriteIndex:0,endOfPassWriteIndex:1}}}}function ne(t,r){if(!r)return null;let e=N(),i=e.createBuffer({label:"timestamp-resolve",size:16,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC});t.resolveQuerySet(r,0,2,i,0);let a=e.createBuffer({label:"timestamp-readback",size:16,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});return t.copyBufferToBuffer(i,0,a,0,16),{tsReadBuffer:a,resolveBuffer:i,querySet:r}}async function A(t){if(!t)return;let{tsReadBuffer:r,resolveBuffer:e,querySet:i}=t;await r.mapAsync(GPUMapMode.READ);let a=new BigInt64Array(r.getMappedRange().slice());return r.unmap(),r.destroy(),e.destroy(),i.destroy(),Math.max(0,Number(a[1]-a[0]))/1e6}var W=null,C=null,ue=null,K=!1;async function le({powerPreference:t="high-performance",benchmark:r=!1}={}){if(W)return W;let e;if(typeof window>"u"){let{create:o,globals:s}=await import("webgpu");Object.assign(globalThis,s),e=o([]),ue=e}else e=navigator.gpu;if(!e)throw new Error("WebGPU not supported in this environment.");if(C=await e.requestAdapter({powerPreference:t})??await e.requestAdapter(),!C)throw new Error("No WebGPU adapter found.");K=r;let a=[...ie(C,r).requiredFeatures??[]];return W=await C.requestDevice({requiredFeatures:a}),W.addEventListener("uncapturederror",o=>{console.error("Uncaptured GPU error:",o.error.message)}),W}function fe(){W&&(W.destroy(),W=null),C=null,ue=null,K=!1}function me(){if(!C)throw new Error("WebGPU adapter not initialized \u2014 call init() first.");let{device:t,description:r}=C.info;return{description:r||"unknown",device:t||"unknown"}}function se(){return K}function N(){if(!W)throw new Error("WebGPU device not initialized \u2014 call init() first.");return W}function p(...t){t.flat().forEach(r=>r.destroy())}function g(t,r="blas-input",e=!1){let i=N(),a=i.limits.maxStorageBufferBindingSize,o=t.byteLength;if(o>a)throw new Error(`Buffer size ${o} bytes exceeds device limit of ${a} bytes.`);let s=e?GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC:GPUBufferUsage.STORAGE,n=i.createBuffer({label:r,size:o,usage:s,mappedAtCreation:!0});return new Float32Array(n.getMappedRange()).set(t),n.unmap(),n}function R(t,r="blas-storage"){return N().createBuffer({label:r,size:t,usage:GPUBufferUsage.STORAGE})}function D(t,r="blas-result"){return N().createBuffer({label:r,size:t,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC})}function y(t,r){let i=N().createBuffer({label:"blas-readback",size:r.size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});return t.copyBufferToBuffer(r,0,i,0,r.size),i}function H(t,r="blas-params"){let e=N(),i=t.length*4,a=Math.ceil(i/16)*16,o=new ArrayBuffer(a),s=new DataView(o);t.forEach(({value:u,type:l},f)=>{let m=f*4;if(l==="u32")s.setUint32(m,u,!0);else if(l==="i32")s.setInt32(m,u,!0);else if(l==="f32")s.setFloat32(m,u,!0);else throw new Error(`Unknown param type "${l}". Use "f32", "u32", or "i32".`)});let n=e.createBuffer({label:r,size:a,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});return e.queue.writeBuffer(n,0,o),n}async function _(t,r=Float32Array){try{await t.mapAsync(GPUMapMode.READ);let e=new r(t.getMappedRange().slice());return t.unmap(),e}finally{t.destroy()}}var b=class t{constructor(r,e,i=Float32Array){this._buf=r,this.length=e,this.dtype=i}static from(r){if(!(r instanceof Float32Array))throw new Error("GpuVector.from expects a Float32Array.");let e=g(r,"gpu-vector",!0);return new t(e,r.length,r.constructor)}async read(){let r=N(),e=r.createCommandEncoder(),i=y(e,this._buf);return r.queue.submit([e.finish()]),_(i,this.dtype)}destroy(){this._buf.destroy()}};var T=class t{constructor(r,e,i,a){this._buf=r,this.rows=e,this.cols=i,this.lda=a}static from(r,e,i,a=i){if(!(r instanceof Float32Array))throw new Error("GpuMatrix.from expects a Float32Array.");if(!Number.isInteger(e)||e<=0)throw new Error("rows must be a positive integer.");if(!Number.isInteger(i)||i<=0)throw new Error("cols must be a positive integer.");if(!Number.isInteger(a)||a<i)throw new Error("lda must be an integer >= cols.");if(r.length<e*a)throw new Error("data does not have enough elements for the given rows and lda.");let o=g(r.subarray(0,e*a),"gpu-matrix",!0);return new t(o,e,i,a)}async read(){let r=N(),e=r.createCommandEncoder(),i=y(e,this._buf);r.queue.submit([e.finish()]);let a=await _(i,Float32Array);if(this.lda===this.cols)return a;let o=new Float32Array(this.rows*this.cols);for(let s=0;s<this.rows;s++)o.set(a.subarray(s*this.lda,s*this.lda+this.cols),s*this.cols);return o}destroy(){this._buf.destroy()}};function pe(t,r=-1,e=1){let i=new Float32Array(t);for(let a=0;a<t;a++)i[a]=r+Math.random()*(e-r);return i}function ce(t,r=-1,e=1){let i=new Float64Array(t);for(let a=0;a<t;a++)i[a]=r+Math.random()*(e-r);return i}function G(t,r){let e=N(),i=r.map((a,o)=>({binding:o,resource:{buffer:a}}));return e.createBindGroup({layout:t,entries:i})}var yr=new WeakMap;function P(t){N().queue.submit([t.finish()])}function L(t,r,e){let i=N(),{querySet:a,passDescriptor:o}=oe(),s=i.createCommandEncoder(),n=s.beginComputePass(o);n.setPipeline(t),n.setBindGroup(0,r),typeof e=="number"?n.dispatchWorkgroups(e):n.dispatchWorkgroups(e.x,e.y),n.end();let u=ne(s,a);return yr.set(s,n),{commandEncoder:s,ts:u}}var Dr={},J=new WeakMap;async function k(t,r){J.has(t)||J.set(t,new Map);let e=J.get(t);return e.has(r)||e.set(r,await Qr(r)),e.get(r)}async function Rr(t){if(typeof process>"u"||!process.versions?.node){let{shaderSources:r}=await Promise.resolve().then(()=>($e(),Ye)),e=r[t];if(!e)throw new Error(`Shader "${t}" not found in browser bundle.`);return e}else{let{readFileSync:r}=await import("fs"),{fileURLToPath:e}=await import("url"),{dirname:i,join:a}=await import("path"),o=i(e(Dr.url));return r(a(o,`../shaders/${t}.wgsl`),"utf8")}}async function Qr(t){let r=N(),e=await Rr(t),i=r.createShaderModule({label:t,code:e}),o=(await i.getCompilationInfo()).messages.filter(n=>n.type==="error");if(o.length>0)throw new Error(`Shader "${t}" compilation failed:
-${o.map(n=>`  line ${n.lineNum}: ${n.message}`).join(`
-`)}`);let s=r.createComputePipeline({label:t,layout:"auto",compute:{module:i}});return s._shaderModule=i,s}var Or=64,Ke=8;function M(t,r){let e=N().limits.maxComputeWorkgroupsPerDimension;return r===void 0?Math.min(Math.ceil(t/Or),e):{x:Math.min(Math.ceil(r/Ke),e),y:Math.min(Math.ceil(t/Ke),e)}}async function Je(t,r,e,i,a){let o=i instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(a))throw new Error("n and incx must be integers.");if(typeof e!="number")throw new Error("alpha must be a number.");if(Number.isNaN(e))throw new Error("alpha must not be NaN.");if(!Number.isFinite(e))throw new Error("alpha must be finite.");if(a<=0)throw new Error("incx must be positive.");if(!(i instanceof Float32Array)&&!(i instanceof b))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return o?{}:i;if(i.length<(r-1)*a+1)throw new Error("x does not have enough elements for the given n and incx.");let s=await k(t,"sscal"),n=null,u=null;try{n=o?i._buf:g(i,"sscal-x",!0),u=H([{value:r,type:"u32"},{value:e,type:"f32"},{value:a,type:"u32"}],"sscal-params");let l=G(s.getBindGroupLayout(0),[n,u]),{commandEncoder:f,ts:m}=L(s,l,M(r)),d=o?null:y(f,n);P(f);let c=await A(m);if(o)return c!==void 0?{gpuTimeMs:c}:{};let x=await _(d,Float32Array);return c!==void 0?{x,gpuTimeMs:c}:x}finally{!o&&n&&p(n),u&&p(u)}}async function er(t,r,e,i,a,o){let s=e instanceof b,n=a instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!(e instanceof Float32Array)&&!(e instanceof b))throw new Error("x must be a Float32Array or GpuVector.");if(!(a instanceof Float32Array)&&!(a instanceof b))throw new Error("y must be a Float32Array or GpuVector.");if(e.constructor!==a.constructor)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return s?{}:{x:e,y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let u=await k(t,"sswap"),l=null,f=null,m=null;try{l=s?e._buf:g(e,"sswap-x",!0),f=n?a._buf:g(a,"sswap-y",!0),m=H([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"sswap-params");let d=G(u.getBindGroupLayout(0),[l,f,m]),{commandEncoder:c,ts:x}=L(u,d,M(r)),h=s?null:y(c,l),E=n?null:y(c,f);P(c);let v=await A(x);if(s&&n)return v!==void 0?{gpuTimeMs:v}:{};let B=await _(h,Float32Array),w=await _(E,Float32Array);return v!==void 0?{x:B,y:w,gpuTimeMs:v}:{x:B,y:w}}finally{!s&&l&&p(l),!n&&f&&p(f),m&&p(m)}}async function rr(t,r,e,i,a,o,s){let n=i instanceof b,u=o instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(a)||!Number.isInteger(s))throw new Error("n, incx, and incy must be integers.");if(typeof e!="number")throw new Error("alpha must be a number.");if(Number.isNaN(e))throw new Error("alpha must not be NaN.");if(!Number.isFinite(e))throw new Error("alpha must be finite.");if(a<=0||s<=0)throw new Error("incx and incy must be positive.");if(!n&&!(i instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!u&&!(o instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(n!==u)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return u?{}:{y:o};if(i.length<(r-1)*a+1)throw new Error("x does not have enough elements for the given n and incx.");if(o.length<(r-1)*s+1)throw new Error("y does not have enough elements for the given n and incy.");let l=await k(t,"saxpy"),f=null,m=null,d=null;try{f=n?i._buf:g(i,"saxpy-x",!1),m=u?o._buf:g(o,"saxpy-y",!0),d=H([{value:r,type:"u32"},{value:e,type:"f32"},{value:a,type:"u32"},{value:s,type:"u32"}],"saxpy-params");let c=G(l.getBindGroupLayout(0),[f,m,d]),{commandEncoder:x,ts:h}=L(l,c,M(r)),E=u?null:y(x,m);P(x);let v=await A(h);if(u&&n)return v!==void 0?{gpuTimeMs:v}:{};let B=await _(E,Float32Array);return v!==void 0?{y:B,gpuTimeMs:v}:{y:B}}finally{!n&&f&&p(f),!u&&m&&p(m),d&&p(d)}}async function tr(t,r,e,i,a,o){let s=e instanceof b,n=a instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!s&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!n&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(s!==n)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return n?{}:{y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let u=await k(t,"scopy"),l=null,f=null,m=null;try{l=s?e._buf:g(e,"scopy-x",!1),f=n?a._buf:g(a,"scopy-y",!0),m=H([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"scopy-params");let d=G(u.getBindGroupLayout(0),[l,f,m]),{commandEncoder:c,ts:x}=L(u,d,M(r)),h=n?null:y(c,f);P(c);let E=await A(x);if(n&&s)return E!==void 0?{gpuTimeMs:E}:{};let v=await _(h,Float32Array);return E!==void 0?{y:v,gpuTimeMs:E}:{y:v}}finally{!s&&l&&p(l),!n&&f&&p(f),m&&p(m)}}var ar=64;async function ir(t,r,e,i,a,o){let s=e instanceof b,n=a instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!s&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!n&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(s!==n)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return{dot:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let u=await k(t,"sdot"),l=await k(t,"reduction/sum"),f=null,m=null,d=null,c=null,x=null;try{f=s?e._buf:g(e,"sdot-x",!1),m=n?a._buf:g(a,"sdot-y",!1),d=R(2*ar*4,"sdot-partials"),c=D(4,"sdot-result"),x=H([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"sdot-params");let h=G(u.getBindGroupLayout(0),[f,m,d,x]),{commandEncoder:E,ts:v}=L(u,h,2*ar);P(E);let B=G(l.getBindGroupLayout(0),[d,c]),{commandEncoder:w,ts:S}=L(l,B,1),I=y(w,c);P(w);let[j,U,V]=await Promise.all([A(v),A(S),_(I,Float32Array)]);return j!==void 0&&U!==void 0?{dot:V[0],gpuTimeMs:j+U}:{dot:V[0]}}finally{!s&&f&&p(f),!n&&m&&p(m),d&&p(d),c&&p(c),x&&p(x)}}var or=64;async function nr(t,r,e,i){let a=e instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i))throw new Error("n and incx must be integers.");if(i<=0)throw new Error("incx must be positive.");if(!a&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return{asum:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");let o=await k(t,"sasum"),s=await k(t,"reduction/sum"),n=null,u=null,l=null,f=null;try{n=a?e._buf:g(e,"sasum-x",!1),u=R(2*or*4,"sasum-partials"),l=D(4,"sasum-result"),f=H([{value:r,type:"u32"},{value:i,type:"u32"}],"sasum-params");let m=G(o.getBindGroupLayout(0),[n,u,f]),{commandEncoder:d,ts:c}=L(o,m,2*or);P(d);let x=G(s.getBindGroupLayout(0),[u,l]),{commandEncoder:h,ts:E}=L(s,x,1),v=y(h,l);P(h);let[B,w,S]=await Promise.all([A(c),A(E),_(v,Float32Array)]);return B!==void 0&&w!==void 0?{asum:S[0],gpuTimeMs:B+w}:{asum:S[0]}}finally{!a&&n&&p(n),u&&p(u),l&&p(l),f&&p(f)}}var sr=64;async function ur(t,r,e,i){let a=e instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i))throw new Error("n and incx must be integers.");if(i<=0)throw new Error("incx must be positive.");if(!a&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return{nrm2:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");let o=await k(t,"snrm2"),s=await k(t,"reduction/sum"),n=null,u=null,l=null,f=null;try{n=a?e._buf:g(e,"snrm2-x",!1),u=R(2*sr*4,"snrm2-partials"),l=D(4,"snrm2-result"),f=H([{value:r,type:"u32"},{value:i,type:"u32"}],"snrm2-params");let m=G(o.getBindGroupLayout(0),[n,u,f]),{commandEncoder:d,ts:c}=L(o,m,2*sr);P(d);let x=G(s.getBindGroupLayout(0),[u,l]),{commandEncoder:h,ts:E}=L(s,x,1),v=y(h,l);P(h);let[B,w,S]=await Promise.all([A(c),A(E),_(v,Float32Array)]),I=Math.sqrt(S[0]);return B!==void 0&&w!==void 0?{nrm2:I,gpuTimeMs:B+w}:{nrm2:I}}finally{!a&&n&&p(n),u&&p(u),l&&p(l),f&&p(f)}}var ee=64;async function lr(t,r,e,i){let a=e instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i))throw new Error("n and incx must be integers.");if(i<=0)throw new Error("incx must be positive.");if(!a&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return{index:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");let o=await k(t,"isamax"),s=await k(t,"reduction/argmax"),n=null,u=null,l=null,f=null,m=null;try{n=a?e._buf:g(e,"isamax-x",!1),u=R(2*ee*4,"isamax-partials-val"),l=R(2*ee*4,"isamax-partials-idx"),f=D(4,"isamax-result"),m=H([{value:r,type:"u32"},{value:i,type:"u32"}],"isamax-params");let d=G(o.getBindGroupLayout(0),[n,u,l,m]),{commandEncoder:c,ts:x}=L(o,d,2*ee);P(c);let h=G(s.getBindGroupLayout(0),[u,l,f]),{commandEncoder:E,ts:v}=L(s,h,1),B=y(E,f);P(E);let[w,S,I]=await Promise.all([A(x),A(v),_(B,Uint32Array)]),j=I[0];return w!==void 0&&S!==void 0?{index:j,gpuTimeMs:w+S}:{index:j}}finally{!a&&n&&p(n),u&&p(u),l&&p(l),f&&p(f),m&&p(m)}}async function fr(t,r,e,i,a,o,s,n){let u=e instanceof b,l=a instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(typeof s!="number")throw new Error("c must be a number.");if(typeof n!="number")throw new Error("s must be a number.");if(Number.isNaN(s)||Number.isNaN(n))throw new Error("c and s must not be NaN.");if(!Number.isFinite(s))throw new Error("c must be finite.");if(!Number.isFinite(n))throw new Error("s must be finite.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!u&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!l&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(u!==l)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return u?{}:{x:e,y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let f=await k(t,"srot"),m=null,d=null,c=null;try{m=u?e._buf:g(e,"srot-x",!0),d=l?a._buf:g(a,"srot-y",!0),c=H([{value:r,type:"u32"},{value:s,type:"f32"},{value:n,type:"f32"},{value:i,type:"u32"},{value:o,type:"u32"}],"srot-params");let x=G(f.getBindGroupLayout(0),[m,d,c]),{commandEncoder:h,ts:E}=L(f,x,M(r)),v=u?null:y(h,m),B=l?null:y(h,d);P(h);let w=await A(E);if(u&&l)return w!==void 0?{gpuTimeMs:w}:{};let[S,I]=await Promise.all([_(v,Float32Array),_(B,Float32Array)]);return w!==void 0?{x:S,y:I,gpuTimeMs:w}:{x:S,y:I}}finally{!u&&m&&p(m),!l&&d&&p(d),c&&p(c)}}async function mr(t,r,e,i,a,o,s){let n=e instanceof b,u=a instanceof b;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(!(s instanceof Float32Array)||s.length!==5)throw new Error("param must be a Float32Array of length 5.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!n&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!u&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(n!==u)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0||s[0]===-2)return n?{}:{x:e,y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let l=await k(t,"srotm"),f=null,m=null,d=null,c=null;try{f=n?e._buf:g(e,"srotm-x",!0),m=u?a._buf:g(a,"srotm-y",!0),d=g(s,"srotm-param",!1),c=H([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"srotm-params");let x=G(l.getBindGroupLayout(0),[f,m,d,c]),{commandEncoder:h,ts:E}=L(l,x,M(r)),v=n?null:y(h,f),B=u?null:y(h,m);P(h);let w=await A(E);if(n&&u)return w!==void 0?{gpuTimeMs:w}:{};let[S,I]=await Promise.all([_(v,Float32Array),_(B,Float32Array)]);return w!==void 0?{x:S,y:I,gpuTimeMs:w}:{x:S,y:I}}finally{!n&&f&&p(f),!u&&m&&p(m),d&&p(d),c&&p(c)}}async function pr(t,r,e,i,a,o,s,n,u,l,f,m){let d=n instanceof b,c=f instanceof b,x=o instanceof T,h=r==="no-transpose";if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!h&&r!=="transpose")throw new Error("trans must be 'no-transpose' or 'transpose'.");if(!Number.isInteger(e)||!Number.isInteger(i)||!Number.isInteger(u)||!Number.isInteger(m)||!Number.isInteger(s))throw new Error("m, n, incx, incy, and lda must be integers.");if(typeof a!="number")throw new Error("alpha must be a number.");if(Number.isNaN(a))throw new Error("alpha must not be NaN.");if(!Number.isFinite(a))throw new Error("alpha must be finite.");if(typeof l!="number")throw new Error("beta must be a number.");if(Number.isNaN(l))throw new Error("beta must not be NaN.");if(!Number.isFinite(l))throw new Error("beta must be finite.");if(u<=0||m<=0)throw new Error("incx and incy must be positive.");if(s<i)throw new Error("lda must be >= n.");if(!x&&!(o instanceof Float32Array))throw new Error("A must be a Float32Array or GpuMatrix.");if(!d&&!(n instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!c&&!(f instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(d!==c)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(d&&!x)throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");if(d&&n._buf===f._buf)throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");if(x&&s!==o.lda)throw new Error("lda must match A.lda when A is a GpuMatrix.");if(x&&(o.rows<e||o.cols<i))throw new Error("A is too small for the given m and n.");if(e<0||i<0)throw new Error("m and n must be non-negative.");if(e===0||i===0)return c?{}:{y:f};let E=h?i:e,v=h?e:i;if(!x&&o.length<(e-1)*s+i)throw new Error("A does not have enough elements for the given m, n, and lda.");if(n.length<(E-1)*u+1)throw new Error("x does not have enough elements for the given dimensions and incx.");if(f.length<(v-1)*m+1)throw new Error("y does not have enough elements for the given dimensions and incy.");let w=await k(t,h?"sgemv_n":"sgemv_t"),S=x?o._buf:g(o,"sgemv-A",!1),I=d?n._buf:g(n,"sgemv-x",!1),j=c?f._buf:g(f,"sgemv-y",!0),U=H([{value:e,type:"u32"},{value:i,type:"u32"},{value:a,type:"f32"},{value:l,type:"f32"},{value:u,type:"u32"},{value:m,type:"u32"},{value:s,type:"u32"}],"sgemv-params");try{let V=G(w.getBindGroupLayout(0),[S,I,j,U]),Q=h?Math.min(e,t.limits.maxComputeWorkgroupsPerDimension):M(v),{commandEncoder:O,ts:z}=L(w,V,Q),q=c?null:y(O,j);P(O);let X=await A(z);if(c)return X!==void 0?{gpuTimeMs:X}:{};let re=await _(q,Float32Array);return X!==void 0?{y:re,gpuTimeMs:X}:{y:re}}finally{x||p(S),d||p(I),c||p(j),p(U)}}async function cr(t,r,e,i,a,o,s,n,u,l,f){let m=s instanceof b,d=l instanceof b,c=a instanceof T,x=r==="lower";if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!x&&r!=="upper")throw new Error("uplo must be 'lower' or 'upper'.");if(!Number.isInteger(e)||!Number.isInteger(n)||!Number.isInteger(f)||!Number.isInteger(o))throw new Error("n, incx, incy, and lda must be integers.");if(typeof i!="number")throw new Error("alpha must be a number.");if(Number.isNaN(i))throw new Error("alpha must not be NaN.");if(!Number.isFinite(i))throw new Error("alpha must be finite.");if(typeof u!="number")throw new Error("beta must be a number.");if(Number.isNaN(u))throw new Error("beta must not be NaN.");if(!Number.isFinite(u))throw new Error("beta must be finite.");if(n<=0||f<=0)throw new Error("incx and incy must be positive.");if(o<e)throw new Error("lda must be >= n.");if(!c&&!(a instanceof Float32Array))throw new Error("A must be a Float32Array or GpuMatrix.");if(!m&&!(s instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!d&&!(l instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(m!==d)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(m&&!c)throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");if(m&&s._buf===l._buf)throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");if(c&&o!==a.lda)throw new Error("lda must match A.lda when A is a GpuMatrix.");if(c&&(a.rows<e||a.cols<e))throw new Error("A is too small for the given n.");if(e<0)throw new Error("n must be non-negative.");if(e===0)return d?{}:{y:l};if(!c&&a.length<(e-1)*o+e)throw new Error("A does not have enough elements for the given n and lda.");if(s.length<(e-1)*n+1)throw new Error("x does not have enough elements for the given n and incx.");if(l.length<(e-1)*f+1)throw new Error("y does not have enough elements for the given n and incy.");let h=await k(t,"ssymv"),E=null,v=null,B=null,w=null;try{E=c?a._buf:g(a,"ssymv-A",!1),v=m?s._buf:g(s,"ssymv-x",!1),B=d?l._buf:g(l,"ssymv-y",!0),w=H([{value:e,type:"u32"},{value:i,type:"f32"},{value:u,type:"f32"},{value:n,type:"u32"},{value:f,type:"u32"},{value:o,type:"u32"},{value:x?0:1,type:"u32"}],"ssymv-params");let S=G(h.getBindGroupLayout(0),[E,v,B,w]),I=Math.min(e,t.limits.maxComputeWorkgroupsPerDimension),{commandEncoder:j,ts:U}=L(h,S,I),V=d?null:y(j,B);P(j);let Q=await A(U);if(d)return Q!==void 0?{gpuTimeMs:Q}:{};let O=await _(V,Float32Array);return Q!==void 0?{y:O,gpuTimeMs:Q}:{y:O}}finally{!c&&E&&p(E),!m&&v&&p(v),!d&&B&&p(B),w&&p(w)}}async function dr(t,r,e,i,a,o,s,n,u,l,f){let m=n instanceof b,d=l instanceof b,c=o instanceof T,x=r==="lower",h=e==="no-transpose",E=i==="unit";if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!x&&r!=="upper")throw new Error("uplo must be 'lower' or 'upper'.");if(!h&&e!=="transpose")throw new Error("trans must be 'no-transpose' or 'transpose'.");if(!E&&i!=="non-unit")throw new Error("diag must be 'unit' or 'non-unit'.");if(!Number.isInteger(a)||!Number.isInteger(u)||!Number.isInteger(f)||!Number.isInteger(s))throw new Error("n, incx, incy, and lda must be integers.");if(u<=0||f<=0)throw new Error("incx and incy must be positive.");if(s<a)throw new Error("lda must be >= n.");if(!c&&!(o instanceof Float32Array))throw new Error("A must be a Float32Array or GpuMatrix.");if(!m&&!(n instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!d&&!(l instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(m!==d)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(m&&n._buf===l._buf)throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");if(m&&!c)throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");if(c&&d&&o._buf===l._buf)throw new Error("A and y must not reference the same GPU buffer.");if(c&&s!==o.lda)throw new Error("lda must match A.lda when A is a GpuMatrix.");if(c&&(o.rows<a||o.cols<a))throw new Error("A is too small for the given n.");if(a<0)throw new Error("n must be non-negative.");if(a===0)return d?{}:{y:l};if(!c&&o.length<(a-1)*s+a)throw new Error("A does not have enough elements for the given n and lda.");if(n.length<(a-1)*u+1)throw new Error("x does not have enough elements for the given n and incx.");if(l.length<(a-1)*f+1)throw new Error("y does not have enough elements for the given n and incy.");let v=await k(t,"strmv"),B=null,w=null,S=null,I=null;try{B=c?o._buf:g(o,"strmv-A",!1),w=m?n._buf:g(n,"strmv-x",!1),S=d?l._buf:g(l,"strmv-y",!0),I=H([{value:a,type:"u32"},{value:u,type:"u32"},{value:f,type:"u32"},{value:s,type:"u32"},{value:h?0:1,type:"u32"},{value:x?0:1,type:"u32"},{value:E?1:0,type:"u32"}],"strmv-params");let j=G(v.getBindGroupLayout(0),[B,w,S,I]),U=Math.min(a,t.limits.maxComputeWorkgroupsPerDimension),{commandEncoder:V,ts:Q}=L(v,j,U),O=d?null:y(V,S);P(V);let z=await A(Q);if(d)return z!==void 0?{gpuTimeMs:z}:{};let q=await _(O,Float32Array);return z!==void 0?{y:q,gpuTimeMs:z}:{y:q}}finally{!c&&B&&p(B),!m&&w&&p(w),!d&&S&&p(S),I&&p(I)}}return vr(Cr);})();
+`});var oe={};nr(oe,{shaderSources:()=>aa});var aa,ne=W(()=>{vr();Er();Ar();Pr();Sr();Nr();Ir();jr();Ur();Vr();Rr();Cr();zr();qr();$r();Zr();Jr();ee();te();aa={"reduction/argmax":_r,"reduction/sum":Gr,"reduction/sumF64":Br,sscal:kr,sswap:Fr,saxpy:Lr,scopy:Wr,sdot:Mr,sasum:Tr,snrm2:Hr,srot:Dr,srotm:Or,isamax:Qr,sgemv_n:Xr,sgemv_t:Yr,ssymv:Kr,strmv:re,f64add:ae,dasum:ie}});var sa={};nr(sa,{GpuMatrix:()=>C,GpuVector:()=>w,cleanup:()=>dr,dasum:()=>xe,gpuName:()=>gr,init:()=>pr,isamax:()=>he,randomFloat32Array:()=>hr,randomFloat64Array:()=>yr,sasum:()=>ge,saxpy:()=>fe,scopy:()=>ce,sdot:()=>pe,sgemv:()=>_e,snrm2:()=>be,srot:()=>ye,srotm:()=>ve,sscal:()=>ue,sswap:()=>le,ssymv:()=>Ee,strmv:()=>Ge});function ur(t,r){return r?t.features.has("timestamp-query")?{requiredFeatures:["timestamp-query"]}:(console.warn("timestamp-query not supported on this device \u2014 benchmark mode disabled."),{}):{}}function lr(){if(!cr())return{querySet:null,passDescriptor:void 0};let r=I().createQuerySet({type:"timestamp",count:2});return{querySet:r,passDescriptor:{timestampWrites:{querySet:r,beginningOfPassWriteIndex:0,endOfPassWriteIndex:1}}}}function fr(t,r){if(!r)return null;let e=I(),i=e.createBuffer({label:"timestamp-resolve",size:16,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC});t.resolveQuerySet(r,0,2,i,0);let a=e.createBuffer({label:"timestamp-readback",size:16,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});return t.copyBufferToBuffer(i,0,a,0,16),{tsReadBuffer:a,resolveBuffer:i,querySet:r}}async function A(t){if(!t)return;let{tsReadBuffer:r,resolveBuffer:e,querySet:i}=t;await r.mapAsync(GPUMapMode.READ);let a=new BigInt64Array(r.getMappedRange().slice());return r.unmap(),r.destroy(),e.destroy(),i.destroy(),Math.max(0,Number(a[1]-a[0]))/1e6}var D=null,Q=null,mr=null,er=!1;async function pr({powerPreference:t="high-performance",benchmark:r=!1}={}){if(D)return D;let e;if(typeof window>"u"){let{create:o,globals:s}=await import("webgpu");Object.assign(globalThis,s),e=o([]),mr=e}else e=navigator.gpu;if(!e)throw new Error("WebGPU not supported in this environment.");if(Q=await e.requestAdapter({powerPreference:t})??await e.requestAdapter(),!Q)throw new Error("No WebGPU adapter found.");er=r;let a=[...ur(Q,r).requiredFeatures??[]];return D=await Q.requestDevice({requiredFeatures:a}),D.addEventListener("uncapturederror",o=>{console.error("Uncaptured GPU error:",o.error.message)}),D}function dr(){D&&(D.destroy(),D=null),Q=null,mr=null,er=!1}function gr(){if(!Q)throw new Error("WebGPU adapter not initialized \u2014 call init() first.");let{device:t,description:r}=Q.info;return{description:r||"unknown",device:t||"unknown"}}function cr(){return er}function I(){if(!D)throw new Error("WebGPU device not initialized \u2014 call init() first.");return D}function d(...t){t.flat().forEach(r=>r.destroy())}function x(t,r="blas-input",e=!1){let i=I(),a=i.limits.maxStorageBufferBindingSize,o=t.byteLength;if(o>a)throw new Error(`Buffer size ${o} bytes exceeds device limit of ${a} bytes.`);let s=e?GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC:GPUBufferUsage.STORAGE,n=i.createBuffer({label:r,size:o,usage:s,mappedAtCreation:!0}),u=t.constructor;return new u(n.getMappedRange()).set(t),n.unmap(),n}function V(t,r="blas-storage"){return I().createBuffer({label:r,size:t,usage:GPUBufferUsage.STORAGE})}function H(t,r="blas-result"){return I().createBuffer({label:r,size:t,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC})}function v(t,r){let i=I().createBuffer({label:"blas-readback",size:r.size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});return t.copyBufferToBuffer(r,0,i,0,r.size),i}function N(t,r="blas-params"){let e=I(),i=t.length*4,a=Math.ceil(i/16)*16,o=new ArrayBuffer(a),s=new DataView(o);t.forEach(({value:u,type:l},f)=>{let c=f*4;if(l==="u32")s.setUint32(c,u,!0);else if(l==="i32")s.setInt32(c,u,!0);else if(l==="f32")s.setFloat32(c,u,!0);else throw new Error(`Unknown param type "${l}". Use "f32", "u32", or "i32".`)});let n=e.createBuffer({label:r,size:a,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});return e.queue.writeBuffer(n,0,o),n}async function h(t,r=Float32Array){try{await t.mapAsync(GPUMapMode.READ);let e=new r(t.getMappedRange().slice());return t.unmap(),e}finally{t.destroy()}}var Ne=new ArrayBuffer(8),q=new DataView(Ne),xr=new ArrayBuffer(4),wr=new Uint32Array(xr),br=new Float32Array(xr);function Le(t){return wr[0]=t>>>0,br[0]}function Ie(t){return br[0]=t,wr[0]}function We(t,r,e,i){let a=r>>>3,o=r&7,s=i>>>29,n=e<<3|s,u=i&536870911,l=t<<31|a<<23|n,f=o>>>2&1,c=o&3,m=u>>>23,p=u&8388607,g=c<<6|m,y=(f<<31|g<<23|p)>>>0;return[Le(l),y]}function je(t,r){let e=Ie(t);r=r>>>0;let i=e>>>31,a=e>>>23&255,o=e&8388607,s=r>>>31,n=r>>>23&255,u=r&8388607,l=s<<2|n>>>6,f=(n&63)<<23|u,c=a<<3|l,m=o>>>3,g=((o&7)<<29|f)>>>0;return{sign:i,rawExp:c,mantissaHi:m,lo:g}}function rr(t){q.setFloat64(0,t,!1);let r=q.getUint32(0,!1),e=q.getUint32(4,!1),i=r>>>31,a=r>>>20&2047,o=r&1048575;return We(i,a,o,e)}function X(t,r){let{sign:e,rawExp:i,mantissaHi:a,lo:o}=je(t,r),s=(e<<31|i<<20|a)>>>0;return q.setUint32(0,s,!1),q.setUint32(4,o,!1),q.getFloat64(0,!1)}var w=class t{constructor(r,e,i=Float32Array,a=null){this._buf=r,this._auxBuf=a,this.length=e,this.dtype=i}static from(r){if(r instanceof Float64Array){let i=new Float32Array(r.length),a=new Uint32Array(r.length);for(let n=0;n<r.length;n++){let u=rr(r[n]);i[n]=u[0],a[n]=u[1]}let o=x(i,"gpu-vector-f64-main",!0),s=x(a,"gpu-vector-f64-aux",!0);return new t(o,r.length,Float64Array,s)}if(!(r instanceof Float32Array))throw new Error("GpuVector.from expects a Float32Array or Float64Array.");let e=x(r,"gpu-vector",!0);return new t(e,r.length,r.constructor)}async read(){let r=I(),e=r.createCommandEncoder(),i=v(e,this._buf);if(r.queue.submit([e.finish()]),!this._auxBuf)return h(i,this.dtype);let a=r.createCommandEncoder(),o=v(a,this._auxBuf);r.queue.submit([a.finish()]);let[s,n]=await Promise.all([h(i,Float32Array),h(o,Uint32Array)]),u=new Float64Array(this.length);for(let l=0;l<this.length;l++)u[l]=X(s[l],n[l]);return u}destroy(){this._buf.destroy(),this._auxBuf&&this._auxBuf.destroy()}};var C=class t{constructor(r,e,i,a,o=null){this._buf=r,this._auxBuf=o,this.rows=e,this.cols=i,this.lda=a}static from(r,e,i,a=i){if(!(r instanceof Float32Array)&&!(r instanceof Float64Array))throw new Error("GpuMatrix.from expects a Float32Array or Float64Array.");if(!Number.isInteger(e)||e<=0)throw new Error("rows must be a positive integer.");if(!Number.isInteger(i)||i<=0)throw new Error("cols must be a positive integer.");if(!Number.isInteger(a)||a<i)throw new Error("lda must be an integer >= cols.");if(r.length<e*a)throw new Error("data does not have enough elements for the given rows and lda.");if(r instanceof Float64Array){let s=e*a,n=new Float32Array(s),u=new Uint32Array(s);for(let c=0;c<s;c++){let m=rr(r[c]);n[c]=m[0],u[c]=m[1]}let l=x(n,"gpu-matrix-f64-main",!0),f=x(u,"gpu-matrix-f64-aux",!0);return new t(l,e,i,a,f)}let o=x(r.subarray(0,e*a),"gpu-matrix",!0);return new t(o,e,i,a)}async read(){let r=I(),e=r.createCommandEncoder(),i=v(e,this._buf);if(r.queue.submit([e.finish()]),this._auxBuf){let s=r.createCommandEncoder(),n=v(s,this._auxBuf);r.queue.submit([s.finish()]);let[u,l]=await Promise.all([h(i,Float32Array),h(n,Uint32Array)]),f=new Float64Array(this.rows*this.lda);for(let m=0;m<f.length;m++)f[m]=X(u[m],l[m]);if(this.lda===this.cols)return f;let c=new Float64Array(this.rows*this.cols);for(let m=0;m<this.rows;m++)c.set(f.subarray(m*this.lda,m*this.lda+this.cols),m*this.cols);return c}let a=await h(i,Float32Array);if(this.lda===this.cols)return a;let o=new Float32Array(this.rows*this.cols);for(let s=0;s<this.rows;s++)o.set(a.subarray(s*this.lda,s*this.lda+this.cols),s*this.cols);return o}destroy(){this._buf.destroy(),this._auxBuf&&this._auxBuf.destroy()}};function hr(t,r=-1,e=1){let i=new Float32Array(t);for(let a=0;a<t;a++)i[a]=r+Math.random()*(e-r);return i}function yr(t,r=-1,e=1){let i=new Float64Array(t);for(let a=0;a<t;a++)i[a]=r+Math.random()*(e-r);return i}function B(t,r,e=0){let i=I(),a=r.map((o,s)=>({binding:e+s,resource:{buffer:o}}));return i.createBindGroup({layout:t,entries:a})}var Me=new WeakMap;function P(t){I().queue.submit([t.finish()])}function k(t,r,e){let i=I(),{querySet:a,passDescriptor:o}=lr(),s=i.createCommandEncoder(),n=s.beginComputePass(o);n.setPipeline(t),n.setBindGroup(0,r),typeof e=="number"?n.dispatchWorkgroups(e):n.dispatchWorkgroups(e.x,e.y),n.end();let u=fr(s,a);return Me.set(s,n),{commandEncoder:s,ts:u}}var oa={},ar=new WeakMap;async function S(t,r,e="main"){ar.has(t)||ar.set(t,new Map);let i=ar.get(t),a=Array.isArray(r)?r:[r],o=`${a.join("+")}::${e}`;return i.has(o)||i.set(o,await ia(a,e)),i.get(o)}async function ta(t){if(typeof process>"u"||!process.versions?.node){let{shaderSources:r}=await Promise.resolve().then(()=>(ne(),oe)),e=r[t];if(!e)throw new Error(`Shader "${t}" not found in browser bundle.`);return e}else{let{readFileSync:r}=await import("fs"),{fileURLToPath:e}=await import("url"),{dirname:i,join:a}=await import("path"),o=i(e(oa.url));return r(a(o,`../shaders/${t}.wgsl`),"utf8")}}async function ia(t,r="main"){let e=I(),i=t.join("+"),a=(await Promise.all(t.map(ta))).join(`
+`),o=e.createShaderModule({label:i,code:a}),n=(await o.getCompilationInfo()).messages.filter(f=>f.type==="error");if(n.length>0)throw new Error(`Shader "${i}" compilation failed:
+${n.map(f=>`  line ${f.lineNum}: ${f.message}`).join(`
+`)}`);let u=r==="main"?{module:o}:{module:o,entryPoint:r},l=e.createComputePipeline({label:i,layout:"auto",compute:u});return l._shaderModule=o,l}var na=64,se=8;function M(t,r){let e=I().limits.maxComputeWorkgroupsPerDimension;return r===void 0?Math.min(Math.ceil(t/na),e):{x:Math.min(Math.ceil(r/se),e),y:Math.min(Math.ceil(t/se),e)}}async function ue(t,r,e,i,a){let o=i instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(a))throw new Error("n and incx must be integers.");if(typeof e!="number")throw new Error("alpha must be a number.");if(Number.isNaN(e))throw new Error("alpha must not be NaN.");if(!Number.isFinite(e))throw new Error("alpha must be finite.");if(a<=0)throw new Error("incx must be positive.");if(!(i instanceof Float32Array)&&!(i instanceof w))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return o?{}:i;if(i.length<(r-1)*a+1)throw new Error("x does not have enough elements for the given n and incx.");let s=await S(t,"sscal"),n=null,u=null;try{n=o?i._buf:x(i,"sscal-x",!0),u=N([{value:r,type:"u32"},{value:e,type:"f32"},{value:a,type:"u32"}],"sscal-params");let l=B(s.getBindGroupLayout(0),[n,u]),{commandEncoder:f,ts:c}=k(s,l,M(r)),m=o?null:v(f,n);P(f);let p=await A(c);if(o)return p!==void 0?{gpuTimeMs:p}:{};let g=await h(m,Float32Array);return p!==void 0?{x:g,gpuTimeMs:p}:g}finally{!o&&n&&d(n),u&&d(u)}}async function le(t,r,e,i,a,o){let s=e instanceof w,n=a instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!(e instanceof Float32Array)&&!(e instanceof w))throw new Error("x must be a Float32Array or GpuVector.");if(!(a instanceof Float32Array)&&!(a instanceof w))throw new Error("y must be a Float32Array or GpuVector.");if(e.constructor!==a.constructor)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return s?{}:{x:e,y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let u=await S(t,"sswap"),l=null,f=null,c=null;try{l=s?e._buf:x(e,"sswap-x",!0),f=n?a._buf:x(a,"sswap-y",!0),c=N([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"sswap-params");let m=B(u.getBindGroupLayout(0),[l,f,c]),{commandEncoder:p,ts:g}=k(u,m,M(r)),y=s?null:v(p,l),E=n?null:v(p,f);P(p);let _=await A(g);if(s&&n)return _!==void 0?{gpuTimeMs:_}:{};let G=await h(y,Float32Array),b=await h(E,Float32Array);return _!==void 0?{x:G,y:b,gpuTimeMs:_}:{x:G,y:b}}finally{!s&&l&&d(l),!n&&f&&d(f),c&&d(c)}}async function fe(t,r,e,i,a,o,s){let n=i instanceof w,u=o instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(a)||!Number.isInteger(s))throw new Error("n, incx, and incy must be integers.");if(typeof e!="number")throw new Error("alpha must be a number.");if(Number.isNaN(e))throw new Error("alpha must not be NaN.");if(!Number.isFinite(e))throw new Error("alpha must be finite.");if(a<=0||s<=0)throw new Error("incx and incy must be positive.");if(!n&&!(i instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!u&&!(o instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(n!==u)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return u?{}:{y:o};if(i.length<(r-1)*a+1)throw new Error("x does not have enough elements for the given n and incx.");if(o.length<(r-1)*s+1)throw new Error("y does not have enough elements for the given n and incy.");let l=await S(t,"saxpy"),f=null,c=null,m=null;try{f=n?i._buf:x(i,"saxpy-x",!1),c=u?o._buf:x(o,"saxpy-y",!0),m=N([{value:r,type:"u32"},{value:e,type:"f32"},{value:a,type:"u32"},{value:s,type:"u32"}],"saxpy-params");let p=B(l.getBindGroupLayout(0),[f,c,m]),{commandEncoder:g,ts:y}=k(l,p,M(r)),E=u?null:v(g,c);P(g);let _=await A(y);if(u&&n)return _!==void 0?{gpuTimeMs:_}:{};let G=await h(E,Float32Array);return _!==void 0?{y:G,gpuTimeMs:_}:{y:G}}finally{!n&&f&&d(f),!u&&c&&d(c),m&&d(m)}}async function ce(t,r,e,i,a,o){let s=e instanceof w,n=a instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!s&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!n&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(s!==n)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return n?{}:{y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let u=await S(t,"scopy"),l=null,f=null,c=null;try{l=s?e._buf:x(e,"scopy-x",!1),f=n?a._buf:x(a,"scopy-y",!0),c=N([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"scopy-params");let m=B(u.getBindGroupLayout(0),[l,f,c]),{commandEncoder:p,ts:g}=k(u,m,M(r)),y=n?null:v(p,f);P(p);let E=await A(g);if(n&&s)return E!==void 0?{gpuTimeMs:E}:{};let _=await h(y,Float32Array);return E!==void 0?{y:_,gpuTimeMs:E}:{y:_}}finally{!s&&l&&d(l),!n&&f&&d(f),c&&d(c)}}var me=64;async function pe(t,r,e,i,a,o){let s=e instanceof w,n=a instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!s&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!n&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(s!==n)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return{dot:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let u=await S(t,"sdot"),l=await S(t,"reduction/sum"),f=null,c=null,m=null,p=null,g=null;try{f=s?e._buf:x(e,"sdot-x",!1),c=n?a._buf:x(a,"sdot-y",!1),m=V(2*me*4,"sdot-partials"),p=H(4,"sdot-result"),g=N([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"sdot-params");let y=B(u.getBindGroupLayout(0),[f,c,m,g]),{commandEncoder:E,ts:_}=k(u,y,2*me);P(E);let G=B(l.getBindGroupLayout(0),[m,p]),{commandEncoder:b,ts:F}=k(l,G,1),L=v(b,p);P(b);let[j,U,T]=await Promise.all([A(_),A(F),h(L,Float32Array)]);return j!==void 0&&U!==void 0?{dot:T[0],gpuTimeMs:j+U}:{dot:T[0]}}finally{!s&&f&&d(f),!n&&c&&d(c),m&&d(m),p&&d(p),g&&d(g)}}var de=64;async function ge(t,r,e,i){let a=e instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i))throw new Error("n and incx must be integers.");if(i<=0)throw new Error("incx must be positive.");if(!a&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return{asum:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");let o=await S(t,"sasum"),s=await S(t,"reduction/sum"),n=null,u=null,l=null,f=null;try{n=a?e._buf:x(e,"sasum-x",!1),u=V(2*de*4,"sasum-partials"),l=H(4,"sasum-result"),f=N([{value:r,type:"u32"},{value:i,type:"u32"}],"sasum-params");let c=B(o.getBindGroupLayout(0),[n,u,f]),{commandEncoder:m,ts:p}=k(o,c,2*de);P(m);let g=B(s.getBindGroupLayout(0),[u,l]),{commandEncoder:y,ts:E}=k(s,g,1),_=v(y,l);P(y);let[G,b,F]=await Promise.all([A(p),A(E),h(_,Float32Array)]);return G!==void 0&&b!==void 0?{asum:F[0],gpuTimeMs:G+b}:{asum:F[0]}}finally{!a&&n&&d(n),u&&d(u),l&&d(l),f&&d(f)}}var tr=64;async function xe(t,r,e,i){let a=e instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i))throw new Error("n and incx must be integers.");if(i<=0)throw new Error("incx must be positive.");if(!a&&!(e instanceof Float64Array))throw new Error("x must be a Float64Array or GpuVector.");if(a&&e.dtype!==Float64Array)throw new Error("x must be a Float64Array-backed GpuVector.");if(r<=0)return{asum:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");let o=await S(t,["f64add","dasum"],"dasum_main"),s=await S(t,["f64add","reduction/sumF64"],"reduce_f64"),n=null,u=null,l=null,f=null,c=null,m=null,p=null,g=null;try{n=a?e:w.from(e),u=V(2*tr*4,"dasum-partialsMain"),l=V(2*tr*4,"dasum-partialsAux"),f=H(4,"dasum-result-main"),c=H(4,"dasum-result-aux"),m=N([{value:r,type:"u32"},{value:i,type:"u32"}],"dasum-params");let y=B(o.getBindGroupLayout(0),[n._buf,n._auxBuf,u,l,m],4),{commandEncoder:E,ts:_}=k(o,y,2*tr);P(E);let G=B(s.getBindGroupLayout(0),[u,l,f,c],4),{commandEncoder:b,ts:F}=k(s,G,1);p=v(b,f),g=v(b,c),P(b);let L=h(p,Float32Array),j=h(g,Uint32Array);p=null,g=null;let[U,T,R,O]=await Promise.all([A(_),A(F),L,j]),z=X(R[0],O[0]);return U!==void 0&&T!==void 0?{asum:z,gpuTimeMs:U+T}:{asum:z}}finally{!a&&n&&n.destroy(),u&&d(u),l&&d(l),f&&d(f),c&&d(c),m&&d(m),p&&d(p),g&&d(g)}}var we=64;async function be(t,r,e,i){let a=e instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i))throw new Error("n and incx must be integers.");if(i<=0)throw new Error("incx must be positive.");if(!a&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return{nrm2:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");let o=await S(t,"snrm2"),s=await S(t,"reduction/sum"),n=null,u=null,l=null,f=null;try{n=a?e._buf:x(e,"snrm2-x",!1),u=V(2*we*4,"snrm2-partials"),l=H(4,"snrm2-result"),f=N([{value:r,type:"u32"},{value:i,type:"u32"}],"snrm2-params");let c=B(o.getBindGroupLayout(0),[n,u,f]),{commandEncoder:m,ts:p}=k(o,c,2*we);P(m);let g=B(s.getBindGroupLayout(0),[u,l]),{commandEncoder:y,ts:E}=k(s,g,1),_=v(y,l);P(y);let[G,b,F]=await Promise.all([A(p),A(E),h(_,Float32Array)]),L=Math.sqrt(F[0]);return G!==void 0&&b!==void 0?{nrm2:L,gpuTimeMs:G+b}:{nrm2:L}}finally{!a&&n&&d(n),u&&d(u),l&&d(l),f&&d(f)}}var ir=64;async function he(t,r,e,i){let a=e instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i))throw new Error("n and incx must be integers.");if(i<=0)throw new Error("incx must be positive.");if(!a&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(r<=0)return{index:0};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");let o=await S(t,"isamax"),s=await S(t,"reduction/argmax"),n=null,u=null,l=null,f=null,c=null;try{n=a?e._buf:x(e,"isamax-x",!1),u=V(2*ir*4,"isamax-partials-val"),l=V(2*ir*4,"isamax-partials-idx"),f=H(4,"isamax-result"),c=N([{value:r,type:"u32"},{value:i,type:"u32"}],"isamax-params");let m=B(o.getBindGroupLayout(0),[n,u,l,c]),{commandEncoder:p,ts:g}=k(o,m,2*ir);P(p);let y=B(s.getBindGroupLayout(0),[u,l,f]),{commandEncoder:E,ts:_}=k(s,y,1),G=v(E,f);P(E);let[b,F,L]=await Promise.all([A(g),A(_),h(G,Uint32Array)]),j=L[0];return b!==void 0&&F!==void 0?{index:j,gpuTimeMs:b+F}:{index:j}}finally{!a&&n&&d(n),u&&d(u),l&&d(l),f&&d(f),c&&d(c)}}async function ye(t,r,e,i,a,o,s,n){let u=e instanceof w,l=a instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(typeof s!="number")throw new Error("c must be a number.");if(typeof n!="number")throw new Error("s must be a number.");if(Number.isNaN(s)||Number.isNaN(n))throw new Error("c and s must not be NaN.");if(!Number.isFinite(s))throw new Error("c must be finite.");if(!Number.isFinite(n))throw new Error("s must be finite.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!u&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!l&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(u!==l)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0)return u?{}:{x:e,y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let f=await S(t,"srot"),c=null,m=null,p=null;try{c=u?e._buf:x(e,"srot-x",!0),m=l?a._buf:x(a,"srot-y",!0),p=N([{value:r,type:"u32"},{value:s,type:"f32"},{value:n,type:"f32"},{value:i,type:"u32"},{value:o,type:"u32"}],"srot-params");let g=B(f.getBindGroupLayout(0),[c,m,p]),{commandEncoder:y,ts:E}=k(f,g,M(r)),_=u?null:v(y,c),G=l?null:v(y,m);P(y);let b=await A(E);if(u&&l)return b!==void 0?{gpuTimeMs:b}:{};let[F,L]=await Promise.all([h(_,Float32Array),h(G,Float32Array)]);return b!==void 0?{x:F,y:L,gpuTimeMs:b}:{x:F,y:L}}finally{!u&&c&&d(c),!l&&m&&d(m),p&&d(p)}}async function ve(t,r,e,i,a,o,s){let n=e instanceof w,u=a instanceof w;if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!Number.isInteger(r)||!Number.isInteger(i)||!Number.isInteger(o))throw new Error("n, incx, and incy must be integers.");if(!(s instanceof Float32Array)||s.length!==5)throw new Error("param must be a Float32Array of length 5.");if(i<=0||o<=0)throw new Error("incx and incy must be positive.");if(!n&&!(e instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!u&&!(a instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(n!==u)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(r<=0||s[0]===-2)return n?{}:{x:e,y:a};if(e.length<(r-1)*i+1)throw new Error("x does not have enough elements for the given n and incx.");if(a.length<(r-1)*o+1)throw new Error("y does not have enough elements for the given n and incy.");let l=await S(t,"srotm"),f=null,c=null,m=null,p=null;try{f=n?e._buf:x(e,"srotm-x",!0),c=u?a._buf:x(a,"srotm-y",!0),m=x(s,"srotm-param",!1),p=N([{value:r,type:"u32"},{value:i,type:"u32"},{value:o,type:"u32"}],"srotm-params");let g=B(l.getBindGroupLayout(0),[f,c,m,p]),{commandEncoder:y,ts:E}=k(l,g,M(r)),_=n?null:v(y,f),G=u?null:v(y,c);P(y);let b=await A(E);if(n&&u)return b!==void 0?{gpuTimeMs:b}:{};let[F,L]=await Promise.all([h(_,Float32Array),h(G,Float32Array)]);return b!==void 0?{x:F,y:L,gpuTimeMs:b}:{x:F,y:L}}finally{!n&&f&&d(f),!u&&c&&d(c),m&&d(m),p&&d(p)}}async function _e(t,r,e,i,a,o,s,n,u,l,f,c){let m=n instanceof w,p=f instanceof w,g=o instanceof C,y=r==="no-transpose";if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!y&&r!=="transpose")throw new Error("trans must be 'no-transpose' or 'transpose'.");if(!Number.isInteger(e)||!Number.isInteger(i)||!Number.isInteger(u)||!Number.isInteger(c)||!Number.isInteger(s))throw new Error("m, n, incx, incy, and lda must be integers.");if(typeof a!="number")throw new Error("alpha must be a number.");if(Number.isNaN(a))throw new Error("alpha must not be NaN.");if(!Number.isFinite(a))throw new Error("alpha must be finite.");if(typeof l!="number")throw new Error("beta must be a number.");if(Number.isNaN(l))throw new Error("beta must not be NaN.");if(!Number.isFinite(l))throw new Error("beta must be finite.");if(u<=0||c<=0)throw new Error("incx and incy must be positive.");if(s<i)throw new Error("lda must be >= n.");if(!g&&!(o instanceof Float32Array))throw new Error("A must be a Float32Array or GpuMatrix.");if(!m&&!(n instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!p&&!(f instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(m!==p)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(m&&!g)throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");if(m&&n._buf===f._buf)throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");if(g&&s!==o.lda)throw new Error("lda must match A.lda when A is a GpuMatrix.");if(g&&(o.rows<e||o.cols<i))throw new Error("A is too small for the given m and n.");if(e<0||i<0)throw new Error("m and n must be non-negative.");if(e===0||i===0)return p?{}:{y:f};let E=y?i:e,_=y?e:i;if(!g&&o.length<(e-1)*s+i)throw new Error("A does not have enough elements for the given m, n, and lda.");if(n.length<(E-1)*u+1)throw new Error("x does not have enough elements for the given dimensions and incx.");if(f.length<(_-1)*c+1)throw new Error("y does not have enough elements for the given dimensions and incy.");let b=await S(t,y?"sgemv_n":"sgemv_t"),F=g?o._buf:x(o,"sgemv-A",!1),L=m?n._buf:x(n,"sgemv-x",!1),j=p?f._buf:x(f,"sgemv-y",!0),U=N([{value:e,type:"u32"},{value:i,type:"u32"},{value:a,type:"f32"},{value:l,type:"f32"},{value:u,type:"u32"},{value:c,type:"u32"},{value:s,type:"u32"}],"sgemv-params");try{let T=B(b.getBindGroupLayout(0),[F,L,j,U]),R=y?Math.min(e,t.limits.maxComputeWorkgroupsPerDimension):M(_),{commandEncoder:O,ts:z}=k(b,T,R),$=p?null:v(O,j);P(O);let Y=await A(z);if(p)return Y!==void 0?{gpuTimeMs:Y}:{};let or=await h($,Float32Array);return Y!==void 0?{y:or,gpuTimeMs:Y}:{y:or}}finally{g||d(F),m||d(L),p||d(j),d(U)}}async function Ee(t,r,e,i,a,o,s,n,u,l,f){let c=s instanceof w,m=l instanceof w,p=a instanceof C,g=r==="lower";if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!g&&r!=="upper")throw new Error("uplo must be 'lower' or 'upper'.");if(!Number.isInteger(e)||!Number.isInteger(n)||!Number.isInteger(f)||!Number.isInteger(o))throw new Error("n, incx, incy, and lda must be integers.");if(typeof i!="number")throw new Error("alpha must be a number.");if(Number.isNaN(i))throw new Error("alpha must not be NaN.");if(!Number.isFinite(i))throw new Error("alpha must be finite.");if(typeof u!="number")throw new Error("beta must be a number.");if(Number.isNaN(u))throw new Error("beta must not be NaN.");if(!Number.isFinite(u))throw new Error("beta must be finite.");if(n<=0||f<=0)throw new Error("incx and incy must be positive.");if(o<e)throw new Error("lda must be >= n.");if(!p&&!(a instanceof Float32Array))throw new Error("A must be a Float32Array or GpuMatrix.");if(!c&&!(s instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!m&&!(l instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(c!==m)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(c&&!p)throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");if(c&&s._buf===l._buf)throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");if(p&&o!==a.lda)throw new Error("lda must match A.lda when A is a GpuMatrix.");if(p&&(a.rows<e||a.cols<e))throw new Error("A is too small for the given n.");if(e<0)throw new Error("n must be non-negative.");if(e===0)return m?{}:{y:l};if(!p&&a.length<(e-1)*o+e)throw new Error("A does not have enough elements for the given n and lda.");if(s.length<(e-1)*n+1)throw new Error("x does not have enough elements for the given n and incx.");if(l.length<(e-1)*f+1)throw new Error("y does not have enough elements for the given n and incy.");let y=await S(t,"ssymv"),E=null,_=null,G=null,b=null;try{E=p?a._buf:x(a,"ssymv-A",!1),_=c?s._buf:x(s,"ssymv-x",!1),G=m?l._buf:x(l,"ssymv-y",!0),b=N([{value:e,type:"u32"},{value:i,type:"f32"},{value:u,type:"f32"},{value:n,type:"u32"},{value:f,type:"u32"},{value:o,type:"u32"},{value:g?0:1,type:"u32"}],"ssymv-params");let F=B(y.getBindGroupLayout(0),[E,_,G,b]),L=Math.min(e,t.limits.maxComputeWorkgroupsPerDimension),{commandEncoder:j,ts:U}=k(y,F,L),T=m?null:v(j,G);P(j);let R=await A(U);if(m)return R!==void 0?{gpuTimeMs:R}:{};let O=await h(T,Float32Array);return R!==void 0?{y:O,gpuTimeMs:R}:{y:O}}finally{!p&&E&&d(E),!c&&_&&d(_),!m&&G&&d(G),b&&d(b)}}async function Ge(t,r,e,i,a,o,s,n,u,l,f){let c=n instanceof w,m=l instanceof w,p=o instanceof C,g=r==="lower",y=e==="no-transpose",E=i==="unit";if(!(t instanceof GPUDevice))throw new Error("device must be a GPUDevice.");if(!g&&r!=="upper")throw new Error("uplo must be 'lower' or 'upper'.");if(!y&&e!=="transpose")throw new Error("trans must be 'no-transpose' or 'transpose'.");if(!E&&i!=="non-unit")throw new Error("diag must be 'unit' or 'non-unit'.");if(!Number.isInteger(a)||!Number.isInteger(u)||!Number.isInteger(f)||!Number.isInteger(s))throw new Error("n, incx, incy, and lda must be integers.");if(u<=0||f<=0)throw new Error("incx and incy must be positive.");if(s<a)throw new Error("lda must be >= n.");if(!p&&!(o instanceof Float32Array))throw new Error("A must be a Float32Array or GpuMatrix.");if(!c&&!(n instanceof Float32Array))throw new Error("x must be a Float32Array or GpuVector.");if(!m&&!(l instanceof Float32Array))throw new Error("y must be a Float32Array or GpuVector.");if(c!==m)throw new Error("x and y must be the same type (both Float32Array or both GpuVector).");if(c&&n._buf===l._buf)throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");if(c&&!p)throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");if(p&&m&&o._buf===l._buf)throw new Error("A and y must not reference the same GPU buffer.");if(p&&s!==o.lda)throw new Error("lda must match A.lda when A is a GpuMatrix.");if(p&&(o.rows<a||o.cols<a))throw new Error("A is too small for the given n.");if(a<0)throw new Error("n must be non-negative.");if(a===0)return m?{}:{y:l};if(!p&&o.length<(a-1)*s+a)throw new Error("A does not have enough elements for the given n and lda.");if(n.length<(a-1)*u+1)throw new Error("x does not have enough elements for the given n and incx.");if(l.length<(a-1)*f+1)throw new Error("y does not have enough elements for the given n and incy.");let _=await S(t,"strmv"),G=null,b=null,F=null,L=null;try{G=p?o._buf:x(o,"strmv-A",!1),b=c?n._buf:x(n,"strmv-x",!1),F=m?l._buf:x(l,"strmv-y",!0),L=N([{value:a,type:"u32"},{value:u,type:"u32"},{value:f,type:"u32"},{value:s,type:"u32"},{value:y?0:1,type:"u32"},{value:g?0:1,type:"u32"},{value:E?1:0,type:"u32"}],"strmv-params");let j=B(_.getBindGroupLayout(0),[G,b,F,L]),U=Math.min(a,t.limits.maxComputeWorkgroupsPerDimension),{commandEncoder:T,ts:R}=k(_,j,U),O=m?null:v(T,F);P(T);let z=await A(R);if(m)return z!==void 0?{gpuTimeMs:z}:{};let $=await h(O,Float32Array);return z!==void 0?{y:$,gpuTimeMs:z}:{y:$}}finally{!p&&G&&d(G),!c&&b&&d(b),!m&&F&&d(F),L&&d(L)}}return Fe(sa);})();

@@ -5,17 +5,17 @@
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
- * | 32 | 0.0082 | 0.5469 | 0.0052 | 0.8615 | 63.5% |
- * | 64 | 0.0083 | 2.0695 | 0.0059 | 2.8973 | 71.4% |
- * | 128 | 0.0089 | 7.4991 | 0.0056 | 12.0460 | 62.3% |
- * | 256 | 0.0113 | 23.3794 | 0.0061 | 43.1667 | 54.2% |
- * | 512 | 0.0164 | 64.3750 | 0.0086 | 123.2150 | 52.2% |
- * | 1024 | 0.0362 | 116.0759 | 0.0324 | 129.8331 | 89.4% |
- * | 1280 | 0.0492 | 133.6458 | 0.0420 | 156.3443 | 85.5% |
- * | 2048 | 0.1044 | 160.8627 | 0.0985 | 170.5558 | 94.3% |
- * | 4096 | 0.3748 | 179.2066 | 0.3686 | 182.1778 | 98.4% |
+ * | 32 | 0.0073 | 0.6167 | 0.0049 | 0.9061 | 68.1% |
+ * | 64 | 0.0074 | 2.3103 | 0.0050 | 3.4359 | 67.2% |
+ * | 128 | 0.0082 | 8.2035 | 0.0055 | 12.2216 | 67.1% |
+ * | 256 | 0.0100 | 26.6495 | 0.0061 | 43.3927 | 61.4% |
+ * | 512 | 0.0145 | 72.8398 | 0.0091 | 115.4466 | 63.1% |
+ * | 1024 | 0.0341 | 123.2015 | 0.0324 | 129.7050 | 95.0% |
+ * | 1280 | 0.0469 | 139.9795 | 0.0424 | 154.8115 | 90.4% |
+ * | 2048 | 0.1010 | 166.4203 | 0.0984 | 170.6667 | 97.5% |
+ * | 4096 | 0.3707 | 181.1478 | 0.3687 | 182.1382 | 99.5% |
  *
- * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. Higher means wgblas is closer to cuBLAS throughput.
+ * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.
  *
  * <svg id="bc-sgemv-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
  * <style>#bc-sgemv-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-sgemv-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-sgemv-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-sgemv-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-sgemv-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-sgemv-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-sgemv-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-sgemv-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-sgemv-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-sgemv-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
@@ -42,26 +42,26 @@
  * <text class="at" x="457.9" y="236" text-anchor="middle">1.3K</text>
  * <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
- * <polyline class="ln1" points="58.0,219.5 133.1,217.9 208.3,212.5 283.4,196.6 358.6,155.6 433.7,103.9 457.9,86.4 508.9,59.1 584.0,40.8"/>
- * <polyline class="ln2" points="58.0,219.1 133.1,217.1 208.3,208.0 283.4,176.8 358.6,96.8 433.7,90.2 457.9,63.7 508.9,49.4 584.0,37.8"/>
- * <circle class="mk1" cx="58.0" cy="219.5" r="4"/>
- * <circle class="mk1" cx="133.1" cy="217.9" r="4"/>
- * <circle class="mk1" cx="208.3" cy="212.5" r="4"/>
- * <circle class="mk1" cx="283.4" cy="196.6" r="4"/>
- * <circle class="mk1" cx="358.6" cy="155.6" r="4"/>
- * <circle class="mk1" cx="433.7" cy="103.9" r="4"/>
- * <circle class="mk1" cx="457.9" cy="86.4" r="4"/>
- * <circle class="mk1" cx="508.9" cy="59.1" r="4"/>
- * <circle class="mk1" cx="584.0" cy="40.8" r="4"/>
+ * <polyline class="ln1" points="58.0,219.4 133.1,217.7 208.3,211.8 283.4,193.4 358.6,147.2 433.7,96.8 457.9,80.0 508.9,53.6 584.0,38.9"/>
+ * <polyline class="ln2" points="58.0,219.1 133.1,216.6 208.3,207.8 283.4,176.6 358.6,104.6 433.7,90.3 457.9,65.2 508.9,49.3 584.0,37.9"/>
+ * <circle class="mk1" cx="58.0" cy="219.4" r="4"/>
+ * <circle class="mk1" cx="133.1" cy="217.7" r="4"/>
+ * <circle class="mk1" cx="208.3" cy="211.8" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="193.4" r="4"/>
+ * <circle class="mk1" cx="358.6" cy="147.2" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="96.8" r="4"/>
+ * <circle class="mk1" cx="457.9" cy="80.0" r="4"/>
+ * <circle class="mk1" cx="508.9" cy="53.6" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="38.9" r="4"/>
  * <circle class="mk2" cx="58.0" cy="219.1" r="4"/>
- * <circle class="mk2" cx="133.1" cy="217.1" r="4"/>
- * <circle class="mk2" cx="208.3" cy="208.0" r="4"/>
- * <circle class="mk2" cx="283.4" cy="176.8" r="4"/>
- * <circle class="mk2" cx="358.6" cy="96.8" r="4"/>
- * <circle class="mk2" cx="433.7" cy="90.2" r="4"/>
- * <circle class="mk2" cx="457.9" cy="63.7" r="4"/>
- * <circle class="mk2" cx="508.9" cy="49.4" r="4"/>
- * <circle class="mk2" cx="584.0" cy="37.8" r="4"/>
+ * <circle class="mk2" cx="133.1" cy="216.6" r="4"/>
+ * <circle class="mk2" cx="208.3" cy="207.8" r="4"/>
+ * <circle class="mk2" cx="283.4" cy="176.6" r="4"/>
+ * <circle class="mk2" cx="358.6" cy="104.6" r="4"/>
+ * <circle class="mk2" cx="433.7" cy="90.3" r="4"/>
+ * <circle class="mk2" cx="457.9" cy="65.2" r="4"/>
+ * <circle class="mk2" cx="508.9" cy="49.3" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="37.9" r="4"/>
  * <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
  * <circle class="mk1" cx="66" cy="252" r="4"/>
  * <text class="lt" x="80" y="256">wgblas</text>
@@ -97,26 +97,26 @@
  * <text class="at" x="457.9" y="236" text-anchor="middle">1.3K</text>
  * <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
- * <polyline class="ln1" points="58.0,215.9 133.1,215.9 208.3,215.5 283.4,214.3 358.6,211.8 433.7,201.9 457.9,195.4 508.9,167.8 584.0,32.6"/>
- * <polyline class="ln2" points="58.0,217.4 133.1,217.0 208.3,217.2 283.4,216.9 358.6,215.7 433.7,203.8 457.9,199.0 508.9,170.8 584.0,35.7"/>
- * <circle class="mk1" cx="58.0" cy="215.9" r="4"/>
- * <circle class="mk1" cx="133.1" cy="215.9" r="4"/>
- * <circle class="mk1" cx="208.3" cy="215.5" r="4"/>
- * <circle class="mk1" cx="283.4" cy="214.3" r="4"/>
- * <circle class="mk1" cx="358.6" cy="211.8" r="4"/>
- * <circle class="mk1" cx="433.7" cy="201.9" r="4"/>
- * <circle class="mk1" cx="457.9" cy="195.4" r="4"/>
- * <circle class="mk1" cx="508.9" cy="167.8" r="4"/>
- * <circle class="mk1" cx="584.0" cy="32.6" r="4"/>
- * <circle class="mk2" cx="58.0" cy="217.4" r="4"/>
- * <circle class="mk2" cx="133.1" cy="217.0" r="4"/>
+ * <polyline class="ln1" points="58.0,216.4 133.1,216.3 208.3,215.9 283.4,215.0 358.6,212.8 433.7,202.9 457.9,196.5 508.9,169.5 584.0,34.6"/>
+ * <polyline class="ln2" points="58.0,217.6 133.1,217.5 208.3,217.2 283.4,216.9 358.6,215.4 433.7,203.8 457.9,198.8 508.9,170.8 584.0,35.6"/>
+ * <circle class="mk1" cx="58.0" cy="216.4" r="4"/>
+ * <circle class="mk1" cx="133.1" cy="216.3" r="4"/>
+ * <circle class="mk1" cx="208.3" cy="215.9" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="215.0" r="4"/>
+ * <circle class="mk1" cx="358.6" cy="212.8" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="202.9" r="4"/>
+ * <circle class="mk1" cx="457.9" cy="196.5" r="4"/>
+ * <circle class="mk1" cx="508.9" cy="169.5" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="34.6" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="217.6" r="4"/>
+ * <circle class="mk2" cx="133.1" cy="217.5" r="4"/>
  * <circle class="mk2" cx="208.3" cy="217.2" r="4"/>
  * <circle class="mk2" cx="283.4" cy="216.9" r="4"/>
- * <circle class="mk2" cx="358.6" cy="215.7" r="4"/>
+ * <circle class="mk2" cx="358.6" cy="215.4" r="4"/>
  * <circle class="mk2" cx="433.7" cy="203.8" r="4"/>
- * <circle class="mk2" cx="457.9" cy="199.0" r="4"/>
+ * <circle class="mk2" cx="457.9" cy="198.8" r="4"/>
  * <circle class="mk2" cx="508.9" cy="170.8" r="4"/>
- * <circle class="mk2" cx="584.0" cy="35.7" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="35.6" r="4"/>
  * </svg>
  *
  * ## See also
