@@ -4,14 +4,15 @@
 // (see src/util/f64pack.mjs) and every `+`/`+=` is computeSum via addPair
 // instead of plain f32 addition. Concatenated after f64add.wgsl by
 // getPipeline (WGSL has no #include), reusing its decode/encode/computeSum/
-// addFields and Packed struct — so bindings here start at 4 (f64add.wgsl
-// already has 0-3) and the entry point is `dasum_main` (f64add.wgsl already
-// has `fn main`).
+// addFields and Packed struct — f64add.wgsl declares no bindings and no entry
+// point of its own (just helper functions), so bindings here start at 0 and
+// the entry point is simply `dasum_main`.
 //
 // xAux/partialsAux are array<u32>, not array<f32> — aux's bits must never
 // pass through an f32-typed storage slot (NaN-bit-pattern corruption risk,
-// see f64pack.mjs and f64add.wgsl's binding comment); Packed (from
-// f64add.wgsl) keeps aux as u32 in registers/workgroup memory too.
+// see f64pack.mjs and the Packed struct comment above decode()/encode() in
+// f64add.wgsl); Packed (from f64add.wgsl) keeps aux as u32 in registers/
+// workgroup memory too.
 //
 // Per-thread accumulation (acc0..acc3) stays in DECODED Fields form for the
 // entire strided loop below, via addFields — not re-encoded to Packed and
@@ -25,11 +26,11 @@
 // memory), but that's a fixed 6 levels regardless of n, unlike the strided
 // loop above whose iteration count scales with n.
 
-@group(0) @binding(4) var<storage, read>       xMain:        array<f32>;
-@group(0) @binding(5) var<storage, read>       xAux:         array<u32>;
-@group(0) @binding(6) var<storage, read_write> partialsMain: array<f32>;
-@group(0) @binding(7) var<storage, read_write> partialsAux:  array<u32>;
-@group(0) @binding(8) var<uniform>             params:       Params;
+@group(0) @binding(0) var<storage, read>       xMain:        array<f32>;
+@group(0) @binding(1) var<storage, read>       xAux:         array<u32>;
+@group(0) @binding(2) var<storage, read_write> partialsMain: array<f32>;
+@group(0) @binding(3) var<storage, read_write> partialsAux:  array<u32>;
+@group(0) @binding(4) var<uniform>             params:       Params;
 
 struct Params {
   n:     u32,

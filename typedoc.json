@@ -27,5 +27,5 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-"sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/main/{path}#L{line}"
+"sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/{gitRevision}/{path}#L{line}"
 }

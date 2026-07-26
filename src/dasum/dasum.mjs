@@ -34,11 +34,12 @@ export async function dasum(device, n, x, incx) {
     );
 
   // dasum.wgsl/reduction/sumF64.wgsl are each concatenated with f64add.wgsl
-  // (reusing its decode/encode/computeSum/Packed — WGSL has no #include), so
-  // their own bindings start at 4 and their entry points are custom names,
-  // since f64add.wgsl already claims bindings 0-3 and `fn main`.
-  const pipelineMain = await getPipeline(device, ["f64add", "dasum"], "dasum_main");
-  const pipelineReduce = await getPipeline(device, ["f64add", "reduction/sumF64"], "reduce_f64");
+  // (reusing its decode/encode/computeSum/Packed — WGSL has no #include).
+  // f64add.wgsl declares no bindings/entry point of its own, so each
+  // concatenated module has exactly one @compute entry — omitting entryPoint
+  // here lets getPipeline auto-detect it, the stable path (see pipeline.mjs).
+  const pipelineMain = await getPipeline(device, ["f64add", "dasum"]);
+  const pipelineReduce = await getPipeline(device, ["f64add", "reduction/sumF64"]);
 
   let xVec = null;
   let partialsMainBuffer = null;
@@ -66,7 +67,6 @@ export async function dasum(device, n, x, incx) {
     const bgMain = createBindGroup(
       pipelineMain.getBindGroupLayout(0),
       [xVec._buf, xVec._auxBuf, partialsMainBuffer, partialsAuxBuffer, paramsBuffer],
-      4, // f64add.wgsl already claims bindings 0-3
     );
     const { commandEncoder: enc1, ts: ts1 } = runComputePass(
       pipelineMain,
@@ -79,7 +79,6 @@ export async function dasum(device, n, x, incx) {
     const bgReduce = createBindGroup(
       pipelineReduce.getBindGroupLayout(0),
       [partialsMainBuffer, partialsAuxBuffer, resultMainBuffer, resultAuxBuffer],
-      4,
     );
     const { commandEncoder: enc2, ts: ts2 } = runComputePass(
       pipelineReduce,

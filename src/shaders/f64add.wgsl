@@ -10,17 +10,6 @@
 // (hi, lo) pair, widened by 3 bits at the bottom to hold guard/round/sticky
 // information while aligning exponents.
 
-// mainInput/mainOutput hold real f32 values; auxInput/auxOutput hold raw u32
-// bits and must NEVER be declared as array<f32> — aux's bit pattern can land
-// on a NaN/Infinity exponent for perfectly ordinary doubles (not just unusual
-// inputs — see f64pack.mjs's comment above fieldsToPacked), and an f32-typed
-// storage slot canonicalizes (quiets) a NaN bit pattern on any round trip,
-// silently corrupting it. aux is only ever bitcast, never used as a float.
-@group(0) @binding(0) var<storage, read>       mainInput:  array<f32, 2>; // [mainA, mainB]
-@group(0) @binding(1) var<storage, read>       auxInput:   array<u32, 2>; // [auxA, auxB]
-@group(0) @binding(2) var<storage, read_write> mainOutput: array<f32, 1>; // [mainSum]
-@group(0) @binding(3) var<storage, read_write> auxOutput:  array<u32, 1>; // [auxSum]
-
 const EXP_ALL_ONES: u32 = 0x7ffu;
 const BIAS: i32 = 1023;
 const QUIET_NAN_MANTISSA_HI: u32 = 1u << 19u; // bit51 of the 52-bit mantissa -> canonical quiet NaN
@@ -32,7 +21,11 @@ struct Fields {
   lo: u32,         // 32 bits
 }
 
-// A packed [main, aux] result — aux stays a raw u32 (see binding comment above).
+// A packed [main, aux] result — aux stays a raw u32; it must never be stored
+// as an array<f32>/treated as a real float (bit pattern can land on a NaN/
+// Infinity exponent for perfectly ordinary doubles — an f32-typed storage
+// slot canonicalizes/corrupts that on any round-trip). See f64pack.mjs's
+// comment above fieldsToPacked, and dasum.wgsl's xAux/partialsAux bindings.
 struct Packed {
   main: f32,
   aux:  u32,
@@ -285,13 +278,4 @@ fn addFields(a: Fields, b: Fields) -> Fields {
 fn computeSum(a: Fields, b: Fields) -> Packed {
   let f = addFields(a, b);
   return encode(f.sign, f.rawExp, f.mantissaHi, f.lo);
-}
-
-@compute @workgroup_size(1)
-fn main() {
-  let a = decode(bitcast<u32>(mainInput[0]), auxInput[0]);
-  let b = decode(bitcast<u32>(mainInput[1]), auxInput[1]);
-  let result = computeSum(a, b);
-  mainOutput[0] = result.main;
-  auxOutput[0] = result.aux;
 }
