@@ -130,12 +130,41 @@ export function ndArrayArb(spec, len) {
 }
 
 /**
+ * Wraps a matrix arbitrary so its n diagonal entries (`A[i*lda+i]`) are
+ * overridden to a fixed away-from-zero band instead of whatever the base
+ * arbitrary generated there. A plain uniform fill (including near-zero or
+ * exactly-zero diagonal entries) is a perfectly legal general matrix, but a
+ * routine that divides by the diagonal (e.g. a triangular solve) needs it
+ * bounded away from 0 — a near-singular fixture would make even a bug-free
+ * GPU/CPU pair disagree wildly, since large relative error there is expected
+ * ill-conditioning, not incorrectness.
+ * @param arrArb base Float32Array arbitrary (from `ndArrayArb`)
+ * @param n matrix order — number of diagonal entries
+ * @param lda leading dimension — diagonal entries sit at `i*lda+i`
+ * @param diagLow lower bound for `|diagonal entry|` (default: 5)
+ * @param diagHigh upper bound for `|diagonal entry|` (default: 15)
+ * @returns fast-check arbitrary producing the same-shaped array with its diagonal patched
+ * @public
+ */
+export function triangularDiagonalArb(arrArb, n, lda, diagLow = 5, diagHigh = 15) {
+  const magArb = fc.array(floatArb(diagLow, diagHigh), { minLength: n, maxLength: n });
+  const signArb = fc.array(fc.constantFrom(-1, 1), { minLength: n, maxLength: n });
+  return fc.tuple(arrArb, magArb, signArb).map(([A, mags, signs]) => {
+    const out = Float32Array.from(A);
+    for (let i = 0; i < n; i++) out[i * lda + i] = signs[i] * mags[i];
+    return out;
+  });
+}
+
+/**
  * Builds a fast-check arbitrary that produces a complete args object for one test run.
  *
  * Scalar params are generated first from their spec types (integer, float, string).
  * For L2 routines (`specs` includes `A`), `lda` is chained after `n` to enforce `lda >= n`.
  * All `float32array`/`float64array` params are then sized via `ndArrayLen` which reads
- * each spec's `dependsOn` — the same formula used in validation's `resolveNdArray`.
+ * each spec's `dependsOn` — the same formula used in validation's `resolveNdArray`. A matrix spec
+ * with `triangular: true` (e.g. for `strsv`) additionally gets its diagonal patched via
+ * `triangularDiagonalArb` — see `diagLow`/`diagHigh` on the spec to override the default band.
  *
  * @param specs record of param specs keyed by param name, from `loadParam`
  * @param extras optional additional arbitraries for routine-specific params (e.g. srotm's `param`)
@@ -164,8 +193,11 @@ export function buildArb(specs, extras = {}) {
   return dimsArb.chain((dims) => {
     const fields = Object.fromEntries(Object.keys(dims).map((k) => [k, fc.constant(dims[k])]));
     for (const [name, spec] of Object.entries(specs)) {
-      if (spec.type === "float32array" || spec.type === "float64array")
-        fields[name] = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
+      if (spec.type !== "float32array" && spec.type !== "float64array") continue;
+      const arrArb = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
+      fields[name] = spec.triangular
+        ? triangularDiagonalArb(arrArb, dims.n, dims.lda, spec.diagLow, spec.diagHigh)
+        : arrArb;
     }
     for (const [k, arb] of Object.entries(extras)) fields[k] = arb;
     return fc.record(fields);

@@ -19,3 +19,4 @@ export { srotm } from "./src/srotm/srotm.mjs";
 export { sgemv } from "./src/sgemv/sgemv.mjs";
 export { ssymv } from "./src/ssymv/ssymv.mjs";
 export { strmv } from "./src/strmv/strmv.mjs";
+export { strsv } from "./src/strsv/strsv.mjs";

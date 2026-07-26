@@ -1,5 +1,5 @@
 {
-  "_note": "A is the input matrix — a Float32Array in row-major order with at least (m-1)*lda+n elements.",
+  "_note": "A is the input matrix — a Float32Array in row-major order with at least (m-1)*lda+n elements. Divides-by-diagonal routines (e.g. strsv) should add 'triangular: true' — see triangularDiagonalArb in fixtures.js.",
   "type": "float32array",
   "dependsOn": ["m", "n", "lda"],
   "range": { "elementMin": -10.0, "elementMax": 10.0 },

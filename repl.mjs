@@ -2,7 +2,7 @@ import repl from "node:repl";
 import {
   init, cleanup,
   GpuVector, GpuMatrix,
-  sscal, sswap, saxpy, scopy, sdot, sasum, snrm2, isamax, srot, srotm, sgemv, ssymv, dasum,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv,
 } from "wgblas";
 
 const device = await init();
@@ -13,7 +13,7 @@ Object.assign(r.context, {
   device,
   GpuVector, GpuMatrix,
   Float32Array,
-  sscal, sswap, saxpy, scopy, sdot, sasum, snrm2, isamax, srot, srotm, sgemv, ssymv, dasum,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv,
 });
 
 r.defineCommand("help", {
@@ -34,6 +34,7 @@ r.defineCommand("help", {
   srotm (device, n, x, incx, y, incy, param)
   sgemv (device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy)
   ssymv (device, uplo, n, alpha, A, lda, x, incx, beta, y, incy)
+  strsv (device, uplo, trans, diag, n, A, lda, x, incx)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
   GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()

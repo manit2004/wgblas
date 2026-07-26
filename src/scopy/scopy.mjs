@@ -49,6 +49,7 @@ export async function scopy(device, n, x, incx, y, incy) {
   let xBuffer = null;
   let yBuffer = null;
   let paramsBuffer = null;
+  let readBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "scopy-x", false);
@@ -72,7 +73,7 @@ export async function scopy(device, n, x, incx, y, incy) {
       bindGroup,
       calcWorkgroups(n),
     );
-    const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 
     submit(commandEncoder);
 
@@ -84,11 +85,14 @@ export async function scopy(device, n, x, incx, y, incy) {
     }
 
     const result = await extractResult(readBuffer, Float32Array);
+    readBuffer = null; // extractResult already destroyed it
     if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
     return { y: result };
   } finally {
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if extractTimestamp threw before extractResult ran.
+    if (readBuffer) destroyBuffers(readBuffer);
   }
 }

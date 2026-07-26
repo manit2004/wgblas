@@ -55,6 +55,7 @@ export async function sdot(device, n, x, incx, y, incy) {
   let partialsBuffer = null;
   let resultBuffer = null;
   let paramsBuffer = null;
+  let readBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sdot-x", false);
@@ -93,14 +94,17 @@ export async function sdot(device, n, x, incx, y, incy) {
       bgReduce,
       1,
     ); // dispatch 1 workgroup to reduce the partial sums to a single result
-    const readBuffer = stageReadback(enc2, resultBuffer);
+    readBuffer = stageReadback(enc2, resultBuffer);
 
     submit(enc2);
+
+    const resultPromise = extractResult(readBuffer, Float32Array);
+    readBuffer = null; // ownership transferred — extractResult's own finally destroys it
 
     const [gpuTime1, gpuTime2, dotArr] = await Promise.all([
       extractTimestamp(ts1),
       extractTimestamp(ts2),
-      extractResult(readBuffer, Float32Array),
+      resultPromise,
     ]);
 
     // dot is always a scalar readback — both paths return { dot }
@@ -113,5 +117,7 @@ export async function sdot(device, n, x, incx, y, incy) {
     if (partialsBuffer) destroyBuffers(partialsBuffer);
     if (resultBuffer) destroyBuffers(resultBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    // Only reached if submit(enc2) threw before ownership was transferred above.
+    if (readBuffer) destroyBuffers(readBuffer);
   }
 }

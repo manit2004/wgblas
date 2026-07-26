@@ -1,0 +1,9 @@
+[
+  { "n": 32, "compute_ms": 0.0118, "compute_GBs": 0.2011 },
+  { "n": 64, "compute_ms": 0.0140, "compute_GBs": 0.6330 },
+  { "n": 128, "compute_ms": 0.0184, "compute_GBs": 1.8472 },
+  { "n": 256, "compute_ms": 0.0278, "compute_GBs": 4.8083 },
+  { "n": 512, "compute_ms": 0.0471, "compute_GBs": 11.2391 },
+  { "n": 1024, "compute_ms": 0.0939, "compute_GBs": 22.4458 },
+  { "n": 2048, "compute_ms": 0.1962, "compute_GBs": 42.8510 }
+]

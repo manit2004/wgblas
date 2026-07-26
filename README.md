@@ -15,6 +15,8 @@
 - [srot](https://manit2004.github.io/wgblas/functions/docs.srot.html)
 - [srotm](https://manit2004.github.io/wgblas/functions/docs.srotm.html)
 - [sgemv](https://manit2004.github.io/wgblas/functions/docs.sgemv.html)
+- [ssymv](https://manit2004.github.io/wgblas/functions/docs.ssymv.html)
+- [strmv](https://manit2004.github.io/wgblas/functions/docs.strmv.html)
 
 ## Browser Support
 
