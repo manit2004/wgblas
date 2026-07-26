@@ -89,13 +89,27 @@ function packedToFields(main, auxBits) {
   return { sign, rawExp, mantissaHi, lo };
 }
 
+// main (unlike aux) genuinely is a float32 value — it gets reinterpreted with
+// real float ops (e.g. abs() in dasum.wgsl), so it can't be transported as
+// raw u32 the way aux is. That leaves a narrow residual gap: main.exponent is
+// `rawExp >>> 3`, which hits 0xff (main's own NaN/Infinity pattern) whenever
+// the f64's raw exponent is >= 2040 — i.e. |value| >= ~1.4e306, plus actual
+// ±Infinity/NaN (rawExp === 2047). Any real Float32Array/GPU round-trip of
+// such a main would get silently NaN-canonicalized, the same corruption class
+// aux was fixed for. Since main can't take that fix, reject the range instead
+// of silently corrupting it.
+const MIN_UNSAFE_RAW_EXP = 2040;
+
 /**
  * Packs a double into a [main, aux] pair for storage/transfer where only f32
  * is available (e.g. WGSL, which has no f64 type). This is a raw bit
  * repacking, not a value-preserving numeric split — neither half is a
  * meaningful float on its own; only `unpackF64(main, aux)` reconstructs the
  * original value.
- * @param {number} value
+ * @param {number} value - finite double with |value| < ~1.4e306 (see
+ *   MIN_UNSAFE_RAW_EXP above); larger magnitudes, ±Infinity, and NaN would
+ *   produce a `main` whose bit pattern is itself NaN/Infinity-shaped, which
+ *   silently corrupts on any real float32 round-trip, so they're rejected.
  * @returns {[number, number]} `[main, aux]` — main is a float32 value, aux is
  *   a raw uint32 bit pattern (0 to 2^32-1). Store/transport aux exclusively
  *   via Uint32Array/`array<u32>` — never as an actual float value — see the
@@ -109,6 +123,14 @@ export function packF64(value) {
   const sign = hi >>> 31;
   const rawExp = (hi >>> 20) & 0x7ff; // 11 bits
   const mantissaHi = hi & 0xfffff; // 20 bits
+
+  if (rawExp >= MIN_UNSAFE_RAW_EXP) {
+    throw new RangeError(
+      `packF64: |${value}| is too large to pack safely (must be finite with ` +
+        `magnitude below ~1.4e306); main's bit pattern would itself be NaN/` +
+        `Infinity-shaped and get silently corrupted by any real float32 round-trip`,
+    );
+  }
 
   return fieldsToPacked(sign, rawExp, mantissaHi, lo);
 }
