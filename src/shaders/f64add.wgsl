@@ -147,31 +147,37 @@ fn ge64(aHi: u32, aLo: u32, bHi: u32, bLo: u32) -> bool {
   return aHi > bHi || (aHi == bHi && aLo >= bLo);
 }
 
-fn computeSum(a: Fields, b: Fields) -> Packed {
+// The actual IEEE-754 addition, returning decoded Fields rather than an
+// encoded Packed pair — lets a caller that's accumulating many values in a
+// row (e.g. dasum.wgsl's per-thread reduction loop) keep the running total
+// in Fields form the whole time, only encoding once at the very end, instead
+// of paying a decode+encode round-trip on every single addition. computeSum
+// (below) is the Packed-in/Packed-out convenience wrapper around this.
+fn addFields(a: Fields, b: Fields) -> Fields {
   let aIsNaN = a.rawExp == EXP_ALL_ONES && (a.mantissaHi != 0u || a.lo != 0u);
   let bIsNaN = b.rawExp == EXP_ALL_ONES && (b.mantissaHi != 0u || b.lo != 0u);
   if (aIsNaN || bIsNaN) {
-    return encode(0u, EXP_ALL_ONES, QUIET_NAN_MANTISSA_HI, 0u);
+    return Fields(0u, EXP_ALL_ONES, QUIET_NAN_MANTISSA_HI, 0u);
   }
 
   let aIsInf = a.rawExp == EXP_ALL_ONES; // mantissa==0 here since NaN is excluded above
   let bIsInf = b.rawExp == EXP_ALL_ONES;
   if (aIsInf && bIsInf) {
     if (a.sign != b.sign) {
-      return encode(0u, EXP_ALL_ONES, QUIET_NAN_MANTISSA_HI, 0u);
+      return Fields(0u, EXP_ALL_ONES, QUIET_NAN_MANTISSA_HI, 0u);
     }
-    return encode(a.sign, EXP_ALL_ONES, 0u, 0u);
+    return Fields(a.sign, EXP_ALL_ONES, 0u, 0u);
   }
-  if (aIsInf) { return encode(a.sign, EXP_ALL_ONES, 0u, 0u); }
-  if (bIsInf) { return encode(b.sign, EXP_ALL_ONES, 0u, 0u); }
+  if (aIsInf) { return Fields(a.sign, EXP_ALL_ONES, 0u, 0u); }
+  if (bIsInf) { return Fields(b.sign, EXP_ALL_ONES, 0u, 0u); }
 
   let aIsZero = a.rawExp == 0u && a.mantissaHi == 0u && a.lo == 0u;
   let bIsZero = b.rawExp == 0u && b.mantissaHi == 0u && b.lo == 0u;
   if (aIsZero && bIsZero) {
-    return encode(a.sign & b.sign, 0u, 0u, 0u);
+    return Fields(a.sign & b.sign, 0u, 0u, 0u);
   }
-  if (aIsZero) { return encode(b.sign, b.rawExp, b.mantissaHi, b.lo); }
-  if (bIsZero) { return encode(a.sign, a.rawExp, a.mantissaHi, a.lo); }
+  if (aIsZero) { return Fields(b.sign, b.rawExp, b.mantissaHi, b.lo); }
+  if (bIsZero) { return Fields(a.sign, a.rawExp, a.mantissaHi, a.lo); }
 
   // Effective (unbiased) exponent — subnormals share the smallest normal
   // exponent for alignment purposes and have no implicit leading 1.
@@ -218,7 +224,7 @@ fn computeSum(a: Fields, b: Fields) -> Packed {
   }
 
   if (sumHi == 0u && sumLo == 0u) {
-    return encode(0u, 0u, 0u, 0u); // exact cancellation -> +0
+    return Fields(0u, 0u, 0u, 0u); // exact cancellation -> +0
   }
 
   // commonExp2: per-bit scale of sumLo's bit0 in the widened representation.
@@ -267,11 +273,18 @@ fn computeSum(a: Fields, b: Fields) -> Packed {
     let unbiasedExp = 52 + resultExpBase;
     let rawExpFinal = unbiasedExp + BIAS;
     if (rawExpFinal >= 2047) {
-      return encode(resultSign, EXP_ALL_ONES, 0u, 0u); // overflow -> Infinity
+      return Fields(resultSign, EXP_ALL_ONES, 0u, 0u); // overflow -> Infinity
     }
-    return encode(resultSign, u32(rawExpFinal), keepHi & 0xfffffu, keepLo);
+    return Fields(resultSign, u32(rawExpFinal), keepHi & 0xfffffu, keepLo);
   }
-  return encode(resultSign, 0u, keepHi & 0xfffffu, keepLo); // subnormal result
+  return Fields(resultSign, 0u, keepHi & 0xfffffu, keepLo); // subnormal result
+}
+
+// Packed-in/Packed-out convenience wrapper around addFields — encodes once,
+// after the math, rather than addFields itself needing to know about Packed.
+fn computeSum(a: Fields, b: Fields) -> Packed {
+  let f = addFields(a, b);
+  return encode(f.sign, f.rawExp, f.mantissaHi, f.lo);
 }
 
 @compute @workgroup_size(1)
