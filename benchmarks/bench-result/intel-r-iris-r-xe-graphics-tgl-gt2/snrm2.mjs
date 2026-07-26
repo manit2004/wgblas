@@ -15,8 +15,8 @@
  * | 65536 | 0.1966 | 1.3333 |
  * | 262144 | 0.2621 | 4.0000 |
  * | 1048576 | 0.5898 | 7.1111 |
- * | 4194304 | 1.2452 | 13.4737 |
- * | 16777216 | 6.0948 | 11.0108 |
+ * | 4194304 | 1.3763 | 12.1905 |
+ * | 16777216 | 6.3570 | 10.5567 |
  *
  * <svg id="bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
  * <style>#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .bg{fill:#fcfcfb}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .bg{fill:#1a1a19}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .gr{stroke:#2c2c2a}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ax{stroke:#383835}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .at{fill:#898781}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .lt{fill:#c3c2b7}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ln1{stroke:#3987e5}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ln2{stroke:#008300}#bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-snrm2-intel_r_iris_r_xe_graphics_tgl_gt2-gbs .mk2{stroke:#1a1a19}</style>
@@ -44,7 +44,7 @@
  * <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
  * <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
- * <polyline class="ln1" points="58.0,220.0 85.7,220.0 113.4,220.0 168.7,219.9 196.4,219.7 251.8,218.9 307.2,215.6 362.5,202.2 417.9,166.7 473.3,125.2 528.6,40.4 584.0,73.2"/>
+ * <polyline class="ln1" points="58.0,220.0 85.7,220.0 113.4,220.0 168.7,219.9 196.4,219.7 251.8,218.9 307.2,215.6 362.5,202.2 417.9,166.7 473.3,125.2 528.6,57.5 584.0,79.2"/>
  * <circle class="mk1" cx="58.0" cy="220.0" r="4"/>
  * <circle class="mk1" cx="85.7" cy="220.0" r="4"/>
  * <circle class="mk1" cx="113.4" cy="220.0" r="4"/>
@@ -55,8 +55,8 @@
  * <circle class="mk1" cx="362.5" cy="202.2" r="4"/>
  * <circle class="mk1" cx="417.9" cy="166.7" r="4"/>
  * <circle class="mk1" cx="473.3" cy="125.2" r="4"/>
- * <circle class="mk1" cx="528.6" cy="40.4" r="4"/>
- * <circle class="mk1" cx="584.0" cy="73.2" r="4"/>
+ * <circle class="mk1" cx="528.6" cy="57.5" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="79.2" r="4"/>
  * </svg>
  *
  * <br>
@@ -89,7 +89,7 @@
  * <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
  * <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
- * <polyline class="ln1" points="58.0,215.1 85.7,215.1 113.4,215.1 168.7,215.1 196.4,215.1 251.8,215.1 307.2,215.1 362.5,215.1 417.9,213.4 473.3,205.3 528.6,188.9 584.0,67.6"/>
+ * <polyline class="ln1" points="58.0,215.1 85.7,215.1 113.4,215.1 168.7,215.1 196.4,215.1 251.8,215.1 307.2,215.1 362.5,215.1 417.9,213.4 473.3,205.3 528.6,185.6 584.0,61.1"/>
  * <circle class="mk1" cx="58.0" cy="215.1" r="4"/>
  * <circle class="mk1" cx="85.7" cy="215.1" r="4"/>
  * <circle class="mk1" cx="113.4" cy="215.1" r="4"/>
@@ -100,8 +100,8 @@
  * <circle class="mk1" cx="362.5" cy="215.1" r="4"/>
  * <circle class="mk1" cx="417.9" cy="213.4" r="4"/>
  * <circle class="mk1" cx="473.3" cy="205.3" r="4"/>
- * <circle class="mk1" cx="528.6" cy="188.9" r="4"/>
- * <circle class="mk1" cx="584.0" cy="67.6" r="4"/>
+ * <circle class="mk1" cx="528.6" cy="185.6" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="61.1" r="4"/>
  * </svg>
  *
  * ## See also

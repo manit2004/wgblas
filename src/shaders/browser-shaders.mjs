@@ -1,5 +1,6 @@
 import argmax from "./reduction/argmax.wgsl";
 import sum from "./reduction/sum.wgsl";
+import sumF64 from "./reduction/sumF64.wgsl";
 import sscal from "./sscal.wgsl";
 import sswap from "./sswap.wgsl";
 import saxpy from "./saxpy.wgsl";
@@ -14,11 +15,14 @@ import sgemv_n from "./sgemv_n.wgsl";
 import sgemv_t from "./sgemv_t.wgsl";
 import ssymv from "./ssymv.wgsl";
 import strmv from "./strmv.wgsl";
+import f64add from "./f64add.wgsl";
+import dasum from "./dasum.wgsl";
 import strsv from "./strsv.wgsl";
 
 export const shaderSources = {
   "reduction/argmax": argmax,
   "reduction/sum": sum,
+  "reduction/sumF64": sumF64,
   sscal,
   sswap,
   saxpy,
@@ -33,5 +37,7 @@ export const shaderSources = {
   sgemv_t,
   ssymv,
   strmv,
+  f64add,
+  dasum,
   strsv,
 };

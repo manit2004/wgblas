@@ -8,18 +8,25 @@ const _pipelines = new WeakMap();
  * Returns a cached `GPUComputePipeline` for the given shader, compiling it on first use.
  * Pipelines are cached per device so reinitialization (new device) always recompiles.
  * @param {GPUDevice} device
- * @param {string} shaderName - filename without `.wgsl` extension (e.g. `"sscal"`)
+ * @param {string|string[]} shaderName - filename without `.wgsl` extension (e.g. `"sscal"`),
+ *   or an array of filenames whose source gets concatenated into one module — WGSL has no
+ *   `#include`, so this is how one shader's helper functions (e.g. f64add.wgsl's decode/
+ *   encode/computeSum) get reused from another (e.g. dasum.wgsl) without duplicating them.
+ * @param {string} [entryPoint="main"] - which `@compute` function to run; only needed when
+ *   concatenating shaders whose entry points aren't both named "main"
  * @returns {Promise<GPUComputePipeline>}
  */
-export async function getPipeline(device, shaderName) {
+export async function getPipeline(device, shaderName, entryPoint = "main") {
   if (!_pipelines.has(device)) {
     _pipelines.set(device, new Map());
   }
   const byName = _pipelines.get(device);
-  if (!byName.has(shaderName)) {
-    byName.set(shaderName, await loadShader(shaderName));
+  const names = Array.isArray(shaderName) ? shaderName : [shaderName];
+  const key = `${names.join("+")}::${entryPoint}`;
+  if (!byName.has(key)) {
+    byName.set(key, await loadShader(names, entryPoint));
   }
-  return byName.get(shaderName);
+  return byName.get(key);
 }
 
 /**
@@ -45,35 +52,43 @@ async function loadCode(shaderName) {
 }
 
 /**
- * Compiles a WGSL shader into a `GPUComputePipeline`. Throws with line-level detail if compilation fails, rather than surfacing a raw GPU error.
- * Uses `layout: "auto"` so the pipeline derives its bind group layout from the shader —
- * no manual layout definition needed.
- * @param {string} shaderName
+ * Compiles one or more WGSL shaders (concatenated, in order, into a single module) into a
+ * `GPUComputePipeline`. Throws with line-level detail if compilation fails, rather than
+ * surfacing a raw GPU error. Uses `layout: "auto"` so the pipeline derives its bind group
+ * layout from the shader — no manual layout definition needed.
+ * @param {string[]} shaderNames - filenames without `.wgsl`, concatenated in array order
+ * @param {string} [entryPoint="main"] - which `@compute` function in the combined module to run
  * @returns {Promise<GPUComputePipeline>}
  * @throws {Error} if the shader has compilation errors
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createShaderModule GPUDevice.createShaderModule()}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUShaderModule/getCompilationInfo GPUShaderModule.getCompilationInfo()}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createComputePipeline GPUDevice.createComputePipeline()}
  */
-export async function loadShader(shaderName) {
+export async function loadShader(shaderNames, entryPoint = "main") {
   const device = getDevice();
-  const code = await loadCode(shaderName);
+  const label = shaderNames.join("+");
+  const code = (await Promise.all(shaderNames.map(loadCode))).join("\n");
 
-  const shaderModule = device.createShaderModule({ label: shaderName, code });
+  const shaderModule = device.createShaderModule({ label, code });
 
   const info = await shaderModule.getCompilationInfo();
   // GPUCompilationMessage: https://developer.mozilla.org/en-US/docs/Web/API/GPUCompilationMessage
   const errors = info.messages.filter((m) => m.type === "error");
   if (errors.length > 0) {
     throw new Error(
-      `Shader "${shaderName}" compilation failed:\n${errors.map((m) => `  line ${m.lineNum}: ${m.message}`).join("\n")}`,
+      `Shader "${label}" compilation failed:\n${errors.map((m) => `  line ${m.lineNum}: ${m.message}`).join("\n")}`,
     );
   }
 
+  // Omit entryPoint when it's the default "main" rather than always passing it explicitly —
+  // this project's WebGPU backend is unstable (intermittent multi-minute hangs and wrong
+  // results, confirmed by bisection) when entryPoint is set explicitly, even to the shader's
+  // only/correct entry point. Auto-detecting the single entry point is the stable path.
+  const compute = entryPoint === "main" ? { module: shaderModule } : { module: shaderModule, entryPoint };
   const pipeline = device.createComputePipeline({
-    label: shaderName,
+    label,
     layout: "auto",
-    compute: { module: shaderModule },
+    compute,
   });
 
   pipeline._shaderModule = shaderModule; // anchor — GC'd shaderModule crashes native pipeline
