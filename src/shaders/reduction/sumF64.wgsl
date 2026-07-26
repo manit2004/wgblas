@@ -5,18 +5,19 @@
 // exactly 2*WGS entries each.
 //
 // Concatenated after f64add.wgsl by getPipeline (WGSL has no #include),
-// reusing its decode/encode/computeSum and Packed struct — bindings here
-// start at 4 (f64add.wgsl already has 0-3) and the entry point is
-// `reduce_f64` (f64add.wgsl already has `fn main`).
+// reusing its decode/encode/computeSum and Packed struct — f64add.wgsl
+// declares no bindings and no entry point of its own (just helper functions),
+// so bindings here start at 0 and the entry point is simply `reduce_f64`.
 //
 // partialsAux/result's aux slot are array<u32>, not array<f32> — aux's bits
 // must never pass through an f32-typed storage slot (NaN-bit-pattern
-// corruption risk, see f64pack.mjs and f64add.wgsl's binding comment).
+// corruption risk, see f64pack.mjs and the Packed struct comment above
+// decode()/encode() in f64add.wgsl).
 
-@group(0) @binding(4) var<storage, read>       partialsMain: array<f32>;
-@group(0) @binding(5) var<storage, read>       partialsAux:  array<u32>;
-@group(0) @binding(6) var<storage, read_write> resultMain:   array<f32, 1>;
-@group(0) @binding(7) var<storage, read_write> resultAux:    array<u32, 1>;
+@group(0) @binding(0) var<storage, read>       partialsMain: array<f32>;
+@group(0) @binding(1) var<storage, read>       partialsAux:  array<u32>;
+@group(0) @binding(2) var<storage, read_write> resultMain:   array<f32, 1>;
+@group(0) @binding(3) var<storage, read_write> resultAux:    array<u32, 1>;
 
 const WGS: u32 = 64;
 

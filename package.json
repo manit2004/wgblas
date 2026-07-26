@@ -113,6 +113,8 @@
     "webgpu": "^0.4.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@stdlib/blas-base-dasum": "^0.4.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
