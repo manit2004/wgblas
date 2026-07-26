@@ -1,0 +1,14 @@
+npx --no -- commitlint --edit "$1" || exit 1
+
+scope=$(head -1 "$1" | sed -n 's/^[a-zA-Z]*(\([^)]*\)).*/\1/p')
+
+if [ -n "$scope" ] && [ -d "tests/$scope" ]; then
+  echo "Scope '$scope' detected — running tests/$scope only"
+  make "test-$scope" || exit 1
+  if [ -f "tests/$scope/src/gpustorage.$scope.js" ]; then
+    make "gpustorage-$scope" || exit 1
+  fi
+else
+  echo "No routine scope detected — running full test suite"
+  make test || exit 1
+fi
