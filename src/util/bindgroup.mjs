@@ -10,7 +10,7 @@ import { getDevice } from "../init.mjs";
  * @param {number} [startBinding=0] - binding index of `buffers[0]`; nonzero only when a shader's
  *   own bindings don't start at 0 — e.g. a module built by concatenating two `.wgsl` files,
  *   where the second file's bindings continue after the first's (see dasum.mjs, whose shader
- *   is concatenated after f64add.wgsl, which already claims bindings 0 and 1)
+ *   is concatenated after f64add.wgsl, which already claims bindings 0 through 3)
  * @returns {GPUBindGroup}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBindGroup GPUDevice.createBindGroup()}
  */
