@@ -71,6 +71,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
 
   let ABuffer = null;
   let xBuffer = null;
+  const paramsBuffers = [];
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsv-A", false);
@@ -96,6 +97,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
         ],
         "strsv-block-params",
       );
+      paramsBuffers.push(blockParams);
       const blockBindGroup = createBindGroup(blockPipeline.getBindGroupLayout(0), [
         ABuffer, xBuffer, blockParams,
       ]);
@@ -131,6 +133,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
         ],
         "strsv-update-params",
       );
+      paramsBuffers.push(updateParams);
       const updateBindGroup = createBindGroup(updatePipeline.getBindGroupLayout(0), [
         ABuffer, xBuffer, updateParams,
       ]);
@@ -157,5 +160,6 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
   } finally {
     if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    destroyBuffers(paramsBuffers);
   }
 }

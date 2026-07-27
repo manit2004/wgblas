@@ -74,6 +74,10 @@ fn strsv_block_main(@builtin(local_invocation_id) lid: vec3u) {
         x[i * params.incx] = rhs / A[i * params.lda + i];
       }
     }
+    // x is storage, not workgroup, address space — workgroupBarrier() alone
+    // doesn't guarantee lane 0's write above is visible to other lanes'
+    // x[j] reads in the next iteration; storageBarrier() does.
+    storageBarrier();
     workgroupBarrier();
   }
 }
