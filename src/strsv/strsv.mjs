@@ -1,6 +1,7 @@
 import {
   uploadBuffer,
   createParamsBuffer,
+  createStorageBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
@@ -12,9 +13,11 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-// Blocked triangular solve: BLOCK_SIZE-row diagonal blocks are solved
-// sequentially (strsv_block.wgsl), then propagated onto remaining rows in
-// parallel (strsv_update.wgsl) — turns n sequential stages into n/BLOCK_SIZE.
+// Blocked triangular solve, explicit-inversion variant: a pre-pass inverts
+// every diagonal block in parallel (strsv_invert_block.wgsl), then each
+// block is solved via a dense matvec against its inverse (strsv_apply_inverse.wgsl)
+// instead of a barrier-per-row substitution. strsv_update.wgsl (propagating
+// a solved block onto remaining rows) is unchanged.
 const BLOCK_SIZE = 64;
 
 export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
@@ -58,67 +61,82 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
       "x does not have enough elements for the given n and incx.",
     );
 
-  const blockPipeline = await getPipeline(device, "strsv_block");
+  const invertPipeline = await getPipeline(device, "strsv_invert_block");
+  const applyPipeline = await getPipeline(device, "strsv_apply_inverse");
   const updatePipeline = await getPipeline(device, "strsv_update");
 
-  // Same forward/backward pairing strsv_block.wgsl/strsv_update.wgsl use.
+  // Same forward/backward pairing the shaders use.
   const forward = isNoTrans === isLower;
   const blockStarts = [];
   for (let s = 0; s < n; s += BLOCK_SIZE) blockStarts.push(s);
   if (!forward) blockStarts.reverse();
+  const numBlocks = blockStarts.length;
 
   const maxWg = device.limits.maxComputeWorkgroupsPerDimension;
 
   let ABuffer = null;
   let xBuffer = null;
+  let AinvBuffer = null;
   const paramsBuffers = [];
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsv-A", false);
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "strsv-x", true);
+    // One BLOCK_SIZE x BLOCK_SIZE dense region per block (row-major), even
+    // though only a triangular half is ever nonzero — see strsv_invert_block.wgsl.
+    AinvBuffer = createStorageBuffer(
+      numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4,
+      "strsv-Ainv",
+    );
 
     const { commandEncoder, querySet } = beginTimedEncoder();
+
+    // Pre-pass: every block's inverse, fully parallel, one dispatch.
+    const invertParams = createParamsBuffer(
+      [
+        { value: n,                 type: "u32" },
+        { value: lda,               type: "u32" },
+        { value: isNoTrans ? 0 : 1, type: "u32" },
+        { value: isLower ? 0 : 1,   type: "u32" },
+        { value: isUnit ? 1 : 0,    type: "u32" },
+      ],
+      "strsv-invert-params",
+    );
+    paramsBuffers.push(invertParams);
+    const invertBindGroup = createBindGroup(invertPipeline.getBindGroupLayout(0), [
+      ABuffer, AinvBuffer, invertParams,
+    ]);
+    const invertDesc = querySet
+      ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } }
+      : undefined;
+    encodePass(commandEncoder, invertPipeline, invertBindGroup, { x: BLOCK_SIZE, y: numBlocks }, invertDesc);
 
     for (let bi = 0; bi < blockStarts.length; bi++) {
       const blockStart = blockStarts[bi];
       const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
-      const isFirstPass = bi === 0;
+      const blockIndex = blockStart / BLOCK_SIZE;
+      const isLastPass = bi === blockStarts.length - 1;
 
-      const blockParams = createParamsBuffer(
+      const applyParams = createParamsBuffer(
         [
-          { value: n,                 type: "u32" },
-          { value: incx,              type: "u32" },
-          { value: lda,               type: "u32" },
-          { value: isNoTrans ? 0 : 1, type: "u32" },
-          { value: isLower ? 0 : 1,   type: "u32" },
-          { value: isUnit ? 1 : 0,    type: "u32" },
-          { value: blockStart,        type: "u32" },
-          { value: blockEnd,          type: "u32" },
+          { value: incx,      type: "u32" },
+          { value: blockIndex, type: "u32" },
+          { value: blockStart, type: "u32" },
+          { value: blockEnd,   type: "u32" },
         ],
-        "strsv-block-params",
+        "strsv-apply-params",
       );
-      paramsBuffers.push(blockParams);
-      const blockBindGroup = createBindGroup(blockPipeline.getBindGroupLayout(0), [
-        ABuffer, xBuffer, blockParams,
+      paramsBuffers.push(applyParams);
+      const applyBindGroup = createBindGroup(applyPipeline.getBindGroupLayout(0), [
+        AinvBuffer, xBuffer, applyParams,
       ]);
 
-      // Blocks partition [0,n), so the last block always has remaining===0 —
-      // its own solve pass, not its (skipped) update, is the true last pass.
+      const applyDesc = isLastPass && querySet
+        ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } }
+        : undefined;
+      encodePass(commandEncoder, applyPipeline, applyBindGroup, 1, applyDesc);
+
       const remaining = forward ? n - blockEnd : blockStart;
-      const isLastPass = remaining === 0;
-
-      let blockDesc;
-      if (querySet) {
-        if (isFirstPass && isLastPass) {
-          blockDesc = { timestampWrites: { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } };
-        } else if (isFirstPass) {
-          blockDesc = { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } };
-        } else if (isLastPass) {
-          blockDesc = { timestampWrites: { querySet, endOfPassWriteIndex: 1 } };
-        }
-      }
-      encodePass(commandEncoder, blockPipeline, blockBindGroup, 1, blockDesc);
-
       if (remaining === 0) continue;
 
       const updateParams = createParamsBuffer(
@@ -160,6 +178,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
   } finally {
     if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    if (AinvBuffer) destroyBuffers(AinvBuffer);
     destroyBuffers(paramsBuffers);
   }
 }
