@@ -13,12 +13,13 @@ import {
 
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
-// Square n×n triangular matrix; lower triangle stored. Unlike strmv (one
-// workgroup per row, fully parallel), strsv always dispatches a SINGLE
-// workgroup regardless of n (each row depends on the previous — see
-// strsv.wgsl), so it doesn't scale down to more parallelism at large n.
-// Sizes are capped well below strmv's 4096 to keep the benchmark practical.
-const SIZES = [32, 64, 128, 256, 512, 1024, 2048];
+// Square n×n triangular matrix; lower triangle stored. Blocked solve: each
+// 64-row diagonal block is still a genuine sequential dependency (single
+// workgroup, like strmv is NOT), but propagating a solved block onto the
+// remaining rows is a dense, fully parallel update (same shape as strmv) —
+// see strsv_block.wgsl/strsv_update.wgsl/strsv.mjs. That turns n sequential
+// stages into ceil(n/64), so this scales to the same sizes strmv does.
+const SIZES = [32, 64, 128, 256, 512, 1024, 2048, 4096];
 
 const COLS = ["n", "compute_ms", "compute_GBs"];
 

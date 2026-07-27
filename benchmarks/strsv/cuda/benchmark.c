@@ -12,10 +12,7 @@ int main(void) {
     cublasHandle_t handle;
     CUBLAS_CHECK(cublasCreate(&handle));
 
-    // strsv always dispatches a single workgroup regardless of n (each row
-    // depends on the previous), so it doesn't scale down to more parallelism
-    // at large n the way strmv does — sizes are capped below strmv's 4096.
-    int sizes[] = { 32, 64, 128, 256, 512, 1024, 2048 };
+    int sizes[] = { 32, 64, 128, 256, 512, 1024, 2048, 4096 };
     int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
 
     float med_times[num_sizes];

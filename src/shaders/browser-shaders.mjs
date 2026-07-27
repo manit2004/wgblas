@@ -17,7 +17,8 @@ import ssymv from "./ssymv.wgsl";
 import strmv from "./strmv.wgsl";
 import f64add from "./f64add.wgsl";
 import dasum from "./dasum.wgsl";
-import strsv from "./strsv.wgsl";
+import strsv_block from "./strsv_block.wgsl";
+import strsv_update from "./strsv_update.wgsl";
 
 export const shaderSources = {
   "reduction/argmax": argmax,
@@ -39,5 +40,6 @@ export const shaderSources = {
   strmv,
   f64add,
   dasum,
-  strsv,
+  strsv_block,
+  strsv_update,
 };
