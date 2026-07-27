@@ -20,6 +20,35 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 // a solved block onto remaining rows) is unchanged.
 const BLOCK_SIZE = 64;
 
+// Packs one small uniform struct per block into a single shared buffer
+// (at `blockIndex * stride`) instead of allocating numBlocks separate tiny
+// buffers — measured CPU-side overhead (buffer/bind-group setup, not actual
+// GPU compute) was 66-83% of total wall-clock time before this, dominated
+// by the O(numBlocks) createBuffer/writeBuffer calls the old per-block loop
+// made. `stride` must be a multiple of the device's uniform offset alignment
+// (device.limits.minUniformBufferOffsetAlignment) so each block's slot is a
+// valid fixed-offset binding.
+function packBlockParams(numBlocks, stride, fieldsPerBlock) {
+  const data = new ArrayBuffer(numBlocks * stride);
+  const view = new DataView(data);
+  for (let blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
+    const fields = fieldsPerBlock(blockIndex);
+    const base = blockIndex * stride;
+    fields.forEach((value, i) => view.setUint32(base + i * 4, value, true));
+  }
+  return data;
+}
+
+function createSharedParamsBuffer(device, data, label) {
+  const buffer = device.createBuffer({
+    label,
+    size: data.byteLength,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  device.queue.writeBuffer(buffer, 0, data);
+  return buffer;
+}
+
 export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
   const xIsGpu = x instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
@@ -73,11 +102,14 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
   const numBlocks = blockStarts.length;
 
   const maxWg = device.limits.maxComputeWorkgroupsPerDimension;
+  const stride = device.limits.minUniformBufferOffsetAlignment;
 
   let ABuffer = null;
   let xBuffer = null;
   let AinvBuffer = null;
-  const paramsBuffers = [];
+  let applyParamsBuffer = null;
+  let updateParamsBuffer = null;
+  let invertParams = null;
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsv-A", false);
@@ -89,10 +121,27 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
       "strsv-Ainv",
     );
 
+    // Every block's {blockStart, blockEnd} is fixed by its natural index
+    // regardless of traversal direction, so both packed buffers are indexed
+    // by blockIndex (0..numBlocks-1), not by loop position.
+    const applyData = packBlockParams(numBlocks, stride, (blockIndex) => {
+      const blockStart = blockIndex * BLOCK_SIZE;
+      const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
+      return [incx, blockIndex, blockStart, blockEnd];
+    });
+    applyParamsBuffer = createSharedParamsBuffer(device, applyData, "strsv-apply-params");
+
+    const updateData = packBlockParams(numBlocks, stride, (blockIndex) => {
+      const blockStart = blockIndex * BLOCK_SIZE;
+      const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
+      return [n, incx, lda, isNoTrans ? 0 : 1, isLower ? 0 : 1, blockStart, blockEnd];
+    });
+    updateParamsBuffer = createSharedParamsBuffer(device, updateData, "strsv-update-params");
+
     const { commandEncoder, querySet } = beginTimedEncoder();
 
     // Pre-pass: every block's inverse, fully parallel, one dispatch.
-    const invertParams = createParamsBuffer(
+    invertParams = createParamsBuffer(
       [
         { value: n,                 type: "u32" },
         { value: lda,               type: "u32" },
@@ -102,7 +151,6 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
       ],
       "strsv-invert-params",
     );
-    paramsBuffers.push(invertParams);
     const invertBindGroup = createBindGroup(invertPipeline.getBindGroupLayout(0), [
       ABuffer, AinvBuffer, invertParams,
     ]);
@@ -116,19 +164,10 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
       const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
       const blockIndex = blockStart / BLOCK_SIZE;
       const isLastPass = bi === blockStarts.length - 1;
+      const paramsOffset = blockIndex * stride;
 
-      const applyParams = createParamsBuffer(
-        [
-          { value: incx,      type: "u32" },
-          { value: blockIndex, type: "u32" },
-          { value: blockStart, type: "u32" },
-          { value: blockEnd,   type: "u32" },
-        ],
-        "strsv-apply-params",
-      );
-      paramsBuffers.push(applyParams);
       const applyBindGroup = createBindGroup(applyPipeline.getBindGroupLayout(0), [
-        AinvBuffer, xBuffer, applyParams,
+        AinvBuffer, xBuffer, { buffer: applyParamsBuffer, offset: paramsOffset, size: 16 },
       ]);
 
       const applyDesc = isLastPass && querySet
@@ -139,21 +178,8 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
       const remaining = forward ? n - blockEnd : blockStart;
       if (remaining === 0) continue;
 
-      const updateParams = createParamsBuffer(
-        [
-          { value: n,                 type: "u32" },
-          { value: incx,              type: "u32" },
-          { value: lda,               type: "u32" },
-          { value: isNoTrans ? 0 : 1, type: "u32" },
-          { value: isLower ? 0 : 1,   type: "u32" },
-          { value: blockStart,        type: "u32" },
-          { value: blockEnd,          type: "u32" },
-        ],
-        "strsv-update-params",
-      );
-      paramsBuffers.push(updateParams);
       const updateBindGroup = createBindGroup(updatePipeline.getBindGroupLayout(0), [
-        ABuffer, xBuffer, updateParams,
+        ABuffer, xBuffer, { buffer: updateParamsBuffer, offset: paramsOffset, size: 32 },
       ]);
 
       const wgCount = Math.min(remaining, maxWg);
@@ -179,6 +205,8 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
     if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (AinvBuffer) destroyBuffers(AinvBuffer);
-    destroyBuffers(paramsBuffers);
+    if (applyParamsBuffer) destroyBuffers(applyParamsBuffer);
+    if (updateParamsBuffer) destroyBuffers(updateParamsBuffer);
+    if (invertParams) destroyBuffers(invertParams);
   }
 }
