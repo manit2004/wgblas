@@ -5,12 +5,17 @@ import {
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
-import { extractTimestamp } from "../util/benchmark.mjs";
+import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+
+// Blocked triangular solve: BLOCK_SIZE-row diagonal blocks are solved
+// sequentially (strsv_block.wgsl), then propagated onto remaining rows in
+// parallel (strsv_update.wgsl) — turns n sequential stages into n/BLOCK_SIZE.
+const BLOCK_SIZE = 64;
 
 export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
   const xIsGpu = x instanceof GpuVector;
@@ -53,37 +58,88 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
       "x does not have enough elements for the given n and incx.",
     );
 
-  const pipeline = await getPipeline(device, "strsv");
+  const blockPipeline = await getPipeline(device, "strsv_block");
+  const updatePipeline = await getPipeline(device, "strsv_update");
+
+  // Same forward/backward pairing strsv_block.wgsl/strsv_update.wgsl use.
+  const forward = isNoTrans === isLower;
+  const blockStarts = [];
+  for (let s = 0; s < n; s += BLOCK_SIZE) blockStarts.push(s);
+  if (!forward) blockStarts.reverse();
+
+  const maxWg = device.limits.maxComputeWorkgroupsPerDimension;
 
   let ABuffer = null;
   let xBuffer = null;
-  let paramsBuffer = null;
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsv-A", false);
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "strsv-x", true);
-    paramsBuffer = createParamsBuffer(
-      [
-        { value: n,                 type: "u32" },
-        { value: incx,              type: "u32" },
-        { value: lda,               type: "u32" },
-        { value: isNoTrans ? 0 : 1, type: "u32" },
-        { value: isLower ? 0 : 1,   type: "u32" },
-        { value: isUnit ? 1 : 0,    type: "u32" },
-      ],
-      "strsv-params",
-    );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
-      ABuffer,
-      xBuffer,
-      paramsBuffer,
-    ]);
+    const { commandEncoder, querySet } = beginTimedEncoder();
 
-    // Single workgroup, always — every row's solution depends on the
-    // previous one, so this can't be farmed out to multiple independent
-    // workgroups the way strmv's row-parallel dispatch is (see strsv.wgsl).
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, 1);
+    for (let bi = 0; bi < blockStarts.length; bi++) {
+      const blockStart = blockStarts[bi];
+      const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
+      const isFirstPass = bi === 0;
+
+      const blockParams = createParamsBuffer(
+        [
+          { value: n,                 type: "u32" },
+          { value: incx,              type: "u32" },
+          { value: lda,               type: "u32" },
+          { value: isNoTrans ? 0 : 1, type: "u32" },
+          { value: isLower ? 0 : 1,   type: "u32" },
+          { value: isUnit ? 1 : 0,    type: "u32" },
+          { value: blockStart,        type: "u32" },
+          { value: blockEnd,          type: "u32" },
+        ],
+        "strsv-block-params",
+      );
+      const blockBindGroup = createBindGroup(blockPipeline.getBindGroupLayout(0), [
+        ABuffer, xBuffer, blockParams,
+      ]);
+
+      // Blocks partition [0,n), so the last block always has remaining===0 —
+      // its own solve pass, not its (skipped) update, is the true last pass.
+      const remaining = forward ? n - blockEnd : blockStart;
+      const isLastPass = remaining === 0;
+
+      let blockDesc;
+      if (querySet) {
+        if (isFirstPass && isLastPass) {
+          blockDesc = { timestampWrites: { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } };
+        } else if (isFirstPass) {
+          blockDesc = { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } };
+        } else if (isLastPass) {
+          blockDesc = { timestampWrites: { querySet, endOfPassWriteIndex: 1 } };
+        }
+      }
+      encodePass(commandEncoder, blockPipeline, blockBindGroup, 1, blockDesc);
+
+      if (remaining === 0) continue;
+
+      const updateParams = createParamsBuffer(
+        [
+          { value: n,                 type: "u32" },
+          { value: incx,              type: "u32" },
+          { value: lda,               type: "u32" },
+          { value: isNoTrans ? 0 : 1, type: "u32" },
+          { value: isLower ? 0 : 1,   type: "u32" },
+          { value: blockStart,        type: "u32" },
+          { value: blockEnd,          type: "u32" },
+        ],
+        "strsv-update-params",
+      );
+      const updateBindGroup = createBindGroup(updatePipeline.getBindGroupLayout(0), [
+        ABuffer, xBuffer, updateParams,
+      ]);
+
+      const wgCount = Math.min(remaining, maxWg);
+      encodePass(commandEncoder, updatePipeline, updateBindGroup, wgCount);
+    }
+
+    const ts = resolveTimestamp(commandEncoder, querySet);
     const readBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
 
     submit(commandEncoder);
@@ -101,6 +157,5 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
   } finally {
     if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
-    if (paramsBuffer) destroyBuffers(paramsBuffer);
   }
 }
