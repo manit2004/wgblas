@@ -17,6 +17,7 @@
 - [sgemv](https://manit2004.github.io/wgblas/functions/docs.sgemv.html)
 - [ssymv](https://manit2004.github.io/wgblas/functions/docs.ssymv.html)
 - [strmv](https://manit2004.github.io/wgblas/functions/docs.strmv.html)
+- [strsv](https://manit2004.github.io/wgblas/functions/docs.strsv.html)
 
 ## Browser Support
 
