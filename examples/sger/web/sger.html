@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>sger — wgblas browser example</title>
+    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, sger, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const m = 4, n = 5, lda = n;
+        const alpha = 1.0;
+        const x = randomFloat32Array(m, -10, 10);
+        const y = randomFloat32Array(n, -10, 10);
+        const A = randomFloat32Array(m * lda, -10, 10);
+
+        const { A: result } = await sger(device, m, n, alpha, x, 1, y, 1, A, lda);
+
+        document.getElementById("out").textContent =
+          "x: " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
+          "\ny: " + Array.from(y).map(v => v.toFixed(4)).join(", ") +
+          "\nA: " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

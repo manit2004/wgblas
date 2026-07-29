@@ -8,6 +8,11 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * the leading dimension (number of floats between the start of consecutive
  * rows — must be >= n).
  *
+ * {@includeCode ../../examples/sger/sger.js}
+ *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/sger/web/sger.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param m      - number of rows in A (length of x)
  * @param n      - number of columns in A (length of y)
@@ -69,6 +74,8 @@ export declare function sger(
  * Performs the rank-1 update A = alpha * x * y^T + A
  *
  * x, y, and A are all kept resident on the GPU.
+ *
+ * {@includeCode ../../examples/sger/gpuvec.sger.js}
  *
  * @param device - GPUDevice from `init()`
  * @param m      - number of rows in A
