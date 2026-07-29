@@ -82,6 +82,10 @@
     "./strsv": {
       "import": "./src/strsv/strsv.mjs",
       "types": "./src/strsv/strsv.d.mts"
+    },
+    "./sger": {
+      "import": "./src/sger/sger.mjs",
+      "types": "./src/sger/sger.d.mts"
     }
   },
   "files": [
