@@ -138,6 +138,7 @@
     "@stdlib/blas-base-sscal": "^0.3.1",
     "@stdlib/blas-base-sswap": "^0.3.1",
     "@stdlib/blas-base-ssymv": "^0.1.1",
+    "@stdlib/blas-base-ssyr": "^0.1.1",
     "@stdlib/blas-base-strmv": "^0.1.0",
     "@stdlib/blas-base-strsv": "^0.1.1",
     "@stdlib/random-array-uniform": "^0.2.2",
