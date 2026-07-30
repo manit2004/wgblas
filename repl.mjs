@@ -2,7 +2,7 @@ import repl from "node:repl";
 import {
   init, cleanup,
   GpuVector, GpuMatrix,
-  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2,
 } from "wgblas";
 
 const device = await init();
@@ -13,7 +13,7 @@ Object.assign(r.context, {
   device,
   GpuVector, GpuMatrix,
   Float32Array, Float64Array,
-  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2,
 });
 
 r.defineCommand("help", {
@@ -37,6 +37,7 @@ r.defineCommand("help", {
   strsv (device, uplo, trans, diag, n, A, lda, x, incx)
   sger  (device, m, n, alpha, x, incx, y, incy, A, lda)
   ssyr  (device, uplo, n, alpha, x, incx, A, lda)
+  ssyr2 (device, uplo, n, alpha, x, incx, y, incy, A, lda)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
   GpuVector.from(Float64Array)   v.read()  v.destroy()  (for dasum)

@@ -90,6 +90,10 @@
     "./ssyr": {
       "import": "./src/ssyr/ssyr.mjs",
       "types": "./src/ssyr/ssyr.d.mts"
+    },
+    "./ssyr2": {
+      "import": "./src/ssyr2/ssyr2.mjs",
+      "types": "./src/ssyr2/ssyr2.d.mts"
     }
   },
   "files": [

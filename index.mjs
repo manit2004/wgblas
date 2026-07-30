@@ -22,3 +22,4 @@ export { strmv } from "./src/strmv/strmv.mjs";
 export { strsv } from "./src/strsv/strsv.mjs";
 export { sger } from "./src/sger/sger.mjs";
 export { ssyr } from "./src/ssyr/ssyr.mjs";
+export { ssyr2 } from "./src/ssyr2/ssyr2.mjs";
