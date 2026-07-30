@@ -8,6 +8,11 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * Only the triangle specified by `uplo` is referenced and updated; the other
  * triangle is left untouched (implied by symmetry).
  *
+ * {@includeCode ../../examples/ssyr2/ssyr2.js}
+ *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/ssyr2/web/ssyr2.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
  * @param n      - order of the matrix A (number of rows and columns)
@@ -38,10 +43,6 @@ export declare function ssyr2(
  * Performs the symmetric rank-2 update A = alpha * x * y^T + alpha * y * x^T + A
  *
  * A is kept GPU-resident; x and y are CPU Float32Arrays.
- *
- * `A` must be Float32-backed — ssyr2.wgsl is f32-only, so the f64-emulated
- * GpuMatrix produced by `GpuMatrix.from(Float64Array)` (as used by dasum) is
- * rejected.
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
@@ -74,9 +75,7 @@ export declare function ssyr2(
  *
  * x, y, and A are all kept resident on the GPU.
  *
- * Both `x`/`y` and `A` must be Float32-backed — ssyr2.wgsl is f32-only, so the
- * f64-emulated GpuVector/GpuMatrix produced by `.from(Float64Array)` (as used
- * by dasum) is rejected.
+ * {@includeCode ../../examples/ssyr2/gpuvec.ssyr2.js}
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
