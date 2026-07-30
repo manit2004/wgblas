@@ -90,6 +90,10 @@
     "./ssyr": {
       "import": "./src/ssyr/ssyr.mjs",
       "types": "./src/ssyr/ssyr.d.mts"
+    },
+    "./ssyr2": {
+      "import": "./src/ssyr2/ssyr2.mjs",
+      "types": "./src/ssyr2/ssyr2.d.mts"
     }
   },
   "files": [
@@ -139,6 +143,7 @@
     "@stdlib/blas-base-sswap": "^0.3.1",
     "@stdlib/blas-base-ssymv": "^0.1.1",
     "@stdlib/blas-base-ssyr": "^0.1.1",
+    "@stdlib/blas-base-ssyr2": "^0.1.1",
     "@stdlib/blas-base-strmv": "^0.1.0",
     "@stdlib/blas-base-strsv": "^0.1.1",
     "@stdlib/random-array-uniform": "^0.2.2",
