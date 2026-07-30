@@ -19,7 +19,7 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * @param alpha  - scalar multiplier for x*x^T
  * @param x      - Float32Array input vector, length at least (n-1)*incx+1
  * @param incx   - stride for x (must be a positive integer)
- * @param A      - Float32Array or GpuMatrix, row-major, at least (n-1)*lda+n elements
+ * @param A      - Float32Array, row-major, at least (n-1)*lda+n elements
  * @param lda    - leading dimension of A (>= n)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/ssyr/ssyr.mjs#L15">Source code: ssyr.mjs (L15)</a>
  * @category BLAS Level 2
@@ -31,7 +31,7 @@ export declare function ssyr(
   alpha: number,
   x: Float32Array,
   incx: number,
-  A: Float32Array | GpuMatrix,
+  A: Float32Array,
   lda: number,
 ): Promise<{ A: Float32Array; gpuTimeMs?: number }>;
 
@@ -60,7 +60,7 @@ export declare function ssyr(
   incx: number,
   A: GpuMatrix,
   lda: number,
-): Promise<{ A: Float32Array; gpuTimeMs?: number }>;
+): Promise<{ gpuTimeMs?: number }>;
 
 /**
  * Performs the symmetric rank-1 update A = alpha * x * x^T + A
