@@ -8,6 +8,11 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * Only the triangle specified by `uplo` is referenced and updated; the other
  * triangle is left untouched (implied by symmetry).
  *
+ * {@includeCode ../../examples/ssyr/ssyr.js}
+ *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/ssyr/web/ssyr.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
  * @param n      - order of the matrix A (number of rows and columns)
@@ -61,6 +66,8 @@ export declare function ssyr(
  * Performs the symmetric rank-1 update A = alpha * x * x^T + A
  *
  * x and A are both kept resident on the GPU.
+ *
+ * {@includeCode ../../examples/ssyr/gpuvec.ssyr.js}
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle

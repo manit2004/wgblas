@@ -24,7 +24,8 @@
         document.getElementById("out").textContent =
           "x: " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
           "\ny: " + Array.from(y).map(v => v.toFixed(4)).join(", ") +
-          "\nA: " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+          "\nA (before): " + Array.from(A).map(v => v.toFixed(4)).join(", ") +
+          "\nA (after): " + Array.from(result).map(v => v.toFixed(4)).join(", ");
 
         cleanup();
       })();
