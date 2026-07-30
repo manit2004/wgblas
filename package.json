@@ -86,6 +86,10 @@
     "./sger": {
       "import": "./src/sger/sger.mjs",
       "types": "./src/sger/sger.d.mts"
+    },
+    "./ssyr": {
+      "import": "./src/ssyr/ssyr.mjs",
+      "types": "./src/ssyr/ssyr.d.mts"
     }
   },
   "files": [
