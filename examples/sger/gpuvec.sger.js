@@ -17,6 +17,7 @@ const AGpu = GpuMatrix.from(A, m, n);
 
 console.log("x:", x);
 console.log("y:", y);
+console.log("A (before):", A);
 
 // results stay on the GPU between steps
 await sger(device, m, n, 1.0, xGpu, 1, yGpu, 1, AGpu, AGpu.lda); // A += x*y^T

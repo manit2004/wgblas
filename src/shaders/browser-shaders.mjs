@@ -16,6 +16,7 @@ import sgemv_t from "./sgemv_t.wgsl";
 import ssymv from "./ssymv.wgsl";
 import strmv from "./strmv.wgsl";
 import sger from "./sger.wgsl";
+import ssyr from "./ssyr.wgsl";
 import f64add from "./f64add.wgsl";
 import dasum from "./dasum.wgsl";
 import strsv_invert_block from "./strsv_invert_block.wgsl";
@@ -41,6 +42,7 @@ export const shaderSources = {
   ssymv,
   strmv,
   sger,
+  ssyr,
   f64add,
   dasum,
   strsv_invert_block,

@@ -13,6 +13,7 @@ const A = randomFloat32Array(m * lda, -10, 10);
 
 console.log("x:", x);
 console.log("y:", y);
+console.log("A (before):", A);
 const { A: result } = await sger(device, m, n, alpha, x, 1, y, 1, A, lda);
-console.log("A:", result);
+console.log("A (after):", result);
 if (typeof process !== "undefined") cleanup();

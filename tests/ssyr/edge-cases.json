@@ -1,0 +1,38 @@
+[
+  {
+    "label": "alpha=0 — A unchanged, no rank-1 contribution",
+    "uplo": "lower", "n": 2, "alpha": 0,
+    "x": [1, 1], "incx": 1,
+    "A": [9, 9, 9, 9], "lda": 2
+  },
+  {
+    "label": "lower: x=[1,2] outer product, only lower triangle touched",
+    "uplo": "lower", "n": 2, "alpha": 1,
+    "x": [1, 2], "incx": 1,
+    "A": [0, 99, 0, 0], "lda": 2
+  },
+  {
+    "label": "upper: same x=[1,2], only upper triangle touched",
+    "uplo": "upper", "n": 2, "alpha": 1,
+    "x": [1, 2], "incx": 1,
+    "A": [0, 0, 99, 0], "lda": 2
+  },
+  {
+    "label": "lda > n — padding elements in stride gaps are ignored",
+    "uplo": "lower", "n": 2, "alpha": 1,
+    "x": [1, 1], "incx": 1,
+    "A": [1, 0, 99, 0, 1, 99], "lda": 3
+  },
+  {
+    "label": "incx=2 — reads every other element of x",
+    "uplo": "lower", "n": 3, "alpha": 1,
+    "x": [2, 99, 3, 99, 4], "incx": 2,
+    "A": [0, 0, 0, 0, 0, 0, 0, 0, 0], "lda": 3
+  },
+  {
+    "label": "alpha=-1 — subtracts the outer product from A",
+    "uplo": "lower", "n": 2, "alpha": -1,
+    "x": [1, 2], "incx": 1,
+    "A": [10, 10, 10, 10], "lda": 2
+  }
+]
