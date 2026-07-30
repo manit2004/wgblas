@@ -24,6 +24,7 @@ import stdlibSsymv from "@stdlib/blas-base-ssymv";
 import stdlibStrsv from "@stdlib/blas-base-strsv";
 import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
+import stdlibSsyr2 from "@stdlib/blas-base-ssyr2";
 
 // (n, x, incx) -> scalar, x untouched.
 function makeReducerReference(stdlibFn) {
@@ -100,6 +101,17 @@ function makeSymMatrixReference(stdlibFn, dims) {
   };
 }
 
+// ("row-major", uplo, n, alpha, x, incx, y, incy, A, lda) mutates only A in
+// place — ssyr2's shape (symmetric rank-2 update, x/y are read-only). `dims(a)`
+// supplies uplo/n.
+function makeSymMatrix2Reference(stdlibFn, dims) {
+  return (a) => {
+    const A = a.A.slice();
+    stdlibFn("row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
+    return { A };
+  };
+}
+
 // sscal mutates x in place (with a leading alpha) and returns x directly,
 // not wrapped — the one mutate-only-x shape, distinct from the others above.
 export const sscalReference = (a) => {
@@ -129,3 +141,5 @@ export const strsvReference = makeMatXReference(stdlibStrsv, (a) => [a.uplo, a.t
 export const sgerReference = makeMatrixReference(stdlibSger, (a) => [a.m, a.n]);
 
 export const ssyrReference = makeSymMatrixReference(stdlibSsyr, (a) => [a.uplo, a.n]);
+
+export const ssyr2Reference = makeSymMatrix2Reference(stdlibSsyr2, (a) => [a.uplo, a.n]);

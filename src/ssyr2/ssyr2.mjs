@@ -37,7 +37,7 @@ export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda) {
     throw new Error("incx and incy must be positive.");
   if (lda < n) throw new Error("lda must be >= n.");
   if (!AIsGpu && !(A instanceof Float32Array))
-    throw new Error("A must be a Float32Array.");
+    throw new Error("A must be a Float32Array or GpuMatrix.");
   if (!xIsGpu && !(x instanceof Float32Array))
     throw new Error("x must be a Float32Array or GpuVector.");
   if (!yIsGpu && !(y instanceof Float32Array))
