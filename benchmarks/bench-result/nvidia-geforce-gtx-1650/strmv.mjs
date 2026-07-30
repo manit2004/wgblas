@@ -5,15 +5,15 @@
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
- * | 32 | 0.0067 | 0.3524 | 0.0040 | 0.5873 | 60.0% |
- * | 64 | 0.0068 | 1.3019 | 0.0056 | 1.5908 | 81.8% |
- * | 128 | 0.0071 | 4.8036 | 0.0099 | 3.4545 | 139.1% |
- * | 256 | 0.0101 | 13.1735 | 0.0250 | 5.3402 | 246.7% |
- * | 512 | 0.0142 | 37.1775 | 0.0854 | 6.1986 | 599.8% |
- * | 1024 | 0.0327 | 64.4384 | 0.3420 | 6.1617 | 1045.8% |
- * | 1280 | 0.0453 | 72.6759 | 0.2046 | 16.0801 | 452.0% |
- * | 2048 | 0.0942 | 89.2609 | 0.2682 | 31.3491 | 284.7% |
- * | 4096 | 0.3133 | 107.2157 | 0.9830 | 34.1750 | 313.7% |
+ * | 32 | 0.0083 | 0.2868 | 0.1069 | 0.0222 | 1292.0% |
+ * | 64 | 0.0083 | 1.0677 | 0.1048 | 0.0843 | 1266.5% |
+ * | 128 | 0.0086 | 3.9554 | 0.0922 | 0.3693 | 1071.1% |
+ * | 256 | 0.0108 | 12.4286 | 0.1364 | 0.9795 | 1268.9% |
+ * | 512 | 0.0150 | 35.2000 | 0.1832 | 2.8900 | 1218.0% |
+ * | 1024 | 0.0339 | 62.1283 | 0.4703 | 4.4809 | 1386.5% |
+ * | 1280 | 0.0453 | 72.6759 | 0.3061 | 10.7458 | 676.3% |
+ * | 2048 | 0.0944 | 89.1095 | 0.3929 | 21.4037 | 416.3% |
+ * | 4096 | 0.3133 | 107.2157 | 0.9768 | 34.3922 | 311.7% |
  *
  * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.
  *
@@ -44,26 +44,26 @@
  * <text class="at" x="457.9" y="236" text-anchor="middle">1.3K</text>
  * <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
- * <polyline class="ln1" points="58.0,219.4 133.1,217.9 208.3,212.3 283.4,198.9 358.6,160.5 433.7,116.9 457.9,103.7 508.9,77.2 584.0,48.5"/>
- * <polyline class="ln2" points="58.0,219.1 133.1,217.5 208.3,214.5 283.4,211.5 358.6,210.1 433.7,210.1 457.9,194.3 508.9,169.8 584.0,165.3"/>
- * <circle class="mk1" cx="58.0" cy="219.4" r="4"/>
- * <circle class="mk1" cx="133.1" cy="217.9" r="4"/>
- * <circle class="mk1" cx="208.3" cy="212.3" r="4"/>
- * <circle class="mk1" cx="283.4" cy="198.9" r="4"/>
- * <circle class="mk1" cx="358.6" cy="160.5" r="4"/>
- * <circle class="mk1" cx="433.7" cy="116.9" r="4"/>
+ * <polyline class="ln1" points="58.0,219.5 133.1,218.3 208.3,213.7 283.4,200.1 358.6,163.7 433.7,120.6 457.9,103.7 508.9,77.4 584.0,48.5"/>
+ * <polyline class="ln2" points="58.0,220.0 133.1,219.9 208.3,219.4 283.4,218.4 358.6,215.4 433.7,212.8 457.9,202.8 508.9,185.8 584.0,165.0"/>
+ * <circle class="mk1" cx="58.0" cy="219.5" r="4"/>
+ * <circle class="mk1" cx="133.1" cy="218.3" r="4"/>
+ * <circle class="mk1" cx="208.3" cy="213.7" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="200.1" r="4"/>
+ * <circle class="mk1" cx="358.6" cy="163.7" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="120.6" r="4"/>
  * <circle class="mk1" cx="457.9" cy="103.7" r="4"/>
- * <circle class="mk1" cx="508.9" cy="77.2" r="4"/>
+ * <circle class="mk1" cx="508.9" cy="77.4" r="4"/>
  * <circle class="mk1" cx="584.0" cy="48.5" r="4"/>
- * <circle class="mk2" cx="58.0" cy="219.1" r="4"/>
- * <circle class="mk2" cx="133.1" cy="217.5" r="4"/>
- * <circle class="mk2" cx="208.3" cy="214.5" r="4"/>
- * <circle class="mk2" cx="283.4" cy="211.5" r="4"/>
- * <circle class="mk2" cx="358.6" cy="210.1" r="4"/>
- * <circle class="mk2" cx="433.7" cy="210.1" r="4"/>
- * <circle class="mk2" cx="457.9" cy="194.3" r="4"/>
- * <circle class="mk2" cx="508.9" cy="169.8" r="4"/>
- * <circle class="mk2" cx="584.0" cy="165.3" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="220.0" r="4"/>
+ * <circle class="mk2" cx="133.1" cy="219.9" r="4"/>
+ * <circle class="mk2" cx="208.3" cy="219.4" r="4"/>
+ * <circle class="mk2" cx="283.4" cy="218.4" r="4"/>
+ * <circle class="mk2" cx="358.6" cy="215.4" r="4"/>
+ * <circle class="mk2" cx="433.7" cy="212.8" r="4"/>
+ * <circle class="mk2" cx="457.9" cy="202.8" r="4"/>
+ * <circle class="mk2" cx="508.9" cy="185.8" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="165.0" r="4"/>
  * <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
  * <circle class="mk1" cx="66" cy="252" r="4"/>
  * <text class="lt" x="80" y="256">wgblas</text>
@@ -101,26 +101,26 @@
  * <text class="at" x="457.9" y="236" text-anchor="middle">1.3K</text>
  * <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
- * <polyline class="ln1" points="58.0,218.7 133.1,218.6 208.3,218.6 283.4,218.0 358.6,217.2 433.7,213.5 457.9,210.9 508.9,201.2 584.0,157.3"/>
- * <polyline class="ln2" points="58.0,219.2 133.1,218.9 208.3,218.0 283.4,215.0 358.6,202.9 433.7,151.6 457.9,179.1 508.9,166.4 584.0,23.4"/>
- * <circle class="mk1" cx="58.0" cy="218.7" r="4"/>
- * <circle class="mk1" cx="133.1" cy="218.6" r="4"/>
- * <circle class="mk1" cx="208.3" cy="218.6" r="4"/>
- * <circle class="mk1" cx="283.4" cy="218.0" r="4"/>
- * <circle class="mk1" cx="358.6" cy="217.2" r="4"/>
- * <circle class="mk1" cx="433.7" cy="213.5" r="4"/>
+ * <polyline class="ln1" points="58.0,218.3 133.1,218.3 208.3,218.3 283.4,217.8 358.6,217.0 433.7,213.2 457.9,210.9 508.9,201.1 584.0,157.3"/>
+ * <polyline class="ln2" points="58.0,198.6 133.1,199.0 208.3,201.6 283.4,192.7 358.6,183.4 433.7,125.9 457.9,158.8 508.9,141.4 584.0,24.6"/>
+ * <circle class="mk1" cx="58.0" cy="218.3" r="4"/>
+ * <circle class="mk1" cx="133.1" cy="218.3" r="4"/>
+ * <circle class="mk1" cx="208.3" cy="218.3" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="217.8" r="4"/>
+ * <circle class="mk1" cx="358.6" cy="217.0" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="213.2" r="4"/>
  * <circle class="mk1" cx="457.9" cy="210.9" r="4"/>
- * <circle class="mk1" cx="508.9" cy="201.2" r="4"/>
+ * <circle class="mk1" cx="508.9" cy="201.1" r="4"/>
  * <circle class="mk1" cx="584.0" cy="157.3" r="4"/>
- * <circle class="mk2" cx="58.0" cy="219.2" r="4"/>
- * <circle class="mk2" cx="133.1" cy="218.9" r="4"/>
- * <circle class="mk2" cx="208.3" cy="218.0" r="4"/>
- * <circle class="mk2" cx="283.4" cy="215.0" r="4"/>
- * <circle class="mk2" cx="358.6" cy="202.9" r="4"/>
- * <circle class="mk2" cx="433.7" cy="151.6" r="4"/>
- * <circle class="mk2" cx="457.9" cy="179.1" r="4"/>
- * <circle class="mk2" cx="508.9" cy="166.4" r="4"/>
- * <circle class="mk2" cx="584.0" cy="23.4" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="198.6" r="4"/>
+ * <circle class="mk2" cx="133.1" cy="199.0" r="4"/>
+ * <circle class="mk2" cx="208.3" cy="201.6" r="4"/>
+ * <circle class="mk2" cx="283.4" cy="192.7" r="4"/>
+ * <circle class="mk2" cx="358.6" cy="183.4" r="4"/>
+ * <circle class="mk2" cx="433.7" cy="125.9" r="4"/>
+ * <circle class="mk2" cx="457.9" cy="158.8" r="4"/>
+ * <circle class="mk2" cx="508.9" cy="141.4" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="24.6" r="4"/>
  * </svg>
  *
  * ## See also

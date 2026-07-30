@@ -23,7 +23,8 @@
       "wgblas/sgemv": ["./src/sgemv/sgemv.d.mts"],
       "wgblas/ssymv": ["./src/ssymv/ssymv.d.mts"],
       "wgblas/strmv": ["./src/strmv/strmv.d.mts"],
-      "wgblas/strsv": ["./src/strsv/strsv.d.mts"]
+      "wgblas/strsv": ["./src/strsv/strsv.d.mts"],
+      "wgblas/sger": ["./src/sger/sger.d.mts"]
     }
   }
 }

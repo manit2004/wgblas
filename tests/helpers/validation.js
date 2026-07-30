@@ -124,6 +124,11 @@ export function ndArrayLen(dependsOn, dims) {
     const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
     return (dim - 1) * inc + 1;
   }
+  // Vector sized by m alone, no trans involved (sger's x: length m, independent of n).
+  if (deps.has("m") && !deps.has("n") && !deps.has("lda") && !deps.has("trans")) {
+    const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
+    return (dims.m - 1) * inc + 1;
+  }
   const n = dims.n ?? 4;
   const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
   return (n - 1) * inc + 1;

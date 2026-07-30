@@ -14,6 +14,17 @@ export function padMatrix(A, rows, lda) {
   return padded;
 }
 
+// Inverse of padMatrix: read() strips lda padding to dense rows*cols, but
+// the CPU reference keeps the original strided shape. `original` fills the
+// untouched padding gaps.
+export function unpadMatrix(dense, original, rows, cols, lda) {
+  if (lda === cols) return dense;
+  const out = Float32Array.from(original);
+  for (let r = 0; r < rows; r++)
+    out.set(dense.subarray(r * cols, r * cols + cols), r * lda);
+  return out;
+}
+
 // Runs body(resources) and destroys every resource afterward, success or
 // failure. `resources` is a plain object of GpuVector/GpuMatrix handles.
 export async function withGpuResources(resources, body) {
