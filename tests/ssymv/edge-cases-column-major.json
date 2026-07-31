@@ -1,0 +1,66 @@
+[
+  {
+    "label": "[column-major] alpha=0 — output is beta*y, no matrix contribution",
+    "layout": "column-major",
+    "uplo": "lower", "n": 2, "alpha": 0,
+    "A": [9, 9, 9, 9], "lda": 2,
+    "x": [1, 1], "incx": 1, "beta": 2,
+    "y": [3, 4], "incy": 1
+  },
+  {
+    "label": "[column-major] beta=0 — output is alpha*A*x, no y contribution",
+    "layout": "column-major",
+    "uplo": "lower", "n": 2, "alpha": 3,
+    "A": [1, 0, 0, 1], "lda": 2,
+    "x": [5, 7], "incx": 1, "beta": 0,
+    "y": [99, 99], "incy": 1
+  },
+  {
+    "label": "[column-major] lower: [[1,2],[2,3]] * [1,1] = [3,5]",
+    "layout": "column-major",
+    "uplo": "lower", "n": 2, "alpha": 1,
+    "A": [1, 2, 99, 3], "lda": 2,
+    "x": [1, 1], "incx": 1, "beta": 0,
+    "y": [0, 0], "incy": 1
+  },
+  {
+    "label": "[column-major] upper: [[1,2],[2,3]] * [1,1] = [3,5] — same matrix, different storage",
+    "layout": "column-major",
+    "uplo": "upper", "n": 2, "alpha": 1,
+    "A": [1, 99, 2, 3], "lda": 2,
+    "x": [1, 1], "incx": 1, "beta": 0,
+    "y": [0, 0], "incy": 1
+  },
+  {
+    "label": "[column-major] lda > n — padding elements in stride gaps are ignored",
+    "layout": "column-major",
+    "uplo": "lower", "n": 3, "alpha": 1,
+    "A": [1, 0, 0, 99, 0, 1, 0, 99, 0, 0, 1, 99], "lda": 4,
+    "x": [2, 3, 5], "incx": 1, "beta": 0,
+    "y": [0, 0, 0], "incy": 1
+  },
+  {
+    "label": "[column-major] incx=2 — reads every other element of x",
+    "layout": "column-major",
+    "uplo": "lower", "n": 3, "alpha": 1,
+    "A": [1, 0, 0, 0, 1, 0, 0, 0, 1], "lda": 3,
+    "x": [1, 99, 2, 99, 3], "incx": 2, "beta": 0,
+    "y": [0, 0, 0], "incy": 1
+  },
+  {
+    "label": "[column-major] incy=2 — writes every other element of y, gaps unchanged",
+    "layout": "column-major",
+    "uplo": "lower", "n": 1, "alpha": 1,
+    "A": [5], "lda": 1,
+    "x": [2], "incx": 1, "beta": 0,
+    "y": [0, 99], "incy": 2
+  },
+  {
+    "label": "[column-major] beta accumulation — y_out = alpha*A*x + beta*y_in",
+    "layout": "column-major",
+    "uplo": "lower", "n": 2, "alpha": 1,
+    "A": [1, 0, 0, 1], "lda": 2,
+    "x": [1, 2], "incx": 1, "beta": 2,
+    "y": [10, 20], "incy": 1
+  }
+]
