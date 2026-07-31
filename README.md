@@ -18,7 +18,10 @@
 - [ssymv](https://manit2004.github.io/wgblas/functions/docs.ssymv.html)
 - [strmv](https://manit2004.github.io/wgblas/functions/docs.strmv.html)
 - [strsv](https://manit2004.github.io/wgblas/functions/docs.strsv.html)
-
+- [sger](https://manit2004.github.io/wgblas/functions/docs.sger.html)
+- [ssyr](https://manit2004.github.io/wgblas/functions/docs.ssyr.html)
+- [ssyr2](https://manit2004.github.io/wgblas/functions/docs.ssysr2.html)
+   
 ## Browser Support
 
 wgblas runs in any browser with WebGPU enabled. Check if it's working in your browser at [webgpureport.org](https://webgpureport.org).
