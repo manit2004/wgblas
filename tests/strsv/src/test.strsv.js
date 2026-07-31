@@ -7,6 +7,7 @@ import { runFixtures } from "../../helpers/fixtures.js";
 import { strsvReference as stdlibReference } from "../../helpers/stdlib.js";
 import { backwardResidualFactor } from "../helpers.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
+import edgeCasesColumnMajor from "../edge-cases-column-major.json" with { type: "json" };
 
 const NUM_RUNS = 100;
 const THRESHOLD = 2;
@@ -39,6 +40,7 @@ const validationSpecs = {
   lda:    loadParam("lda"),
   x:      { ...loadParam("x"), dependsOn: ["n", "incx"] },
   incx:   loadParam("incx"),
+  layout: loadParam("layout"),
 };
 
 // Cap n for fixtures — validationSpecs allows up to 1000, which makes property tests slow.
@@ -48,7 +50,7 @@ test("strsv validation", async (t) => {
   await runValidation(
     t,
     validationSpecs,
-    (a) => strsv(a.device, a.uplo, a.trans, a.diag, a.n, a.A, a.lda, a.x, a.incx),
+    (a) => strsv(a.device, a.uplo, a.trans, a.diag, a.n, a.A, a.lda, a.x, a.incx, a.layout),
     { device },
   );
 });
@@ -61,7 +63,7 @@ test("strsv fixtures", async (t) => {
     NUM_RUNS,                   // number of fast-check runs
     THRESHOLD,                  // max allowed backward-residual factor
     fixtureSpecs,               // A's spec has triangular: true — buildArb keeps its diagonal safe
-    async (dev, a) => strsv(dev, a.uplo, a.trans, a.diag, a.n, a.A, a.lda, a.x, a.incx), // GPU impl
+    async (dev, a) => strsv(dev, a.uplo, a.trans, a.diag, a.n, a.A, a.lda, a.x, a.incx, a.layout), // GPU impl
     () => ({}),                 // no CPU reference needed — backwardResidualFactor self-checks against b
     backwardResidualFactor,     // error metric: plug GPU x back into op(A)*x and compare to b
   );
@@ -92,6 +94,39 @@ test("strsv edge cases", async (t) => {
         a.lda,    // leading dimension (row stride) of A
         a.x,      // holds b on input, the solution on output
         a.incx,   // stride through x
+      ); // GPU result
+      const { x: expected } = stdlibReference(a); // stdlib result
+      assert.deepEqual(got, expected);
+    });
+  }
+});
+
+// Small hand-picked scenarios loaded from edge-cases-column-major.json.
+test("strsv edge cases (column-major)", async (t) => {
+  for (const c of edgeCasesColumnMajor) {
+    await t.test(c.label, async () => {
+      const a = {
+        uplo: c.uplo,                  // which triangle of A is stored
+        trans: c.trans,                // whether to use A or Aᵀ
+        diag: c.diag,                  // unit (diagonal implicitly 1) or non-unit (read from A)
+        n: c.n,                        // matrix dimension (n×n)
+        A: new Float32Array(c.A),      // matrix, column-major, size n*lda
+        lda: c.lda,                    // leading dimension (column stride) of A
+        x: new Float32Array(c.x),      // holds b on input, the solution on output
+        incx: c.incx,                  // stride through x
+        layout: c.layout,              // "column-major"
+      };
+      const { x: got } = await strsv(
+        device,     // GPU device
+        a.uplo,     // which triangle of A is stored
+        a.trans,    // whether to use A or Aᵀ
+        a.diag,     // unit (diagonal implicitly 1) or non-unit (read from A)
+        a.n,        // matrix dimension (n×n)
+        a.A,        // matrix, column-major, size n*lda
+        a.lda,      // leading dimension (column stride) of A
+        a.x,        // holds b on input, the solution on output
+        a.incx,     // stride through x
+        a.layout,   // storage layout
       ); // GPU result
       const { x: expected } = stdlibReference(a); // stdlib result
       assert.deepEqual(got, expected);

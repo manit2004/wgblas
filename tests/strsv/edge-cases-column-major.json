@@ -1,0 +1,58 @@
+[
+  {
+    "label": "[column-major] lower no-transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 3, 99, 4], "lda": 2,
+    "x": [4, 11], "incx": 1
+  },
+  {
+    "label": "[column-major] upper no-transpose",
+    "layout": "column-major",
+    "uplo": "upper", "trans": "no-transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 99, 3, 4], "lda": 2,
+    "x": [10, 8], "incx": 1
+  },
+  {
+    "label": "[column-major] lower transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 3, 99, 4], "lda": 2,
+    "x": [10, 8], "incx": 1
+  },
+  {
+    "label": "[column-major] upper transpose",
+    "layout": "column-major",
+    "uplo": "upper", "trans": "transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 99, 3, 4], "lda": 2,
+    "x": [4, 14], "incx": 1
+  },
+  {
+    "label": "[column-major] n=1 lower",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 1, "A": [5], "lda": 1,
+    "x": [10], "incx": 1
+  },
+  {
+    "label": "[column-major] incx=2 lower no-transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 3, "A": [1, 2, 3, 99, 1, 4, 99, 99, 1], "lda": 3,
+    "x": [2, 99, 7, 99, 22], "incx": 2
+  },
+  {
+    "label": "[column-major] unit diag lower no-transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "unit",
+    "n": 2, "A": [99, 3, 99, 99], "lda": 2,
+    "x": [2, 11], "incx": 1
+  },
+  {
+    "label": "[column-major] unit diag upper transpose",
+    "layout": "column-major",
+    "uplo": "upper", "trans": "transpose", "diag": "unit",
+    "n": 2, "A": [99, 99, 3, 99], "lda": 2,
+    "x": [2, 13], "incx": 1
+  }
+]
