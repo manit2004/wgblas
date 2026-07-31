@@ -15,10 +15,14 @@
 const eps = 2 ** -23;
 
 export function forwardFactor(gpu, ref, a) {
-  const { trans, m, n, alpha, A, lda, x, incx, beta, y, incy } = a;
+  const { trans, m, n, alpha, A, lda, x, incx, beta, y, incy, layout } = a;
   const isNoTrans = trans === "no-transpose";
   const yLen   = isNoTrans ? m : n;
   const nTerms = isNoTrans ? n : m;
+  // A[row,col] flat index — column-major storage swaps which dimension lda strides over.
+  const at = layout === "column-major"
+    ? (row, col) => A[col * lda + row]
+    : (row, col) => A[row * lda + col];
 
   let maxFactor = 0;
   for (let i = 0; i < yLen; i++) {
@@ -27,10 +31,10 @@ export function forwardFactor(gpu, ref, a) {
     let dotBound = 0;
     if (isNoTrans) {
       for (let j = 0; j < n; j++)
-        dotBound += Math.abs(A[i * lda + j]) * Math.abs(x[j * incx]);
+        dotBound += Math.abs(at(i, j)) * Math.abs(x[j * incx]);
     } else {
       for (let j = 0; j < m; j++)
-        dotBound += Math.abs(A[j * lda + i]) * Math.abs(x[j * incx]);
+        dotBound += Math.abs(at(j, i)) * Math.abs(x[j * incx]);
     }
 
     const bound = eps * ((nTerms + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * Math.abs(y[i * incy]));

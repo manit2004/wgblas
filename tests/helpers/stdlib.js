@@ -58,12 +58,14 @@ function makeYReference(stdlibFn, prefix = () => []) {
   };
 }
 
-// ("row-major", ...dims, alpha, A, lda, x, incx, beta, y, incy) mutates only
-// y in place. `dims(a)` supplies the trans/uplo + size args.
+// (order, ...dims, alpha, A, lda, x, incx, beta, y, incy) mutates only y in
+// place. `dims(a)` supplies the trans/uplo + size args. `a.layout` (default
+// "row-major") is forwarded as-is — stdlib's sgemv/ssymv natively support
+// both orders.
 function makeMatVecReference(stdlibFn, dims) {
   return (a) => {
     const out = a.y.slice();
-    stdlibFn("row-major", ...dims(a), a.alpha, a.A.slice(), a.lda, a.x.slice(), a.incx, a.beta, out, a.incy);
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.A.slice(), a.lda, a.x.slice(), a.incx, a.beta, out, a.incy);
     return { y: out };
   };
 }
