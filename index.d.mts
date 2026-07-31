@@ -6,6 +6,7 @@ export { GpuMatrix } from "./src/classes/GpuMatrix.mjs";
 export {
   randomFloat32Array,
   randomFloat64Array,
+  randomTriangularFloat32Array,
 } from "./src/random/random.mjs";
 export { sscal } from "./src/sscal/sscal.mjs";
 export { sswap } from "./src/sswap/sswap.mjs";
