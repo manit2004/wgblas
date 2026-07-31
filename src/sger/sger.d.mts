@@ -21,7 +21,8 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * @param incx   - stride for x (must be a positive integer)
  * @param y      - Float32Array input vector, length at least (n-1)*incy+1
  * @param incy   - stride for y (must be a positive integer)
- * @param A      - Float32Array, row-major or column-major (see `layout`), at least (m-1)*lda+n elements
+ * @param A      - Float32Array, row-major or column-major (see `layout`), at least
+ *   (m-1)*lda+n elements for row-major or (n-1)*lda+m elements for column-major
  * @param lda    - leading dimension of A (>= n for row-major, >= m for column-major)
  * @param layout - storage layout of `A` (default: `'row-major'`)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sger/sger.mjs#L15">Source code: sger.mjs (L15)</a>

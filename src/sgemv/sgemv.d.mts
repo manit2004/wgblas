@@ -20,7 +20,8 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * @param m      - number of rows in A
  * @param n      - number of columns in A
  * @param alpha  - scalar multiplier for op(A)*x
- * @param A      - Float32Array, row-major or column-major (see `layout`), at least (m-1)*lda+n elements
+ * @param A      - Float32Array, row-major or column-major (see `layout`), at least
+ *   (m-1)*lda+n elements for row-major or (n-1)*lda+m elements for column-major
  * @param lda    - leading dimension of A (>= n for row-major, >= m for column-major)
  * @param x      - Float32Array input vector
  * @param incx   - stride for x (must be a positive integer)
