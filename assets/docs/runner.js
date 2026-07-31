@@ -57,6 +57,29 @@
     return String(a);
   }
 
+  // Plain-text grid for console.table (array of arrays or array of objects) —
+  // the page's output is a <pre>, not a live DevTools table, so this renders
+  // a space-padded grid instead. Falls back to formatArg for non-tabular data.
+  function formatTable(data) {
+    if (!Array.isArray(data)) return formatArg(data);
+    var rows = data.map(function (row) {
+      if (Array.isArray(row)) return row.map(formatArg);
+      if (typeof row === "object" && row !== null)
+        return Object.keys(row).map(function (k) { return formatArg(row[k]); });
+      return [formatArg(row)];
+    });
+    var cols = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+    var widths = [];
+    for (var c = 0; c < cols; c++) {
+      widths[c] = rows.reduce(function (m, r) { return Math.max(m, (r[c] || "").length); }, 0);
+    }
+    return rows.map(function (r) {
+      return r.map(function (cell, c) {
+        return (cell || "").padStart(widths[c]);
+      }).join("  ");
+    }).join("\n");
+  }
+
   function addRunButton(pre) {
     if (pre.dataset.runAdded) return;
     var code = pre.querySelector("code");
@@ -97,6 +120,7 @@
         var origLog = console.log;
         var origWarn = console.warn;
         var origError = console.error;
+        var origTable = console.table;
         function capture(prefix) {
           return function () {
             var line = prefix + Array.prototype.slice.call(arguments).map(formatArg).join(" ");
@@ -107,6 +131,10 @@
         console.log = capture("");
         console.warn = capture("⚠ ");
         console.error = capture("❌ ");
+        console.table = function (data) {
+          logs.push(formatTable(data));
+          if (origTable) origTable.apply(console, arguments);
+        };
         (async function () {
           try {
             await eval("(async () => { " + transformed + " })()");
@@ -117,6 +145,7 @@
             console.log = origLog;
             console.warn = origWarn;
             console.error = origError;
+            console.table = origTable;
             try { if (window.wgblas && window.wgblas.cleanup) window.wgblas.cleanup(); } catch (e) { void e; }
             btn.disabled = false;
             btn.textContent = "▶ Run";
