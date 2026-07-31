@@ -9,6 +9,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  toColumnMajor,
 } from "../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -32,7 +33,7 @@ for (const size of SIZES) {
   const n = size;
   const lda = n;
 
-  const AGpu = GpuMatrix.from(randomFloat32Array(n * n), n, n, lda);
+  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(n * n), n, n), n, n, lda, "column-major");
   const xGpu = GpuVector.from(randomFloat32Array(n));
   const yGpu = GpuVector.from(new Float32Array(n));
 

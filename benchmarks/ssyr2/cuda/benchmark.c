@@ -43,20 +43,17 @@ int main(void) {
         CUDA_CHECK(cudaEventCreate(&start));
         CUDA_CHECK(cudaEventCreate(&stop));
 
-        // h_A is row-major lower triangular; cuBLAS is column-major. ssyr2's
-        // update is symmetric (x*y^T + y*x^T), so the same buffer reinterpreted
-        // column-major (ld=lda) stores identical values as an upper triangle —
-        // no transpose needed (ssyr2 has no trans parameter), FILL_MODE_UPPER
-        // alone suffices.
+        // d_A is genuinely column-major — cuBLAS's native layout, so
+        // FILL_MODE_LOWER reads the same triangle wgblas's "lower" reads.
         for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasSsyr2(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha, d_x, 1, d_y, 1, d_A, lda));
+            CUBLAS_CHECK(cublasSsyr2(handle, CUBLAS_FILL_MODE_LOWER, n, &alpha, d_x, 1, d_y, 1, d_A, lda));
         }
         CUDA_CHECK(cudaDeviceSynchronize());
 
         float compute_times[BENCH_ITERS];
         for (int i = 0; i < BENCH_ITERS; i++) {
             CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSsyr2(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha, d_x, 1, d_y, 1, d_A, lda));
+            CUBLAS_CHECK(cublasSsyr2(handle, CUBLAS_FILL_MODE_LOWER, n, &alpha, d_x, 1, d_y, 1, d_A, lda));
             CUDA_CHECK(cudaEventRecord(stop, 0));
             CUDA_CHECK(cudaEventSynchronize(stop));
             CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
