@@ -19,7 +19,7 @@
         const x = randomFloat32Array(n, -10, 10);
         const y = randomFloat32Array(n, -10, 10);
 
-        const { y: result } = await ssymv(device, "lower", n, alpha, A, lda, x, 1, beta, y, 1);
+        const { y: result } = await ssymv(device, "lower", n, alpha, A, lda, x, 1, beta, y, 1, "row-major");
 
         document.getElementById("out").textContent =
           "A (lower triangle): " + Array.from(A).map(v => v.toFixed(4)).join(", ") +

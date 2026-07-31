@@ -23,7 +23,7 @@ console.log("x:", x);
 console.log("y:", y);
 console.log("A (before):");
 console.table(toMatrix(A, m, n, lda));
-const { A: result } = await sger(device, m, n, alpha, x, 1, y, 1, A, lda);
+const { A: result } = await sger(device, m, n, alpha, x, 1, y, 1, A, lda, "row-major");
 console.log("A (after):");
 console.table(toMatrix(result, m, n, lda));
 if (typeof process !== "undefined") cleanup();

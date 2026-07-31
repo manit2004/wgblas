@@ -11,7 +11,7 @@ const A = randomFloat32Array(n * n, -10, 10); // lower triangle is the stored tr
 const x = randomFloat32Array(n, -10, 10);
 const y = randomFloat32Array(n, -10, 10);
 
-const AGpu = GpuMatrix.from(A, n, n);
+const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
 const xGpu = GpuVector.from(x);
 const yGpu = GpuVector.from(y);
 

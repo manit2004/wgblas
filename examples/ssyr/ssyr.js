@@ -21,7 +21,7 @@ const A = randomFloat32Array(n * lda, -10, 10); // only lower triangle is read/u
 console.log("x:", x);
 console.log("A (lower triangle, before):");
 console.table(toMatrix(A, n, n, lda));
-const { A: result } = await ssyr(device, "lower", n, alpha, x, 1, A, lda);
+const { A: result } = await ssyr(device, "lower", n, alpha, x, 1, A, lda, "row-major");
 console.log("A (lower triangle, after):");
 console.table(toMatrix(result, n, n, lda));
 if (typeof process !== "undefined") cleanup();

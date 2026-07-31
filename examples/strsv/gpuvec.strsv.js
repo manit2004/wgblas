@@ -10,7 +10,7 @@ const n = 4;
 const A = randomTriangularFloat32Array(n, n, "lower", -10, 10);
 const b = randomFloat32Array(n, -10, 10);
 
-const AGpu = GpuMatrix.from(A, n, n);
+const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
 const xGpu = GpuVector.from(Float32Array.from(b));
 
 console.log("A (lower triangle):", A);
