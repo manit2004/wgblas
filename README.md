@@ -20,7 +20,7 @@
 - [strsv](https://manit2004.github.io/wgblas/functions/docs.strsv.html)
 - [sger](https://manit2004.github.io/wgblas/functions/docs.sger.html)
 - [ssyr](https://manit2004.github.io/wgblas/functions/docs.ssyr.html)
-- [ssyr2](https://manit2004.github.io/wgblas/functions/docs.ssysr2.html)
+- [ssyr2](https://manit2004.github.io/wgblas/functions/docs.ssyr2.html)
    
 ## Browser Support
 
