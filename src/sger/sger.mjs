@@ -12,13 +12,17 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda) {
-  const xIsGpu = x instanceof GpuVector;
-  const yIsGpu = y instanceof GpuVector;
+export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout = "row-major") {
   const AIsGpu = A instanceof GpuMatrix;
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  if (layout !== "row-major" && layout !== "column-major")
+    throw new Error("layout must be 'row-major' or 'column-major'.");
+  if (typeof alpha !== "number")
+    throw new Error("alpha must be a number.");
+  if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
+  if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
   if (
     !Number.isInteger(m) ||
     !Number.isInteger(n) ||
@@ -27,15 +31,28 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda) {
     !Number.isInteger(lda)
   )
     throw new Error("m, n, incx, incy, and lda must be integers.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
-  if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
-  if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
   if (incx <= 0 || incy <= 0)
     throw new Error("incx and incy must be positive.");
-  if (lda < n) throw new Error("lda must be >= n.");
   if (!AIsGpu && !(A instanceof Float32Array))
     throw new Error("A must be a Float32Array or GpuMatrix.");
+  if (AIsGpu && lda !== A.lda)
+    throw new Error("lda must match A.lda when A is a GpuMatrix.");
+  // A.rows/A.cols are fixed regardless of layout — check against original m/n before the swap below.
+  if (AIsGpu && (A.rows < m || A.cols < n))
+    throw new Error("A is too small for the given m and n.");
+
+  // GpuMatrix's own layout wins over the argument; column-major A reinterpreted row-major is A^T, so swap x/y and m/n to reproduce it (transpose of a rank-1 update swaps its two vectors).
+  const effLayout = AIsGpu ? A.layout : layout;
+  if (effLayout === "column-major") {
+    [m, n] = [n, m];
+    [x, y] = [y, x];
+    [incx, incy] = [incy, incx];
+  }
+
+  const xIsGpu = x instanceof GpuVector;
+  const yIsGpu = y instanceof GpuVector;
+
+  if (lda < n) throw new Error("lda must be >= n.");
   if (!xIsGpu && !(x instanceof Float32Array))
     throw new Error("x must be a Float32Array or GpuVector.");
   if (!yIsGpu && !(y instanceof Float32Array))
@@ -50,10 +67,6 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda) {
     throw new Error("A and x must not reference the same GPU buffer.");
   if (AIsGpu && yIsGpu && A._buf === y._buf)
     throw new Error("A and y must not reference the same GPU buffer.");
-  if (AIsGpu && lda !== A.lda)
-    throw new Error("lda must match A.lda when A is a GpuMatrix.");
-  if (AIsGpu && (A.rows < m || A.cols < n))
-    throw new Error("A is too small for the given m and n.");
   if (m < 0 || n < 0) throw new Error("m and n must be non-negative.");
   if (m === 0 || n === 0) return AIsGpu ? {} : { A };
 

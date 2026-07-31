@@ -21,8 +21,11 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * @param incx   - stride for x (must be a positive integer)
  * @param y      - Float32Array input vector, length at least (n-1)*incy+1
  * @param incy   - stride for y (must be a positive integer)
- * @param A      - Float32Array, row-major, at least (n-1)*lda+n elements
- * @param lda    - leading dimension of A (>= n)
+ * @param A      - Float32Array, row-major or column-major (see `layout`), at least (n-1)*lda+n elements
+ * @param lda    - leading dimension of A (>= n either way — A is square)
+ * @param layout - storage layout of `A` (default: `'row-major'`); for a symmetric
+ *   matrix, column-major storage just means the *other* triangle is the one
+ *   physically referenced for a given `uplo`
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/ssyr2/ssyr2.mjs#L15">Source code: ssyr2.mjs (L15)</a>
  * @category BLAS Level 2
  */
@@ -37,12 +40,15 @@ export declare function ssyr2(
   incy: number,
   A: Float32Array,
   lda: number,
+  layout?: 'row-major' | 'column-major',
 ): Promise<{ A: Float32Array; gpuTimeMs?: number }>;
 
 /**
  * Performs the symmetric rank-2 update A = alpha * x * y^T + alpha * y * x^T + A
  *
- * A is kept GPU-resident; x and y are CPU Float32Arrays.
+ * A is kept GPU-resident; x and y are CPU Float32Arrays. `A`'s own `layout`
+ * (set at `GpuMatrix.from` time) determines the operation — there is no
+ * separate `layout` argument here.
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
@@ -73,7 +79,9 @@ export declare function ssyr2(
 /**
  * Performs the symmetric rank-2 update A = alpha * x * y^T + alpha * y * x^T + A
  *
- * x, y, and A are all kept resident on the GPU.
+ * x, y, and A are all kept resident on the GPU. `A`'s own `layout` (set at
+ * `GpuMatrix.from` time) determines the operation — there is no separate
+ * `layout` argument here.
  *
  * {@includeCode ../../examples/ssyr2/gpuvec.ssyr2.js}
  *

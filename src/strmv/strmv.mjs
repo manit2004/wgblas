@@ -12,22 +12,22 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, incy) {
+export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, incy, layout = "row-major") {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
-  const isLower = uplo === "lower";
-  const isNoTrans = trans === "no-transpose";
   const isUnit = diag === "unit";
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
-  if (!isLower && uplo !== "upper")
+  if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
-  if (!isNoTrans && trans !== "transpose")
+  if (trans !== "no-transpose" && trans !== "transpose")
     throw new Error("trans must be 'no-transpose' or 'transpose'.");
   if (!isUnit && diag !== "non-unit")
     throw new Error("diag must be 'unit' or 'non-unit'.");
+  if (layout !== "row-major" && layout !== "column-major")
+    throw new Error("layout must be 'row-major' or 'column-major'.");
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -75,6 +75,12 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
     throw new Error(
       "y does not have enough elements for the given n and incy.",
     );
+
+  // GpuMatrix's own layout wins over the argument; column-major A reinterpreted row-major is A^T, so flip both uplo and trans to reproduce the requested op(A).
+  const effLayout = AIsGpu ? A.layout : layout;
+  const isColMajor = effLayout === "column-major";
+  const isLower = isColMajor ? uplo === "upper" : uplo === "lower";
+  const isNoTrans = isColMajor ? trans === "transpose" : trans === "no-transpose";
 
   const pipeline = await getPipeline(device, "strmv");
 

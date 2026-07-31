@@ -13,21 +13,10 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-// Blocked triangular solve, explicit-inversion variant: a pre-pass inverts
-// every diagonal block in parallel (strsv_invert_block.wgsl), then each
-// block is solved via a dense matvec against its inverse (strsv_apply_inverse.wgsl)
-// instead of a barrier-per-row substitution. strsv_update.wgsl (propagating
-// a solved block onto remaining rows) is unchanged.
+// Blocked triangular solve via explicit block inversion (invert/apply/update passes) instead of barrier-per-row substitution.
 const BLOCK_SIZE = 64;
 
-// Packs one small uniform struct per block into a single shared buffer
-// (at `blockIndex * stride`) instead of allocating numBlocks separate tiny
-// buffers — measured CPU-side overhead (buffer/bind-group setup, not actual
-// GPU compute) was 66-83% of total wall-clock time before this, dominated
-// by the O(numBlocks) createBuffer/writeBuffer calls the old per-block loop
-// made. `stride` must be a multiple of the device's uniform offset alignment
-// (device.limits.minUniformBufferOffsetAlignment) so each block's slot is a
-// valid fixed-offset binding.
+// One shared buffer holds all blocks' params (offset blockIndex*stride) instead of one buffer per block — avoids the O(numBlocks) createBuffer/writeBuffer calls that dominated CPU time.
 function packBlockParams(numBlocks, stride, fieldsPerBlock) {
   const data = new ArrayBuffer(numBlocks * stride);
   const view = new DataView(data);
@@ -49,21 +38,21 @@ function createSharedParamsBuffer(device, data, label) {
   return buffer;
 }
 
-export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
+export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layout = "row-major") {
   const xIsGpu = x instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
-  const isLower = uplo === "lower";
-  const isNoTrans = trans === "no-transpose";
   const isUnit = diag === "unit";
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
-  if (!isLower && uplo !== "upper")
+  if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
-  if (!isNoTrans && trans !== "transpose")
+  if (trans !== "no-transpose" && trans !== "transpose")
     throw new Error("trans must be 'no-transpose' or 'transpose'.");
   if (!isUnit && diag !== "non-unit")
     throw new Error("diag must be 'unit' or 'non-unit'.");
+  if (layout !== "row-major" && layout !== "column-major")
+    throw new Error("layout must be 'row-major' or 'column-major'.");
   if (!Number.isInteger(n) || !Number.isInteger(incx) || !Number.isInteger(lda))
     throw new Error("n, incx, and lda must be integers.");
   if (incx <= 0) throw new Error("incx must be positive.");
@@ -89,6 +78,12 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx) {
     throw new Error(
       "x does not have enough elements for the given n and incx.",
     );
+
+  // GpuMatrix's own layout wins over the argument; column-major A reinterpreted row-major is A^T, so flip both uplo and trans to reproduce the requested system.
+  const effLayout = AIsGpu ? A.layout : layout;
+  const isColMajor = effLayout === "column-major";
+  const isLower = isColMajor ? uplo === "upper" : uplo === "lower";
+  const isNoTrans = isColMajor ? trans === "transpose" : trans === "no-transpose";
 
   const invertPipeline = await getPipeline(device, "strsv_invert_block");
   const applyPipeline = await getPipeline(device, "strsv_apply_inverse");

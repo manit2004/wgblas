@@ -13,24 +13,17 @@ import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy) {
+export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, layout = "row-major") {
+  const AIsGpu = A instanceof GpuMatrix;
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
-  const AIsGpu = A instanceof GpuMatrix;
-  const isNoTrans = trans === "no-transpose";
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
-  if (!isNoTrans && trans !== "transpose")
+  if (trans !== "no-transpose" && trans !== "transpose")
     throw new Error("trans must be 'no-transpose' or 'transpose'.");
-  if (
-    !Number.isInteger(m) ||
-    !Number.isInteger(n) ||
-    !Number.isInteger(incx) ||
-    !Number.isInteger(incy) ||
-    !Number.isInteger(lda)
-  )
-    throw new Error("m, n, incx, incy, and lda must be integers.");
+  if (layout !== "row-major" && layout !== "column-major")
+    throw new Error("layout must be 'row-major' or 'column-major'.");
   if (typeof alpha !== "number")
     throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
@@ -39,9 +32,16 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     throw new Error("beta must be a number.");
   if (Number.isNaN(beta)) throw new Error("beta must not be NaN.");
   if (!Number.isFinite(beta)) throw new Error("beta must be finite.");
+  if (
+    !Number.isInteger(m) ||
+    !Number.isInteger(n) ||
+    !Number.isInteger(incx) ||
+    !Number.isInteger(incy) ||
+    !Number.isInteger(lda)
+  )
+    throw new Error("m, n, incx, incy, and lda must be integers.");
   if (incx <= 0 || incy <= 0)
     throw new Error("incx and incy must be positive.");
-  if (lda < n) throw new Error("lda must be >= n.");
   if (!AIsGpu && !(A instanceof Float32Array))
     throw new Error("A must be a Float32Array or GpuMatrix.");
   if (!xIsGpu && !(x instanceof Float32Array))
@@ -65,11 +65,20 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
   if (m < 0 || n < 0) throw new Error("m and n must be non-negative.");
   if (m === 0 || n === 0) return yIsGpu ? {} : { y };
 
-  // NoTrans: x has n elements, y has m elements
-  // Trans:   x has m elements, y has n elements
+  // Column-major A reinterpreted row-major is A^T — swap to the kernel's
+  // view of m/n/trans now that the shape checks above are done.
+  const effLayout = AIsGpu ? A.layout : layout;
+  if (effLayout === "column-major") {
+    [m, n] = [n, m];
+    trans = trans === "no-transpose" ? "transpose" : "no-transpose";
+  }
+  const isNoTrans = trans === "no-transpose";
+
+  // NoTrans: x has n elements, y has m elements; Trans: x has m elements, y has n elements.
   const xLen = isNoTrans ? n : m;
   const yLen = isNoTrans ? m : n;
 
+  if (lda < n) throw new Error("lda must be >= n.");
   if (!AIsGpu && A.length < (m - 1) * lda + n)
     throw new Error(
       "A does not have enough elements for the given m, n, and lda.",
@@ -110,9 +119,7 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
       paramsBuffer,
     ]);
 
-    // NoTrans: one workgroup per row; clamped to device limit — the shader's
-    // grid-stride loop handles remaining rows when m > dispatch count.
-    // Trans:   one thread per output column → dispatch ceil(n/64)
+    // NoTrans: one workgroup per row (grid-stride handles overflow); Trans: one thread per output column.
     const wgCount = isNoTrans
       ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
       : calcWorkgroups(yLen);

@@ -21,8 +21,9 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * @param incx   - stride for x (must be a positive integer)
  * @param y      - Float32Array input vector, length at least (n-1)*incy+1
  * @param incy   - stride for y (must be a positive integer)
- * @param A      - Float32Array or GpuMatrix, row-major, at least (m-1)*lda+n elements
- * @param lda    - leading dimension of A (>= n)
+ * @param A      - Float32Array, row-major or column-major (see `layout`), at least (m-1)*lda+n elements
+ * @param lda    - leading dimension of A (>= n for row-major, >= m for column-major)
+ * @param layout - storage layout of `A` (default: `'row-major'`)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sger/sger.mjs#L15">Source code: sger.mjs (L15)</a>
  * @category BLAS Level 2
  */
@@ -35,14 +36,17 @@ export declare function sger(
   incx: number,
   y: Float32Array,
   incy: number,
-  A: Float32Array | GpuMatrix,
+  A: Float32Array,
   lda: number,
+  layout?: 'row-major' | 'column-major',
 ): Promise<{ A: Float32Array; gpuTimeMs?: number }>;
 
 /**
  * Performs the rank-1 update A = alpha * x * y^T + A
  *
- * A is kept GPU-resident; x and y are CPU Float32Arrays.
+ * A is kept GPU-resident; x and y are CPU Float32Arrays. `A`'s own `layout`
+ * (set at `GpuMatrix.from` time) determines the operation — there is no
+ * separate `layout` argument here.
  *
  * @param device - GPUDevice from `init()`
  * @param m      - number of rows in A
@@ -52,7 +56,7 @@ export declare function sger(
  * @param incx   - stride for x (must be a positive integer)
  * @param y      - Float32Array input vector
  * @param incy   - stride for y (must be a positive integer)
- * @param A      - GpuMatrix, row-major, GPU-resident
+ * @param A      - GpuMatrix, GPU-resident
  * @param lda    - leading dimension of A (must equal A.lda)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sger/sger.mjs#L15">Source code: sger.mjs (L15)</a>
  * @category BLAS Level 2
@@ -68,12 +72,14 @@ export declare function sger(
   incy: number,
   A: GpuMatrix,
   lda: number,
-): Promise<{ A: Float32Array; gpuTimeMs?: number }>;
+): Promise<{ gpuTimeMs?: number }>;
 
 /**
  * Performs the rank-1 update A = alpha * x * y^T + A
  *
- * x, y, and A are all kept resident on the GPU.
+ * x, y, and A are all kept resident on the GPU. `A`'s own `layout` (set at
+ * `GpuMatrix.from` time) determines the operation — there is no separate
+ * `layout` argument here.
  *
  * {@includeCode ../../examples/sger/gpuvec.sger.js}
  *
@@ -85,7 +91,7 @@ export declare function sger(
  * @param incx   - stride for x (must be a positive integer)
  * @param y      - GpuVector input vector (not mutated)
  * @param incy   - stride for y (must be a positive integer)
- * @param A      - GpuMatrix, row-major, mutated in place
+ * @param A      - GpuMatrix, mutated in place
  * @param lda    - leading dimension of A (must equal A.lda)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sger/sger.mjs#L15">Source code: sger.mjs (L15)</a>
  * @category BLAS Level 2
