@@ -2,6 +2,14 @@ import { init, cleanup } from "wgblas";
 import { sger } from "wgblas/sger";
 import { randomFloat32Array } from "wgblas/random";
 
+// Reshapes a flat row-major array into rows for console.table's 2D grid view.
+function toMatrix(A, rows, cols, lda = cols) {
+  const out = [];
+  for (let r = 0; r < rows; r++)
+    out.push(Array.from(A.subarray(r * lda, r * lda + cols), (v) => +v.toFixed(4)));
+  return out;
+}
+
 const device = await init();
 
 // 4×5 rank-1 update; lda = n
@@ -13,7 +21,9 @@ const A = randomFloat32Array(m * lda, -10, 10);
 
 console.log("x:", x);
 console.log("y:", y);
-console.log("A (before):", A);
+console.log("A (before):");
+console.table(toMatrix(A, m, n, lda));
 const { A: result } = await sger(device, m, n, alpha, x, 1, y, 1, A, lda);
-console.log("A (after):", result);
+console.log("A (after):");
+console.table(toMatrix(result, m, n, lda));
 if (typeof process !== "undefined") cleanup();
