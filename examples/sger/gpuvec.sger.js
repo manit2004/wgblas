@@ -21,7 +21,7 @@ const A = randomFloat32Array(m * n, -10, 10);
 
 const xGpu = GpuVector.from(x);
 const yGpu = GpuVector.from(y);
-const AGpu = GpuMatrix.from(A, m, n);
+const AGpu = GpuMatrix.from(A, m, n, n, "row-major");
 
 console.log("x:", x);
 console.log("y:", y);

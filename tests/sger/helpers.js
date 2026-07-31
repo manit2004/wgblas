@@ -6,7 +6,7 @@ export function forwardFactor(gpu, ref, a) {
     const xi = a.x[i * a.incx];
     for (let j = 0; j < a.n; j++) {
       const yj = a.y[j * a.incy];
-      const idx = i * a.lda + j;
+      const idx = a.layout === "column-major" ? j * a.lda + i : i * a.lda + j;
       const bound = eps * (Math.abs(a.alpha * xi * yj) + Math.abs(a.A[idx]));
       const err = Math.abs(gpu.A[idx] - ref.A[idx]);
       if (bound > 0) maxFactor = Math.max(maxFactor, err / bound);

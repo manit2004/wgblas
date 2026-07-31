@@ -12,16 +12,17 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, incy) {
+export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, incy, layout = "row-major") {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
-  const isLower = uplo === "lower";
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
-  if (!isLower && uplo !== "upper")
+  if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
+  if (layout !== "row-major" && layout !== "column-major")
+    throw new Error("layout must be 'row-major' or 'column-major'.");
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -73,6 +74,10 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     throw new Error(
       "y does not have enough elements for the given n and incy.",
     );
+
+  // GpuMatrix's own layout wins over the argument; A is symmetric, so column-major A reinterpreted row-major just flips which triangle is stored — flip uplo to match.
+  const effLayout = AIsGpu ? A.layout : layout;
+  const isLower = effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
 
   const pipeline = await getPipeline(device, "ssymv");
 

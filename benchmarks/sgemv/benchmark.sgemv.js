@@ -9,6 +9,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  toColumnMajor,
 } from "../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -31,11 +32,11 @@ printHeader(COLS);
 for (const size of SIZES) {
   const m = size;
   const n = size;
-  const lda = n;
+  const lda = m; // column-major: lda >= m, matching cuBLAS's native layout
   const alpha = 1.0;
   const beta = 0.0;
 
-  const AGpu = GpuMatrix.from(randomFloat32Array(m * n), m, n, lda);
+  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * n), m, n), m, n, lda, "column-major");
   const xGpu = GpuVector.from(randomFloat32Array(n));
   const yGpu = GpuVector.from(new Float32Array(m));
 

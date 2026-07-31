@@ -18,10 +18,13 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * @param trans  - `'no-transpose'` to solve A*x=b, `'transpose'` to solve A^T*x=b
  * @param diag   - `'unit'` to treat the diagonal as all-ones (A's diagonal is not read), `'non-unit'` to read it
  * @param n      - order of the matrix A (number of rows and columns)
- * @param A      - Float32Array or GpuMatrix, row-major, at least (n-1)*lda+n elements
- * @param lda    - leading dimension of A (>= n)
+ * @param A      - Float32Array, row-major or column-major (see `layout`), at least (n-1)*lda+n elements
+ * @param lda    - leading dimension of A (>= n either way — A is square)
  * @param x      - Float32Array holding b on input, the solution on output; length at least (n-1)*incx+1
  * @param incx   - stride for x (must be a positive integer)
+ * @param layout - storage layout of `A` (default: `'row-major'`); column-major
+ *   flips both the stored triangle and the effective `trans` (the system
+ *   being solved stays what you asked for either way)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/strsv/strsv.mjs#L15">Source code: strsv.mjs (L15)</a>
  * @category BLAS Level 2
  */
@@ -31,23 +34,26 @@ export declare function strsv(
   trans: 'no-transpose' | 'transpose',
   diag: 'unit' | 'non-unit',
   n: number,
-  A: Float32Array | GpuMatrix,
+  A: Float32Array,
   lda: number,
   x: Float32Array,
   incx: number,
+  layout?: 'row-major' | 'column-major',
 ): Promise<{ x: Float32Array; gpuTimeMs?: number }>;
 
 /**
  * Solves the triangular system op(A) * x = b for x, in place.
  *
- * A is kept GPU-resident; x is a CPU Float32Array.
+ * A is kept GPU-resident; x is a CPU Float32Array. `A`'s own `layout` (set at
+ * `GpuMatrix.from` time) determines the operation — there is no separate
+ * `layout` argument here.
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
  * @param trans  - `'no-transpose'` to solve A*x=b, `'transpose'` to solve A^T*x=b
  * @param diag   - `'unit'` to treat the diagonal as all-ones (A's diagonal is not read), `'non-unit'` to read it
  * @param n      - order of the matrix A
- * @param A      - GpuMatrix, row-major, GPU-resident
+ * @param A      - GpuMatrix, GPU-resident
  * @param lda    - leading dimension of A (must equal A.lda)
  * @param x      - Float32Array holding b on input, the solution on output
  * @param incx   - stride for x (must be a positive integer)
@@ -69,7 +75,9 @@ export declare function strsv(
 /**
  * Solves the triangular system op(A) * x = b for x, in place.
  *
- * x is kept resident on the GPU (mutated in place). A must be a GpuMatrix.
+ * x is kept resident on the GPU (mutated in place). A must be a GpuMatrix;
+ * its own `layout` (set at `GpuMatrix.from` time) determines the operation —
+ * there is no separate `layout` argument here.
  *
  * {@includeCode ../../examples/strsv/gpuvec.strsv.js}
  *
@@ -78,7 +86,7 @@ export declare function strsv(
  * @param trans  - `'no-transpose'` to solve A*x=b, `'transpose'` to solve A^T*x=b
  * @param diag   - `'unit'` to treat the diagonal as all-ones (A's diagonal is not read), `'non-unit'` to read it
  * @param n      - order of the matrix A
- * @param A      - GpuMatrix, row-major, GPU-resident
+ * @param A      - GpuMatrix, GPU-resident
  * @param lda    - leading dimension of A (must equal A.lda)
  * @param x      - GpuVector holding b on input, the solution on output (mutated in place)
  * @param incx   - stride for x (must be a positive integer)

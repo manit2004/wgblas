@@ -12,6 +12,7 @@ import { padMatrix, withGpuResources } from "../../helpers/gpustorage.js";
 import { strsvReference as stdlibReference } from "../../helpers/stdlib.js";
 import { backwardResidualFactor } from "../helpers.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
+import edgeCasesColumnMajor from "../edge-cases-column-major.json" with { type: "json" };
 
 const NUM_RUNS = 100;
 const THRESHOLD = 2;
@@ -44,15 +45,20 @@ const validationSpecs = {
   lda:    loadParam("lda"),
   x:      { ...loadParam("x"), dependsOn: ["n", "incx"] },
   incx:   loadParam("incx"),
+  layout: loadParam("layout"),
 };
 
 // Cap n for fixtures — validationSpecs allows up to 1000, which makes property tests slow.
 const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
 
+// GpuMatrix's own layout wins over strsv's layout arg, so a GPU-resident A
+// never passes `layout` to strsv() itself — only to GpuMatrix.from. A is
+// square (n×n), so the padMatrix outer count (n) doesn't change with layout.
 async function callGpuResident(dev, a) {
+  const layout = a.layout ?? "row-major";
   return withGpuResources(
     {
-      A: GpuMatrix.from(padMatrix(a.A, a.n, a.lda), a.n, a.n, a.lda),
+      A: GpuMatrix.from(padMatrix(a.A, a.n, a.lda), a.n, a.n, a.lda, layout),
       x: GpuVector.from(a.x),
     },
     async ({ A, x }) => {
@@ -88,6 +94,27 @@ test("strsv edge cases (GPU-resident)", async (t) => {
         lda: c.lda,                   // leading dimension (row stride) of A
         x: new Float32Array(c.x),     // holds b on input, the solution on output
         incx: c.incx,                 // stride through x
+      };
+      const { x: got } = await callGpuResident(device, a); // GPU result
+      const { x: expected } = stdlibReference(a); // stdlib result
+      assert.deepEqual(got, expected);
+    });
+  }
+});
+
+test("strsv edge cases (GPU-resident, column-major)", async (t) => {
+  for (const c of edgeCasesColumnMajor) {
+    await t.test(c.label, async () => {
+      const a = {
+        uplo: c.uplo,                 // which triangle of A is stored
+        trans: c.trans,               // whether to use A or Aᵀ
+        diag: c.diag,                 // unit (diagonal implicitly 1) or non-unit (read from A)
+        n: c.n,                       // matrix dimension (n×n)
+        A: new Float32Array(c.A),     // matrix, column-major, size n*lda
+        lda: c.lda,                   // leading dimension (column stride) of A
+        x: new Float32Array(c.x),     // holds b on input, the solution on output
+        incx: c.incx,                 // stride through x
+        layout: c.layout,             // "column-major"
       };
       const { x: got } = await callGpuResident(device, a); // GPU result
       const { x: expected } = stdlibReference(a); // stdlib result

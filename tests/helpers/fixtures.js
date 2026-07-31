@@ -181,11 +181,16 @@ export function buildArb(specs, extras = {}) {
     Object.fromEntries(scalarEntries.map(([k, s]) => [k, paramArb(s)]))
   );
 
-  // For L2, chain lda in [n, n + ldaPad] so lda >= n is always satisfied.
+  // For L2, chain lda in [floor, floor + ldaPad] so lda >= n (row-major) or
+  // lda >= m (column-major) is always satisfied — same swap ndArrayLen uses.
+  // Symmetric/triangular routines (ssymv, ssyr, strmv, ...) have no `m` —
+  // square matrices need lda >= n regardless of layout, so `s.m ?? s.n` falls
+  // back correctly.
   const dimsArb = isL2 && specs.lda
     ? scalarRec.chain((s) => {
         const ldaPad = specs.lda.range.max - specs.lda.range.min;
-        return fc.integer({ min: s.n, max: s.n + ldaPad }).map((lda) => ({ ...s, lda }));
+        const ldaFloor = s.layout === "column-major" ? (s.m ?? s.n) : s.n;
+        return fc.integer({ min: ldaFloor, max: ldaFloor + ldaPad }).map((lda) => ({ ...s, lda }));
       })
     : scalarRec;
 

@@ -45,17 +45,17 @@ int main(void) {
         CUDA_CHECK(cudaEventCreate(&stop));
 
         // warm up
-        // h_A is row-major lower triangular; cuBLAS is column-major, so row-major
-        // lower = column-major upper → use CUBLAS_FILL_MODE_UPPER.
+        // d_A is genuinely column-major — cuBLAS's native layout, so
+        // FILL_MODE_LOWER reads the same triangle wgblas's "lower" reads.
         for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
+            CUBLAS_CHECK(cublasSsymv(handle, CUBLAS_FILL_MODE_LOWER, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
         }
         CUDA_CHECK(cudaDeviceSynchronize());
 
         float compute_times[BENCH_ITERS];
         for (int i = 0; i < BENCH_ITERS; i++) {
             CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
+            CUBLAS_CHECK(cublasSsymv(handle, CUBLAS_FILL_MODE_LOWER, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
             CUDA_CHECK(cudaEventRecord(stop, 0));
             CUDA_CHECK(cudaEventSynchronize(stop));
             CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));

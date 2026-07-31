@@ -12,16 +12,17 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda) {
+export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda, layout = "row-major") {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
-  const isLower = uplo === "lower";
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
-  if (!isLower && uplo !== "upper")
+  if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
+  if (layout !== "row-major" && layout !== "column-major")
+    throw new Error("layout must be 'row-major' or 'column-major'.");
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -67,6 +68,10 @@ export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda) {
     throw new Error("x does not have enough elements for the given n and incx.");
   if (y.length < (n - 1) * incy + 1)
     throw new Error("y does not have enough elements for the given n and incy.");
+
+  // GpuMatrix's own layout wins over the argument; A is symmetric, so column-major A reinterpreted row-major just flips which triangle is stored (no x/y swap needed — x*y^T+y*x^T is already symmetric under swapping them).
+  const effLayout = AIsGpu ? A.layout : layout;
+  const isLower = effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
 
   const pipeline = await getPipeline(device, "ssyr2");
 

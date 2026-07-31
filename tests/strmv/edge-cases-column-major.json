@@ -1,0 +1,74 @@
+[
+  {
+    "label": "[column-major] lower no-transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 2, "A": [1, 2, 99, 3], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "incy": 1
+  },
+  {
+    "label": "[column-major] upper no-transpose",
+    "layout": "column-major",
+    "uplo": "upper", "trans": "no-transpose", "diag": "non-unit",
+    "n": 2, "A": [1, 99, 2, 3], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "incy": 1
+  },
+  {
+    "label": "[column-major] lower transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "transpose", "diag": "non-unit",
+    "n": 2, "A": [1, 2, 99, 3], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "incy": 1
+  },
+  {
+    "label": "[column-major] upper transpose",
+    "layout": "column-major",
+    "uplo": "upper", "trans": "transpose", "diag": "non-unit",
+    "n": 2, "A": [1, 99, 2, 3], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "incy": 1
+  },
+  {
+    "label": "[column-major] n=1 lower",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 1, "A": [5], "lda": 1,
+    "x": [2], "incx": 1,
+    "incy": 1
+  },
+  {
+    "label": "[column-major] incx=2 lower no-transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 3, "A": [1, 0, 0, 0, 1, 0, 0, 0, 1], "lda": 3,
+    "x": [1, 99, 2, 99, 3], "incx": 2,
+    "incy": 1
+  },
+  {
+    "label": "[column-major] incy=2 lower no-transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 2, "A": [1, 2, 0, 3], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "incy": 2
+  },
+  {
+    "label": "[column-major] unit diag lower no-transpose",
+    "layout": "column-major",
+    "uplo": "lower", "trans": "no-transpose", "diag": "unit",
+    "n": 2, "A": [99, 2, 0, 99], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "incy": 1
+  },
+  {
+    "label": "[column-major] unit diag upper transpose",
+    "layout": "column-major",
+    "uplo": "upper", "trans": "transpose", "diag": "unit",
+    "n": 2, "A": [99, 0, 2, 99], "lda": 2,
+    "x": [1, 1], "incx": 1,
+    "incy": 1
+  }
+]

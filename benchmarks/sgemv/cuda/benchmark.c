@@ -30,7 +30,7 @@ int main(void) {
     for (int si = 0; si < num_sizes; si++) {
         int m = sizes[si];
         int n = sizes[si];
-        int lda = n; // row-major, dense
+        int lda = m; // column-major, dense — cuBLAS's native layout
 
         float *h_A = random_float_array(m * n, -1.0f, 1.0f);
         float *h_x = random_float_array(n, -1.0f, 1.0f);
@@ -49,17 +49,17 @@ int main(void) {
         CUDA_CHECK(cudaEventCreate(&stop));
 
         // warm up
+        // d_A is genuinely column-major m×n (lda=m) — cuBLAS's native layout,
+        // so a plain CUBLAS_OP_N call computes y = alpha*A*x + beta*y directly.
         for (int i = 0; i < WARMUP_ITERS; i++) {
-            // h_A is row-major m×n; CUBLAS is column-major, so pass as column-major
-            // n×m with CUBLAS_OP_T to compute y = alpha * A_rowmajor * x + beta * y.
-            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_T, n, m, &alpha, d_A, n, d_x, 1, &beta, d_y, 1));
+            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_N, m, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
         }
         CUDA_CHECK(cudaDeviceSynchronize());
 
         float compute_times[BENCH_ITERS];
         for (int i = 0; i < BENCH_ITERS; i++) {
             CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_T, n, m, &alpha, d_A, n, d_x, 1, &beta, d_y, 1));
+            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_N, m, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
             CUDA_CHECK(cudaEventRecord(stop, 0));
             CUDA_CHECK(cudaEventSynchronize(stop));
             CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));

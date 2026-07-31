@@ -11,6 +11,6 @@ const b = randomFloat32Array(n, -10, 10);
 
 console.log("A (lower triangle):", A);
 console.log("b:", b);
-const { x } = await strsv(device, "lower", "no-transpose", "non-unit", n, A, lda, Float32Array.from(b), 1);
+const { x } = await strsv(device, "lower", "no-transpose", "non-unit", n, A, lda, Float32Array.from(b), 1, "row-major");
 console.log("x (solves A*x = b):", x);
 if (typeof process !== "undefined") cleanup();

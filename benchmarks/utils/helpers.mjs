@@ -62,6 +62,24 @@ export function saveResults(routineName, gpuModel, results) {
 }
 
 /**
+ * Transposes a flat row-major rows×cols array into flat column-major storage
+ * (lda = rows) — column-major storage of A is just row-major storage of Aᵀ.
+ * Used so the Level 2 benchmarks can feed genuinely column-major data to
+ * `GpuMatrix.from(..., "column-major")`, matching cuBLAS's native layout.
+ * @param A - Float32Array, row-major, rows×cols, densely packed (lda = cols)
+ * @param rows - number of logical rows
+ * @param cols - number of logical columns
+ * @returns Float32Array, column-major, rows×cols, densely packed (lda = rows)
+ */
+export function toColumnMajor(A, rows, cols) {
+  const out = new Float32Array(rows * cols);
+  for (let i = 0; i < rows; i++)
+    for (let j = 0; j < cols; j++)
+      out[j * rows + i] = A[i * cols + j];
+  return out;
+}
+
+/**
  * Returns the median value of a numeric array.
  * Copies the array before sorting so the original is not mutated.
  * @param arr - array of numbers

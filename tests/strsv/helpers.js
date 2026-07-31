@@ -7,12 +7,16 @@ const eps = 2 ** -23;
 // solve. So instead of comparing x to a reference, plug it back into op(A)*x
 // and check the residual against b.
 export function backwardResidualFactor(gpu, ref, a) {
-  const { uplo, trans, diag, n, A, lda, incx } = a;
+  const { uplo, trans, diag, n, A, lda, incx, layout } = a;
   const b = a.x; // original right-hand side (strsv solves in place)
   const isLower = uplo === "lower";
   const isNoTrans = trans === "no-transpose";
   const isUnit = diag === "unit";
-  const elem = (r, c) => (isUnit && r === c ? 1 : A[r * lda + c]);
+  // A[row,col] flat index — column-major storage swaps which dimension lda strides over.
+  const at = layout === "column-major"
+    ? (row, col) => A[col * lda + row]
+    : (row, col) => A[row * lda + col];
+  const elem = (r, c) => (isUnit && r === c ? 1 : at(r, c));
 
   let maxFactor = 0;
   for (let i = 0; i < n; i++) {

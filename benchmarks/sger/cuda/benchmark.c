@@ -26,7 +26,7 @@ int main(void) {
     for (int si = 0; si < num_sizes; si++) {
         int m = sizes[si];
         int n = sizes[si];
-        int lda = n; // row-major, dense
+        int lda = m; // column-major, dense — cuBLAS's native layout
 
         float *h_x = random_float_array(m, -1.0f, 1.0f);
         float *h_y = random_float_array(n, -1.0f, 1.0f);
@@ -44,20 +44,17 @@ int main(void) {
         CUDA_CHECK(cudaEventCreate(&start));
         CUDA_CHECK(cudaEventCreate(&stop));
 
-        // h_A is row-major m×n; cuBLAS is column-major, so the same buffer (ld=lda)
-        // reinterpreted column-major is A^T (n×m). Since (A += alpha*x*y^T)^T is
-        // (A^T += alpha*y*x^T), swapping x/y and m/n reproduces the row-major
-        // update directly — sger has no transpose flag to juggle, unlike
-        // strmv/ssymv/sgemv.
+        // d_A is genuinely column-major m×n (lda=m) — cuBLAS's native layout,
+        // so a plain call computes A += alpha*x*y^T directly, no swap needed.
         for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasSger(handle, n, m, &alpha, d_y, 1, d_x, 1, d_A, lda));
+            CUBLAS_CHECK(cublasSger(handle, m, n, &alpha, d_x, 1, d_y, 1, d_A, lda));
         }
         CUDA_CHECK(cudaDeviceSynchronize());
 
         float compute_times[BENCH_ITERS];
         for (int i = 0; i < BENCH_ITERS; i++) {
             CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSger(handle, n, m, &alpha, d_y, 1, d_x, 1, d_A, lda));
+            CUBLAS_CHECK(cublasSger(handle, m, n, &alpha, d_x, 1, d_y, 1, d_A, lda));
             CUDA_CHECK(cudaEventRecord(stop, 0));
             CUDA_CHECK(cudaEventSynchronize(stop));
             CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));

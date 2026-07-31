@@ -38,13 +38,12 @@ int main(void) {
         CUDA_CHECK(cudaEventCreate(&stop));
 
         // cublasStrsv solves op(A)*x = b in place (b on input, x on output).
-        // h_A is row-major lower triangular; cuBLAS is column-major, so row-major
-        // lower = column-major upper → use CUBLAS_FILL_MODE_UPPER. That same
-        // reinterpretation also transposes the logical matrix, so CUBLAS_OP_T
-        // undoes it and yields the requested no-transpose op(A) = A.
+        // d_A is genuinely column-major — cuBLAS's native layout, so
+        // FILL_MODE_LOWER + OP_N read the same op(A) = A wgblas's
+        // "lower"/"no-transpose" reads, no reinterpretation trick needed.
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice));
-            CUBLAS_CHECK(cublasStrsv(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, n, d_A, lda, d_x, 1));
+            CUBLAS_CHECK(cublasStrsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, d_A, lda, d_x, 1));
         }
         CUDA_CHECK(cudaDeviceSynchronize());
 
@@ -52,7 +51,7 @@ int main(void) {
         for (int i = 0; i < BENCH_ITERS; i++) {
             CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice));
             CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasStrsv(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, n, d_A, lda, d_x, 1));
+            CUBLAS_CHECK(cublasStrsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, d_A, lda, d_x, 1));
             CUDA_CHECK(cudaEventRecord(stop, 0));
             CUDA_CHECK(cudaEventSynchronize(stop));
             CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));

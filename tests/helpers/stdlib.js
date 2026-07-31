@@ -5,9 +5,8 @@
 // shape gets one factory below and every routine just supplies its stdlib
 // function (and any extra args the shape doesn't already cover).
 //
-// strmv is the one routine with a genuinely unique shape (it solves in
-// place on x, then remaps that into y's shape) — its reference stays next
-// to its forwardFactor in tests/strmv/helpers.js instead of living here.
+// strmv has a genuinely unique shape (it solves in place on x, then remaps
+// that into y's shape), so it's a standalone export rather than a factory.
 import stdlibSscal from "@stdlib/blas-base-sscal";
 import stdlibSswap from "@stdlib/blas-base-sswap";
 import stdlibSaxpy from "@stdlib/blas-base-saxpy";
@@ -21,6 +20,7 @@ import stdlibSrot from "@stdlib/blas-base-srot";
 import stdlibSrotm from "@stdlib/blas-base-srotm";
 import stdlibSgemv from "@stdlib/blas-base-sgemv";
 import stdlibSsymv from "@stdlib/blas-base-ssymv";
+import stdlibStrmv from "@stdlib/blas-base-strmv";
 import stdlibStrsv from "@stdlib/blas-base-strsv";
 import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
@@ -58,56 +58,61 @@ function makeYReference(stdlibFn, prefix = () => []) {
   };
 }
 
-// ("row-major", ...dims, alpha, A, lda, x, incx, beta, y, incy) mutates only
-// y in place. `dims(a)` supplies the trans/uplo + size args.
+// (order, ...dims, alpha, A, lda, x, incx, beta, y, incy) mutates only y in
+// place. `dims(a)` supplies the trans/uplo + size args. `a.layout` (default
+// "row-major") is forwarded as-is — stdlib's sgemv/ssymv natively support
+// both orders.
 function makeMatVecReference(stdlibFn, dims) {
   return (a) => {
     const out = a.y.slice();
-    stdlibFn("row-major", ...dims(a), a.alpha, a.A.slice(), a.lda, a.x.slice(), a.incx, a.beta, out, a.incy);
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.A.slice(), a.lda, a.x.slice(), a.incx, a.beta, out, a.incy);
     return { y: out };
   };
 }
 
-// ("row-major", ...dims, A, lda, x, incx) mutates only x in place, no
+// (order, ...dims, A, lda, x, incx) mutates only x in place, no
 // alpha/beta/y — strsv's shape (solves op(A)*x=b in place on x). `dims(a)`
-// supplies uplo/trans/diag/n.
+// supplies uplo/trans/diag/n. `a.layout` (default "row-major") is forwarded
+// as-is — stdlib's strsv natively supports both orders.
 function makeMatXReference(stdlibFn, dims) {
   return (a) => {
     const x = a.x.slice();
-    stdlibFn("row-major", ...dims(a), a.A.slice(), a.lda, x, a.incx);
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.A.slice(), a.lda, x, a.incx);
     return { x };
   };
 }
 
-// ("row-major", m, n, alpha, x, incx, y, incy, A, lda) mutates only A in
-// place — sger's shape (rank-1 update, x/y are read-only). `dims(a)` supplies
-// m/n.
+// (order, m, n, alpha, x, incx, y, incy, A, lda) mutates only A in place —
+// sger's shape (rank-1 update, x/y are read-only). `dims(a)` supplies m/n.
+// `a.layout` (default "row-major") is forwarded as-is — stdlib's sger
+// natively supports both orders.
 function makeMatrixReference(stdlibFn, dims) {
   return (a) => {
     const A = a.A.slice();
-    stdlibFn("row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
     return { A };
   };
 }
 
-// ("row-major", uplo, n, alpha, x, incx, A, lda) mutates only A in place —
-// ssyr's shape (symmetric rank-1 update, x is read-only). `dims(a)` supplies
-// uplo/n.
+// (order, uplo, n, alpha, x, incx, A, lda) mutates only A in place — ssyr's
+// shape (symmetric rank-1 update, x is read-only). `dims(a)` supplies uplo/n.
+// `a.layout` (default "row-major") is forwarded as-is — stdlib's ssyr
+// natively supports both orders.
 function makeSymMatrixReference(stdlibFn, dims) {
   return (a) => {
     const A = a.A.slice();
-    stdlibFn("row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, A, a.lda);
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, A, a.lda);
     return { A };
   };
 }
 
-// ("row-major", uplo, n, alpha, x, incx, y, incy, A, lda) mutates only A in
-// place — ssyr2's shape (symmetric rank-2 update, x/y are read-only). `dims(a)`
-// supplies uplo/n.
+// (order, uplo, n, alpha, x, incx, y, incy, A, lda) mutates only A in place —
+// ssyr2's shape (symmetric rank-2 update, x/y are read-only). `dims(a)`
+// supplies uplo/n. `a.layout` (default "row-major") is forwarded as-is.
 function makeSymMatrix2Reference(stdlibFn, dims) {
   return (a) => {
     const A = a.A.slice();
-    stdlibFn("row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
     return { A };
   };
 }
@@ -135,6 +140,19 @@ export const isamaxReference = makeReducerReference(stdlibIsamax);
 
 export const sgemvReference = makeMatVecReference(stdlibSgemv, (a) => [a.trans, a.m, a.n]);
 export const ssymvReference = makeMatVecReference(stdlibSsymv, (a) => [a.uplo, a.n]);
+
+// stdlib's strmv solves in place on x (no separate y, no incy) — this remaps
+// its result into the shape wgblas's API returns: a y-sized array where only
+// y[i*incy] for i in [0,n) is overwritten, everything else stays as it was in a.y.
+// `a.layout` (default "row-major") is forwarded as-is — stdlib's strmv
+// natively supports both orders.
+export function strmvReference(a) {
+  const xCopy = a.x.slice();
+  stdlibStrmv(a.layout ?? "row-major", a.uplo, a.trans, a.diag, a.n, a.A.slice(), a.lda, xCopy, a.incx);
+  const out = new Float32Array(a.y);
+  for (let i = 0; i < a.n; i++) out[i * a.incy] = xCopy[i * a.incx];
+  return { y: out };
+}
 
 export const strsvReference = makeMatXReference(stdlibStrsv, (a) => [a.uplo, a.trans, a.diag, a.n]);
 

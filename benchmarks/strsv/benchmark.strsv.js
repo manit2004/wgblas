@@ -9,6 +9,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  toColumnMajor,
 } from "../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -36,8 +37,12 @@ for (const size of SIZES) {
   const n = size;
   const lda = n;
 
-  // Well-conditioned diagonal (away from 0) — strsv divides by it.
-  const AGpu = GpuMatrix.from(randomTriangularFloat32Array(n, lda, "lower"), n, n, lda);
+  // Well-conditioned diagonal (away from 0) — strsv divides by it. Generated
+  // row-major then transposed to genuine column-major storage of the same
+  // logical (still well-conditioned, still lower-triangular) matrix.
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomTriangularFloat32Array(n, lda, "lower"), n, n), n, n, lda, "column-major",
+  );
   const b = randomFloat32Array(n);
 
   // strsv solves in place, so reset x to b before every call, or later

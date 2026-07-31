@@ -4,24 +4,28 @@
 // part is identical across routines, so it lives here. Each routine still
 // supplies its own call signature and return shape.
 
-// Zero-pads A to rows*lda elements — GpuMatrix.from requires the full
-// rows*lda buffer, but the Float32Array API's A is only sized to the minimum
-// (rows-1)*lda+cols, which is shorter whenever lda > cols. The padding is
-// never read by any shader either way.
-export function padMatrix(A, rows, lda) {
-  const padded = new Float32Array(rows * lda);
+// Zero-pads A to outerCount*lda elements — GpuMatrix.from requires the full
+// outerCount*lda buffer (outerCount is rows for row-major, cols for
+// column-major), but the Float32Array API's A is only sized to the minimum
+// (outerCount-1)*lda+innerCount, which is shorter whenever lda > innerCount.
+// The padding is never read by any shader either way.
+export function padMatrix(A, outerCount, lda) {
+  const padded = new Float32Array(outerCount * lda);
   padded.set(A);
   return padded;
 }
 
-// Inverse of padMatrix: read() strips lda padding to dense rows*cols, but
-// the CPU reference keeps the original strided shape. `original` fills the
-// untouched padding gaps.
-export function unpadMatrix(dense, original, rows, cols, lda) {
-  if (lda === cols) return dense;
+// Inverse of padMatrix: read() strips lda padding to dense rows*cols
+// (row-major) or cols*rows (column-major), but the CPU reference keeps the
+// original strided shape. `original` fills the untouched padding gaps.
+export function unpadMatrix(dense, original, rows, cols, lda, layout = "row-major") {
+  const isRowMajor = layout !== "column-major";
+  const outer = isRowMajor ? rows : cols;
+  const inner = isRowMajor ? cols : rows;
+  if (lda === inner) return dense;
   const out = Float32Array.from(original);
-  for (let r = 0; r < rows; r++)
-    out.set(dense.subarray(r * cols, r * cols + cols), r * lda);
+  for (let i = 0; i < outer; i++)
+    out.set(dense.subarray(i * inner, i * inner + inner), i * lda);
   return out;
 }
 

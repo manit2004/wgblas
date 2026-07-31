@@ -19,7 +19,7 @@ const x = randomFloat32Array(n, -10, 10);
 const A = randomFloat32Array(n * n, -10, 10);
 
 const xGpu = GpuVector.from(x);
-const AGpu = GpuMatrix.from(A, n, n);
+const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
 
 console.log("x:", x);
 console.log("A (before):");

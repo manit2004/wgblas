@@ -1,9 +1,12 @@
 /**
- * Represents a row-major Float32Array matrix stored in GPU memory.
+ * Represents a Float32Array (or Float64Array) matrix stored in GPU memory,
+ * row-major or column-major.
  *
- * The buffer holds `rows * lda` elements. `lda` (leading dimension) is the
- * number of floats between the start of consecutive rows — must be >= `cols`.
- * When `lda === cols` the matrix is dense with no padding.
+ * `rows`/`cols` always describe the logical shape regardless of layout.
+ * `lda` (leading dimension) is the stride between consecutive rows
+ * (row-major) or columns (column-major) — must be >= `cols` (row-major) or
+ * >= `rows` (column-major). When `lda` equals that minimum the matrix is
+ * dense with no padding.
  *
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/classes/GpuMatrix.mjs#L7">Source code: GpuMatrix.mjs (L7)</a>
  * @see [MDN: GPUBuffer](https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer)
@@ -15,28 +18,34 @@ export declare class GpuMatrix {
   /** @internal */
   readonly _buf: GPUBuffer;
 
-  /** Number of rows. */
+  /** Number of rows (logical shape, independent of layout). */
   readonly rows: number;
 
-  /** Number of columns. */
+  /** Number of columns (logical shape, independent of layout). */
   readonly cols: number;
 
-  /** Leading dimension — stride between row starts (>= cols). */
+  /** Leading dimension — stride between row starts (row-major) or column starts (column-major). */
   readonly lda: number;
 
+  /** Storage layout this matrix was created with — every routine that accepts a GpuMatrix reads this automatically. */
+  readonly layout: 'row-major' | 'column-major';
+
   /**
-   * Uploads a row-major Float32Array or Float64Array matrix to GPU memory. A
-   * Float64Array is packed as two f32s per element (WGSL has no f64 type)
-   * and stored across two GPU buffers internally; `read()` reassembles the
-   * original doubles.
+   * Uploads a Float32Array or Float64Array matrix to GPU memory, row-major
+   * or column-major. A Float64Array is packed as two f32s per element (WGSL
+   * has no f64 type) and stored across two GPU buffers internally; `read()`
+   * reassembles the original doubles.
    *
-   * `lda` defaults to `cols` (dense, no padding between rows).
-   * `data` must have at least `rows * lda` elements.
+   * `rows`/`cols` always describe the logical shape regardless of layout.
+   * `lda` defaults to `cols` (row-major) or `rows` (column-major) — dense, no
+   * padding. `data` must have at least `rows * lda` (row-major) or
+   * `cols * lda` (column-major) elements.
    *
-   * @param data - matrix data in row-major order
-   * @param rows - number of rows
-   * @param cols - number of columns
-   * @param lda  - leading dimension (default: cols)
+   * @param data   - matrix data, in the order matching `layout`
+   * @param rows   - number of rows
+   * @param cols   - number of columns
+   * @param lda    - leading dimension (default: `cols` for row-major, `rows` for column-major)
+   * @param layout - storage layout (default: `'row-major'`)
    *
    * @example
    * ```js
@@ -46,15 +55,19 @@ export declare class GpuMatrix {
    * // 2×3 matrix: [[1,2,3],[4,5,6]]
    * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
    * console.log(mat.rows, mat.cols, mat.lda); // 2 3 3
+   *
+   * // Same logical matrix, column-major storage
+   * const matCol = GpuMatrix.from(new Float32Array([1,4,2,5,3,6]), 2, 3, undefined, "column-major");
    * ```
    */
-  static from(data: Float32Array | Float64Array, rows: number, cols: number, lda?: number): GpuMatrix;
+  static from(data: Float32Array | Float64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
 
   /**
-   * Downloads the matrix from GPU memory and returns a dense row-major
-   * array of shape `rows × cols` — a `Float32Array`, or a `Float64Array` if
-   * this matrix was created from one. If `lda > cols`, the leading-dimension
-   * padding is stripped so the returned array is always tightly packed.
+   * Downloads the matrix from GPU memory and returns a dense array of shape
+   * `rows × cols`, in the same layout it was created with — a `Float32Array`,
+   * or a `Float64Array` if this matrix was created from one. If `lda` exceeds
+   * the dense minimum, the leading-dimension padding is stripped so the
+   * returned array is always tightly packed.
    *
    * @example
    * ```js

@@ -12,6 +12,6 @@ const y = new Float32Array(n);
 
 console.log("A (lower triangle):", A);
 console.log("x:", x);
-const { y: result } = await strmv(device, "lower", "no-transpose", "non-unit", n, A, lda, x, 1, y, 1);
+const { y: result } = await strmv(device, "lower", "no-transpose", "non-unit", n, A, lda, x, 1, y, 1, "row-major");
 console.log("y:", result);
 if (typeof process !== "undefined") cleanup();

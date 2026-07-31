@@ -13,6 +13,6 @@ const y = randomFloat32Array(m, -10, 10);
 
 console.log("A:", A);
 console.log("x:", x);
-const { y: result } = await sgemv(device, "no-transpose", m, n, alpha, A, lda, x, 1, beta, y, 1);
+const { y: result } = await sgemv(device, "no-transpose", m, n, alpha, A, lda, x, 1, beta, y, 1, "row-major");
 console.log("y:", result);
 if (typeof process !== "undefined") cleanup();
