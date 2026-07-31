@@ -111,8 +111,13 @@ const SPECIALS = {
  */
 export function ndArrayLen(dependsOn, dims) {
   const deps = new Set(dependsOn ?? []);
-  if (deps.has("lda") && deps.has("m") && deps.has("n"))
-    return (dims.m - 1) * dims.lda + dims.n;
+  if (deps.has("lda") && deps.has("m") && deps.has("n")) {
+    // Column-major storage swaps which dimension lda strides over — A^T
+    // reinterpreted row-major, same trick the routines themselves use.
+    return dims.layout === "column-major"
+      ? (dims.n - 1) * dims.lda + dims.m
+      : (dims.m - 1) * dims.lda + dims.n;
+  }
   // Symmetric matrix (ssymv): square n×n, no separate m
   if (deps.has("lda") && deps.has("n") && !deps.has("m"))
     return Math.max(0, (dims.n - 1) * dims.lda + dims.n);

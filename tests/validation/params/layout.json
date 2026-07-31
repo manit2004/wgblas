@@ -1,0 +1,16 @@
+{
+  "_note": "layout describes how A is stored in memory: 'row-major' (default) or 'column-major'.",
+  "type": "string",
+  "baseline": "row-major",
+  "values": ["row-major", "column-major"],
+  "invalid": [
+    { "value": "row",      "error": "layout must be", "label": "shorthand 'row'" },
+    { "value": "col",      "error": "layout must be", "label": "shorthand 'col'" },
+    { "special": "number", "error": "layout must be", "label": "number" },
+    { "special": "null",   "error": "layout must be", "label": "null" }
+  ],
+  "edge": [
+    { "value": "row-major",    "label": "row-major storage" },
+    { "value": "column-major", "label": "column-major storage" }
+  ]
+}

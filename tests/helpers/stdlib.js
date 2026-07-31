@@ -79,13 +79,14 @@ function makeMatXReference(stdlibFn, dims) {
   };
 }
 
-// ("row-major", m, n, alpha, x, incx, y, incy, A, lda) mutates only A in
-// place — sger's shape (rank-1 update, x/y are read-only). `dims(a)` supplies
-// m/n.
+// (order, m, n, alpha, x, incx, y, incy, A, lda) mutates only A in place —
+// sger's shape (rank-1 update, x/y are read-only). `dims(a)` supplies m/n.
+// `a.layout` (default "row-major") is forwarded as-is — stdlib's sger
+// natively supports both orders.
 function makeMatrixReference(stdlibFn, dims) {
   return (a) => {
     const A = a.A.slice();
-    stdlibFn("row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
     return { A };
   };
 }

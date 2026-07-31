@@ -181,11 +181,13 @@ export function buildArb(specs, extras = {}) {
     Object.fromEntries(scalarEntries.map(([k, s]) => [k, paramArb(s)]))
   );
 
-  // For L2, chain lda in [n, n + ldaPad] so lda >= n is always satisfied.
+  // For L2, chain lda in [floor, floor + ldaPad] so lda >= n (row-major) or
+  // lda >= m (column-major) is always satisfied — same swap ndArrayLen uses.
   const dimsArb = isL2 && specs.lda
     ? scalarRec.chain((s) => {
         const ldaPad = specs.lda.range.max - specs.lda.range.min;
-        return fc.integer({ min: s.n, max: s.n + ldaPad }).map((lda) => ({ ...s, lda }));
+        const ldaFloor = s.layout === "column-major" ? s.m : s.n;
+        return fc.integer({ min: ldaFloor, max: ldaFloor + ldaPad }).map((lda) => ({ ...s, lda }));
       })
     : scalarRec;
 
