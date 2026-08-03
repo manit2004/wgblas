@@ -120,7 +120,7 @@
   "bugs": {
     "url": "https://github.com/manit2004/wgblas/issues"
   },
-  "homepage": "https://github.com/manit2004/wgblas#readme",
+  "homepage": "https://manit2004.github.io/wgblas/",
   "dependencies": {
     "webgpu": "^0.4.0"
   },
