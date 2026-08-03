@@ -1,10 +1,13 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Computes the sum of absolute values of a vector of doubles in double
- * precision: result = sum(|x[i]|). Each element of `x` is packed into a
- * [main, aux] f32 pair (see `packF64`/`GpuVector`) since WGSL has no f64
- * type; accumulation is done with f64add.wgsl's IEEE-754 binary64 addition.
+ * Computes the sum of absolute values of a vector of doubles in extended
+ * precision: result = sum(|x[i]|). Each element of `x` has abs() applied,
+ * then is split into a (hi, lo) double-double f32 pair (see
+ * `splitDoubleDouble`/`f64.mjs`) since WGSL has no f64 type; accumulation
+ * uses Dekker's double-double algorithm (see `shaders/f64/dekker.wgsl`), giving ~48 bits
+ * of mantissa — more than a single f32 (24 bits) but less than true f64
+ * (52 bits), so results are not bit-exact with a CPU double.
  *
  * {@includeCode ../../examples/dasum/dasum.js}
  *

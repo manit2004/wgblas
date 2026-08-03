@@ -76,11 +76,10 @@ export function floatArb(min, max) {
 
 /**
  * A fast-check arbitrary for f64 scalars in `[min, max]`, excluding subnormals.
- * Used for dasum's x (Float64Array): the emulated-f64 kernel still packs each
- * double's "aux" half into a real f32 GPU buffer, so the same FTZ-safety floor
- * as `floatArb` applies. (aux's bits are transported as raw u32, never an
- * actual float value, so unlike an earlier version of this function, no
- * NaN-bit-pattern filter is needed here — see f64pack.mjs.)
+ * Used for dasum's x (Float64Array): the double-double kernel splits each
+ * double into a (hi, lo) f32 pair, so the same FTZ-safety floor as `floatArb`
+ * applies to both halves. hi/lo are always genuine f32 values (never raw
+ * bits), so no NaN-bit-pattern filter is needed here — see f64.mjs.
  * @returns fast-check arbitrary that generates usable f64 scalars
  * @public
  */

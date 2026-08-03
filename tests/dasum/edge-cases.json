@@ -4,5 +4,5 @@
   { "label": "all zeros → 0", "n": 3, "x": [0, 0, 0], "incx": 1 },
   { "label": "n=1 negative element", "n": 1, "x": [-7], "incx": 1 },
   { "label": "incx=2 — only strided elements summed", "n": 3, "x": [1, 99, 2, 99, 3], "incx": 2 },
-  { "label": "values needing double precision — exceeds f32 mantissa", "n": 3, "x": [1.0000000000000002, -2.0000000000000004, 3.0000000000000009], "incx": 1 }
+  { "label": "values exceeding f32 mantissa — within double-double's ULP tolerance, not bit-exact f64", "n": 3, "x": [1.0000000000000002, -2.0000000000000004, 3.0000000000000009], "incx": 1 }
 ]
