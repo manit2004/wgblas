@@ -4,14 +4,15 @@ import {
   createResultBuffer,
   stageReadback,
   destroyBuffers,
+  uploadBuffer,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { runComputePass, submit } from "../util/compute.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
-import { unpackF64 } from "../util/f64pack.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
+import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 
 const WGS = 64; // workgroup size
 
@@ -33,29 +34,34 @@ export async function dasum(device, n, x, incx) {
       "x does not have enough elements for the given n and incx.",
     );
 
-  // dasum.wgsl/reduction/sumF64.wgsl are each concatenated with f64add.wgsl
-  // (reusing its decode/encode/computeSum/Packed — WGSL has no #include).
-  // f64add.wgsl declares no bindings/entry point of its own, so each
-  // concatenated module has exactly one @compute entry — omitting entryPoint
-  // here lets getPipeline auto-detect it, the stable path (see pipeline.mjs).
-  const pipelineMain = await getPipeline(device, ["f64add", "dasum"]);
-  const pipelineReduce = await getPipeline(device, ["f64add", "reduction/sumF64"]);
+  // Concatenated with f64/dekker.wgsl for its DD struct/ddAdd helpers (WGSL
+  // has no #include); entryPoint omitted since each module has only one @compute.
+  const pipelineMain = await getPipeline(device, ["f64/dekker", "dasum"]);
+  const pipelineReduce = await getPipeline(device, ["f64/dekker", "reduction/sumF64"]);
 
-  let xVec = null;
-  let partialsMainBuffer = null;
-  let partialsAuxBuffer = null;
-  let resultMainBuffer = null;
-  let resultAuxBuffer = null;
+  let xHiBuffer = null;
+  let xLoBuffer = null;
+  let partialsHiBuffer = null;
+  let partialsLoBuffer = null;
+  let resultHiBuffer = null;
+  let resultLoBuffer = null;
   let paramsBuffer = null;
-  let readMainBuffer = null;
-  let readAuxBuffer = null;
+  let readHiBuffer = null;
+  let readLoBuffer = null;
 
   try {
-    xVec = xIsGpu ? x : GpuVector.from(x);
-    partialsMainBuffer = createStorageBuffer(2 * WGS * 4, "dasum-partialsMain"); // 2*WGS partial sums, main halves
-    partialsAuxBuffer = createStorageBuffer(2 * WGS * 4, "dasum-partialsAux"); // 2*WGS partial sums, aux halves (raw u32 bits)
-    resultMainBuffer = createResultBuffer(4, "dasum-result-main"); // final main half
-    resultAuxBuffer = createResultBuffer(4, "dasum-result-aux"); // final aux half (raw u32 bits)
+    if (xIsGpu) {
+      xHiBuffer = x._buf;
+      xLoBuffer = x._loBuf;
+    } else {
+      const { hi, lo } = splitDoubleDouble(x.map(Math.abs));
+      xHiBuffer = uploadBuffer(hi, "dasum-xHi", false);
+      xLoBuffer = uploadBuffer(lo, "dasum-xLo", false);
+    }
+    partialsHiBuffer = createStorageBuffer(2 * WGS * 4, "dasum-partialsHi");
+    partialsLoBuffer = createStorageBuffer(2 * WGS * 4, "dasum-partialsLo");
+    resultHiBuffer = createResultBuffer(4, "dasum-result-hi");
+    resultLoBuffer = createResultBuffer(4, "dasum-result-lo");
     paramsBuffer = createParamsBuffer(
       [
         { value: n, type: "u32" },
@@ -66,7 +72,7 @@ export async function dasum(device, n, x, incx) {
 
     const bgMain = createBindGroup(
       pipelineMain.getBindGroupLayout(0),
-      [xVec._buf, xVec._auxBuf, partialsMainBuffer, partialsAuxBuffer, paramsBuffer],
+      [xHiBuffer, xLoBuffer, partialsHiBuffer, partialsLoBuffer, paramsBuffer],
     );
     const { commandEncoder: enc1, ts: ts1 } = runComputePass(
       pipelineMain,
@@ -78,44 +84,45 @@ export async function dasum(device, n, x, incx) {
 
     const bgReduce = createBindGroup(
       pipelineReduce.getBindGroupLayout(0),
-      [partialsMainBuffer, partialsAuxBuffer, resultMainBuffer, resultAuxBuffer],
+      [partialsHiBuffer, partialsLoBuffer, resultHiBuffer, resultLoBuffer],
     );
     const { commandEncoder: enc2, ts: ts2 } = runComputePass(
       pipelineReduce,
       bgReduce,
       1,
     ); // dispatch 1 workgroup to reduce the partial sums to a single result
-    readMainBuffer = stageReadback(enc2, resultMainBuffer);
-    readAuxBuffer = stageReadback(enc2, resultAuxBuffer);
+    readHiBuffer = stageReadback(enc2, resultHiBuffer);
+    readLoBuffer = stageReadback(enc2, resultLoBuffer);
 
     submit(enc2);
 
-    const mainPromise = extractResult(readMainBuffer, Float32Array);
-    const auxPromise = extractResult(readAuxBuffer, Uint32Array);
-    readMainBuffer = null; // ownership transferred — extractResult's own finally destroys it
-    readAuxBuffer = null;
+    const hiPromise = extractResult(readHiBuffer, Float32Array);
+    const loPromise = extractResult(readLoBuffer, Float32Array);
+    readHiBuffer = null; // ownership transferred — extractResult's own finally destroys it
+    readLoBuffer = null;
 
-    const [gpuTime1, gpuTime2, mainArr, auxArr] = await Promise.all([
+    const [gpuTime1, gpuTime2, hiArr, loArr] = await Promise.all([
       extractTimestamp(ts1),
       extractTimestamp(ts2),
-      mainPromise,
-      auxPromise,
+      hiPromise,
+      loPromise,
     ]);
 
     // asum is always a scalar readback — both paths return { asum }
-    const asum = unpackF64(mainArr[0], auxArr[0]);
+    const asum = mergeDoubleDouble(hiArr, loArr)[0];
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { asum, gpuTimeMs: gpuTime1 + gpuTime2 };
     return { asum };
   } finally {
-    if (!xIsGpu && xVec) xVec.destroy();
-    if (partialsMainBuffer) destroyBuffers(partialsMainBuffer);
-    if (partialsAuxBuffer) destroyBuffers(partialsAuxBuffer);
-    if (resultMainBuffer) destroyBuffers(resultMainBuffer);
-    if (resultAuxBuffer) destroyBuffers(resultAuxBuffer);
+    if (!xIsGpu && xHiBuffer) destroyBuffers(xHiBuffer);
+    if (!xIsGpu && xLoBuffer) destroyBuffers(xLoBuffer);
+    if (partialsHiBuffer) destroyBuffers(partialsHiBuffer);
+    if (partialsLoBuffer) destroyBuffers(partialsLoBuffer);
+    if (resultHiBuffer) destroyBuffers(resultHiBuffer);
+    if (resultLoBuffer) destroyBuffers(resultLoBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
     // Only reached if submit(enc2) threw before ownership was transferred above.
-    if (readMainBuffer) destroyBuffers(readMainBuffer);
-    if (readAuxBuffer) destroyBuffers(readAuxBuffer);
+    if (readHiBuffer) destroyBuffers(readHiBuffer);
+    if (readLoBuffer) destroyBuffers(readLoBuffer);
   }
 }

@@ -1,15 +1,12 @@
 import { getDevice } from "../init.mjs";
 import { uploadBuffer, stageReadback } from "../util/buffer.mjs";
 import { extractResult } from "../util/result.mjs";
-import { packF64, unpackF64 } from "../util/f64pack.mjs";
+import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 
 export class GpuMatrix {
-  constructor(buffer, rows, cols, lda, auxBuffer = null, layout = "row-major") {
+  constructor(buffer, rows, cols, lda, loBuffer = null, layout = "row-major") {
     this._buf = buffer;
-    // Non-null only for Float64Array-backed matrices — see GpuVector for why
-    // (packF64 splits each element into a "main"/_buf f32 and "aux"/_auxBuf
-    // raw u32 — never a Float32Array, see f64pack.mjs).
-    this._auxBuf = auxBuffer;
+    this._loBuf = loBuffer; // Non-null only for Float64Array-backed matrices
     this.rows = rows;
     this.cols = cols;
     this.lda  = lda;
@@ -50,16 +47,10 @@ export class GpuMatrix {
 
     if (data instanceof Float64Array) {
       const n = outerCount * lda;
-      const main = new Float32Array(n);
-      const aux = new Uint32Array(n);
-      for (let i = 0; i < n; i++) {
-        const packed = packF64(data[i]);
-        main[i] = packed[0];
-        aux[i] = packed[1];
-      }
-      const mainBuf = uploadBuffer(main, "gpu-matrix-f64-main", true);
-      const auxBuf = uploadBuffer(aux, "gpu-matrix-f64-aux", true);
-      return new GpuMatrix(mainBuf, rows, cols, lda, auxBuf, layout);
+      const { hi, lo } = splitDoubleDouble(data.subarray(0, n));
+      const hiBuf = uploadBuffer(hi, "gpu-matrix-f64-hi", true);
+      const loBuf = uploadBuffer(lo, "gpu-matrix-f64-lo", true);
+      return new GpuMatrix(hiBuf, rows, cols, lda, loBuf, layout);
     }
 
     const buf = uploadBuffer(data.subarray(0, outerCount * lda), "gpu-matrix", true);
@@ -76,17 +67,16 @@ export class GpuMatrix {
     const outerCount = isRowMajor ? this.rows : this.cols;
     const innerLen   = isRowMajor ? this.cols : this.rows;
 
-    if (this._auxBuf) {
-      const encAux = device.createCommandEncoder();
-      const rbAux = stageReadback(encAux, this._auxBuf);
-      device.queue.submit([encAux.finish()]);
+    if (this._loBuf) {
+      const encLo = device.createCommandEncoder();
+      const rbLo = stageReadback(encLo, this._loBuf);
+      device.queue.submit([encLo.finish()]);
 
-      const [main, aux] = await Promise.all([
+      const [hi, lo] = await Promise.all([
         extractResult(rb, Float32Array),
-        extractResult(rbAux, Uint32Array),
+        extractResult(rbLo, Float32Array),
       ]);
-      const raw = new Float64Array(outerCount * this.lda);
-      for (let i = 0; i < raw.length; i++) raw[i] = unpackF64(main[i], aux[i]);
+      const raw = mergeDoubleDouble(hi, lo);
       if (this.lda === innerLen) return raw;
       const out = new Float64Array(outerCount * innerLen);
       for (let r = 0; r < outerCount; r++)
@@ -104,6 +94,6 @@ export class GpuMatrix {
 
   destroy() {
     this._buf.destroy();
-    if (this._auxBuf) this._auxBuf.destroy();
+    if (this._loBuf) this._loBuf.destroy();
   }
 }

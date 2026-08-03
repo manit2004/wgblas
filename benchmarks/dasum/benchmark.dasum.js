@@ -45,7 +45,7 @@ for (const n of SIZES) {
 
   if (times.length === 0) continue;
   const med = median(times);
-  // x read only, but emulated as [main, aux] f32 pairs — 8 bytes/element,
+  // x read only, but emulated as double-double (hi, lo) f32 pairs — 8 bytes/element,
   // matching the memory traffic a real f64 buffer of the same length would need.
   const bytes = n * 8;
   const gbs = bytes / 1e9 / (med / 1e3);

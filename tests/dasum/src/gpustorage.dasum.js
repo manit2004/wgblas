@@ -14,7 +14,7 @@ import { ulpDiff64 } from "../../helpers/ulp.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-const THRESHOLD = 10;
+const THRESHOLD = 64;
 
 let device;
 before(async () => {
@@ -64,7 +64,10 @@ test("dasum edge cases (GPU-resident)", async (t) => {
       };
       const { asum: got } = await callGpuResident(device, a);
       const expected = stdlibReference(a);
-      assert.strictEqual(got, expected);
+      assert.ok(
+        ulpDiff64(got, expected) <= THRESHOLD,
+        `${c.label}: got ${got}, expected ${expected} (ULP diff ${ulpDiff64(got, expected)} > ${THRESHOLD})`,
+      );
     });
   }
 });

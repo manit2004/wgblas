@@ -32,9 +32,12 @@ export declare class GpuMatrix {
 
   /**
    * Uploads a Float32Array or Float64Array matrix to GPU memory, row-major
-   * or column-major. A Float64Array is packed as two f32s per element (WGSL
-   * has no f64 type) and stored across two GPU buffers internally; `read()`
-   * reassembles the original doubles.
+   * or column-major. A Float64Array is split into a double-double (hi, lo)
+   * f32 pair per element (WGSL has no f64 type) and stored across two GPU
+   * buffers internally; `read()` reassembles doubles from these pairs. This
+   * gives ~48 bits of mantissa (vs. 24 for a single f32) but less than true
+   * f64 precision (52 bits), so round-tripped values are not always
+   * bit-exact with the original input.
    *
    * `rows`/`cols` always describe the logical shape regardless of layout.
    * `lda` defaults to `cols` (row-major) or `rows` (column-major) — dense, no

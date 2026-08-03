@@ -1,36 +1,12 @@
-// dasum: result = sum(|x[i]|)
-// pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/sumF64.wgsl.
-// Same structure as sasum.wgsl — every value is now a [main, aux] pair
-// (see src/util/f64pack.mjs) and every `+`/`+=` is computeSum via addPair
-// instead of plain f32 addition. Concatenated after f64add.wgsl by
-// getPipeline (WGSL has no #include), reusing its decode/encode/computeSum/
-// addFields and Packed struct — f64add.wgsl declares no bindings and no entry
-// point of its own (just helper functions), so bindings here start at 0 and
-// the entry point is simply `dasum_main`.
-//
-// xAux/partialsAux are array<u32>, not array<f32> — aux's bits must never
-// pass through an f32-typed storage slot (NaN-bit-pattern corruption risk,
-// see f64pack.mjs and the Packed struct comment above decode()/encode() in
-// f64add.wgsl); Packed (from f64add.wgsl) keeps aux as u32 in registers/
-// workgroup memory too.
-//
-// Per-thread accumulation (acc0..acc3) stays in DECODED Fields form for the
-// entire strided loop below, via addFields — not re-encoded to Packed and
-// re-decoded on every single element like a naive version would. Only the
-// freshly-loaded x[idx] needs decoding each iteration (unavoidable, it's new
-// data every time); the running total never leaves Fields form until the
-// four accumulators are combined and encoded exactly once, right before
-// writing into workgroup-shared `tile`. The cross-thread reduction tree
-// after that still goes through Packed per level (unavoidable — each level
-// combines values that live in different threads' registers via shared
-// memory), but that's a fixed 6 levels regardless of n, unlike the strided
-// loop above whose iteration count scales with n.
+// dasum: sum(|x[i]|), double-double (Dekker). Same ILP=4 shape as sasum.wgsl;
+// see f64/dekker.wgsl for ddAddProtected and why plain ddAdd isn't safe.
+// GpuVector input isn't pre-abs'd, so ddAbs() applies unconditionally below.
 
-@group(0) @binding(0) var<storage, read>       xMain:        array<f32>;
-@group(0) @binding(1) var<storage, read>       xAux:         array<u32>;
-@group(0) @binding(2) var<storage, read_write> partialsMain: array<f32>;
-@group(0) @binding(3) var<storage, read_write> partialsAux:  array<u32>;
-@group(0) @binding(4) var<uniform>             params:       Params;
+@group(0) @binding(0) var<storage, read>       xHi:        array<f32>;
+@group(0) @binding(1) var<storage, read>       xLo:        array<f32>;
+@group(0) @binding(2) var<storage, read_write> partialsHi: array<f32>;
+@group(0) @binding(3) var<storage, read_write> partialsLo: array<f32>;
+@group(0) @binding(4) var<uniform>             params:     Params;
 
 struct Params {
   n:     u32,
@@ -39,21 +15,7 @@ struct Params {
 
 const WGS: u32 = 64;
 
-var<workgroup> tile: array<Packed, 64>;
-
-// a + b, where a/b are [main, aux] pairs — computeSum takes decoded Fields.
-// Only used for the cross-thread reduction tree below; the per-thread
-// strided loop uses addFields directly instead (see module comment).
-fn addPair(a: Packed, b: Packed) -> Packed {
-  return computeSum(decode(bitcast<u32>(a.main), a.aux), decode(bitcast<u32>(b.main), b.aux));
-}
-
-// |x| for a packed double is abs(main) with aux untouched — only main's
-// sign bit carries the double's sign (see fieldsToPacked() in f64pack.mjs).
-// Returns decoded Fields directly (not Packed) for the per-thread loop.
-fn absFields(idx: u32) -> Fields {
-  return decode(bitcast<u32>(abs(xMain[idx])), xAux[idx]);
-}
+var<workgroup> tile: array<DD, 64>;
 
 @compute @workgroup_size(64)
 fn dasum_main(
@@ -62,37 +24,61 @@ fn dasum_main(
   @builtin(workgroup_id)         wgid:   vec3u,
   @builtin(num_workgroups)       num_wg: vec3u,
 ) {
-  var acc0: Fields = Fields(0u, 0u, 0u, 0u);
-  var acc1: Fields = Fields(0u, 0u, 0u, 0u);
-  var acc2: Fields = Fields(0u, 0u, 0u, 0u);
-  var acc3: Fields = Fields(0u, 0u, 0u, 0u);
+  var acc0 = DD(0.0, 0.0);
+  var acc1 = DD(0.0, 0.0);
+  var acc2 = DD(0.0, 0.0);
+  var acc3 = DD(0.0, 0.0);
 
   let stride   = num_wg.x * WGS;
   let n4_floor = (params.n / (4u * stride)) * (4u * stride);
 
-  for (var id = gid.x; id < n4_floor; id += 4u * stride) {
-    acc0 = addFields(acc0, absFields( id                * params.x_inc));
-    acc1 = addFields(acc1, absFields((id +      stride) * params.x_inc));
-    acc2 = addFields(acc2, absFields((id + 2u * stride) * params.x_inc));
-    acc3 = addFields(acc3, absFields((id + 3u * stride) * params.x_inc));
-  }
-  for (var id = n4_floor + gid.x; id < params.n; id += stride) {
-    acc0 = addFields(acc0, absFields(id * params.x_inc));
+  // Same trip count for every thread, but driven by a counter, not `id`
+  // itself (ddAddProtected's barrier needs a provably-uniform loop bound).
+  let mainIters = n4_floor / (4u * stride);
+  for (var iter = 0u; iter < mainIters; iter++) {
+    let id =  gid.x + iter * 4u * stride;
+    let i0 =  id                * params.x_inc;
+    let i1 = (id +      stride) * params.x_inc;
+    let i2 = (id + 2u * stride) * params.x_inc;
+    let i3 = (id + 3u * stride) * params.x_inc;
+    acc0 = ddAddProtected(acc0, ddAbs(DD(xHi[i0], xLo[i0])), lid.x);
+    acc1 = ddAddProtected(acc1, ddAbs(DD(xHi[i1], xLo[i1])), lid.x);
+    acc2 = ddAddProtected(acc2, ddAbs(DD(xHi[i2], xLo[i2])), lid.x);
+    acc3 = ddAddProtected(acc3, ddAbs(DD(xHi[i3], xLo[i3])), lid.x);
   }
 
-  // Combine the 4 per-thread accumulators in Fields form too — still no
-  // encode/decode needed, since none of them have touched Packed yet.
-  let combined = addFields(addFields(acc0, acc1), addFields(acc2, acc3));
-  tile[lid.x] = encode(combined.sign, combined.rawExp, combined.mantissaHi, combined.lo);
+  // Tail is ragged (0-3 extra per thread) — pad to this workgroup's worst case.
+  let wgBaseGid = wgid.x * WGS;
+  var tailIters = 0u;
+  if (n4_floor + wgBaseGid < params.n) {
+    tailIters = (params.n - 1u - n4_floor - wgBaseGid) / stride + 1u;
+  }
+  for (var iter = 0u; iter < tailIters; iter++) {
+    let id    = n4_floor + gid.x + iter * stride;
+    let valid = id < params.n;
+    let i     = select(0u, id * params.x_inc, valid);
+    let loaded = ddAbs(DD(xHi[i], xLo[i])); // select() has no DD overload
+    let contribution = DD(select(0.0, loaded.hi, valid), select(0.0, loaded.lo, valid));
+    acc0 = ddAddProtected(acc0, contribution, lid.x);
+  }
+
+  let combined01 = ddAddProtected(acc0, acc1, lid.x);
+  let combined23 = ddAddProtected(acc2, acc3, lid.x);
+  tile[lid.x] = ddAddProtected(combined01, combined23, lid.x);
   workgroupBarrier();
 
+  // Inactive threads combine against a throwaway partner and discard it
+  // (ddAddProtected must be called unconditionally by every thread).
   for (var s = WGS / 2u; s > 0u; s >>= 1u) {
-    if (lid.x < s) { tile[lid.x] = addPair(tile[lid.x], tile[lid.x + s]); }
+    let partner = select(lid.x, lid.x + s, lid.x < s);
+    let combined = ddAddProtected(tile[lid.x], tile[partner], lid.x);
+    workgroupBarrier(); // all threads must read tile[] above before any write below
+    if (lid.x < s) { tile[lid.x] = combined; }
     workgroupBarrier();
   }
 
   if (lid.x == 0u) {
-    partialsMain[wgid.x] = tile[0].main;
-    partialsAux[wgid.x] = tile[0].aux;
+    partialsHi[wgid.x] = tile[0].hi;
+    partialsLo[wgid.x] = tile[0].lo;
   }
 }
