@@ -16,6 +16,7 @@ import stdlibSasum from "@stdlib/blas-base-sasum";
 import stdlibDasum from "@stdlib/blas-base-dasum";
 import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
 import stdlibIsamax from "@stdlib/blas-base-isamax";
+import stdlibIdamax from "@stdlib/blas-base-idamax";
 import stdlibSrot from "@stdlib/blas-base-srot";
 import stdlibSrotm from "@stdlib/blas-base-srotm";
 import stdlibSgemv from "@stdlib/blas-base-sgemv";
@@ -137,6 +138,7 @@ export const sasumReference = makeReducerReference(stdlibSasum);
 export const dasumReference = makeReducerReference(stdlibDasum);
 export const snrm2Reference = makeReducerReference(stdlibSnrm2);
 export const isamaxReference = makeReducerReference(stdlibIsamax);
+export const idamaxReference = makeReducerReference(stdlibIdamax);
 
 export const sgemvReference = makeMatVecReference(stdlibSgemv, (a) => [a.trans, a.m, a.n]);
 export const ssymvReference = makeMatVecReference(stdlibSsymv, (a) => [a.uplo, a.n]);
