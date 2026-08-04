@@ -2,8 +2,8 @@
 // into one, using ddAddProtected instead of plain f32 `+` (see
 // reduction/sum.wgsl for the f32 original this mirrors).
 // dispatch: 1 workgroup of WGS threads. partialsHi/partialsLo must have
-// exactly 2*WGS entries each. Concatenated after f64/dekker.wgsl for
-// DD/ddAddProtected (see it for why plain ddAdd isn't safe).
+// exactly 2*WGS entries each. Concatenated after f64/dekker.wgsl (DD struct)
+// and f64/utils/add.wgsl (ddAddProtected — see it for why plain ddAdd isn't safe).
 
 @group(0) @binding(0) var<storage, read>       partialsHi: array<f32>;
 @group(0) @binding(1) var<storage, read>       partialsLo: array<f32>;

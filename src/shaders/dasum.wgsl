@@ -1,6 +1,7 @@
 // dasum: sum(|x[i]|), double-double (Dekker). Same ILP=4 shape as sasum.wgsl;
-// see f64/dekker.wgsl for ddAddProtected and why plain ddAdd isn't safe.
-// GpuVector input isn't pre-abs'd, so ddAbs() applies unconditionally below.
+// see f64/utils/add.wgsl for ddAddProtected and why plain ddAdd isn't safe.
+// GpuVector input isn't pre-abs'd, so ddAbs() (f64/utils/abs.wgsl) applies
+// unconditionally below.
 
 @group(0) @binding(0) var<storage, read>       xHi:        array<f32>;
 @group(0) @binding(1) var<storage, read>       xLo:        array<f32>;

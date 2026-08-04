@@ -2,9 +2,9 @@
 
 // Double-double f64 emulation — splits a double into a (hi, lo) pair of f32
 // values with hi+lo approximating the original, hi holding the leading bits
-// and lo the rounding error hi lost on its own. See
-// src/shaders/f64/dekker.wgsl for the GPU-side arithmetic this pairs with
-// (Dekker's algorithm).
+// and lo the rounding error hi lost on its own. See src/shaders/f64/ (the DD
+// struct in dekker.wgsl, operations in utils/) for the GPU-side arithmetic
+// this pairs with (Dekker's algorithm).
 //
 // Not a value-preserving exact split: double-double buys roughly 2x f32's
 // mantissa (~48 bits vs f32's 24), less than real f64's 52-bit mantissa.

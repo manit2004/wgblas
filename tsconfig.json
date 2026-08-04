@@ -18,6 +18,7 @@
       "wgblas/dasum": ["./src/dasum/dasum.d.mts"],
       "wgblas/snrm2": ["./src/snrm2/snrm2.d.mts"],
       "wgblas/isamax": ["./src/isamax/isamax.d.mts"],
+      "wgblas/idamax": ["./src/idamax/idamax.d.mts"],
       "wgblas/srot": ["./src/srot/srot.d.mts"],
       "wgblas/srotm": ["./src/srotm/srotm.d.mts"],
       "wgblas/sgemv": ["./src/sgemv/sgemv.d.mts"],

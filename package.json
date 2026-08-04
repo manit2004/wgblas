@@ -59,6 +59,10 @@
       "import": "./src/isamax/isamax.mjs",
       "types": "./src/isamax/isamax.d.mts"
     },
+    "./idamax": {
+      "import": "./src/idamax/idamax.mjs",
+      "types": "./src/idamax/idamax.d.mts"
+    },
     "./srot": {
       "import": "./src/srot/srot.mjs",
       "types": "./src/srot/srot.d.mts"

@@ -2,7 +2,7 @@ import repl from "node:repl";
 import {
   init, cleanup,
   GpuVector, GpuMatrix,
-  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2,
 } from "wgblas";
 
 const device = await init();
@@ -13,7 +13,7 @@ Object.assign(r.context, {
   device,
   GpuVector, GpuMatrix,
   Float32Array, Float64Array,
-  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2,
 });
 
 r.defineCommand("help", {
@@ -30,6 +30,7 @@ r.defineCommand("help", {
   dasum (device, n, x, incx)
   snrm2 (device, n, x, incx)
   isamax(device, n, x, incx)
+  idamax(device, n, x, incx)
   srot  (device, n, x, incx, y, incy, c, s)
   srotm (device, n, x, incx, y, incy, param)
   sgemv (device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy)

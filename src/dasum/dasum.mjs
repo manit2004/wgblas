@@ -34,10 +34,12 @@ export async function dasum(device, n, x, incx) {
       "x does not have enough elements for the given n and incx.",
     );
 
-  // Concatenated with f64/dekker.wgsl for its DD struct/ddAdd helpers (WGSL
-  // has no #include); entryPoint omitted since each module has only one @compute.
-  const pipelineMain = await getPipeline(device, ["f64/dekker", "dasum"]);
-  const pipelineReduce = await getPipeline(device, ["f64/dekker", "reduction/sumF64"]);
+  // Concatenated with f64/dekker.wgsl (DD struct), f64/utils/abs.wgsl
+  // (ddAbs), and f64/utils/add.wgsl (ddAddProtected) — WGSL has no
+  // #include; entryPoint omitted since each module has only one @compute.
+  const f64Deps = ["f64/dekker", "f64/utils/abs", "f64/utils/add"];
+  const pipelineMain = await getPipeline(device, [...f64Deps, "dasum"]);
+  const pipelineReduce = await getPipeline(device, [...f64Deps, "reduction/sumF64"]);
 
   let xHiBuffer = null;
   let xLoBuffer = null;
