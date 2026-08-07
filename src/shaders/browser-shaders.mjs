@@ -1,4 +1,5 @@
 import argmax from "./reduction/argmax.wgsl";
+import argmaxF64 from "./reduction/argmaxF64.wgsl";
 import sum from "./reduction/sum.wgsl";
 import sumF64 from "./reduction/sumF64.wgsl";
 import sscal from "./sscal.wgsl";
@@ -20,13 +21,19 @@ import ssyr from "./ssyr.wgsl";
 import ssyr2 from "./ssyr2.wgsl";
 import f64add from "./f64add.wgsl";
 import dekker from "./f64/dekker.wgsl";
+import ddAbs from "./f64/utils/abs.wgsl";
+import ddAddUtil from "./f64/utils/add.wgsl";
+import ddGreater from "./f64/utils/greater.wgsl";
+import ddEqual from "./f64/utils/equal.wgsl";
 import dasum from "./dasum.wgsl";
+import idamax from "./idamax.wgsl";
 import strsv_invert_block from "./strsv_invert_block.wgsl";
 import strsv_apply_inverse from "./strsv_apply_inverse.wgsl";
 import strsv_update from "./strsv_update.wgsl";
 
 export const shaderSources = {
   "reduction/argmax": argmax,
+  "reduction/argmaxF64": argmaxF64,
   "reduction/sum": sum,
   "reduction/sumF64": sumF64,
   sscal,
@@ -48,7 +55,12 @@ export const shaderSources = {
   ssyr2,
   f64add,
   "f64/dekker": dekker,
+  "f64/utils/abs": ddAbs,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/greater": ddGreater,
+  "f64/utils/equal": ddEqual,
   dasum,
+  idamax,
   strsv_invert_block,
   strsv_apply_inverse,
   strsv_update,

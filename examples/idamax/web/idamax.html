@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>idamax — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, idamax, randomFloat64Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 10;
+        const x = randomFloat64Array(n, -10, 10);
+
+        const { index } = await idamax(device, n, x, 1);
+
+        document.getElementById("out").textContent =
+          "x:        " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
+          "\nindex:    " + index +
+          "\nx[index]: " + x[index].toFixed(4);
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

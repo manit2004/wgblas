@@ -1,6 +1,6 @@
 {
   "name": "wgblas",
-  "version": "1.1.1",
+  "version": "1.2.1",
   "description": "BLAS on WebGPU",
   "type": "module",
   "main": "index.mjs",
@@ -58,6 +58,10 @@
     "./isamax": {
       "import": "./src/isamax/isamax.mjs",
       "types": "./src/isamax/isamax.d.mts"
+    },
+    "./idamax": {
+      "import": "./src/idamax/idamax.mjs",
+      "types": "./src/idamax/idamax.d.mts"
     },
     "./srot": {
       "import": "./src/srot/srot.mjs",
@@ -120,7 +124,7 @@
   "bugs": {
     "url": "https://github.com/manit2004/wgblas/issues"
   },
-  "homepage": "https://github.com/manit2004/wgblas#readme",
+  "homepage": "https://manit2004.github.io/wgblas/",
   "dependencies": {
     "webgpu": "^0.4.0"
   },
@@ -129,6 +133,7 @@
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@stdlib/blas-base-dasum": "^0.4.1",
+    "@stdlib/blas-base-idamax": "^0.1.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
     "@stdlib/blas-base-sasum": "^0.3.1",
     "@stdlib/blas-base-saxpy": "^0.3.1",
