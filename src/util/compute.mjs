@@ -38,7 +38,8 @@ export function beginTimedEncoder() {
  * @param {GPUCommandEncoder} commandEncoder
  * @param {GPUComputePipeline} pipeline
  * @param {GPUBindGroup} bindGroup
- * @param {number | { x: number, y: number }} workgroups - workgroup count; number for 1D dispatch, `{x, y}` for 2D
+ * @param {number | { x: number, y: number, z?: number }} workgroups - workgroup count;
+ *   number for 1D dispatch, `{x, y}` for 2D, `{x, y, z}` for 3D (z defaults to 1)
  * @param {object} [passDescriptor] - passed to `beginComputePass`, e.g. for timestamp writes
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUCommandEncoder/beginComputePass GPUCommandEncoder.beginComputePass()}
  */
@@ -51,7 +52,8 @@ export function encodePass(commandEncoder, pipeline, bindGroup, workgroups, pass
   if (typeof workgroups === "number") {
     passEncoder.dispatchWorkgroups(workgroups);
   } else {
-    passEncoder.dispatchWorkgroups(workgroups.x, workgroups.y);
+    // `?? 1` is load-bearing — confirmed passing undefined (from an {x,y}-only caller) crashes the process, not just no-ops.
+    passEncoder.dispatchWorkgroups(workgroups.x, workgroups.y, workgroups.z ?? 1);
   }
 
   passEncoder.end();
@@ -64,7 +66,8 @@ export function encodePass(commandEncoder, pipeline, bindGroup, workgroups, pass
  * dispatches workgroups, and optionally wraps the pass in GPU timestamp queries.
  * @param {GPUComputePipeline} pipeline
  * @param {GPUBindGroup} bindGroup
- * @param {number | { x: number, y: number }} workgroups - workgroup count; number for 1D dispatch, `{x, y}` for 2D
+ * @param {number | { x: number, y: number, z?: number }} workgroups - workgroup count;
+ *   number for 1D dispatch, `{x, y}` for 2D, `{x, y, z}` for 3D (z defaults to 1)
  * @returns {{ commandEncoder: GPUCommandEncoder, ts: any }} encoded commands and timestamp handle
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
  */
