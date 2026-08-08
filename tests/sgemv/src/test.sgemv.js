@@ -1,6 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
+import { getPowerPreference } from "../../helpers/device.js";
 import { sgemv } from "wgblas/sgemv";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
@@ -18,7 +19,7 @@ const THRESHOLD = 4;
 
 let device;
 before(async () => {
-  device = await init();
+  device = await init({ powerPreference: getPowerPreference() });
 });
 after(() => {
   cleanup();
