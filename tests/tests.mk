@@ -1,10 +1,13 @@
-.PHONY: test
+.PHONY: test test-gpu
 
 test:
-	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test --test-reporter=spec $$(find tests -name 'test.*.js' -o -name 'gpustorage.*.js')
+	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test --test-reporter=spec $$(find tests -name 'test.*.js')
+
+test-gpu:
+	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test --test-reporter=spec $$(find tests -name 'gpustorage.*.js')
 
 test-%:
 	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test tests/$*/src/test.$*.js
 
-gpustorage-%:
+test-gpu-%:
 	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test tests/$*/src/gpustorage.$*.js
