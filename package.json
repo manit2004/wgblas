@@ -98,6 +98,10 @@
     "./ssyr2": {
       "import": "./src/ssyr2/ssyr2.mjs",
       "types": "./src/ssyr2/ssyr2.d.mts"
+    },
+    "./sgemm": {
+      "import": "./src/sgemm/sgemm.mjs",
+      "types": "./src/sgemm/sgemm.d.mts"
     }
   },
   "files": [

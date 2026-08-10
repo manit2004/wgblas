@@ -27,7 +27,8 @@
       "wgblas/strsv": ["./src/strsv/strsv.d.mts"],
       "wgblas/sger": ["./src/sger/sger.d.mts"],
       "wgblas/ssyr": ["./src/ssyr/ssyr.d.mts"],
-      "wgblas/ssyr2": ["./src/ssyr2/ssyr2.d.mts"]
+      "wgblas/ssyr2": ["./src/ssyr2/ssyr2.d.mts"],
+      "wgblas/sgemm": ["./src/sgemm/sgemm.d.mts"]
     }
   }
 }
