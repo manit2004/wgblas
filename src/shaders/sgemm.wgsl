@@ -1,4 +1,5 @@
 // sgemm_naive: C = alpha * op(A) * op(B) + beta * C
+// 1. col mapped to gid.x for coalesced B/C access (row-major: col is contiguous).
 
 @group(0) @binding(0) var<storage, read>       A: array<f32>;
 @group(0) @binding(1) var<storage, read>       B: array<f32>;
@@ -21,8 +22,8 @@ struct Params {
 
 @compute @workgroup_size(8, 8)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
-  let row = gid.x;
-  let col = gid.y;
+  let row = gid.y;
+  let col = gid.x;
 
   // guard is necessary for when m or n aren't multiples of the workgroup size.
   if (row < params.m && col < params.n) {

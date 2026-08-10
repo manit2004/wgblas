@@ -156,8 +156,8 @@ export async function sgemm(
     ]);
 
     const wgCount = {
-      x: Math.min(Math.ceil(m / WGS), device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(Math.ceil(n / WGS), device.limits.maxComputeWorkgroupsPerDimension),
+      x: Math.min(Math.ceil(n / WGS), device.limits.maxComputeWorkgroupsPerDimension),
+      y: Math.min(Math.ceil(m / WGS), device.limits.maxComputeWorkgroupsPerDimension),
     };
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
     const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
