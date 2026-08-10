@@ -57,7 +57,7 @@ export declare function sgemv(
  * `layout` (set at `GpuMatrix.from` time) determines the operation — there is
  * no separate `layout` argument here.
  *
- * {@includeCode ../../examples/sgemv/gpuvec.sgemv.js}
+ * {@includeCode ../../examples/sgemv/gpu.sgemv.js}
  *
  * @param device - GPUDevice from `init()`
  * @param trans  - `'no-transpose'` for A, `'transpose'` for A^T

@@ -1,7 +1,9 @@
 /**
- * Runnable examples for all BLAS Level 1 routines — one plain and one
- * GpuVector variant per routine. Run locally with `make example-<routine>`
- * or `make example-gpuvec-<routine>`.
+ * Runnable examples for all BLAS routines — one plain Float32Array variant
+ * and one GPU-resident variant (`GpuVector`, or `GpuMatrix` for routines
+ * whose GPU-resident overload doesn't involve a vector at all, e.g. sgemm)
+ * per routine. Run locally with `make example-<routine>` or
+ * `make example-gpu-<routine>`.
  *
  * ## Common Conventions
  *
@@ -38,8 +40,8 @@
  * |---|---|
  * | `make example` | Runs the plain `<routine>.js` for all routines in sequence |
  * | `make example-<routine>` | Runs the plain example for one routine, e.g. `make example-saxpy` |
- * | `make example-gpuvec` | Runs `gpuvec.<routine>.js` for all routines in sequence |
- * | `make example-gpuvec-<routine>` | Runs the GpuVector example for one routine, e.g. `make example-gpuvec-saxpy` |
+ * | `make example-gpu` | Runs `gpu.<routine>.js` for all routines in sequence |
+ * | `make example-gpu-<routine>` | Runs the GPU-resident example for one routine, e.g. `make example-gpu-saxpy` |
  * | `make example-<routine>-web` | Opens one routine's HTML stub in Vite dev server |
  * | `make example-web` | Starts Vite on port 5173 and opens all routine HTML stubs at once |
  *

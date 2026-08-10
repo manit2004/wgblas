@@ -50,7 +50,7 @@ export declare function ssyr2(
  * `GpuMatrix.from` time) determines the operation — there is no separate
  * `layout` argument here.
  *
- * {@includeCode ../../examples/ssyr2/gpuvec.ssyr2.js}
+ * {@includeCode ../../examples/ssyr2/gpu.ssyr2.js}
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle

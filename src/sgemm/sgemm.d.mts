@@ -64,7 +64,7 @@ export declare function sgemm(
  * `layout` argument here. A and B must be GpuMatrix whenever C is, and vice
  * versa — mixing a GpuMatrix with a plain Float32Array is not supported.
  *
- * {@includeCode ../../examples/sgemm/gpuvec.sgemm.js}
+ * {@includeCode ../../examples/sgemm/gpu.sgemm.js}
  *
  * @param device - GPUDevice from `init()`
  * @param transA - `'no-transpose'` for A, `'transpose'` for A^T

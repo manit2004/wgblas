@@ -51,7 +51,7 @@ export declare function ssymv(
  * `layout` (set at `GpuMatrix.from` time) determines the operation — there is
  * no separate `layout` argument here.
  *
- * {@includeCode ../../examples/ssymv/gpuvec.ssymv.js}
+ * {@includeCode ../../examples/ssymv/gpu.ssymv.js}
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle

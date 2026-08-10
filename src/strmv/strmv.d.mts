@@ -51,7 +51,7 @@ export declare function strmv(
  * `layout` (set at `GpuMatrix.from` time) determines the operation — there is
  * no separate `layout` argument here.
  *
- * {@includeCode ../../examples/strmv/gpuvec.strmv.js}
+ * {@includeCode ../../examples/strmv/gpu.strmv.js}
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle

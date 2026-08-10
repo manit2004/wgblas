@@ -37,7 +37,7 @@ export declare function srot(
  *   x = c*x + s*y
  *   y = -s*x + c*y
  *
- * {@includeCode ../../examples/srot/gpuvec.srot.js}
+ * {@includeCode ../../examples/srot/gpu.srot.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

@@ -28,7 +28,7 @@ export declare function isamax(
  * Returns the 0-based index of the element with the largest absolute value.
  * Ties are broken in favour of the lower index, matching CBLAS behaviour.
  *
- * {@includeCode ../../examples/isamax/gpuvec.isamax.js}
+ * {@includeCode ../../examples/isamax/gpu.isamax.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

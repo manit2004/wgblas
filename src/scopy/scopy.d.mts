@@ -29,7 +29,7 @@ export declare function scopy(
 /**
  * Performs the operation y = x
  *
- * {@includeCode ../../examples/scopy/gpuvec.scopy.js}
+ * {@includeCode ../../examples/scopy/gpu.scopy.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

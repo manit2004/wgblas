@@ -49,7 +49,7 @@ export declare function sger(
  * `GpuMatrix.from` time) determines the operation — there is no separate
  * `layout` argument here.
  *
- * {@includeCode ../../examples/sger/gpuvec.sger.js}
+ * {@includeCode ../../examples/sger/gpu.sger.js}
  *
  * @param device - GPUDevice from `init()`
  * @param m      - number of rows in A

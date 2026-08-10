@@ -27,7 +27,7 @@ export declare function sscal(
 /**
  * Scales a single-precision vector by a constant: x = alpha * x
  *
- * {@includeCode ../../examples/sscal/gpuvec.sscal.js}
+ * {@includeCode ../../examples/sscal/gpu.sscal.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements to scale (must be a positive integer)
