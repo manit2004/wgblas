@@ -1,7 +1,11 @@
-// sgemm_naive: C = alpha * op(A) * op(B) + beta * C
-// 1. col mapped to gid.x for coalesced B/C access (row-major: col is contiguous).
-// 2. BM x BK / BK x BN tiles of op(A)/op(B) cached in workgroup memory, reused each K-tile before the next fetch from global memory.
-// 3. Each thread computes a TM x TN block of output (2D register blocking) instead of 1, via an outer product of cached As/Bs registers.
+// sgemm_small: C = alpha * op(A) * op(B) + beta * C — small-tile half of
+// the two-tier autotuned dispatch (see sgemm.mjs and sgemm_large.wgsl).
+// BM=BN=32, BK=8, TM=TN=2 — wins over the large tile below a 6x6=36
+// workgroup grid of 64-tiles, where the large tile doesn't have enough
+// workgroups to fill the GPU. Same structure as sgemm_large.wgsl (2D
+// register-blocked, shared-memory-tiled), just smaller.
+//
+// col mapped to gid.x for coalesced B/C access (row-major: col contiguous).
 
 const BM: u32 = 32u;
 const BN: u32 = 32u;
@@ -10,9 +14,9 @@ const TM: u32 = 2u;
 const TN: u32 = 2u;
 const THREADS_X: u32 = BN / TN;
 const THREADS_Y: u32 = BM / TM;
-const NUM_THREADS: u32 = THREADS_X * THREADS_Y; // 256, WebGPU's guaranteed-portable workgroup-invocation minimum
-const STRIDE_A: u32 = NUM_THREADS / BK; // rows of As covered per load-loop step
-const STRIDE_B: u32 = NUM_THREADS / BN; // rows of Bs covered per load-loop step
+const NUM_THREADS: u32 = THREADS_X * THREADS_Y; // 256
+const STRIDE_A: u32 = NUM_THREADS / BK;
+const STRIDE_B: u32 = NUM_THREADS / BN;
 
 @group(0) @binding(0) var<storage, read>       A: array<f32>;
 @group(0) @binding(1) var<storage, read>       B: array<f32>;
@@ -47,10 +51,6 @@ fn main(
   let threadCol = lid.x;
   let threadRow = lid.y;
 
-  // Load indices, independent of the compute thread shape — a loop since
-  // NUM_THREADS no longer necessarily matches the tile size 1:1 the way
-  // kernel 4's did (it still does at these particular BM/BN/BK/TM/TN, but
-  // won't once autotuning changes them).
   let innerRowA = tid / BK;
   let innerColA = tid % BK;
   let innerRowB = tid / BN;

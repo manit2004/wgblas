@@ -6,9 +6,10 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * - `transA/transB='no-transpose'`: op(A) = A (m×k), op(B) = B (k×n)
  * - `transA/transB='transpose'`:    op(A) = A^T,     op(B) = B^T
  *
- * A, B, C are row-major or column-major (see `layout`) — currently backed
- * by `sgemm_naive.wgsl`, a one-thread-per-output-element baseline with no
- * tiling/blocking (see `new-routine.md` for the planned optimization path).
+ * A, B, C are row-major or column-major (see `layout`) — backed by one of
+ * two shared-memory-tiled, register-blocked kernels chosen by shape:
+ * `sgemm_small.wgsl` (BM=BN=32) below a 6x6 workgroup grid, `sgemm_large.wgsl`
+ * (BM=BN=64) above it.
  *
  * {@includeCode ../../examples/sgemm/sgemm.js}
  *

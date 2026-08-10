@@ -11,7 +11,9 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-const BM = 32, BN = 32;
+const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
+const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
+const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // large tile needs >= a 6x6 grid of its own tiles to beat the small tile
 
 export async function sgemm(
   device, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, layout = "row-major",
@@ -126,7 +128,12 @@ export async function sgemm(
     [m, n] = [n, m];
   }
 
-  const pipeline = await getPipeline(device, "sgemm");
+  // Shape-based auto-select — see sgemm_small.wgsl/sgemm_large.wgsl.
+  const largeWgX = Math.ceil(n / BN_LARGE);
+  const largeWgY = Math.ceil(m / BM_LARGE);
+  const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
+
+  const pipeline = await getPipeline(device, useLargeTile ? "sgemm_large" : "sgemm_small");
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sgemm-A", false);
   const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "sgemm-B", false);
@@ -155,10 +162,15 @@ export async function sgemm(
       paramsBuffer,
     ]);
 
-    const wgCount = {
-      x: Math.min(Math.ceil(n / BN), device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(Math.ceil(m / BM), device.limits.maxComputeWorkgroupsPerDimension),
-    };
+    const wgCount = useLargeTile
+      ? {
+        x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension),
+        y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension),
+      }
+      : {
+        x: Math.min(Math.ceil(n / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+        y: Math.min(Math.ceil(m / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+      };
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
     const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
 
