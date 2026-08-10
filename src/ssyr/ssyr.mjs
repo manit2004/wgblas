@@ -36,6 +36,8 @@ export async function ssyr(device, uplo, n, alpha, x, incx, A, lda, layout = "ro
     throw new Error("x must be a Float32Array or GpuVector.");
   if (xIsGpu && !AIsGpu)
     throw new Error("A must be a GpuMatrix when x is a GpuVector.");
+  if (AIsGpu && !xIsGpu)
+    throw new Error("x must be a GpuVector when A is a GpuMatrix.");
   if (AIsGpu && xIsGpu && A._buf === x._buf)
     throw new Error("A and x must not reference the same GPU buffer.");
   if (AIsGpu && lda !== A.lda)

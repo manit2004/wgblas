@@ -53,6 +53,8 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     );
   if (xIsGpu && !AIsGpu)
     throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
+  if (AIsGpu && !xIsGpu)
+    throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
   if (xIsGpu && x._buf === y._buf)
     throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");
   if (AIsGpu && lda !== A.lda)

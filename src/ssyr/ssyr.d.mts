@@ -42,35 +42,6 @@ export declare function ssyr(
 /**
  * Performs the symmetric rank-1 update A = alpha * x * x^T + A
  *
- * A is kept GPU-resident; x is a CPU Float32Array. `A`'s own `layout` (set at
- * `GpuMatrix.from` time) determines the operation — there is no separate
- * `layout` argument here.
- *
- * @param device - GPUDevice from `init()`
- * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
- * @param n      - order of the matrix A
- * @param alpha  - scalar multiplier for x*x^T
- * @param x      - Float32Array input vector
- * @param incx   - stride for x (must be a positive integer)
- * @param A      - GpuMatrix, GPU-resident
- * @param lda    - leading dimension of A (must equal A.lda)
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/ssyr/ssyr.mjs#L15">Source code: ssyr.mjs (L15)</a>
- * @category BLAS Level 2
- */
-export declare function ssyr(
-  device: GPUDevice,
-  uplo: 'lower' | 'upper',
-  n: number,
-  alpha: number,
-  x: Float32Array,
-  incx: number,
-  A: GpuMatrix,
-  lda: number,
-): Promise<{ gpuTimeMs?: number }>;
-
-/**
- * Performs the symmetric rank-1 update A = alpha * x * x^T + A
- *
  * x and A are both kept resident on the GPU. `A`'s own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate
  * `layout` argument here.

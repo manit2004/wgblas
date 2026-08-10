@@ -34,7 +34,7 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  *   (default: `'row-major'`); column-major A/B flips the respective trans
  *   flag internally, column-major C computes C^T = op(B)^T*op(A)^T instead
  *   (same underlying bytes) — op(A)*op(B) stays what you asked for either way
- * @returns updated C — always a CPU readback, even for GpuMatrix inputs
+ * @returns updated C as a Float32Array
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sgemm/sgemm.mjs#L17">Source code: sgemm.mjs (L17)</a>
  * @category BLAS Level 3
  */
@@ -64,7 +64,7 @@ export declare function sgemm(
  * `layout` argument here. A and B must be GpuMatrix whenever C is, and vice
  * versa — mixing a GpuMatrix with a plain Float32Array is not supported.
  *
- * {@includeCode ../../examples/sgemm/gpumat.sgemm.js}
+ * {@includeCode ../../examples/sgemm/gpuvec.sgemm.js}
  *
  * @param device - GPUDevice from `init()`
  * @param transA - `'no-transpose'` for A, `'transpose'` for A^T
@@ -80,6 +80,7 @@ export declare function sgemm(
  * @param beta   - scalar multiplier for C
  * @param C      - GpuMatrix (mutated in place)
  * @param ldc    - leading dimension of C (must equal C.lda)
+ * @returns no C — it stays GPU-resident; call `C.read()` yourself for a CPU readback (see the example)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sgemm/sgemm.mjs#L17">Source code: sgemm.mjs (L17)</a>
  * @category BLAS Level 3
  */
