@@ -126,7 +126,7 @@ export async function sgemm(
     [m, n] = [n, m];
   }
 
-  const pipeline = await getPipeline(device, "sgemm_naive");
+  const pipeline = await getPipeline(device, "sgemm");
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sgemm-A", false);
   const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "sgemm-B", false);
