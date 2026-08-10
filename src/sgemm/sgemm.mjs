@@ -11,7 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
-const WGS = 8; // matches sgemm_naive.wgsl's @workgroup_size(8, 8)
+const BM = 32, BN = 32;
 
 export async function sgemm(
   device, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, layout = "row-major",
@@ -156,8 +156,8 @@ export async function sgemm(
     ]);
 
     const wgCount = {
-      x: Math.min(Math.ceil(n / WGS), device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(Math.ceil(m / WGS), device.limits.maxComputeWorkgroupsPerDimension),
+      x: Math.min(Math.ceil(n / BN), device.limits.maxComputeWorkgroupsPerDimension),
+      y: Math.min(Math.ceil(m / BM), device.limits.maxComputeWorkgroupsPerDimension),
     };
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
     const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
