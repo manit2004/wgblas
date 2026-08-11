@@ -108,7 +108,7 @@
  *
  * ## See also
  *
- * - [benchmark.scopy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/scopy/benchmark.scopy.js) — WebGPU benchmark script
+ * - [scopy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/scopy/wgblas/scopy.js) — WebGPU benchmark script
  *
  * @module benchmarks/amd-radeon-780m-graphics-radv-phoenix/scopy
  */

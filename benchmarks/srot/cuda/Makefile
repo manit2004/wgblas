@@ -1,11 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-all: $(TARGET)
+all: $(BIN)/srot $(BIN)/stride.srot
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas -lm
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/srot: srot.c ../../utils/helpers.h | $(BIN)
+	$(CC) srot.c -o $(BIN)/srot -lcublas
+
+$(BIN)/stride.srot: stride.srot.c ../../utils/helpers.h | $(BIN)
+	$(CC) stride.srot.c -o $(BIN)/stride.srot -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

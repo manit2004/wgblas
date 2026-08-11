@@ -108,7 +108,7 @@
  *
  * ## See also
  *
- * - [benchmark.snrm2.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/snrm2/benchmark.snrm2.js) — WebGPU benchmark script
+ * - [snrm2.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/snrm2/wgblas/snrm2.js) — WebGPU benchmark script
  *
  * @module benchmarks/amd-radeon-780m-graphics-radv-phoenix/snrm2
  */

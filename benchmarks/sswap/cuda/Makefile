@@ -1,11 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-all: $(TARGET)
+all: $(BIN)/sswap $(BIN)/stride.sswap
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/sswap: sswap.c ../../utils/helpers.h | $(BIN)
+	$(CC) sswap.c -o $(BIN)/sswap -lcublas
+
+$(BIN)/stride.sswap: stride.sswap.c ../../utils/helpers.h | $(BIN)
+	$(CC) stride.sswap.c -o $(BIN)/stride.sswap -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

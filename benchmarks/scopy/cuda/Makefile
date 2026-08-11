@@ -1,11 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-all: $(TARGET)
+all: $(BIN)/scopy $(BIN)/stride.scopy
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/scopy: scopy.c ../../utils/helpers.h | $(BIN)
+	$(CC) scopy.c -o $(BIN)/scopy -lcublas
+
+$(BIN)/stride.scopy: stride.scopy.c ../../utils/helpers.h | $(BIN)
+	$(CC) stride.scopy.c -o $(BIN)/stride.scopy -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

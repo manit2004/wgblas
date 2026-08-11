@@ -106,7 +106,7 @@
  *
  * ## See also
  *
- * - [benchmark.sdot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sdot/benchmark.sdot.js) — WebGPU benchmark script
+ * - [sdot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sdot/wgblas/sdot.js) — WebGPU benchmark script
  *
  * @module benchmarks/amd-radeon-780m-graphics-radv-phoenix/sdot
  */

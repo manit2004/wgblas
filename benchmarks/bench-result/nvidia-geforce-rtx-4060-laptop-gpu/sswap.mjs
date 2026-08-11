@@ -140,8 +140,8 @@
  *
  * ## See also
  *
- * - [benchmark.sswap.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sswap/benchmark.sswap.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/sswap/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [sswap.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sswap/wgblas/sswap.js) — WebGPU benchmark script
+ * - [sswap.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/sswap/cuda/sswap.c) — CUDA / cuBLAS reference script
  *
  * @module benchmarks/nvidia-geforce-rtx-4060-laptop-gpu/sswap
  */

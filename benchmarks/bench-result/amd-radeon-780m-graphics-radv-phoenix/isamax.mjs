@@ -108,7 +108,7 @@
  *
  * ## See also
  *
- * - [benchmark.isamax.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/isamax/benchmark.isamax.js) — WebGPU benchmark script
+ * - [isamax.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/isamax/wgblas/isamax.js) — WebGPU benchmark script
  *
  * @module benchmarks/amd-radeon-780m-graphics-radv-phoenix/isamax
  */

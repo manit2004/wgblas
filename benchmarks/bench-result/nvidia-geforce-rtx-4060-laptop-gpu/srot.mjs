@@ -140,8 +140,8 @@
  *
  * ## See also
  *
- * - [benchmark.srot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/benchmark.srot.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [srot.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/wgblas/srot.js) — WebGPU benchmark script
+ * - [srot.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/srot/cuda/srot.c) — CUDA / cuBLAS reference script
  *
  * @module benchmarks/nvidia-geforce-rtx-4060-laptop-gpu/srot
  */
