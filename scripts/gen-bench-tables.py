@@ -43,8 +43,13 @@ def discover_routines():
         if not gpu_dir.is_dir():
             continue
         wgblas_dir = gpu_dir / "wgblas"
-        if wgblas_dir.is_dir():
-            has_bench.update(f.stem for f in wgblas_dir.glob("*.json"))
+        if not wgblas_dir.is_dir():
+            continue
+        has_bench.update(f.stem for f in wgblas_dir.glob("*.json"))
+        # migrated routines nest their results at wgblas/<routine>/<routine>.json
+        for sub in wgblas_dir.iterdir():
+            if sub.is_dir() and (sub / f"{sub.name}.json").exists():
+                has_bench.add(sub.name)
     return sorted(in_src & has_bench)
 
 
@@ -55,18 +60,67 @@ def already_generated(gpu):
     return {f.stem for f in gpu_out.glob("*.mjs") if f.stem != "index"}
 
 
-def fetch_json(gpu, backend, routine, local_only=False):
+def fetch_json(gpu, backend, rel_path, local_only=False):
+    """rel_path is relative to benchmarks/results/<gpu>/<backend>/, without .json."""
     if not local_only:
-        url = f"{BASE_URL}/{gpu}/{backend}/{routine}.json"
+        url = f"{BASE_URL}/{gpu}/{backend}/{rel_path}.json"
         try:
             with urllib.request.urlopen(url) as r:
                 return json.loads(r.read())
         except Exception:
             pass
-    local = RESULTS_DIR / gpu / backend / f"{routine}.json"
+    local = RESULTS_DIR / gpu / backend / f"{rel_path}.json"
     if local.exists():
         return json.loads(local.read_text())
     return None
+
+
+def fetch_main(gpu, backend, routine, local_only=False):
+    """Routines migrated to the nested benchmarks/<routine>/wgblas/<routine>.js
+    layout store results at <backend>/<routine>/<routine>.json; older ones are
+    still flat at <backend>/<routine>.json. Try nested first, fall back to flat."""
+    data = fetch_json(gpu, backend, f"{routine}/{routine}", local_only)
+    if data is not None:
+        return data
+    return fetch_json(gpu, backend, routine, local_only)
+
+
+def fetch_stride(gpu, backend, routine, local_only=False):
+    """Stride-sweep companion file — only present for routines with a
+    stride.<routine> benchmark alongside the main one. None if absent."""
+    return fetch_json(gpu, backend, f"{routine}/stride.{routine}", local_only)
+
+
+def script_path(routine, backend):
+    """Repo-relative path to a routine's benchmark script, preferring the
+    migrated benchmarks/<routine>/<backend>/<routine>.{js,c} layout and
+    falling back to the older flat benchmark.<routine>.js / benchmark.c."""
+    if backend == "wgblas":
+        nested = ROOT / "benchmarks" / routine / "wgblas" / f"{routine}.js"
+        if nested.exists():
+            return f"benchmarks/{routine}/wgblas/{routine}.js"
+        return f"benchmarks/{routine}/benchmark.{routine}.js"
+    nested = ROOT / "benchmarks" / routine / "cuda" / f"{routine}.c"
+    if nested.exists():
+        return f"benchmarks/{routine}/cuda/{routine}.c"
+    return f"benchmarks/{routine}/cuda/benchmark.c"
+
+
+def stride_script_path(routine, backend):
+    """Repo-relative path to a routine's stride-sweep benchmark script."""
+    ext = "js" if backend == "wgblas" else "c"
+    return f"benchmarks/{routine}/{backend}/stride.{routine}.{ext}"
+
+
+def group_by_stride(rows):
+    """Groups stride-sweep rows by 'stride', sorting each group's rows by n
+    ascending. Returns a dict ordered by ascending stride."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["stride"], []).append(r)
+    for g in groups.values():
+        g.sort(key=lambda r: r["n"])
+    return dict(sorted(groups.items()))
 
 
 def _tick_step(y_max):
@@ -323,6 +377,49 @@ def make_wgblas_only_table(wgblas_rows):
     return "\n".join(lines)
 
 
+def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
+    """Builds the stride-sweep subsection: one table + chart per stride value,
+    stride groups in ascending order, each group's rows sorted n ascending.
+    """
+    groups = group_by_stride(wgblas_stride)
+    cuda_groups = group_by_stride(cuda_stride) if cuda_stride else {}
+
+    parts = [
+        "## Stride sweep\n",
+        f"Unless noted otherwise, every result above uses unit stride "
+        f"(`incx = incy = 1`) — the normal case, and the coalesced, "
+        f"best-case GPU access pattern. Real usage sometimes passes a "
+        f"non-unit stride (e.g. operating on a row or column of a larger "
+        f"matrix, where `incx = lda`), which breaks memory coalescing and "
+        f"costs measurably more. This section sweeps a few representative "
+        f"strides to characterize that cost separately.\n",
+    ]
+    for stride, wrows in groups.items():
+        crows = cuda_groups.get(stride, [])
+        parts.append(f"### {display} — stride = {stride}\n")
+        parts.append(
+            make_comparison_table(wrows, crows) if crows
+            else make_wgblas_only_table(wrows)
+        )
+        parts.append("")
+        chart = make_svg_chart(wrows, crows, f"{routine}-stride{stride}", gpu)
+        if chart:
+            parts.append(chart)
+        parts.append("")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [stride.{routine}.js]({gh}/{stride_script_path(routine, 'wgblas')}) "
+        "— WebGPU stride-sweep benchmark script"
+    )
+    if cuda_stride:
+        parts.append(
+            f"- [stride.{routine}.c]({gh}/{stride_script_path(routine, 'cuda')}) "
+            "— CUDA / cuBLAS stride-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
 def gpu_display_name(folder):
     return folder.replace("-", " ").title()
 
@@ -398,18 +495,22 @@ def main():
         print(f"GPU: {display}")
 
         for routine in to_generate:
-            wgblas = fetch_json(gpu, "wgblas", routine, local_only=args.local)
+            wgblas = fetch_main(gpu, "wgblas", routine, local_only=args.local)
             if wgblas is None:
                 print(f"  skip {routine} (no wgblas data)")
                 continue
 
-            cuda = fetch_json(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
+            cuda = fetch_main(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
+            wgblas_stride = fetch_stride(gpu, "wgblas", routine, local_only=args.local)
+            cuda_stride = fetch_stride(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
 
-            wgblas_link = f"{gh}/benchmarks/{routine}/benchmark.{routine}.js"
+            wgblas_link = f"{gh}/{script_path(routine, 'wgblas')}"
+            wgblas_script_name = script_path(routine, "wgblas").rsplit("/", 1)[-1]
 
             if cuda:
                 table = make_comparison_table(wgblas, cuda)
-                cuda_link = f"{gh}/benchmarks/{routine}/cuda/benchmark.c"
+                cuda_link = f"{gh}/{script_path(routine, 'cuda')}"
+                cuda_script_name = script_path(routine, "cuda").rsplit("/", 1)[-1]
                 body = (
                     f"## {display} — wgblas vs cuBLAS\n\n"
                     + table
@@ -417,8 +518,8 @@ def main():
                     "100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.\n\n"
                     + make_svg_chart(wgblas, cuda, routine, gpu) + "\n\n"
                     "## See also\n\n"
-                    f"- [benchmark.{routine}.js]({wgblas_link}) — WebGPU benchmark script\n"
-                    f"- [benchmark.c]({cuda_link}) — CUDA / cuBLAS reference script"
+                    f"- [{wgblas_script_name}]({wgblas_link}) — WebGPU benchmark script\n"
+                    f"- [{cuda_script_name}]({cuda_link}) — CUDA / cuBLAS reference script"
                 )
             else:
                 table = make_wgblas_only_table(wgblas)
@@ -428,7 +529,12 @@ def main():
                     + "\n\n"
                     + make_svg_chart(wgblas, None, routine, gpu) + "\n\n"
                     "## See also\n\n"
-                    f"- [benchmark.{routine}.js]({wgblas_link}) — WebGPU benchmark script"
+                    f"- [{wgblas_script_name}]({wgblas_link}) — WebGPU benchmark script"
+                )
+
+            if wgblas_stride:
+                body += "\n\n" + make_stride_section(
+                    wgblas_stride, cuda_stride, routine, gpu, display, gh
                 )
 
             out_file = out_gpu_dir / f"{routine}.mjs"

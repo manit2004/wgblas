@@ -4,8 +4,10 @@ node_modules/
 __pycache__/
 *.pyc
 
-# benchmark binaries
-benchmarks/***/benchmark
+# benchmark binaries — non-migrated cuda dirs still build "benchmark" flat;
+# migrated ones (e.g. saxpy) build into cuda/bin/ instead
+benchmarks/*/cuda/benchmark
+benchmarks/*/cuda/bin/
 
 # Kaggle API credentials
 kaggle.json

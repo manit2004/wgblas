@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../../utils/helpers.h"
 
+#define STRIDE 1 // unit stride — coalesced, best case. See stride.saxpy.c for incx/incy > 1.
 #define WARMUP_ITERS 5
 #define BENCH_ITERS  100
 
@@ -39,14 +40,14 @@ int main(void) {
 
         // warm up
         for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasSaxpy(handle, n, &alpha, d_x, 1, d_y, 1));
+            CUBLAS_CHECK(cublasSaxpy(handle, n, &alpha, d_x, STRIDE, d_y, STRIDE));
         }
         CUDA_CHECK(cudaDeviceSynchronize());
 
         float compute_times[BENCH_ITERS];
         for (int i = 0; i < BENCH_ITERS; i++) {
             CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSaxpy(handle, n, &alpha, d_x, 1, d_y, 1));
+            CUBLAS_CHECK(cublasSaxpy(handle, n, &alpha, d_x, STRIDE, d_y, STRIDE));
             CUDA_CHECK(cudaEventRecord(stop, 0));
             CUDA_CHECK(cudaEventSynchronize(stop));
             CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
@@ -72,7 +73,7 @@ int main(void) {
 
     cublasDestroy(handle);
 
-    save_results("saxpy", gpu_model, bench_ns, med_times, gbs_vals, num_ns);
+    save_results_ex("saxpy", gpu_model, "saxpy", "saxpy", bench_ns, med_times, gbs_vals, num_ns);
 
     return 0;
 }

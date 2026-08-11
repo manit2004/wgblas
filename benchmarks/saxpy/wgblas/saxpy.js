@@ -8,8 +8,9 @@ import {
   printRow,
   getGpuModel,
   saveResults,
-} from "../utils/helpers.mjs";
+} from "../../utils/helpers.mjs";
 
+const STRIDE = 1; // unit stride — coalesced, best case. See stride.saxpy.js for incx/incy > 1.
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
 const SIZES = [
@@ -23,7 +24,6 @@ const powerPreference =
   process.argv[2] === "low-power" ? "low-power" : "high-performance";
 const device = await init({ benchmark: true, powerPreference });
 
-// save results to benchmarks/results/<gpuModel>/saxpy.wgblas.json
 const gpuModel = getGpuModel();
 const records = [];
 
@@ -36,12 +36,12 @@ for (const n of SIZES) {
 
   // warm up
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await saxpy(device, n, alpha, xGpu, 1, yGpu, 1);
+    await saxpy(device, n, alpha, xGpu, STRIDE, yGpu, STRIDE);
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await saxpy(device, n, alpha, xGpu, 1, yGpu, 1);
+    const { gpuTimeMs } = await saxpy(device, n, alpha, xGpu, STRIDE, yGpu, STRIDE);
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
 
@@ -56,6 +56,6 @@ for (const n of SIZES) {
   records.push({ n, compute_ms: med, compute_GBs: gbs });
 }
 
-saveResults("saxpy", gpuModel, records);
+saveResults("saxpy", gpuModel, records, { folder: "saxpy" });
 
 cleanup();

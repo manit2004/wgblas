@@ -106,7 +106,7 @@
  *
  * ## See also
  *
- * - [benchmark.saxpy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/saxpy/benchmark.saxpy.js) — WebGPU benchmark script
+ * - [saxpy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/saxpy/wgblas/saxpy.js) — WebGPU benchmark script
  *
  * @module benchmarks/amd-radeon-780m-graphics-radv-phoenix/saxpy
  */

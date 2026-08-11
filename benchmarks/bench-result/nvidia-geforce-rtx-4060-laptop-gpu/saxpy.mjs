@@ -148,8 +148,8 @@
  *
  * ## See also
  *
- * - [benchmark.saxpy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/saxpy/benchmark.saxpy.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/saxpy/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [saxpy.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/saxpy/wgblas/saxpy.js) — WebGPU benchmark script
+ * - [saxpy.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/saxpy/cuda/saxpy.c) — CUDA / cuBLAS reference script
  *
  * @module benchmarks/nvidia-geforce-rtx-4060-laptop-gpu/saxpy
  */

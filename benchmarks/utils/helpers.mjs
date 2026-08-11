@@ -44,19 +44,34 @@ export function getGpuModel() {
 /**
  * Writes `results` to `benchmarks/results/<gpuModel>/wgblas/<routineName>.json`,
  * creating the directory if needed. No-ops with a warning when `gpuModel` is null.
+ *
+ * Routines with more than one benchmark variant (e.g. a stride sweep
+ * alongside the main unit-stride one) pass `folder` to nest both under
+ * `benchmarks/results/<gpuModel>/wgblas/<folder>/` instead, and `fileName`
+ * to give each variant its own file within it — e.g.
+ * `saveResults("saxpy", gpuModel, strideRecords, { folder: "saxpy", fileName: "stride.saxpy" })`
+ * writes `.../wgblas/saxpy/stride.saxpy.json`. Omitting both keeps the
+ * original flat layout every other routine still uses.
+ *
  * @param routineName - e.g. `"saxpy"`
  * @param gpuModel - slug from {@link getGpuModel}
  * @param results - array of `{ n, compute_ms, compute_GBs }` records
+ * @param {{ folder?: string, fileName?: string }} [options]
+ * @param options.folder - subfolder under `wgblas/` to nest the file in (default: none, flat layout)
+ * @param options.fileName - file name without `.json` (default: `routineName`)
  */
-export function saveResults(routineName, gpuModel, results) {
+export function saveResults(routineName, gpuModel, results, options = {}) {
+  const { folder, fileName } = options;
   if (!gpuModel) {
     console.warn("Warning: couldn't fetch GPU model — skipping result save.");
     return;
   }
-  const outDir = `benchmarks/results/${gpuModel}/wgblas`;
+  const outDir = folder
+    ? `benchmarks/results/${gpuModel}/wgblas/${folder}`
+    : `benchmarks/results/${gpuModel}/wgblas`;
   mkdirSync(outDir, { recursive: true });
   writeFileSync(
-    `${outDir}/${routineName}.json`,
+    `${outDir}/${fileName ?? routineName}.json`,
     JSON.stringify(results, null, 2),
   ); // 2-space indent for human-readable diffs in git
 }

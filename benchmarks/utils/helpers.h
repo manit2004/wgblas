@@ -108,6 +108,88 @@ static void save_results(const char *routine, const char *gpu_model,
 }
 
 /**
+ * Like `save_results`, but writes to `benchmarks/results/<gpu_model>/cuda/<folder>/<file_name>.json`
+ * instead of the flat `cuda/<routine>.json` layout — for routines with more
+ * than one benchmark variant (e.g. a stride sweep alongside the main
+ * unit-stride one), mirroring `saveResults`'s `{ folder, fileName }` option
+ * in `helpers.mjs`.
+ *
+ * @param routine   routine name, e.g. `"saxpy"` (unused in the output path here, kept for signature symmetry with `save_results`)
+ * @param gpu_model slug from `get_gpu_model()`
+ * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"saxpy"`
+ * @param file_name file name without `.json`, e.g. `"saxpy"`
+ * @param sizes     array of `n` values used in the benchmark
+ * @param med_times median compute times in milliseconds, one per size
+ * @param gbs_vals  throughput in GB/s, one per size
+ * @param n         number of entries in `sizes`, `med_times`, and `gbs_vals`
+ */
+static void save_results_ex(const char *routine, const char *gpu_model,
+                             const char *folder, const char *file_name,
+                             int *sizes, float *med_times, float *gbs_vals, int n) {
+    (void)routine; // kept for signature symmetry with save_results, unused here
+    char *gpu_dir, *base_dir, *out_dir, *file_path;
+    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
+    asprintf(&base_dir,  "%s/cuda", gpu_dir);
+    asprintf(&out_dir,   "%s/%s", base_dir, folder);
+    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
+    mkdir("benchmarks/results", 0755); // 0755: owner rwx
+    mkdir(gpu_dir, 0755);
+    mkdir(base_dir, 0755);
+    mkdir(out_dir, 0755);
+    FILE *fp = fopen(file_path, "w");
+    fprintf(fp, "[\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "  { \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
+            sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
+    }
+    fprintf(fp, "]\n");
+    fclose(fp);
+    free(gpu_dir);
+    free(base_dir);
+    free(out_dir);
+    free(file_path);
+}
+
+/**
+ * Like `save_results_ex`, but each record also carries a `stride` field —
+ * for stride-sweep benchmarks (e.g. `stride.saxpy.c`), matching the record
+ * shape `saveResults` writes for `stride.saxpy.js` in `helpers.mjs`.
+ *
+ * @param gpu_model slug from `get_gpu_model()`
+ * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"saxpy"`
+ * @param file_name file name without `.json`, e.g. `"stride.saxpy"`
+ * @param strides   array of `incx`/`incy` values used, one per record
+ * @param sizes     array of `n` values used, one per record
+ * @param med_times median compute times in milliseconds, one per record
+ * @param gbs_vals  throughput in GB/s, one per record
+ * @param n         number of entries in `strides`, `sizes`, `med_times`, and `gbs_vals`
+ */
+static void save_results_stride(const char *gpu_model, const char *folder, const char *file_name,
+                                 int *strides, int *sizes, float *med_times, float *gbs_vals, int n) {
+    char *gpu_dir, *base_dir, *out_dir, *file_path;
+    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
+    asprintf(&base_dir,  "%s/cuda", gpu_dir);
+    asprintf(&out_dir,   "%s/%s", base_dir, folder);
+    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
+    mkdir("benchmarks/results", 0755); // 0755: owner rwx
+    mkdir(gpu_dir, 0755);
+    mkdir(base_dir, 0755);
+    mkdir(out_dir, 0755);
+    FILE *fp = fopen(file_path, "w");
+    fprintf(fp, "[\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "  { \"stride\": %d, \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
+            strides[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
+    }
+    fprintf(fp, "]\n");
+    fclose(fp);
+    free(gpu_dir);
+    free(base_dir);
+    free(out_dir);
+    free(file_path);
+}
+
+/**
  * Returns the median of `arr[0..n-1]`. Copies the array before sorting so
  * the original is not mutated.
  *
