@@ -1,11 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-all: $(TARGET)
+all: $(BIN)/sger $(BIN)/lda.sger
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/sger: sger.c ../../utils/helpers.h | $(BIN)
+	$(CC) sger.c -o $(BIN)/sger -lcublas
+
+$(BIN)/lda.sger: lda.sger.c ../../utils/helpers.h | $(BIN)
+	$(CC) lda.sger.c -o $(BIN)/lda.sger -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

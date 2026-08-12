@@ -10,6 +10,12 @@ bench-stride-%:
 bench-trans-%:
 	node benchmarks/$*/wgblas/trans.$*.js $(ARGS)
 
+bench-lda-%:
+	node benchmarks/$*/wgblas/lda.$*.js $(ARGS)
+
+bench-uplo-%:
+	node benchmarks/$*/wgblas/uplo.$*.js $(ARGS)
+
 bench-%:
 	node benchmarks/$*/wgblas/$*.js $(ARGS)
 
@@ -27,3 +33,11 @@ cuda-stride-%:
 cuda-trans-%:
 	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/trans.$*
 	./benchmarks/$*/cuda/bin/trans.$*
+
+cuda-lda-%:
+	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/lda.$*
+	./benchmarks/$*/cuda/bin/lda.$*
+
+cuda-uplo-%:
+	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/uplo.$*
+	./benchmarks/$*/cuda/bin/uplo.$*

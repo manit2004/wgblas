@@ -95,7 +95,7 @@
  *
  * ## See also
  *
- * - [benchmark.sger.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sger/benchmark.sger.js) — WebGPU benchmark script
+ * - [sger.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sger/wgblas/sger.js) — WebGPU benchmark script
  *
  * @module benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/sger
  */

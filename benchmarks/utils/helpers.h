@@ -190,6 +190,88 @@ static void save_results_stride(const char *gpu_model, const char *folder, const
 }
 
 /**
+ * Like `save_results_stride`, but for an `lda`-padding sweep — each record
+ * carries `pad` (the number of elements added to a tight `lda`) instead of
+ * `stride`. Used by `lda.<routine>.c` benchmarks (e.g. ssymv, ssyr, ssyr2,
+ * sger), whose lda-sensitivity mechanisms were confirmed empirically to
+ * differ per routine — see TODO.md.
+ *
+ * @param gpu_model slug from `get_gpu_model()`
+ * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"ssymv"`
+ * @param file_name file name without `.json`, e.g. `"lda.ssymv"`
+ * @param pads      array of lda-padding amounts (elements) used, one per record
+ * @param sizes     array of `n` values used, one per record
+ * @param med_times median compute times in milliseconds, one per record
+ * @param gbs_vals  throughput in GB/s, one per record
+ * @param n         number of entries in `pads`, `sizes`, `med_times`, and `gbs_vals`
+ */
+static void save_results_pad(const char *gpu_model, const char *folder, const char *file_name,
+                              int *pads, int *sizes, float *med_times, float *gbs_vals, int n) {
+    char *gpu_dir, *base_dir, *out_dir, *file_path;
+    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
+    asprintf(&base_dir,  "%s/cuda", gpu_dir);
+    asprintf(&out_dir,   "%s/%s", base_dir, folder);
+    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
+    mkdir("benchmarks/results", 0755);
+    mkdir(gpu_dir, 0755);
+    mkdir(base_dir, 0755);
+    mkdir(out_dir, 0755);
+    FILE *fp = fopen(file_path, "w");
+    fprintf(fp, "[\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "  { \"pad\": %d, \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
+            pads[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
+    }
+    fprintf(fp, "]\n");
+    fclose(fp);
+    free(gpu_dir);
+    free(base_dir);
+    free(out_dir);
+    free(file_path);
+}
+
+/**
+ * Like `save_results_stride`, but for a `uplo` sweep — each record carries
+ * `uplo` (`"lower"` or `"upper"`) instead of `stride`. Used by
+ * `uplo.<routine>.c` benchmarks (e.g. ssyr, ssyr2), whose uplo-sensitivity
+ * was confirmed empirically to be real (~1.7-1.8x, dispatch-order workload
+ * imbalance) — see TODO.md.
+ *
+ * @param gpu_model slug from `get_gpu_model()`
+ * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"ssyr"`
+ * @param file_name file name without `.json`, e.g. `"uplo.ssyr"`
+ * @param uplos     array of `"lower"`/`"upper"` strings, one per record
+ * @param sizes     array of `n` values used, one per record
+ * @param med_times median compute times in milliseconds, one per record
+ * @param gbs_vals  throughput in GB/s, one per record
+ * @param n         number of entries in `uplos`, `sizes`, `med_times`, and `gbs_vals`
+ */
+static void save_results_uplo(const char *gpu_model, const char *folder, const char *file_name,
+                               const char **uplos, int *sizes, float *med_times, float *gbs_vals, int n) {
+    char *gpu_dir, *base_dir, *out_dir, *file_path;
+    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
+    asprintf(&base_dir,  "%s/cuda", gpu_dir);
+    asprintf(&out_dir,   "%s/%s", base_dir, folder);
+    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
+    mkdir("benchmarks/results", 0755);
+    mkdir(gpu_dir, 0755);
+    mkdir(base_dir, 0755);
+    mkdir(out_dir, 0755);
+    FILE *fp = fopen(file_path, "w");
+    fprintf(fp, "[\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "  { \"uplo\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
+            uplos[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
+    }
+    fprintf(fp, "]\n");
+    fclose(fp);
+    free(gpu_dir);
+    free(base_dir);
+    free(out_dir);
+    free(file_path);
+}
+
+/**
  * Returns the median of `arr[0..n-1]`. Copies the array before sorting so
  * the original is not mutated.
  *

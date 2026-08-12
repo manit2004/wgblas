@@ -93,9 +93,26 @@ def fetch_stride(gpu, backend, routine, local_only=False):
 
 def fetch_trans(gpu, backend, routine, local_only=False):
     """Trans-sweep companion file — only present for routines with a
-    trans.<routine> benchmark alongside the main one (currently sgemv).
-    None if absent."""
+    trans.<routine> benchmark alongside the main one (currently sgemv,
+    strmv). None if absent."""
     return fetch_json(gpu, backend, f"{routine}/trans.{routine}", local_only)
+
+
+def fetch_uplo(gpu, backend, routine, local_only=False):
+    """Uplo-sweep companion file — only present for routines where uplo was
+    confirmed to be a real effect (currently ssyr, ssyr2 — not ssymv/strmv,
+    where it was scoped and found to be a non-effect). None if absent."""
+    return fetch_json(gpu, backend, f"{routine}/uplo.{routine}", local_only)
+
+
+def fetch_lda(gpu, backend, routine, local_only=False):
+    """Lda-sweep companion file — present for routines where lda was
+    confirmed to be a real effect (ssymv, ssyr, ssyr2, sger, strmv — not
+    sgemv, where it was scoped and found to be a non-effect). For strmv
+    specifically this is a combined trans×pad sweep (records carry a
+    "trans" key too, since lda only mattered for trans="transpose" there);
+    every other routine's records are just {pad, n, ...}. None if absent."""
+    return fetch_json(gpu, backend, f"{routine}/lda.{routine}", local_only)
 
 
 def script_path(routine, backend):
@@ -125,12 +142,79 @@ def trans_script_path(routine, backend):
     return f"benchmarks/{routine}/{backend}/trans.{routine}.{ext}"
 
 
+def uplo_script_path(routine, backend):
+    """Repo-relative path to a routine's uplo-sweep benchmark script."""
+    ext = "js" if backend == "wgblas" else "c"
+    return f"benchmarks/{routine}/{backend}/uplo.{routine}.{ext}"
+
+
+def lda_script_path(routine, backend):
+    """Repo-relative path to a routine's lda-sweep benchmark script."""
+    ext = "js" if backend == "wgblas" else "c"
+    return f"benchmarks/{routine}/{backend}/lda.{routine}.{ext}"
+
+
 def group_by_stride(rows):
     """Groups stride-sweep rows by 'stride', sorting each group's rows by n
     ascending. Returns a dict ordered by ascending stride."""
     groups = {}
     for r in rows:
         groups.setdefault(r["stride"], []).append(r)
+    for g in groups.values():
+        g.sort(key=lambda r: r["n"])
+    return dict(sorted(groups.items()))
+
+
+def group_by_uplo(rows):
+    """Groups uplo-sweep rows by 'uplo', sorting each group's rows by n
+    ascending. Returns a dict ordered "lower" then "upper" (alphabetical
+    happens to match the desired order)."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["uplo"], []).append(r)
+    for g in groups.values():
+        g.sort(key=lambda r: r["n"])
+    return dict(sorted(groups.items()))
+
+
+def group_by_pad(rows):
+    """Groups lda-sweep rows by 'pad', sorting each group's rows by n
+    ascending. Returns a dict ordered by ascending pad. Only for routines
+    with a plain {pad, n, ...} lda sweep (not strmv's combined trans×pad
+    one — see group_by_trans_and_pad)."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["pad"], []).append(r)
+    for g in groups.values():
+        g.sort(key=lambda r: r["n"])
+    return dict(sorted(groups.items()))
+
+
+def group_by_trans_and_pad(rows):
+    """Groups a combined trans×pad lda-sweep (currently just strmv) by
+    'trans' then by 'pad', sorting each innermost group's rows by n
+    ascending. Same shape as group_by_trans_and_m, keyed by pad instead
+    of m."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["trans"], {}).setdefault(r["pad"], []).append(r)
+    for by_pad in groups.values():
+        for g in by_pad.values():
+            g.sort(key=lambda r: r["n"])
+    return {
+        trans: dict(sorted(by_pad.items()))
+        for trans, by_pad in sorted(groups.items())
+    }
+
+
+def group_by_trans(rows):
+    """Groups a single-axis trans sweep (currently just strmv, always square
+    n×n — no separate m) by 'trans', sorting each group's rows by n
+    ascending. Not for sgemv's m×n-grid trans sweep — see
+    group_by_trans_and_m for that shape."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["trans"], []).append(r)
     for g in groups.values():
         g.sort(key=lambda r: r["n"])
     return dict(sorted(groups.items()))
@@ -503,6 +587,190 @@ def make_trans_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
     return "\n".join(parts)
 
 
+def make_trans_simple_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
+    """Like make_trans_section, but for a single-axis trans sweep (currently
+    just strmv, always square n×n — no m×n grid to group by). "trans" then
+    n ascending, same shape as make_stride_section/make_uplo_section.
+    """
+    groups = group_by_trans(wgblas_trans)
+    cuda_groups = group_by_trans(cuda_trans) if cuda_trans else {}
+
+    parts = [
+        "## Transpose sweep\n",
+        f"Unless noted otherwise, every result above uses `trans = "
+        f"\"no-transpose\"`. `trans = \"transpose\"` reads A with a "
+        f"cross-thread `lda`-strided mirror pattern instead of a coalesced "
+        f"one, and the gap grows with `n` — collapsed below by default, "
+        f"expand a `trans` value to see its table and chart.\n",
+    ]
+    for trans, wrows in groups.items():
+        crows = cuda_groups.get(trans, [])
+        parts.append(f"<details>\n<summary>{display} — trans = {trans}</summary>\n")
+        parts.append(
+            make_comparison_table(wrows, crows) if crows
+            else make_wgblas_only_table(wrows)
+        )
+        parts.append("")
+        chart = make_svg_chart(wrows, crows, f"{routine}-trans{trans}", gpu)
+        if chart:
+            parts.append(chart)
+        parts.append("")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [trans.{routine}.js]({gh}/{trans_script_path(routine, 'wgblas')}) "
+        "— WebGPU trans-sweep benchmark script"
+    )
+    if cuda_trans:
+        parts.append(
+            f"- [trans.{routine}.c]({gh}/{trans_script_path(routine, 'cuda')}) "
+            "— CUDA / cuBLAS trans-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
+def make_uplo_section(wgblas_uplo, cuda_uplo, routine, gpu, display, gh):
+    """Builds the uplo-sweep subsection: one table + chart per uplo value,
+    "lower" then "upper", each group's rows sorted n ascending. Only built
+    for routines where uplo was confirmed to be a real effect (ssyr,
+    ssyr2) — dispatch-order workload imbalance, ~1.7-1.8x slower for upper.
+    """
+    groups = group_by_uplo(wgblas_uplo)
+    cuda_groups = group_by_uplo(cuda_uplo) if cuda_uplo else {}
+
+    parts = [
+        "## Uplo sweep\n",
+        f"Unless noted otherwise, every result above uses `uplo = "
+        f"\"lower\"`. Real workgroups dispatch in increasing index order, "
+        f"so `uplo = \"upper\"` front-loads the heaviest rows first "
+        f"(worse — long-running heavy workgroups have nothing to overlap "
+        f"with) while `lower` back-loads them (better — light rows clear "
+        f"fast, the heavy tail gets full GPU to itself) — collapsed below "
+        f"by default, expand a `uplo` value to see its table and chart.\n",
+    ]
+    for uplo, wrows in groups.items():
+        crows = cuda_groups.get(uplo, [])
+        parts.append(f"<details>\n<summary>{display} — uplo = {uplo}</summary>\n")
+        parts.append(
+            make_comparison_table(wrows, crows) if crows
+            else make_wgblas_only_table(wrows)
+        )
+        parts.append("")
+        chart = make_svg_chart(wrows, crows, f"{routine}-uplo{uplo}", gpu)
+        if chart:
+            parts.append(chart)
+        parts.append("")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [uplo.{routine}.js]({gh}/{uplo_script_path(routine, 'wgblas')}) "
+        "— WebGPU uplo-sweep benchmark script"
+    )
+    if cuda_uplo:
+        parts.append(
+            f"- [uplo.{routine}.c]({gh}/{uplo_script_path(routine, 'cuda')}) "
+            "— CUDA / cuBLAS uplo-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
+def make_lda_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
+    """Builds the lda-sweep subsection: one table + chart per pad value,
+    ascending pad, rows sorted n ascending. Each routine's lda-sensitivity
+    mechanism was confirmed empirically and differs — see TODO.md — so the
+    intro text is routine-specific rather than a single generic blurb.
+    """
+    groups = group_by_pad(wgblas_lda)
+    cuda_groups = group_by_pad(cuda_lda) if cuda_lda else {}
+
+    parts = [
+        "## Lda sweep\n",
+        f"Unless noted otherwise, every result above uses a tight `lda` "
+        f"(no padding). Padding the row stride changes throughput here — "
+        f"the exact mechanism and shape of that effect is routine-specific "
+        f"(see TODO.md in the repo for the measured mechanism) — collapsed "
+        f"below by default, expand a `pad` value to see its table and "
+        f"chart.\n",
+    ]
+    for pad, wrows in groups.items():
+        crows = cuda_groups.get(pad, [])
+        parts.append(f"<details>\n<summary>{display} — pad = {pad}</summary>\n")
+        parts.append(
+            make_comparison_table(wrows, crows) if crows
+            else make_wgblas_only_table(wrows)
+        )
+        parts.append("")
+        chart = make_svg_chart(wrows, crows, f"{routine}-pad{pad}", gpu)
+        if chart:
+            parts.append(chart)
+        parts.append("")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [lda.{routine}.js]({gh}/{lda_script_path(routine, 'wgblas')}) "
+        "— WebGPU lda-sweep benchmark script"
+    )
+    if cuda_lda:
+        parts.append(
+            f"- [lda.{routine}.c]({gh}/{lda_script_path(routine, 'cuda')}) "
+            "— CUDA / cuBLAS lda-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
+def make_lda_trans_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
+    """Like make_lda_section, but for a combined trans×pad lda sweep
+    (currently just strmv, where lda only mattered for trans="transpose").
+    trans groups in "no-transpose" then "transpose" order, pad ascending
+    within each.
+    """
+    groups = group_by_trans_and_pad(wgblas_lda)
+    cuda_groups = group_by_trans_and_pad(cuda_lda) if cuda_lda else {}
+
+    parts = [
+        "## Lda sweep\n",
+        f"Unless noted otherwise, every result above uses a tight `lda` "
+        f"(no padding). Padding the row stride only matters for `trans = "
+        f"\"transpose\"` here (swept at both `trans` values below so "
+        f"that's visible in the data, not just claimed) — see TODO.md in "
+        f"the repo for the measured mechanism. Collapsed below by default "
+        f"— expand a `trans` value, then a `pad`, to see its table and "
+        f"chart.\n",
+    ]
+    for trans, by_pad in groups.items():
+        cuda_by_pad = cuda_groups.get(trans, {})
+        parts.append(f"<details>\n<summary>{display} — trans = {trans} ({len(by_pad)} pads)</summary>\n")
+        for pad, wrows in by_pad.items():
+            crows = cuda_by_pad.get(pad, [])
+            parts.append(f"<details>\n<summary>pad = {pad}</summary>\n")
+            parts.append(
+                make_comparison_table(wrows, crows) if crows
+                else make_wgblas_only_table(wrows)
+            )
+            parts.append("")
+            chart = make_svg_chart(wrows, crows, f"{routine}-lda-{trans}-pad{pad}", gpu)
+            if chart:
+                parts.append(chart)
+            parts.append("")
+            parts.append("</details>\n")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [lda.{routine}.js]({gh}/{lda_script_path(routine, 'wgblas')}) "
+        "— WebGPU lda-sweep benchmark script"
+    )
+    if cuda_lda:
+        parts.append(
+            f"- [lda.{routine}.c]({gh}/{lda_script_path(routine, 'cuda')}) "
+            "— CUDA / cuBLAS lda-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
 def gpu_display_name(folder):
     return folder.replace("-", " ").title()
 
@@ -588,6 +856,10 @@ def main():
             cuda_stride = fetch_stride(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
             wgblas_trans = fetch_trans(gpu, "wgblas", routine, local_only=args.local)
             cuda_trans = fetch_trans(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
+            wgblas_uplo = fetch_uplo(gpu, "wgblas", routine, local_only=args.local)
+            cuda_uplo = fetch_uplo(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
+            wgblas_lda = fetch_lda(gpu, "wgblas", routine, local_only=args.local)
+            cuda_lda = fetch_lda(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
 
             wgblas_link = f"{gh}/{script_path(routine, 'wgblas')}"
             wgblas_script_name = script_path(routine, "wgblas").rsplit("/", 1)[-1]
@@ -623,9 +895,35 @@ def main():
                 )
 
             if wgblas_trans:
-                body += "\n\n" + make_trans_section(
-                    wgblas_trans, cuda_trans, routine, gpu, display, gh
+                # sgemv's trans sweep is a full m×n grid (records carry an
+                # "m" key); strmv's is a single n-axis (always square, no
+                # separate m) — dispatch to the matching section builder.
+                if "m" in wgblas_trans[0]:
+                    body += "\n\n" + make_trans_section(
+                        wgblas_trans, cuda_trans, routine, gpu, display, gh
+                    )
+                else:
+                    body += "\n\n" + make_trans_simple_section(
+                        wgblas_trans, cuda_trans, routine, gpu, display, gh
+                    )
+
+            if wgblas_uplo:
+                body += "\n\n" + make_uplo_section(
+                    wgblas_uplo, cuda_uplo, routine, gpu, display, gh
                 )
+
+            if wgblas_lda:
+                # strmv's lda sweep is a combined trans×pad one (records
+                # carry a "trans" key); every other routine's is plain
+                # {pad, n, ...} — dispatch to the matching section builder.
+                if "trans" in wgblas_lda[0]:
+                    body += "\n\n" + make_lda_trans_section(
+                        wgblas_lda, cuda_lda, routine, gpu, display, gh
+                    )
+                else:
+                    body += "\n\n" + make_lda_section(
+                        wgblas_lda, cuda_lda, routine, gpu, display, gh
+                    )
 
             out_file = out_gpu_dir / f"{routine}.mjs"
             write_mjs(

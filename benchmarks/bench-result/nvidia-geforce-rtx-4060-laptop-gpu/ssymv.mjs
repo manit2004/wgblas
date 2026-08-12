@@ -127,8 +127,8 @@
  *
  * ## See also
  *
- * - [benchmark.ssymv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/benchmark.ssymv.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [ssymv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/wgblas/ssymv.js) — WebGPU benchmark script
+ * - [ssymv.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssymv/cuda/ssymv.c) — CUDA / cuBLAS reference script
  *
  * @module benchmarks/nvidia-geforce-rtx-4060-laptop-gpu/ssymv
  */

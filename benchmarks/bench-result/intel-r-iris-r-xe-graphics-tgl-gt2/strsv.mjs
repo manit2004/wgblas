@@ -87,7 +87,7 @@
  *
  * ## See also
  *
- * - [benchmark.strsv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/strsv/benchmark.strsv.js) — WebGPU benchmark script
+ * - [strsv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/strsv/wgblas/strsv.js) — WebGPU benchmark script
  *
  * @module benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/strsv
  */

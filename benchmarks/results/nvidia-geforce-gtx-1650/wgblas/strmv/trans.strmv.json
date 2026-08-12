@@ -1,0 +1,110 @@
+[
+  {
+    "trans": "no-transpose",
+    "n": 32,
+    "compute_ms": 0.006752,
+    "compute_GBs": 0.35071090047393366
+  },
+  {
+    "trans": "no-transpose",
+    "n": 64,
+    "compute_ms": 0.0068319999999999995,
+    "compute_GBs": 1.2927400468384076
+  },
+  {
+    "trans": "no-transpose",
+    "n": 128,
+    "compute_ms": 0.00704,
+    "compute_GBs": 4.836363636363637
+  },
+  {
+    "trans": "no-transpose",
+    "n": 256,
+    "compute_ms": 0.008608,
+    "compute_GBs": 15.524163568773236
+  },
+  {
+    "trans": "no-transpose",
+    "n": 512,
+    "compute_ms": 0.011408,
+    "compute_GBs": 46.40673211781206
+  },
+  {
+    "trans": "no-transpose",
+    "n": 1024,
+    "compute_ms": 0.028672,
+    "compute_GBs": 73.5
+  },
+  {
+    "trans": "no-transpose",
+    "n": 1280,
+    "compute_ms": 0.038944,
+    "compute_GBs": 84.47000821692687
+  },
+  {
+    "trans": "no-transpose",
+    "n": 2048,
+    "compute_ms": 0.08252799999999999,
+    "compute_GBs": 101.8937572702598
+  },
+  {
+    "trans": "no-transpose",
+    "n": 4096,
+    "compute_ms": 0.277136,
+    "compute_GBs": 121.22348594192023
+  },
+  {
+    "trans": "transpose",
+    "n": 32,
+    "compute_ms": 0.006848,
+    "compute_GBs": 0.34579439252336447
+  },
+  {
+    "trans": "transpose",
+    "n": 64,
+    "compute_ms": 0.006992,
+    "compute_GBs": 1.263157894736842
+  },
+  {
+    "trans": "transpose",
+    "n": 128,
+    "compute_ms": 0.008,
+    "compute_GBs": 4.256
+  },
+  {
+    "trans": "transpose",
+    "n": 256,
+    "compute_ms": 0.011584,
+    "compute_GBs": 11.535911602209945
+  },
+  {
+    "trans": "transpose",
+    "n": 512,
+    "compute_ms": 0.0208,
+    "compute_GBs": 25.452307692307695
+  },
+  {
+    "trans": "transpose",
+    "n": 1024,
+    "compute_ms": 0.060752,
+    "compute_GBs": 34.68843824071635
+  },
+  {
+    "trans": "transpose",
+    "n": 1280,
+    "compute_ms": 0.097728,
+    "compute_GBs": 33.66077275703995
+  },
+  {
+    "trans": "transpose",
+    "n": 2048,
+    "compute_ms": 0.213376,
+    "compute_GBs": 39.40971805638872
+  },
+  {
+    "trans": "transpose",
+    "n": 4096,
+    "compute_ms": 1.14024,
+    "compute_GBs": 29.463439275941912
+  }
+]

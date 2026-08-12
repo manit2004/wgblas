@@ -95,7 +95,7 @@
  *
  * ## See also
  *
- * - [benchmark.ssyr2.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssyr2/benchmark.ssyr2.js) — WebGPU benchmark script
+ * - [ssyr2.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/ssyr2/wgblas/ssyr2.js) — WebGPU benchmark script
  *
  * @module benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/ssyr2
  */
