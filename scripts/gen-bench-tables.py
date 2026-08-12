@@ -91,6 +91,13 @@ def fetch_stride(gpu, backend, routine, local_only=False):
     return fetch_json(gpu, backend, f"{routine}/stride.{routine}", local_only)
 
 
+def fetch_trans(gpu, backend, routine, local_only=False):
+    """Trans-sweep companion file — only present for routines with a
+    trans.<routine> benchmark alongside the main one (currently sgemv).
+    None if absent."""
+    return fetch_json(gpu, backend, f"{routine}/trans.{routine}", local_only)
+
+
 def script_path(routine, backend):
     """Repo-relative path to a routine's benchmark script, preferring the
     migrated benchmarks/<routine>/<backend>/<routine>.{js,c} layout and
@@ -112,6 +119,12 @@ def stride_script_path(routine, backend):
     return f"benchmarks/{routine}/{backend}/stride.{routine}.{ext}"
 
 
+def trans_script_path(routine, backend):
+    """Repo-relative path to a routine's trans-sweep benchmark script."""
+    ext = "js" if backend == "wgblas" else "c"
+    return f"benchmarks/{routine}/{backend}/trans.{routine}.{ext}"
+
+
 def group_by_stride(rows):
     """Groups stride-sweep rows by 'stride', sorting each group's rows by n
     ascending. Returns a dict ordered by ascending stride."""
@@ -121,6 +134,23 @@ def group_by_stride(rows):
     for g in groups.values():
         g.sort(key=lambda r: r["n"])
     return dict(sorted(groups.items()))
+
+
+def group_by_trans_and_m(rows):
+    """Groups trans-sweep rows by 'trans' then by 'm', sorting each innermost
+    group's rows by n ascending. Returns nested dicts ordered by trans
+    ("no-transpose" before "transpose" — alphabetical happens to match) then
+    ascending m."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["trans"], {}).setdefault(r["m"], []).append(r)
+    for by_m in groups.values():
+        for g in by_m.values():
+            g.sort(key=lambda r: r["n"])
+    return {
+        trans: dict(sorted(by_m.items()))
+        for trans, by_m in sorted(groups.items())
+    }
 
 
 def _tick_step(y_max):
@@ -392,11 +422,12 @@ def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
         f"non-unit stride (e.g. operating on a row or column of a larger "
         f"matrix, where `incx = lda`), which breaks memory coalescing and "
         f"costs measurably more. This section sweeps a few representative "
-        f"strides to characterize that cost separately.\n",
+        f"strides to characterize that cost separately, collapsed below by "
+        f"default — expand a stride to see its table and chart.\n",
     ]
     for stride, wrows in groups.items():
         crows = cuda_groups.get(stride, [])
-        parts.append(f"### {display} — stride = {stride}\n")
+        parts.append(f"<details>\n<summary>{display} — stride = {stride}</summary>\n")
         parts.append(
             make_comparison_table(wrows, crows) if crows
             else make_wgblas_only_table(wrows)
@@ -406,6 +437,7 @@ def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
         if chart:
             parts.append(chart)
         parts.append("")
+        parts.append("</details>\n")
 
     parts.append("**See also:**\n")
     parts.append(
@@ -416,6 +448,57 @@ def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
         parts.append(
             f"- [stride.{routine}.c]({gh}/{stride_script_path(routine, 'cuda')}) "
             "— CUDA / cuBLAS stride-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
+def make_trans_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
+    """Builds the trans-sweep subsection: one table + chart per (trans, m)
+    pair, sweeping n ascending within each — trans groups in "no-transpose"
+    then "transpose" order, m ascending within each trans.
+    """
+    groups = group_by_trans_and_m(wgblas_trans)
+    cuda_groups = group_by_trans_and_m(cuda_trans) if cuda_trans else {}
+
+    parts = [
+        "## Transpose sweep\n",
+        f"Unless noted otherwise, every result above uses `trans = "
+        f"\"no-transpose\"`. `trans = \"transpose\"`'s parallelism is bounded "
+        f"by `n` (one workgroup per output-column tile) rather than `m`, so "
+        f"it's slower at matched square shapes and substantially slower on "
+        f"tall-narrow shapes — this section sweeps every `(m, n)` pair for "
+        f"both `trans` values to characterize that shape sensitivity, not "
+        f"just a single square-shape A/B. Collapsed by default since it's "
+        f"{sum(len(by_m) for by_m in groups.values())} shape combinations — "
+        f"expand a `trans` value, then a shape, to see its table and chart.\n",
+    ]
+    for trans, by_m in groups.items():
+        cuda_by_m = cuda_groups.get(trans, {})
+        parts.append(f"<details>\n<summary>{display} — trans = {trans} ({len(by_m)} shapes)</summary>\n")
+        for m, wrows in by_m.items():
+            crows = cuda_by_m.get(m, [])
+            parts.append(f"<details>\n<summary>m = {m}</summary>\n")
+            parts.append(
+                make_comparison_table(wrows, crows) if crows
+                else make_wgblas_only_table(wrows)
+            )
+            parts.append("")
+            chart = make_svg_chart(wrows, crows, f"{routine}-trans-{trans}-m{m}", gpu)
+            if chart:
+                parts.append(chart)
+            parts.append("")
+            parts.append("</details>\n")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [trans.{routine}.js]({gh}/{trans_script_path(routine, 'wgblas')}) "
+        "— WebGPU trans-sweep benchmark script"
+    )
+    if cuda_trans:
+        parts.append(
+            f"- [trans.{routine}.c]({gh}/{trans_script_path(routine, 'cuda')}) "
+            "— CUDA / cuBLAS trans-sweep reference script"
         )
     return "\n".join(parts)
 
@@ -503,6 +586,8 @@ def main():
             cuda = fetch_main(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
             wgblas_stride = fetch_stride(gpu, "wgblas", routine, local_only=args.local)
             cuda_stride = fetch_stride(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
+            wgblas_trans = fetch_trans(gpu, "wgblas", routine, local_only=args.local)
+            cuda_trans = fetch_trans(gpu, "cuda", routine, local_only=args.local) if has_cuda else None
 
             wgblas_link = f"{gh}/{script_path(routine, 'wgblas')}"
             wgblas_script_name = script_path(routine, "wgblas").rsplit("/", 1)[-1]
@@ -535,6 +620,11 @@ def main():
             if wgblas_stride:
                 body += "\n\n" + make_stride_section(
                     wgblas_stride, cuda_stride, routine, gpu, display, gh
+                )
+
+            if wgblas_trans:
+                body += "\n\n" + make_trans_section(
+                    wgblas_trans, cuda_trans, routine, gpu, display, gh
                 )
 
             out_file = out_gpu_dir / f"{routine}.mjs"

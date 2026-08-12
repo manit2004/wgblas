@@ -10,8 +10,9 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
-} from "../utils/helpers.mjs";
+} from "../../utils/helpers.mjs";
 
+const STRIDE = 1; // unit stride — coalesced, best case. See stride.sgemv.js for incx/incy > 1.
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
 // Square matrices m=n; covers sub-tile (m<64), tiled (m>=64) paths.
@@ -40,15 +41,16 @@ for (const size of SIZES) {
   const xGpu = GpuVector.from(randomFloat32Array(n));
   const yGpu = GpuVector.from(new Float32Array(m));
 
-  // warm up
+  // warm up — trans="no-transpose" only; see trans.sgemv.js for
+  // trans="transpose" and its much stronger aspect-ratio sensitivity.
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await sgemv(device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1);
+    await sgemv(device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, STRIDE, beta, yGpu, STRIDE);
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await sgemv(
-      device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1,
+      device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, STRIDE, beta, yGpu, STRIDE,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
@@ -67,6 +69,6 @@ for (const size of SIZES) {
   records.push({ m, n, compute_ms: med, compute_GBs: gbs });
 }
 
-saveResults("sgemv", gpuModel, records);
+saveResults("sgemv", gpuModel, records, { folder: "sgemv" });
 
 cleanup();

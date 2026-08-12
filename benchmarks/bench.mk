@@ -7,6 +7,9 @@ bench:
 bench-stride-%:
 	node benchmarks/$*/wgblas/stride.$*.js $(ARGS)
 
+bench-trans-%:
+	node benchmarks/$*/wgblas/trans.$*.js $(ARGS)
+
 bench-%:
 	node benchmarks/$*/wgblas/$*.js $(ARGS)
 
@@ -20,3 +23,7 @@ cuda-%:
 cuda-stride-%:
 	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/stride.$*
 	./benchmarks/$*/cuda/bin/stride.$*
+
+cuda-trans-%:
+	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/trans.$*
+	./benchmarks/$*/cuda/bin/trans.$*

@@ -151,9 +151,10 @@
  *
  * ## Stride sweep
  *
- * Unless noted otherwise, every result above uses unit stride (`incx = incy = 1`) — the normal case, and the coalesced, best-case GPU access pattern. Real usage sometimes passes a non-unit stride (e.g. operating on a row or column of a larger matrix, where `incx = lda`), which breaks memory coalescing and costs measurably more. This section sweeps a few representative strides to characterize that cost separately.
+ * Unless noted otherwise, every result above uses unit stride (`incx = incy = 1`) — the normal case, and the coalesced, best-case GPU access pattern. Real usage sometimes passes a non-unit stride (e.g. operating on a row or column of a larger matrix, where `incx = lda`), which breaks memory coalescing and costs measurably more. This section sweeps a few representative strides to characterize that cost separately, collapsed below by default — expand a stride to see its table and chart.
  *
- * ### Nvidia Geforce Gtx 1650 — stride = 4
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — stride = 4</summary>
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
@@ -289,7 +290,10 @@
  * <circle class="mk2" cx="584.0" cy="29.6" r="4"/>
  * </svg>
  *
- * ### Nvidia Geforce Gtx 1650 — stride = 32
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — stride = 32</summary>
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
@@ -414,7 +418,10 @@
  * <circle class="mk2" cx="584.0" cy="39.9" r="4"/>
  * </svg>
  *
- * ### Nvidia Geforce Gtx 1650 — stride = 256
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — stride = 256</summary>
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
@@ -505,6 +512,8 @@
  * <circle class="mk2" cx="433.7" cy="174.8" r="4"/>
  * <circle class="mk2" cx="584.0" cy="27.9" r="4"/>
  * </svg>
+ *
+ * </details>
  *
  * **See also:**
  *

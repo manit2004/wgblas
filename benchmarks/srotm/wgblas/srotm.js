@@ -11,6 +11,9 @@ import {
 } from "../../utils/helpers.mjs";
 
 const STRIDE = 1; // unit stride — coalesced, best case. See stride.srotm.js for incx/incy > 1.
+// flag = -2.0 (identity H) is not swept here: srotm.mjs:39 returns before any
+// GPU dispatch in that case, so timing is ~flat JS-return overhead, not a
+// throughput number — not representative of this sweep's n-dependent shape.
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
 const SIZES = [

@@ -95,7 +95,7 @@
  *
  * ## See also
  *
- * - [benchmark.sgemv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemv/benchmark.sgemv.js) — WebGPU benchmark script
+ * - [sgemv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemv/wgblas/sgemv.js) — WebGPU benchmark script
  *
  * @module benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/sgemv
  */
