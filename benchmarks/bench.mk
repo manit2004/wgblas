@@ -16,6 +16,9 @@ bench-lda-%:
 bench-uplo-%:
 	node benchmarks/$*/wgblas/uplo.$*.js $(ARGS)
 
+bench-ldb-%:
+	node benchmarks/$*/wgblas/ldb.$*.js $(ARGS)
+
 bench-%:
 	node benchmarks/$*/wgblas/$*.js $(ARGS)
 
@@ -41,3 +44,7 @@ cuda-lda-%:
 cuda-uplo-%:
 	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/uplo.$*
 	./benchmarks/$*/cuda/bin/uplo.$*
+
+cuda-ldb-%:
+	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/ldb.$*
+	./benchmarks/$*/cuda/bin/ldb.$*

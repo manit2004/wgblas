@@ -9,12 +9,19 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
-} from "../utils/helpers.mjs";
+} from "../../utils/helpers.mjs";
 
-// O(n^3) compute vs sgemv's O(n^2) — and this is sgemm_naive (no
-// tiling/blocking yet), so far fewer/smaller sizes and iterations than the
-// Level 1/2 benchmarks, to keep total runtime reasonable. Revisit once the
-// tiled/register-blocked kernels land.
+// O(n^3) compute vs sgemv's O(n^2), so far fewer/smaller sizes and
+// iterations than the Level 1/2 benchmarks, to keep total runtime
+// reasonable. Uses the autotuned two-tier tiled/register-blocked dispatch
+// (sgemm_small/sgemm_large, see those shaders) — trans="no-transpose" for
+// both operands and lda/ldb/ldc tight throughout; see trans.sgemm.js for
+// the transA/transB effect (transB dominates, transA is small/mixed — an
+// asymmetry from B's tile dimension (BN=64) spanning a full warp where
+// A's (BK=8) doesn't) and ldb.sgemm.js for the lda/ldb/ldc-padding effect
+// (only ldb matters, and only when transB="transpose"). Shape/aspect-ratio
+// (m vs n skew) was scoped and found to be shape-robust here, unlike
+// sgemv — not swept separately.
 const WARMUP_ITERS = 3;
 const BENCH_ITERS = 20;
 const SIZES = [32, 64, 128, 256, 512, 1024];
@@ -71,6 +78,6 @@ for (const size of SIZES) {
   records.push({ m, n, k, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
 }
 
-saveResults("sgemm", gpuModel, records);
+saveResults("sgemm", gpuModel, records, { folder: "sgemm" });
 
 cleanup();

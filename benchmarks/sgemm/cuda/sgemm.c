@@ -95,12 +95,14 @@ int main(void) {
     }
 
     // write JSON results
-    char *gpu_dir, *out_dir, *file_path;
+    char *gpu_dir, *base_dir, *out_dir, *file_path;
     asprintf(&gpu_dir,   "benchmarks/results/%s",       gpu_model);
-    asprintf(&out_dir,   "%s/cuda",                      gpu_dir);
+    asprintf(&base_dir,  "%s/cuda",                      gpu_dir);
+    asprintf(&out_dir,   "%s/sgemm",                     base_dir);
     asprintf(&file_path, "%s/sgemm.json",                out_dir);
     mkdir("benchmarks/results", 0755);
     mkdir(gpu_dir, 0755);
+    mkdir(base_dir, 0755);
     mkdir(out_dir, 0755);
     FILE *fp = fopen(file_path, "w");
     if (!fp) { perror(file_path); return 1; }
@@ -115,6 +117,7 @@ int main(void) {
     fprintf(fp, "]\n");
     fclose(fp);
     free(gpu_dir);
+    free(base_dir);
     free(out_dir);
     free(file_path);
 

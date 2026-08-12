@@ -194,7 +194,7 @@ static void save_results_stride(const char *gpu_model, const char *folder, const
  * carries `pad` (the number of elements added to a tight `lda`) instead of
  * `stride`. Used by `lda.<routine>.c` benchmarks (e.g. ssymv, ssyr, ssyr2,
  * sger), whose lda-sensitivity mechanisms were confirmed empirically to
- * differ per routine — see TODO.md.
+ * differ per routine — see .md.
  *
  * @param gpu_model slug from `get_gpu_model()`
  * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"ssymv"`
@@ -235,7 +235,7 @@ static void save_results_pad(const char *gpu_model, const char *folder, const ch
  * `uplo` (`"lower"` or `"upper"`) instead of `stride`. Used by
  * `uplo.<routine>.c` benchmarks (e.g. ssyr, ssyr2), whose uplo-sensitivity
  * was confirmed empirically to be real (~1.7-1.8x, dispatch-order workload
- * imbalance) — see TODO.md.
+ * imbalance) — see .md.
  *
  * @param gpu_model slug from `get_gpu_model()`
  * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"ssyr"`
