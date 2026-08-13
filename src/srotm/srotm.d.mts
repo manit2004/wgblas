@@ -36,7 +36,7 @@ export declare function srotm(
  *   x = H[0][0]*x + H[0][1]*y
  *   y = H[1][0]*x + H[1][1]*y
  *
- * {@includeCode ../../examples/srotm/gpuvec.srotm.js}
+ * {@includeCode ../../examples/srotm/gpu.srotm.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

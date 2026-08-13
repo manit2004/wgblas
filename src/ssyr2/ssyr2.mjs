@@ -49,6 +49,8 @@ export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda, la
     );
   if (xIsGpu && !AIsGpu)
     throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
+  if (AIsGpu && !xIsGpu)
+    throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
   if (AIsGpu && xIsGpu && A._buf === x._buf)
     throw new Error("A and x must not reference the same GPU buffer.");
   if (AIsGpu && yIsGpu && A._buf === y._buf)

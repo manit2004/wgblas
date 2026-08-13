@@ -1,13 +1,13 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-.PHONY: all clean
+all: $(BIN)/strsv
 
-all: $(TARGET)
+$(BIN):
+	mkdir -p $(BIN)
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN)/strsv: strsv.c ../../utils/helpers.h | $(BIN)
+	$(CC) strsv.c -o $(BIN)/strsv -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

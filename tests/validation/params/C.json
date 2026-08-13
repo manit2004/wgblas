@@ -1,0 +1,18 @@
+{
+  "_note": "Matrix C",
+  "type": "float32array",
+  "baseline": [0, 0, 0, 0, 0, 0],
+  "dependsOn": ["m", "n", "ldc"],
+  "range": { "elementMin": -10.0, "elementMax": 10.0 },
+  "invalid": [
+    { "special": "null",      "error": "C must be a Float32Array or GpuMatrix", "label": "null" },
+    { "special": "undefined", "error": "C must be a Float32Array or GpuMatrix", "label": "undefined" },
+    { "special": "array",     "error": "C must be a Float32Array or GpuMatrix", "label": "plain Array []" },
+    { "special": "object",    "error": "C must be a Float32Array or GpuMatrix", "label": "plain object {}" },
+    { "special": "number",    "error": "C must be a Float32Array or GpuMatrix", "label": "number" },
+    { "value": [0, 0, 0],     "error": "C does not have enough elements", "label": "3 of 4 required elements (baseline m=n=2, ldc=2) — one short" }
+  ],
+  "edge": [
+    { "value": [0, 0, 0, 0], "label": "exactly 4 elements — minimum valid at m=n=2, ldc=2" }
+  ]
+}

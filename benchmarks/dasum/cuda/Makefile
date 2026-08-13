@@ -1,11 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-all: $(TARGET)
+all: $(BIN)/dasum $(BIN)/stride.dasum
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/dasum: dasum.c ../../utils/helpers.h | $(BIN)
+	$(CC) dasum.c -o $(BIN)/dasum -lcublas
+
+$(BIN)/stride.dasum: stride.dasum.c ../../utils/helpers.h | $(BIN)
+	$(CC) stride.dasum.c -o $(BIN)/stride.dasum -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

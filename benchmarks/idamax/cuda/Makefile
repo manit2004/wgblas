@@ -1,11 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-all: $(TARGET)
+all: $(BIN)/idamax $(BIN)/stride.idamax
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/idamax: idamax.c ../../utils/helpers.h | $(BIN)
+	$(CC) idamax.c -o $(BIN)/idamax -lcublas
+
+$(BIN)/stride.idamax: stride.idamax.c ../../utils/helpers.h | $(BIN)
+	$(CC) stride.idamax.c -o $(BIN)/stride.idamax -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

@@ -6,6 +6,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import fc from "fast-check";
 import { init, cleanup, GpuVector } from "wgblas";
+import { getPowerPreference } from "../../helpers/device.js";
 import { srotm } from "wgblas/srotm";
 import { loadParam } from "../../helpers/validation.js";
 import { runFixtures, floatArb } from "../../helpers/fixtures.js";
@@ -28,7 +29,7 @@ const paramArb = fc.integer({ min: 0, max: paramSpec.range.flags.length - 1 }) /
 
 let device;
 before(async () => {
-  device = await init();
+  device = await init({ powerPreference: getPowerPreference() });
 });
 after(() => {
   cleanup();

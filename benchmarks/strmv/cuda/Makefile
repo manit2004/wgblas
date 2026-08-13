@@ -1,13 +1,19 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-.PHONY: all clean
+all: $(BIN)/strmv $(BIN)/trans.strmv $(BIN)/lda.strmv
 
-all: $(TARGET)
+$(BIN):
+	mkdir -p $(BIN)
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN)/strmv: strmv.c ../../utils/helpers.h | $(BIN)
+	$(CC) strmv.c -o $(BIN)/strmv -lcublas
+
+$(BIN)/trans.strmv: trans.strmv.c ../../utils/helpers.h | $(BIN)
+	$(CC) trans.strmv.c -o $(BIN)/trans.strmv -lcublas
+
+$(BIN)/lda.strmv: lda.strmv.c ../../utils/helpers.h | $(BIN)
+	$(CC) lda.strmv.c -o $(BIN)/lda.strmv -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

@@ -5,14 +5,14 @@
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
- * | 32 | 0.0410 | 0.0578 | 0.0102 | 0.2313 | 25.0% |
- * | 64 | 0.0755 | 0.1170 | 0.0123 | 0.7188 | 16.3% |
- * | 128 | 0.0926 | 0.3677 | 0.0171 | 1.9962 | 18.4% |
- * | 256 | 0.1476 | 0.9057 | 0.0266 | 5.0192 | 18.0% |
- * | 512 | 0.3031 | 1.7466 | 0.0471 | 11.2315 | 15.6% |
- * | 1024 | 0.6480 | 3.2522 | 0.0983 | 21.4445 | 15.2% |
- * | 2048 | 1.4746 | 5.7025 | 0.1976 | 42.5665 | 13.4% |
- * | 4096 | 3.3628 | 9.9903 | 0.4271 | 78.6586 | 12.7% |
+ * | 32 | 0.0470 | 0.0504 | 0.0100 | 0.2357 | 21.4% |
+ * | 64 | 0.0869 | 0.1016 | 0.0123 | 0.7188 | 14.1% |
+ * | 128 | 0.1065 | 0.3197 | 0.0172 | 1.9795 | 16.2% |
+ * | 256 | 0.1700 | 0.7861 | 0.0265 | 5.0496 | 15.6% |
+ * | 512 | 0.3482 | 1.5206 | 0.0449 | 11.7877 | 12.9% |
+ * | 1024 | 0.7417 | 2.8413 | 0.0983 | 21.4375 | 13.3% |
+ * | 2048 | 1.6872 | 4.9840 | 0.1948 | 43.1749 | 11.5% |
+ * | 4096 | 3.6253 | 9.2669 | 0.4223 | 79.5556 | 11.6% |
  *
  * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.
  *
@@ -40,24 +40,24 @@
  * <text class="at" x="433.7" y="236" text-anchor="middle">1.0K</text>
  * <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
- * <polyline class="ln1" points="58.0,219.9 133.1,219.8 208.3,219.3 283.4,218.2 358.6,216.5 433.7,213.5 508.9,208.6 584.0,200.0"/>
- * <polyline class="ln2" points="58.0,219.5 133.1,218.6 208.3,216.0 283.4,210.0 358.6,197.5 433.7,177.1 508.9,134.9 584.0,62.7"/>
+ * <polyline class="ln1" points="58.0,219.9 133.1,219.8 208.3,219.4 283.4,218.4 358.6,217.0 433.7,214.3 508.9,210.0 584.0,201.5"/>
+ * <polyline class="ln2" points="58.0,219.5 133.1,218.6 208.3,216.0 283.4,209.9 358.6,196.4 433.7,177.1 508.9,133.7 584.0,60.9"/>
  * <circle class="mk1" cx="58.0" cy="219.9" r="4"/>
  * <circle class="mk1" cx="133.1" cy="219.8" r="4"/>
- * <circle class="mk1" cx="208.3" cy="219.3" r="4"/>
- * <circle class="mk1" cx="283.4" cy="218.2" r="4"/>
- * <circle class="mk1" cx="358.6" cy="216.5" r="4"/>
- * <circle class="mk1" cx="433.7" cy="213.5" r="4"/>
- * <circle class="mk1" cx="508.9" cy="208.6" r="4"/>
- * <circle class="mk1" cx="584.0" cy="200.0" r="4"/>
+ * <circle class="mk1" cx="208.3" cy="219.4" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="218.4" r="4"/>
+ * <circle class="mk1" cx="358.6" cy="217.0" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="214.3" r="4"/>
+ * <circle class="mk1" cx="508.9" cy="210.0" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="201.5" r="4"/>
  * <circle class="mk2" cx="58.0" cy="219.5" r="4"/>
  * <circle class="mk2" cx="133.1" cy="218.6" r="4"/>
  * <circle class="mk2" cx="208.3" cy="216.0" r="4"/>
- * <circle class="mk2" cx="283.4" cy="210.0" r="4"/>
- * <circle class="mk2" cx="358.6" cy="197.5" r="4"/>
+ * <circle class="mk2" cx="283.4" cy="209.9" r="4"/>
+ * <circle class="mk2" cx="358.6" cy="196.4" r="4"/>
  * <circle class="mk2" cx="433.7" cy="177.1" r="4"/>
- * <circle class="mk2" cx="508.9" cy="134.9" r="4"/>
- * <circle class="mk2" cx="584.0" cy="62.7" r="4"/>
+ * <circle class="mk2" cx="508.9" cy="133.7" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="60.9" r="4"/>
  * <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
  * <circle class="mk1" cx="66" cy="252" r="4"/>
  * <text class="lt" x="80" y="256">wgblas</text>
@@ -92,30 +92,30 @@
  * <text class="at" x="433.7" y="236" text-anchor="middle">1.0K</text>
  * <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
- * <polyline class="ln1" points="58.0,218.0 133.1,216.2 208.3,215.4 283.4,212.6 358.6,204.8 433.7,187.6 508.9,146.3 584.0,51.9"/>
- * <polyline class="ln2" points="58.0,219.5 133.1,219.4 208.3,219.1 283.4,218.7 358.6,217.6 433.7,215.1 508.9,210.1 584.0,198.6"/>
- * <circle class="mk1" cx="58.0" cy="218.0" r="4"/>
- * <circle class="mk1" cx="133.1" cy="216.2" r="4"/>
- * <circle class="mk1" cx="208.3" cy="215.4" r="4"/>
- * <circle class="mk1" cx="283.4" cy="212.6" r="4"/>
- * <circle class="mk1" cx="358.6" cy="204.8" r="4"/>
- * <circle class="mk1" cx="433.7" cy="187.6" r="4"/>
- * <circle class="mk1" cx="508.9" cy="146.3" r="4"/>
- * <circle class="mk1" cx="584.0" cy="51.9" r="4"/>
+ * <polyline class="ln1" points="58.0,217.6 133.1,215.7 208.3,214.7 283.4,211.5 358.6,202.6 433.7,182.9 508.9,135.6 584.0,38.7"/>
+ * <polyline class="ln2" points="58.0,219.5 133.1,219.4 208.3,219.1 283.4,218.7 358.6,217.8 433.7,215.1 508.9,210.3 584.0,198.9"/>
+ * <circle class="mk1" cx="58.0" cy="217.6" r="4"/>
+ * <circle class="mk1" cx="133.1" cy="215.7" r="4"/>
+ * <circle class="mk1" cx="208.3" cy="214.7" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="211.5" r="4"/>
+ * <circle class="mk1" cx="358.6" cy="202.6" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="182.9" r="4"/>
+ * <circle class="mk1" cx="508.9" cy="135.6" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="38.7" r="4"/>
  * <circle class="mk2" cx="58.0" cy="219.5" r="4"/>
  * <circle class="mk2" cx="133.1" cy="219.4" r="4"/>
  * <circle class="mk2" cx="208.3" cy="219.1" r="4"/>
  * <circle class="mk2" cx="283.4" cy="218.7" r="4"/>
- * <circle class="mk2" cx="358.6" cy="217.6" r="4"/>
+ * <circle class="mk2" cx="358.6" cy="217.8" r="4"/>
  * <circle class="mk2" cx="433.7" cy="215.1" r="4"/>
- * <circle class="mk2" cx="508.9" cy="210.1" r="4"/>
- * <circle class="mk2" cx="584.0" cy="198.6" r="4"/>
+ * <circle class="mk2" cx="508.9" cy="210.3" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="198.9" r="4"/>
  * </svg>
  *
  * ## See also
  *
- * - [benchmark.strsv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/strsv/benchmark.strsv.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/strsv/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [strsv.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/strsv/wgblas/strsv.js) — WebGPU benchmark script
+ * - [strsv.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/strsv/cuda/strsv.c) — CUDA / cuBLAS reference script
  *
  * @module benchmarks/nvidia-geforce-gtx-1650/strsv
  */

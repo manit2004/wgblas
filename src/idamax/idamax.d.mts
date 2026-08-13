@@ -33,7 +33,7 @@ export declare function idamax(
  * Returns the 0-based index of the element with the largest absolute value.
  * Ties are broken in favour of the lower index, matching CBLAS behaviour.
  *
- * {@includeCode ../../examples/idamax/gpuvec.idamax.js}
+ * {@includeCode ../../examples/idamax/gpu.idamax.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

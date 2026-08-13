@@ -1,4 +1,4 @@
-.PHONY: example example-gpuvec example-web
+.PHONY: example example-gpu example-web
 
 example:
 	@for d in examples/*/; do r=$$(basename $$d); [ -f "$${d}$${r}.js" ] && node "$${d}$${r}.js" || true; done
@@ -19,8 +19,8 @@ example-web:
 	done; \
 	wait $$VPID
 
-example-gpuvec:
-	@for d in examples/*/; do r=$$(basename $$d); [ -f "$${d}gpuvec.$${r}.js" ] && node "$${d}gpuvec.$${r}.js" || true; done
+example-gpu:
+	@for d in examples/*/; do r=$$(basename $$d); [ -f "$${d}gpu.$${r}.js" ] && node "$${d}gpu.$${r}.js" || true; done
 
-example-gpuvec-%:
-	node examples/$*/gpuvec.$*.js
+example-gpu-%:
+	node examples/$*/gpu.$*.js

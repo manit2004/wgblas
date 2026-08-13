@@ -5,18 +5,18 @@
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
- * | 32 | 0.0205 | 0.0125 | 0.0169 | 0.0152 | 82.2% |
- * | 64 | 0.0205 | 0.0250 | 0.0170 | 0.0301 | 83.0% |
- * | 128 | 0.0205 | 0.0500 | 0.0174 | 0.0588 | 85.0% |
- * | 512 | 0.0206 | 0.1988 | 0.0205 | 0.1998 | 99.5% |
- * | 1024 | 0.0206 | 0.3975 | 0.0205 | 0.3997 | 99.5% |
- * | 4096 | 0.0206 | 1.5925 | 0.0190 | 1.7239 | 92.4% |
- * | 16384 | 0.0211 | 6.2108 | 0.0189 | 6.9424 | 89.5% |
- * | 65536 | 0.0227 | 23.1086 | 0.0270 | 19.4353 | 118.9% |
- * | 262144 | 0.0359 | 58.4621 | 0.0413 | 50.7637 | 115.2% |
- * | 1048576 | 0.0699 | 120.0293 | 0.0913 | 91.8514 | 130.7% |
- * | 4194304 | 0.2068 | 162.2178 | 0.2867 | 117.0416 | 138.6% |
- * | 16777216 | 0.7645 | 175.5710 | 1.0617 | 126.4201 | 138.9% |
+ * | 32 | 0.0212 | 0.0120 | 0.0168 | 0.0152 | 79.3% |
+ * | 64 | 0.0214 | 0.0239 | 0.0176 | 0.0291 | 82.1% |
+ * | 128 | 0.0208 | 0.0493 | 0.0197 | 0.0519 | 95.0% |
+ * | 512 | 0.0211 | 0.1944 | 0.0170 | 0.2408 | 80.7% |
+ * | 1024 | 0.0214 | 0.3832 | 0.0169 | 0.4848 | 79.0% |
+ * | 4096 | 0.0216 | 1.5204 | 0.0181 | 1.8060 | 84.2% |
+ * | 16384 | 0.0219 | 5.9796 | 0.0179 | 7.3143 | 81.8% |
+ * | 65536 | 0.0235 | 22.3520 | 0.0263 | 19.9562 | 112.0% |
+ * | 262144 | 0.0363 | 57.7410 | 0.0386 | 54.2741 | 106.4% |
+ * | 1048576 | 0.0700 | 119.8099 | 0.0839 | 99.9977 | 119.8% |
+ * | 4194304 | 0.2078 | 161.4436 | 0.2666 | 125.8568 | 128.3% |
+ * | 16777216 | 0.7641 | 175.6482 | 1.0618 | 126.4068 | 139.0% |
  *
  * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.
  *
@@ -48,31 +48,31 @@
  * <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
  * <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
- * <polyline class="ln1" points="58.0,220.0 85.7,220.0 113.4,220.0 168.7,219.8 196.4,219.6 251.8,218.4 307.2,213.8 362.5,196.9 417.9,161.5 473.3,100.0 528.6,57.8 584.0,44.4"/>
- * <polyline class="ln2" points="58.0,220.0 85.7,220.0 113.4,219.9 168.7,219.8 196.4,219.6 251.8,218.3 307.2,213.1 362.5,200.6 417.9,169.2 473.3,128.1 528.6,103.0 584.0,93.6"/>
+ * <polyline class="ln1" points="58.0,220.0 85.7,220.0 113.4,220.0 168.7,219.8 196.4,219.6 251.8,218.5 307.2,214.0 362.5,197.6 417.9,162.3 473.3,100.2 528.6,58.6 584.0,44.4"/>
+ * <polyline class="ln2" points="58.0,220.0 85.7,220.0 113.4,219.9 168.7,219.8 196.4,219.5 251.8,218.2 307.2,212.7 362.5,200.0 417.9,165.7 473.3,120.0 528.6,94.1 584.0,93.6"/>
  * <circle class="mk1" cx="58.0" cy="220.0" r="4"/>
  * <circle class="mk1" cx="85.7" cy="220.0" r="4"/>
  * <circle class="mk1" cx="113.4" cy="220.0" r="4"/>
  * <circle class="mk1" cx="168.7" cy="219.8" r="4"/>
  * <circle class="mk1" cx="196.4" cy="219.6" r="4"/>
- * <circle class="mk1" cx="251.8" cy="218.4" r="4"/>
- * <circle class="mk1" cx="307.2" cy="213.8" r="4"/>
- * <circle class="mk1" cx="362.5" cy="196.9" r="4"/>
- * <circle class="mk1" cx="417.9" cy="161.5" r="4"/>
- * <circle class="mk1" cx="473.3" cy="100.0" r="4"/>
- * <circle class="mk1" cx="528.6" cy="57.8" r="4"/>
+ * <circle class="mk1" cx="251.8" cy="218.5" r="4"/>
+ * <circle class="mk1" cx="307.2" cy="214.0" r="4"/>
+ * <circle class="mk1" cx="362.5" cy="197.6" r="4"/>
+ * <circle class="mk1" cx="417.9" cy="162.3" r="4"/>
+ * <circle class="mk1" cx="473.3" cy="100.2" r="4"/>
+ * <circle class="mk1" cx="528.6" cy="58.6" r="4"/>
  * <circle class="mk1" cx="584.0" cy="44.4" r="4"/>
  * <circle class="mk2" cx="58.0" cy="220.0" r="4"/>
  * <circle class="mk2" cx="85.7" cy="220.0" r="4"/>
  * <circle class="mk2" cx="113.4" cy="219.9" r="4"/>
  * <circle class="mk2" cx="168.7" cy="219.8" r="4"/>
- * <circle class="mk2" cx="196.4" cy="219.6" r="4"/>
- * <circle class="mk2" cx="251.8" cy="218.3" r="4"/>
- * <circle class="mk2" cx="307.2" cy="213.1" r="4"/>
- * <circle class="mk2" cx="362.5" cy="200.6" r="4"/>
- * <circle class="mk2" cx="417.9" cy="169.2" r="4"/>
- * <circle class="mk2" cx="473.3" cy="128.1" r="4"/>
- * <circle class="mk2" cx="528.6" cy="103.0" r="4"/>
+ * <circle class="mk2" cx="196.4" cy="219.5" r="4"/>
+ * <circle class="mk2" cx="251.8" cy="218.2" r="4"/>
+ * <circle class="mk2" cx="307.2" cy="212.7" r="4"/>
+ * <circle class="mk2" cx="362.5" cy="200.0" r="4"/>
+ * <circle class="mk2" cx="417.9" cy="165.7" r="4"/>
+ * <circle class="mk2" cx="473.3" cy="120.0" r="4"/>
+ * <circle class="mk2" cx="528.6" cy="94.1" r="4"/>
  * <circle class="mk2" cx="584.0" cy="93.6" r="4"/>
  * <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
  * <circle class="mk1" cx="66" cy="252" r="4"/>
@@ -116,38 +116,402 @@
  * <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
  * <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
  * <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
- * <polyline class="ln1" points="58.0,216.6 85.7,216.6 113.4,216.6 168.7,216.6 196.4,216.6 251.8,216.6 307.2,216.5 362.5,216.2 417.9,214.0 473.3,208.4 528.6,185.5 584.0,92.6"/>
- * <polyline class="ln2" points="58.0,217.2 85.7,217.2 113.4,217.1 168.7,216.6 196.4,216.6 251.8,216.8 307.2,216.8 362.5,215.5 417.9,213.1 473.3,204.8 528.6,172.2 584.0,43.1"/>
- * <circle class="mk1" cx="58.0" cy="216.6" r="4"/>
- * <circle class="mk1" cx="85.7" cy="216.6" r="4"/>
- * <circle class="mk1" cx="113.4" cy="216.6" r="4"/>
- * <circle class="mk1" cx="168.7" cy="216.6" r="4"/>
- * <circle class="mk1" cx="196.4" cy="216.6" r="4"/>
- * <circle class="mk1" cx="251.8" cy="216.6" r="4"/>
- * <circle class="mk1" cx="307.2" cy="216.5" r="4"/>
- * <circle class="mk1" cx="362.5" cy="216.2" r="4"/>
- * <circle class="mk1" cx="417.9" cy="214.0" r="4"/>
- * <circle class="mk1" cx="473.3" cy="208.4" r="4"/>
- * <circle class="mk1" cx="528.6" cy="185.5" r="4"/>
+ * <polyline class="ln1" points="58.0,216.5 85.7,216.4 113.4,216.5 168.7,216.5 196.4,216.4 251.8,216.4 307.2,216.3 362.5,216.1 417.9,213.9 473.3,208.3 528.6,185.4 584.0,92.6"/>
+ * <polyline class="ln2" points="58.0,217.2 85.7,217.1 113.4,216.7 168.7,217.2 196.4,217.2 251.8,217.0 307.2,217.0 362.5,215.6 417.9,213.6 473.3,206.0 528.6,175.6 584.0,43.0"/>
+ * <circle class="mk1" cx="58.0" cy="216.5" r="4"/>
+ * <circle class="mk1" cx="85.7" cy="216.4" r="4"/>
+ * <circle class="mk1" cx="113.4" cy="216.5" r="4"/>
+ * <circle class="mk1" cx="168.7" cy="216.5" r="4"/>
+ * <circle class="mk1" cx="196.4" cy="216.4" r="4"/>
+ * <circle class="mk1" cx="251.8" cy="216.4" r="4"/>
+ * <circle class="mk1" cx="307.2" cy="216.3" r="4"/>
+ * <circle class="mk1" cx="362.5" cy="216.1" r="4"/>
+ * <circle class="mk1" cx="417.9" cy="213.9" r="4"/>
+ * <circle class="mk1" cx="473.3" cy="208.3" r="4"/>
+ * <circle class="mk1" cx="528.6" cy="185.4" r="4"/>
  * <circle class="mk1" cx="584.0" cy="92.6" r="4"/>
  * <circle class="mk2" cx="58.0" cy="217.2" r="4"/>
- * <circle class="mk2" cx="85.7" cy="217.2" r="4"/>
- * <circle class="mk2" cx="113.4" cy="217.1" r="4"/>
- * <circle class="mk2" cx="168.7" cy="216.6" r="4"/>
- * <circle class="mk2" cx="196.4" cy="216.6" r="4"/>
- * <circle class="mk2" cx="251.8" cy="216.8" r="4"/>
- * <circle class="mk2" cx="307.2" cy="216.8" r="4"/>
- * <circle class="mk2" cx="362.5" cy="215.5" r="4"/>
- * <circle class="mk2" cx="417.9" cy="213.1" r="4"/>
- * <circle class="mk2" cx="473.3" cy="204.8" r="4"/>
- * <circle class="mk2" cx="528.6" cy="172.2" r="4"/>
- * <circle class="mk2" cx="584.0" cy="43.1" r="4"/>
+ * <circle class="mk2" cx="85.7" cy="217.1" r="4"/>
+ * <circle class="mk2" cx="113.4" cy="216.7" r="4"/>
+ * <circle class="mk2" cx="168.7" cy="217.2" r="4"/>
+ * <circle class="mk2" cx="196.4" cy="217.2" r="4"/>
+ * <circle class="mk2" cx="251.8" cy="217.0" r="4"/>
+ * <circle class="mk2" cx="307.2" cy="217.0" r="4"/>
+ * <circle class="mk2" cx="362.5" cy="215.6" r="4"/>
+ * <circle class="mk2" cx="417.9" cy="213.6" r="4"/>
+ * <circle class="mk2" cx="473.3" cy="206.0" r="4"/>
+ * <circle class="mk2" cx="528.6" cy="175.6" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="43.0" r="4"/>
  * </svg>
  *
  * ## See also
  *
- * - [benchmark.idamax.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/idamax/benchmark.idamax.js) — WebGPU benchmark script
- * - [benchmark.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/idamax/cuda/benchmark.c) — CUDA / cuBLAS reference script
+ * - [idamax.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/idamax/wgblas/idamax.js) — WebGPU benchmark script
+ * - [idamax.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/idamax/cuda/idamax.c) — CUDA / cuBLAS reference script
+ *
+ * ## Stride sweep
+ *
+ * Unless noted otherwise, every result above uses unit stride (`incx = incy = 1`) — the normal case, and the coalesced, best-case GPU access pattern. Real usage sometimes passes a non-unit stride (e.g. operating on a row or column of a larger matrix, where `incx = lda`), which breaks memory coalescing and costs measurably more. This section sweeps a few representative strides to characterize that cost separately, collapsed below by default — expand a stride to see its table and chart.
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — stride = 4</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 32 | 0.0212 | 0.0121 | 0.0163 | 0.0157 | 76.9% |
+ * | 64 | 0.0208 | 0.0246 | 0.0169 | 0.0302 | 81.4% |
+ * | 128 | 0.0206 | 0.0497 | 0.0171 | 0.0599 | 83.0% |
+ * | 512 | 0.0208 | 0.1968 | 0.0167 | 0.2457 | 80.1% |
+ * | 1024 | 0.0210 | 0.3908 | 0.0168 | 0.4876 | 80.2% |
+ * | 4096 | 0.0216 | 1.5170 | 0.0181 | 1.8124 | 83.7% |
+ * | 16384 | 0.0225 | 5.8182 | 0.0180 | 7.2753 | 80.0% |
+ * | 65536 | 0.0349 | 15.0105 | 0.0306 | 17.1381 | 87.6% |
+ * | 262144 | 0.0696 | 30.1176 | 0.0640 | 32.7762 | 91.9% |
+ * | 1048576 | 0.2096 | 40.0281 | 0.1999 | 41.9699 | 95.4% |
+ * | 4194304 | 0.7802 | 43.0053 | 0.7362 | 45.5764 | 94.4% |
+ *
+ * <svg id="bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
+ * <style>#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
+ * <rect class="bg" width="600" height="260"/>
+ * <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
+ * <line class="gr" x1="58" y1="180.0" x2="584" y2="180.0"/>
+ * <line class="gr" x1="58" y1="140.0" x2="584" y2="140.0"/>
+ * <line class="gr" x1="58" y1="100.0" x2="584" y2="100.0"/>
+ * <line class="gr" x1="58" y1="60.0" x2="584" y2="60.0"/>
+ * <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
+ * <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
+ * <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
+ * <text class="at" x="52" y="224.0" text-anchor="end">0</text>
+ * <text class="at" x="52" y="184.0" text-anchor="end">10</text>
+ * <text class="at" x="52" y="144.0" text-anchor="end">20</text>
+ * <text class="at" x="52" y="104.0" text-anchor="end">30</text>
+ * <text class="at" x="52" y="64.0" text-anchor="end">40</text>
+ * <text class="at" x="52" y="24.0" text-anchor="end">50</text>
+ * <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">GB/s</text>
+ * <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
+ * <text class="at" x="88.9" y="236" text-anchor="middle">64</text>
+ * <text class="at" x="119.9" y="236" text-anchor="middle">128</text>
+ * <text class="at" x="181.8" y="236" text-anchor="middle">512</text>
+ * <text class="at" x="212.7" y="236" text-anchor="middle">1.0K</text>
+ * <text class="at" x="274.6" y="236" text-anchor="middle">4.1K</text>
+ * <text class="at" x="336.5" y="236" text-anchor="middle">16K</text>
+ * <text class="at" x="398.4" y="236" text-anchor="middle">65K</text>
+ * <text class="at" x="460.2" y="236" text-anchor="middle">262K</text>
+ * <text class="at" x="522.1" y="236" text-anchor="middle">1.0M</text>
+ * <text class="at" x="584.0" y="236" text-anchor="middle">4.2M</text>
+ * <polyline class="ln1" points="58.0,220.0 88.9,219.9 119.9,219.8 181.8,219.2 212.7,218.4 274.6,213.9 336.5,196.7 398.4,160.0 460.2,99.5 522.1,59.9 584.0,48.0"/>
+ * <polyline class="ln2" points="58.0,219.9 88.9,219.9 119.9,219.8 181.8,219.0 212.7,218.0 274.6,212.8 336.5,190.9 398.4,151.4 460.2,88.9 522.1,52.1 584.0,37.7"/>
+ * <circle class="mk1" cx="58.0" cy="220.0" r="4"/>
+ * <circle class="mk1" cx="88.9" cy="219.9" r="4"/>
+ * <circle class="mk1" cx="119.9" cy="219.8" r="4"/>
+ * <circle class="mk1" cx="181.8" cy="219.2" r="4"/>
+ * <circle class="mk1" cx="212.7" cy="218.4" r="4"/>
+ * <circle class="mk1" cx="274.6" cy="213.9" r="4"/>
+ * <circle class="mk1" cx="336.5" cy="196.7" r="4"/>
+ * <circle class="mk1" cx="398.4" cy="160.0" r="4"/>
+ * <circle class="mk1" cx="460.2" cy="99.5" r="4"/>
+ * <circle class="mk1" cx="522.1" cy="59.9" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="48.0" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="219.9" r="4"/>
+ * <circle class="mk2" cx="88.9" cy="219.9" r="4"/>
+ * <circle class="mk2" cx="119.9" cy="219.8" r="4"/>
+ * <circle class="mk2" cx="181.8" cy="219.0" r="4"/>
+ * <circle class="mk2" cx="212.7" cy="218.0" r="4"/>
+ * <circle class="mk2" cx="274.6" cy="212.8" r="4"/>
+ * <circle class="mk2" cx="336.5" cy="190.9" r="4"/>
+ * <circle class="mk2" cx="398.4" cy="151.4" r="4"/>
+ * <circle class="mk2" cx="460.2" cy="88.9" r="4"/>
+ * <circle class="mk2" cx="522.1" cy="52.1" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="37.7" r="4"/>
+ * <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
+ * <circle class="mk1" cx="66" cy="252" r="4"/>
+ * <text class="lt" x="80" y="256">wgblas</text>
+ * <line class="ln2" x1="132" y1="252" x2="148" y2="252"/>
+ * <circle class="mk2" cx="140" cy="252" r="4"/>
+ * <text class="lt" x="154" y="256">cuBLAS</text>
+ * </svg>
+ *
+ * <br>
+ *
+ * <svg id="bc-idamax-stride4-nvidia_geforce_gtx_1650-ms" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="ms vs n">
+ * <style>#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .bg{fill:#fcfcfb}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .at{fill:#898781}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300}#bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-idamax-stride4-nvidia_geforce_gtx_1650-ms .mk2{stroke:#1a1a19}</style>
+ * <rect class="bg" width="600" height="260"/>
+ * <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
+ * <line class="gr" x1="58" y1="170.0" x2="584" y2="170.0"/>
+ * <line class="gr" x1="58" y1="120.0" x2="584" y2="120.0"/>
+ * <line class="gr" x1="58" y1="70.0" x2="584" y2="70.0"/>
+ * <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
+ * <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
+ * <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
+ * <text class="at" x="52" y="224.0" text-anchor="end">0</text>
+ * <text class="at" x="52" y="174.0" text-anchor="end">0.200</text>
+ * <text class="at" x="52" y="124.0" text-anchor="end">0.400</text>
+ * <text class="at" x="52" y="74.0" text-anchor="end">0.600</text>
+ * <text class="at" x="52" y="24.0" text-anchor="end">0.800</text>
+ * <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">ms</text>
+ * <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
+ * <text class="at" x="88.9" y="236" text-anchor="middle">64</text>
+ * <text class="at" x="119.9" y="236" text-anchor="middle">128</text>
+ * <text class="at" x="181.8" y="236" text-anchor="middle">512</text>
+ * <text class="at" x="212.7" y="236" text-anchor="middle">1.0K</text>
+ * <text class="at" x="274.6" y="236" text-anchor="middle">4.1K</text>
+ * <text class="at" x="336.5" y="236" text-anchor="middle">16K</text>
+ * <text class="at" x="398.4" y="236" text-anchor="middle">65K</text>
+ * <text class="at" x="460.2" y="236" text-anchor="middle">262K</text>
+ * <text class="at" x="522.1" y="236" text-anchor="middle">1.0M</text>
+ * <text class="at" x="584.0" y="236" text-anchor="middle">4.2M</text>
+ * <polyline class="ln1" points="58.0,214.7 88.9,214.8 119.9,214.8 181.8,214.8 212.7,214.8 274.6,214.6 336.5,214.4 398.4,211.3 460.2,202.6 522.1,167.6 584.0,24.9"/>
+ * <polyline class="ln2" points="58.0,215.9 88.9,215.8 119.9,215.7 181.8,215.8 212.7,215.8 274.6,215.5 336.5,215.5 398.4,212.3 460.2,204.0 522.1,170.0 584.0,36.0"/>
+ * <circle class="mk1" cx="58.0" cy="214.7" r="4"/>
+ * <circle class="mk1" cx="88.9" cy="214.8" r="4"/>
+ * <circle class="mk1" cx="119.9" cy="214.8" r="4"/>
+ * <circle class="mk1" cx="181.8" cy="214.8" r="4"/>
+ * <circle class="mk1" cx="212.7" cy="214.8" r="4"/>
+ * <circle class="mk1" cx="274.6" cy="214.6" r="4"/>
+ * <circle class="mk1" cx="336.5" cy="214.4" r="4"/>
+ * <circle class="mk1" cx="398.4" cy="211.3" r="4"/>
+ * <circle class="mk1" cx="460.2" cy="202.6" r="4"/>
+ * <circle class="mk1" cx="522.1" cy="167.6" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="24.9" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="215.9" r="4"/>
+ * <circle class="mk2" cx="88.9" cy="215.8" r="4"/>
+ * <circle class="mk2" cx="119.9" cy="215.7" r="4"/>
+ * <circle class="mk2" cx="181.8" cy="215.8" r="4"/>
+ * <circle class="mk2" cx="212.7" cy="215.8" r="4"/>
+ * <circle class="mk2" cx="274.6" cy="215.5" r="4"/>
+ * <circle class="mk2" cx="336.5" cy="215.5" r="4"/>
+ * <circle class="mk2" cx="398.4" cy="212.3" r="4"/>
+ * <circle class="mk2" cx="460.2" cy="204.0" r="4"/>
+ * <circle class="mk2" cx="522.1" cy="170.0" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="36.0" r="4"/>
+ * </svg>
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — stride = 32</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 32 | 0.0192 | 0.0134 | 0.0167 | 0.0153 | 87.3% |
+ * | 64 | 0.0191 | 0.0268 | 0.0139 | 0.0368 | 72.9% |
+ * | 128 | 0.0188 | 0.0546 | 0.0172 | 0.0595 | 91.7% |
+ * | 512 | 0.0195 | 0.2104 | 0.0170 | 0.2411 | 87.2% |
+ * | 1024 | 0.0197 | 0.4156 | 0.0164 | 0.4995 | 83.2% |
+ * | 4096 | 0.0228 | 1.4402 | 0.0174 | 1.8806 | 76.6% |
+ * | 16384 | 0.0331 | 3.9632 | 0.0216 | 6.0592 | 65.4% |
+ * | 65536 | 0.0661 | 7.9341 | 0.0395 | 13.2664 | 59.8% |
+ * | 262144 | 0.2023 | 10.3672 | 0.1078 | 19.4584 | 53.3% |
+ *
+ * <svg id="bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
+ * <style>#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
+ * <rect class="bg" width="600" height="260"/>
+ * <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
+ * <line class="gr" x1="58" y1="170.0" x2="584" y2="170.0"/>
+ * <line class="gr" x1="58" y1="120.0" x2="584" y2="120.0"/>
+ * <line class="gr" x1="58" y1="70.0" x2="584" y2="70.0"/>
+ * <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
+ * <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
+ * <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
+ * <text class="at" x="52" y="224.0" text-anchor="end">0</text>
+ * <text class="at" x="52" y="174.0" text-anchor="end">5.0</text>
+ * <text class="at" x="52" y="124.0" text-anchor="end">10</text>
+ * <text class="at" x="52" y="74.0" text-anchor="end">15</text>
+ * <text class="at" x="52" y="24.0" text-anchor="end">20</text>
+ * <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">GB/s</text>
+ * <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
+ * <text class="at" x="98.5" y="236" text-anchor="middle">64</text>
+ * <text class="at" x="138.9" y="236" text-anchor="middle">128</text>
+ * <text class="at" x="219.8" y="236" text-anchor="middle">512</text>
+ * <text class="at" x="260.3" y="236" text-anchor="middle">1.0K</text>
+ * <text class="at" x="341.2" y="236" text-anchor="middle">4.1K</text>
+ * <text class="at" x="422.2" y="236" text-anchor="middle">16K</text>
+ * <text class="at" x="503.1" y="236" text-anchor="middle">65K</text>
+ * <text class="at" x="584.0" y="236" text-anchor="middle">262K</text>
+ * <polyline class="ln1" points="58.0,219.9 98.5,219.7 138.9,219.5 219.8,217.9 260.3,215.8 341.2,205.6 422.2,180.4 503.1,140.7 584.0,116.3"/>
+ * <polyline class="ln2" points="58.0,219.8 98.5,219.6 138.9,219.4 219.8,217.6 260.3,215.0 341.2,201.2 422.2,159.4 503.1,87.3 584.0,25.4"/>
+ * <circle class="mk1" cx="58.0" cy="219.9" r="4"/>
+ * <circle class="mk1" cx="98.5" cy="219.7" r="4"/>
+ * <circle class="mk1" cx="138.9" cy="219.5" r="4"/>
+ * <circle class="mk1" cx="219.8" cy="217.9" r="4"/>
+ * <circle class="mk1" cx="260.3" cy="215.8" r="4"/>
+ * <circle class="mk1" cx="341.2" cy="205.6" r="4"/>
+ * <circle class="mk1" cx="422.2" cy="180.4" r="4"/>
+ * <circle class="mk1" cx="503.1" cy="140.7" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="116.3" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="219.8" r="4"/>
+ * <circle class="mk2" cx="98.5" cy="219.6" r="4"/>
+ * <circle class="mk2" cx="138.9" cy="219.4" r="4"/>
+ * <circle class="mk2" cx="219.8" cy="217.6" r="4"/>
+ * <circle class="mk2" cx="260.3" cy="215.0" r="4"/>
+ * <circle class="mk2" cx="341.2" cy="201.2" r="4"/>
+ * <circle class="mk2" cx="422.2" cy="159.4" r="4"/>
+ * <circle class="mk2" cx="503.1" cy="87.3" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="25.4" r="4"/>
+ * <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
+ * <circle class="mk1" cx="66" cy="252" r="4"/>
+ * <text class="lt" x="80" y="256">wgblas</text>
+ * <line class="ln2" x1="132" y1="252" x2="148" y2="252"/>
+ * <circle class="mk2" cx="140" cy="252" r="4"/>
+ * <text class="lt" x="154" y="256">cuBLAS</text>
+ * </svg>
+ *
+ * <br>
+ *
+ * <svg id="bc-idamax-stride32-nvidia_geforce_gtx_1650-ms" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="ms vs n">
+ * <style>#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .bg{fill:#fcfcfb}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .at{fill:#898781}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300}#bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-idamax-stride32-nvidia_geforce_gtx_1650-ms .mk2{stroke:#1a1a19}</style>
+ * <rect class="bg" width="600" height="260"/>
+ * <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
+ * <line class="gr" x1="58" y1="180.0" x2="584" y2="180.0"/>
+ * <line class="gr" x1="58" y1="140.0" x2="584" y2="140.0"/>
+ * <line class="gr" x1="58" y1="100.0" x2="584" y2="100.0"/>
+ * <line class="gr" x1="58" y1="60.0" x2="584" y2="60.0"/>
+ * <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
+ * <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
+ * <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
+ * <text class="at" x="52" y="224.0" text-anchor="end">0</text>
+ * <text class="at" x="52" y="184.0" text-anchor="end">0.0500</text>
+ * <text class="at" x="52" y="144.0" text-anchor="end">0.100</text>
+ * <text class="at" x="52" y="104.0" text-anchor="end">0.150</text>
+ * <text class="at" x="52" y="64.0" text-anchor="end">0.200</text>
+ * <text class="at" x="52" y="24.0" text-anchor="end">0.250</text>
+ * <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">ms</text>
+ * <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
+ * <text class="at" x="98.5" y="236" text-anchor="middle">64</text>
+ * <text class="at" x="138.9" y="236" text-anchor="middle">128</text>
+ * <text class="at" x="219.8" y="236" text-anchor="middle">512</text>
+ * <text class="at" x="260.3" y="236" text-anchor="middle">1.0K</text>
+ * <text class="at" x="341.2" y="236" text-anchor="middle">4.1K</text>
+ * <text class="at" x="422.2" y="236" text-anchor="middle">16K</text>
+ * <text class="at" x="503.1" y="236" text-anchor="middle">65K</text>
+ * <text class="at" x="584.0" y="236" text-anchor="middle">262K</text>
+ * <polyline class="ln1" points="58.0,204.7 98.5,204.7 138.9,205.0 219.8,204.4 260.3,204.2 341.2,201.8 422.2,193.5 503.1,167.1 584.0,58.2"/>
+ * <polyline class="ln2" points="58.0,206.6 98.5,208.9 138.9,206.2 219.8,206.4 260.3,206.9 341.2,206.1 422.2,202.7 503.1,188.4 584.0,133.8"/>
+ * <circle class="mk1" cx="58.0" cy="204.7" r="4"/>
+ * <circle class="mk1" cx="98.5" cy="204.7" r="4"/>
+ * <circle class="mk1" cx="138.9" cy="205.0" r="4"/>
+ * <circle class="mk1" cx="219.8" cy="204.4" r="4"/>
+ * <circle class="mk1" cx="260.3" cy="204.2" r="4"/>
+ * <circle class="mk1" cx="341.2" cy="201.8" r="4"/>
+ * <circle class="mk1" cx="422.2" cy="193.5" r="4"/>
+ * <circle class="mk1" cx="503.1" cy="167.1" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="58.2" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="206.6" r="4"/>
+ * <circle class="mk2" cx="98.5" cy="208.9" r="4"/>
+ * <circle class="mk2" cx="138.9" cy="206.2" r="4"/>
+ * <circle class="mk2" cx="219.8" cy="206.4" r="4"/>
+ * <circle class="mk2" cx="260.3" cy="206.9" r="4"/>
+ * <circle class="mk2" cx="341.2" cy="206.1" r="4"/>
+ * <circle class="mk2" cx="422.2" cy="202.7" r="4"/>
+ * <circle class="mk2" cx="503.1" cy="188.4" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="133.8" r="4"/>
+ * </svg>
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — stride = 256</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 512 | 0.0196 | 0.2088 | 0.0162 | 0.2522 | 82.8% |
+ * | 1024 | 0.0197 | 0.4166 | 0.0164 | 0.5010 | 83.2% |
+ * | 4096 | 0.0290 | 1.1284 | 0.0180 | 1.8204 | 62.0% |
+ * | 16384 | 0.0449 | 2.9205 | 0.0294 | 4.4619 | 65.5% |
+ * | 65536 | 0.1021 | 5.1328 | 0.0501 | 10.4556 | 49.1% |
+ *
+ * <svg id="bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
+ * <style>#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
+ * <rect class="bg" width="600" height="260"/>
+ * <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
+ * <line class="gr" x1="58" y1="186.7" x2="584" y2="186.7"/>
+ * <line class="gr" x1="58" y1="153.3" x2="584" y2="153.3"/>
+ * <line class="gr" x1="58" y1="120.0" x2="584" y2="120.0"/>
+ * <line class="gr" x1="58" y1="86.7" x2="584" y2="86.7"/>
+ * <line class="gr" x1="58" y1="53.3" x2="584" y2="53.3"/>
+ * <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
+ * <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
+ * <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
+ * <text class="at" x="52" y="224.0" text-anchor="end">0</text>
+ * <text class="at" x="52" y="190.7" text-anchor="end">2.0</text>
+ * <text class="at" x="52" y="157.3" text-anchor="end">4.0</text>
+ * <text class="at" x="52" y="124.0" text-anchor="end">6.0</text>
+ * <text class="at" x="52" y="90.7" text-anchor="end">8.0</text>
+ * <text class="at" x="52" y="57.3" text-anchor="end">10</text>
+ * <text class="at" x="52" y="24.0" text-anchor="end">12</text>
+ * <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">GB/s</text>
+ * <text class="at" x="58.0" y="236" text-anchor="middle">512</text>
+ * <text class="at" x="133.1" y="236" text-anchor="middle">1.0K</text>
+ * <text class="at" x="283.4" y="236" text-anchor="middle">4.1K</text>
+ * <text class="at" x="433.7" y="236" text-anchor="middle">16K</text>
+ * <text class="at" x="584.0" y="236" text-anchor="middle">65K</text>
+ * <polyline class="ln1" points="58.0,216.5 133.1,213.1 283.4,201.2 433.7,171.3 584.0,134.5"/>
+ * <polyline class="ln2" points="58.0,215.8 133.1,211.7 283.4,189.7 433.7,145.6 584.0,45.7"/>
+ * <circle class="mk1" cx="58.0" cy="216.5" r="4"/>
+ * <circle class="mk1" cx="133.1" cy="213.1" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="201.2" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="171.3" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="134.5" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="215.8" r="4"/>
+ * <circle class="mk2" cx="133.1" cy="211.7" r="4"/>
+ * <circle class="mk2" cx="283.4" cy="189.7" r="4"/>
+ * <circle class="mk2" cx="433.7" cy="145.6" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="45.7" r="4"/>
+ * <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
+ * <circle class="mk1" cx="66" cy="252" r="4"/>
+ * <text class="lt" x="80" y="256">wgblas</text>
+ * <line class="ln2" x1="132" y1="252" x2="148" y2="252"/>
+ * <circle class="mk2" cx="140" cy="252" r="4"/>
+ * <text class="lt" x="154" y="256">cuBLAS</text>
+ * </svg>
+ *
+ * <br>
+ *
+ * <svg id="bc-idamax-stride256-nvidia_geforce_gtx_1650-ms" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="ms vs n">
+ * <style>#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .bg{fill:#fcfcfb}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .at{fill:#898781}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300}#bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-idamax-stride256-nvidia_geforce_gtx_1650-ms .mk2{stroke:#1a1a19}</style>
+ * <rect class="bg" width="600" height="260"/>
+ * <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
+ * <line class="gr" x1="58" y1="186.7" x2="584" y2="186.7"/>
+ * <line class="gr" x1="58" y1="153.3" x2="584" y2="153.3"/>
+ * <line class="gr" x1="58" y1="120.0" x2="584" y2="120.0"/>
+ * <line class="gr" x1="58" y1="86.7" x2="584" y2="86.7"/>
+ * <line class="gr" x1="58" y1="53.3" x2="584" y2="53.3"/>
+ * <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
+ * <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
+ * <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
+ * <text class="at" x="52" y="224.0" text-anchor="end">0</text>
+ * <text class="at" x="52" y="190.7" text-anchor="end">0.0200</text>
+ * <text class="at" x="52" y="157.3" text-anchor="end">0.0400</text>
+ * <text class="at" x="52" y="124.0" text-anchor="end">0.0600</text>
+ * <text class="at" x="52" y="90.7" text-anchor="end">0.0800</text>
+ * <text class="at" x="52" y="57.3" text-anchor="end">0.100</text>
+ * <text class="at" x="52" y="24.0" text-anchor="end">0.120</text>
+ * <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">ms</text>
+ * <text class="at" x="58.0" y="236" text-anchor="middle">512</text>
+ * <text class="at" x="133.1" y="236" text-anchor="middle">1.0K</text>
+ * <text class="at" x="283.4" y="236" text-anchor="middle">4.1K</text>
+ * <text class="at" x="433.7" y="236" text-anchor="middle">16K</text>
+ * <text class="at" x="584.0" y="236" text-anchor="middle">65K</text>
+ * <polyline class="ln1" points="58.0,187.3 133.1,187.2 283.4,171.6 433.7,145.2 584.0,49.8"/>
+ * <polyline class="ln2" points="58.0,193.0 133.1,192.7 283.4,190.0 433.7,171.0 584.0,136.5"/>
+ * <circle class="mk1" cx="58.0" cy="187.3" r="4"/>
+ * <circle class="mk1" cx="133.1" cy="187.2" r="4"/>
+ * <circle class="mk1" cx="283.4" cy="171.6" r="4"/>
+ * <circle class="mk1" cx="433.7" cy="145.2" r="4"/>
+ * <circle class="mk1" cx="584.0" cy="49.8" r="4"/>
+ * <circle class="mk2" cx="58.0" cy="193.0" r="4"/>
+ * <circle class="mk2" cx="133.1" cy="192.7" r="4"/>
+ * <circle class="mk2" cx="283.4" cy="190.0" r="4"/>
+ * <circle class="mk2" cx="433.7" cy="171.0" r="4"/>
+ * <circle class="mk2" cx="584.0" cy="136.5" r="4"/>
+ * </svg>
+ *
+ * </details>
+ *
+ * **See also:**
+ *
+ * - [stride.idamax.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/idamax/wgblas/stride.idamax.js) — WebGPU stride-sweep benchmark script
+ * - [stride.idamax.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/idamax/cuda/stride.idamax.c) — CUDA / cuBLAS stride-sweep reference script
  *
  * @module benchmarks/nvidia-geforce-gtx-1650/idamax
  */

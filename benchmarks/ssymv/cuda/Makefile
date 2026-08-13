@@ -1,13 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-.PHONY: all clean
+all: $(BIN)/ssymv $(BIN)/lda.ssymv
 
-all: $(TARGET)
+$(BIN):
+	mkdir -p $(BIN)
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN)/ssymv: ssymv.c ../../utils/helpers.h | $(BIN)
+	$(CC) ssymv.c -o $(BIN)/ssymv -lcublas
+
+$(BIN)/lda.ssymv: lda.ssymv.c ../../utils/helpers.h | $(BIN)
+	$(CC) lda.ssymv.c -o $(BIN)/lda.ssymv -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

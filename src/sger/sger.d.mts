@@ -45,44 +45,11 @@ export declare function sger(
 /**
  * Performs the rank-1 update A = alpha * x * y^T + A
  *
- * A is kept GPU-resident; x and y are CPU Float32Arrays. `A`'s own `layout`
- * (set at `GpuMatrix.from` time) determines the operation — there is no
- * separate `layout` argument here.
- *
- * @param device - GPUDevice from `init()`
- * @param m      - number of rows in A
- * @param n      - number of columns in A
- * @param alpha  - scalar multiplier for x*y^T
- * @param x      - Float32Array input vector
- * @param incx   - stride for x (must be a positive integer)
- * @param y      - Float32Array input vector
- * @param incy   - stride for y (must be a positive integer)
- * @param A      - GpuMatrix, GPU-resident
- * @param lda    - leading dimension of A (must equal A.lda)
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/sger/sger.mjs#L15">Source code: sger.mjs (L15)</a>
- * @category BLAS Level 2
- */
-export declare function sger(
-  device: GPUDevice,
-  m: number,
-  n: number,
-  alpha: number,
-  x: Float32Array,
-  incx: number,
-  y: Float32Array,
-  incy: number,
-  A: GpuMatrix,
-  lda: number,
-): Promise<{ gpuTimeMs?: number }>;
-
-/**
- * Performs the rank-1 update A = alpha * x * y^T + A
- *
  * x, y, and A are all kept resident on the GPU. `A`'s own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate
  * `layout` argument here.
  *
- * {@includeCode ../../examples/sger/gpuvec.sger.js}
+ * {@includeCode ../../examples/sger/gpu.sger.js}
  *
  * @param device - GPUDevice from `init()`
  * @param m      - number of rows in A

@@ -29,7 +29,7 @@ export declare function sswap(
 /**
  * Swaps the elements of two single-precision vectors: x <-> y
  *
- * {@includeCode ../../examples/sswap/gpuvec.sswap.js}
+ * {@includeCode ../../examples/sswap/gpu.sswap.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements to swap (must be a positive integer)

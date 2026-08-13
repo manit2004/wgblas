@@ -33,7 +33,7 @@ export declare function dasum(
  * Computes the sum of absolute values of a vector of doubles in double
  * precision: result = sum(|x[i]|).
  *
- * {@includeCode ../../examples/dasum/gpuvec.dasum.js}
+ * {@includeCode ../../examples/dasum/gpu.dasum.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

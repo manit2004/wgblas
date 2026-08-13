@@ -26,7 +26,7 @@ export declare function snrm2(
 /**
  * Computes the Euclidean norm of a vector: result = sqrt(sum(x[i] * x[i]))
  *
- * {@includeCode ../../examples/snrm2/gpuvec.snrm2.js}
+ * {@includeCode ../../examples/snrm2/gpu.snrm2.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

@@ -47,46 +47,11 @@ export declare function ssymv(
 /**
  * Performs the symmetric matrix-vector operation y = alpha * A * x + beta * y
  *
- * A is kept GPU-resident; x and y are CPU Float32Arrays. `A`'s own `layout`
- * (set at `GpuMatrix.from` time) determines the operation — there is no
- * separate `layout` argument here.
- *
- * @param device - GPUDevice from `init()`
- * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle
- * @param n      - order of the matrix A
- * @param alpha  - scalar multiplier for A*x
- * @param A      - GpuMatrix, GPU-resident
- * @param lda    - leading dimension of A (must equal A.lda)
- * @param x      - Float32Array input vector
- * @param incx   - stride for x (must be a positive integer)
- * @param beta   - scalar multiplier for y
- * @param y      - Float32Array input/output vector
- * @param incy   - stride for y (must be a positive integer)
- * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/ssymv/ssymv.mjs#L15">Source code: ssymv.mjs (L15)</a>
- * @category BLAS Level 2
- */
-export declare function ssymv(
-  device: GPUDevice,
-  uplo: 'lower' | 'upper',
-  n: number,
-  alpha: number,
-  A: GpuMatrix,
-  lda: number,
-  x: Float32Array,
-  incx: number,
-  beta: number,
-  y: Float32Array,
-  incy: number,
-): Promise<{ y: Float32Array; gpuTimeMs?: number }>;
-
-/**
- * Performs the symmetric matrix-vector operation y = alpha * A * x + beta * y
- *
  * x and y are kept resident on the GPU. A must be a GpuMatrix; its own
  * `layout` (set at `GpuMatrix.from` time) determines the operation — there is
  * no separate `layout` argument here.
  *
- * {@includeCode ../../examples/ssymv/gpuvec.ssymv.js}
+ * {@includeCode ../../examples/ssymv/gpu.ssymv.js}
  *
  * @param device - GPUDevice from `init()`
  * @param uplo   - `'lower'` to use the lower triangle, `'upper'` to use the upper triangle

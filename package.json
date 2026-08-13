@@ -98,6 +98,10 @@
     "./ssyr2": {
       "import": "./src/ssyr2/ssyr2.mjs",
       "types": "./src/ssyr2/ssyr2.d.mts"
+    },
+    "./sgemm": {
+      "import": "./src/sgemm/sgemm.mjs",
+      "types": "./src/sgemm/sgemm.d.mts"
     }
   },
   "files": [
@@ -139,6 +143,7 @@
     "@stdlib/blas-base-saxpy": "^0.3.1",
     "@stdlib/blas-base-scopy": "^0.3.1",
     "@stdlib/blas-base-sdot": "^0.3.1",
+    "@stdlib/blas-base-sgemm": "^0.1.1",
     "@stdlib/blas-base-sgemv": "^0.1.1",
     "@stdlib/blas-base-sger": "^0.1.1",
     "@stdlib/blas-base-snrm2": "^0.3.1",

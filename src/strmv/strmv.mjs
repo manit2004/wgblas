@@ -54,6 +54,8 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
     );
   if (xIsGpu && !AIsGpu)
     throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
+  if (AIsGpu && !xIsGpu)
+    throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
   if (AIsGpu && yIsGpu && A._buf === y._buf)
     throw new Error("A and y must not reference the same GPU buffer.");
   if (AIsGpu && lda !== A.lda)

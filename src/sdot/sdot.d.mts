@@ -30,7 +30,7 @@ export declare function sdot(
 /**
  * Computes the dot product of two vectors: result = sum(x[i] * y[i])
  *
- * {@includeCode ../../examples/sdot/gpuvec.sdot.js}
+ * {@includeCode ../../examples/sdot/gpu.sdot.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

@@ -1,6 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
+import { getPowerPreference } from "../../helpers/device.js";
 import { saxpy } from "wgblas/saxpy";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
@@ -15,7 +16,7 @@ const NUM_RUNS = 100;
 
 let device;
 before(async () => {
-  device = await init();
+  device = await init({ powerPreference: getPowerPreference() });
 });
 after(() => {
   cleanup();

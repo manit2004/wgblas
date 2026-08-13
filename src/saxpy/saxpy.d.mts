@@ -31,7 +31,7 @@ export declare function saxpy(
 /**
  * Performs the operation y = alpha * x + y
  *
- * {@includeCode ../../examples/saxpy/gpuvec.saxpy.js}
+ * {@includeCode ../../examples/saxpy/gpu.saxpy.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

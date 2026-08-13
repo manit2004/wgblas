@@ -26,7 +26,7 @@ export declare function sasum(
 /**
  * Computes the sum of absolute values of a vector: result = sum(|x[i]|)
  *
- * {@includeCode ../../examples/sasum/gpuvec.sasum.js}
+ * {@includeCode ../../examples/sasum/gpu.sasum.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)

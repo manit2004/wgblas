@@ -1,11 +1,16 @@
 CC = nvcc
-TARGET = benchmark
-SRC = benchmark.c
+BIN = bin
 
-all: $(TARGET)
+all: $(BIN)/saxpy $(BIN)/stride.saxpy
 
-$(TARGET): $(SRC) ../../utils/helpers.h
-	$(CC) $(SRC) -o $(TARGET) -lcublas
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/saxpy: saxpy.c ../../utils/helpers.h | $(BIN)
+	$(CC) saxpy.c -o $(BIN)/saxpy -lcublas
+
+$(BIN)/stride.saxpy: stride.saxpy.c ../../utils/helpers.h | $(BIN)
+	$(CC) stride.saxpy.c -o $(BIN)/stride.saxpy -lcublas
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BIN)

@@ -1,0 +1,17 @@
+{
+  "_note": "Generic Level 3 leading-dimension check",
+  "type": "integer",
+  "baseline": 2,
+  "range": { "min": 2, "max": 4 },
+  "invalid": [
+    { "value": 1,             "error": "must be >=",      "label": "below required minimum (baseline 2)" },
+    { "value": 1.5,           "error": "must be integers", "label": "fractional" },
+    { "special": "NaN",       "error": "must be integers", "label": "NaN" },
+    { "special": "Infinity",  "error": "must be integers", "label": "Infinity" },
+    { "special": "null",      "error": "must be integers", "label": "null" }
+  ],
+  "edge": [
+    { "value": 2, "label": "dense, no padding" },
+    { "value": 4, "label": "padded" }
+  ]
+}
