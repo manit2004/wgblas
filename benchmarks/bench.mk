@@ -2,7 +2,7 @@
 
 NVCC ?= $(shell command -v nvcc 2>/dev/null || echo /usr/local/cuda/bin/nvcc)
 bench:
-	@for f in benchmarks/*/benchmark.*.js benchmarks/*/wgblas/*.js; do node $$f $(ARGS); done
+	@for f in benchmarks/*/wgblas/*.js; do node $$f $(ARGS); done
 
 bench-stride-%:
 	node benchmarks/$*/wgblas/stride.$*.js $(ARGS)
@@ -23,7 +23,10 @@ bench-%:
 	node benchmarks/$*/wgblas/$*.js $(ARGS)
 
 cuda:
-	@for d in benchmarks/*/cuda; do r=$$(basename $$(dirname $$d)); $(MAKE) -C $$d clean && $(MAKE) -C $$d CC=$(NVCC) && ./$$d/bin/$$r; done
+	@for d in benchmarks/*/cuda; do \
+		$(MAKE) -C $$d clean && $(MAKE) -C $$d CC=$(NVCC) && \
+		for f in $$d/*.c; do b=$$(basename $$f .c); ./$$d/bin/$$b; done; \
+	done
 
 cuda-%:
 	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/$*
