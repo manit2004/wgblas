@@ -13,5 +13,20 @@
   ],
   "edge": [
     { "scenario": "minimal", "label": "exactly (m-1)*lda+n elements — minimum valid" }
-  ]
+  ],
+  "level-3": {
+    "_note": "Level 3 override (loadParam('A')['level-3'])",
+    "dependsOn": ["m", "k", "lda", "transA"],
+    "invalid": [
+      { "special": "null",      "error": "A must be a Float32Array or GpuMatrix", "label": "null" },
+      { "special": "undefined", "error": "A must be a Float32Array or GpuMatrix", "label": "undefined" },
+      { "special": "array",     "error": "A must be a Float32Array or GpuMatrix", "label": "plain Array []" },
+      { "special": "object",    "error": "A must be a Float32Array or GpuMatrix", "label": "plain object {}" },
+      { "special": "number",    "error": "A must be a Float32Array or GpuMatrix", "label": "number" },
+      { "scenario": "tooShort", "error": "A does not have enough elements", "label": "one short of the required minimum" }
+    ],
+    "edge": [
+      { "scenario": "minimal", "label": "exactly the required minimum — no padding" }
+    ]
+  }
 }

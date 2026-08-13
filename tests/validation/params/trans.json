@@ -1,14 +1,14 @@
 {
-  "_note": "trans selects the matrix operation: 'no-transpose' for A, 'transpose' for A^T.",
+  "_note": "trans selects the matrix operation: 'no-transpose' for A, 'transpose' for A^T. Also reused for transA/transB.",
   "type": "string",
   "baseline": "no-transpose",
   "values": ["no-transpose", "transpose"],
   "invalid": [
-    { "value": "N",           "error": "trans must be", "label": "legacy 'N' string" },
-    { "value": "T",           "error": "trans must be", "label": "legacy 'T' string" },
-    { "special": "number",    "error": "trans must be", "label": "number" },
-    { "special": "null",      "error": "trans must be", "label": "null" },
-    { "special": "undefined", "error": "trans must be", "label": "undefined" }
+    { "value": "N",           "error": "must be", "label": "legacy 'N' string" },
+    { "value": "T",           "error": "must be", "label": "legacy 'T' string" },
+    { "special": "number",    "error": "must be", "label": "number" },
+    { "special": "null",      "error": "must be", "label": "null" },
+    { "special": "undefined", "error": "must be", "label": "undefined" }
   ],
   "edge": [
     { "value": "no-transpose", "label": "no-transpose" },

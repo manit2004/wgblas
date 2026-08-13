@@ -26,6 +26,7 @@ import stdlibStrsv from "@stdlib/blas-base-strsv";
 import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
 import stdlibSsyr2 from "@stdlib/blas-base-ssyr2";
+import stdlibSgemm from "@stdlib/blas-base-sgemm";
 
 // (n, x, incx) -> scalar, x untouched.
 function makeReducerReference(stdlibFn) {
@@ -118,6 +119,20 @@ function makeSymMatrix2Reference(stdlibFn, dims) {
   };
 }
 
+// (order, ...dims, alpha, A, lda, B, ldb, beta, C, ldc) mutates only C in
+// place — the general Level 3 "gemm" shape (matrix-matrix product, A/B
+// read-only), shared by every future Level 3 routine with this call shape
+// the same way makeMatVecReference covers every L2 matrix-vector one.
+// `dims(a)` supplies the trans flags + m/n/k. `a.layout` (default
+// "row-major") is forwarded as-is.
+function makeMatMatReference(stdlibFn, dims) {
+  return (a) => {
+    const C = a.C.slice();
+    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.A.slice(), a.lda, a.B.slice(), a.ldb, a.beta, C, a.ldc);
+    return { C };
+  };
+}
+
 // sscal mutates x in place (with a leading alpha) and returns x directly,
 // not wrapped — the one mutate-only-x shape, distinct from the others above.
 export const sscalReference = (a) => {
@@ -163,3 +178,5 @@ export const sgerReference = makeMatrixReference(stdlibSger, (a) => [a.m, a.n]);
 export const ssyrReference = makeSymMatrixReference(stdlibSsyr, (a) => [a.uplo, a.n]);
 
 export const ssyr2Reference = makeSymMatrix2Reference(stdlibSsyr2, (a) => [a.uplo, a.n]);
+
+export const sgemmReference = makeMatMatReference(stdlibSgemm, (a) => [a.transA, a.transB, a.m, a.n, a.k]);

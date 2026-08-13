@@ -100,9 +100,45 @@ const SPECIALS = {
 
 
 /**
+ * Computes the logical `{ outer, inner }` shape of a matrix param from its
+ * `dependsOn` and `dims` — `inner` doubles as the minimum valid value for
+ * whichever `ld*` field it depends on. Returns `null` for non-matrix specs
+ * (no `ld*` in `dependsOn`).
+ *
+ * - `dependsOn` has a `trans*` field and `"k"` → Level 3 matrix whose shape
+ *   swaps between (m,k)/(k,m) (A~transA) or (k,n)/(n,k) (B~transB) with its
+ *   own trans flag — see A.json's "level-3" section / B.json.
+ * - `dependsOn` has `"m"` and `"n"` (no trans) → plain matrix: m×n
+ *   (row-major) or n×m (column-major) — sgemv/ssyr2/etc.'s A, sgemm's C.
+ * - `dependsOn` has `"n"` alone → symmetric: square n×n (ssymv/ssyr's A).
+ *
+ * Shared by `ndArrayLen` (array sizing) and `buildArb` (fixtures, to chain
+ * `ld*` in `[inner, inner+pad]`) so the two never drift apart.
+ * @public
+ */
+export function matrixShape(dependsOn, dims) {
+  const deps = new Set(dependsOn ?? []);
+  const transKey = dependsOn?.find((d) => d.startsWith("trans"));
+  const isCM = dims.layout === "column-major";
+  if (transKey && deps.has("k")) {
+    const [dim1, dim2] = deps.has("m") ? [dims.m, dims.k] : [dims.k, dims.n];
+    const rows = isCM ? dim2 : dim1;
+    const cols = isCM ? dim1 : dim2;
+    const isNoTrans = (dims[transKey] ?? "no-transpose") === "no-transpose";
+    return isNoTrans ? { outer: rows, inner: cols } : { outer: cols, inner: rows };
+  }
+  if (deps.has("m") && deps.has("n"))
+    return isCM ? { outer: dims.n, inner: dims.m } : { outer: dims.m, inner: dims.n };
+  if (deps.has("n"))
+    return { outer: dims.n, inner: dims.n };
+  return null;
+}
+
+/**
  * Computes the minimum valid Float32Array length for a param from its `dependsOn` and `dims`.
  *
- * - `dependsOn` contains `"lda"` → matrix: `(m-1)*lda+n`
+ * - `dependsOn` contains an `"ld*"` field → matrix, sized via `matrixShape`:
+ *   `(outer-1)*ld+inner`
  * - `dependsOn` contains `"trans"` (and `m` is in dims) → L2 vector: size from `dims.trans`
  * - otherwise → L1 vector: `(n-1)*inc+1`
  *
@@ -111,16 +147,11 @@ const SPECIALS = {
  */
 export function ndArrayLen(dependsOn, dims) {
   const deps = new Set(dependsOn ?? []);
-  if (deps.has("lda") && deps.has("m") && deps.has("n")) {
-    // Column-major storage swaps which dimension lda strides over — A^T
-    // reinterpreted row-major, same trick the routines themselves use.
-    return dims.layout === "column-major"
-      ? (dims.n - 1) * dims.lda + dims.m
-      : (dims.m - 1) * dims.lda + dims.n;
+  const ldKey = dependsOn?.find((d) => d.startsWith("ld"));
+  if (ldKey) {
+    const shape = matrixShape(dependsOn, dims);
+    if (shape) return Math.max(0, (shape.outer - 1) * dims[ldKey] + shape.inner);
   }
-  // Symmetric matrix (ssymv): square n×n, no separate m
-  if (deps.has("lda") && deps.has("n") && !deps.has("m"))
-    return Math.max(0, (dims.n - 1) * dims.lda + dims.n);
   if (deps.has("trans") && deps.has("m") && deps.has("n") && "m" in dims) {
     const isNoTrans = (dims.trans ?? "no-transpose") === "no-transpose";
     const dim = deps.has("incx")
@@ -130,7 +161,7 @@ export function ndArrayLen(dependsOn, dims) {
     return (dim - 1) * inc + 1;
   }
   // Vector sized by m alone, no trans involved (sger's x: length m, independent of n).
-  if (deps.has("m") && !deps.has("n") && !deps.has("lda") && !deps.has("trans")) {
+  if (deps.has("m") && !deps.has("n") && !ldKey && !deps.has("trans")) {
     const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
     return (dims.m - 1) * inc + 1;
   }
@@ -184,6 +215,11 @@ export function resolveParam(scenario) {
  * Resolves a single JSON spec entry to a concrete JS value.
  * Dispatches on `entry.value` (literal), `entry.special` (named non-serialisable),
  * or `entry.scenario` (named construction rule for arrays and `param`).
+ * A literal `entry.value` for an array-typed param (`type` is `"float32array"`/
+ * `"float64array"`) is coerced into the matching typed array — routines whose
+ * shape doesn't fit `dependsOn`/`scenario`'s sizing formulas (e.g. sgemm, whose
+ * A/B shape depends on transA/transB rather than a static m/n pair) can still
+ * spell out exact arrays literally instead of relying on that machinery.
  * @param entry one entry from `spec.invalid` or `spec.edge`
  * @param paramName name of the parameter being tested (selects `resolveParam` vs `resolveNdArray`)
  * @param baselines current baseline args (needed to size arrays from dimensions and stride)
@@ -197,7 +233,13 @@ export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
     if (paramName === "param") return resolveParam(entry.scenario);
     return resolveNdArray(entry.scenario, dependsOn, baselines, false, type);
   }
-  if ("value" in entry) return entry.value;
+  if ("value" in entry) {
+    if (Array.isArray(entry.value) && (type === "float32array" || type === "float64array")) {
+      const Ctor = type === "float64array" ? Float64Array : Float32Array;
+      return new Ctor(entry.value);
+    }
+    return entry.value;
+  }
   if ("special" in entry) {
     if (!(entry.special in SPECIALS))
       throw new Error(`Unknown special value: "${entry.special}"`);

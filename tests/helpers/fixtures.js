@@ -36,7 +36,7 @@
 
 import fc from "fast-check";
 import { ulpDiff, maxUlp } from "./ulp.js";
-import { ndArrayLen } from "./validation.js";
+import { ndArrayLen, matrixShape } from "./validation.js";
 
 export { ulpDiff, maxUlp };
 
@@ -159,7 +159,13 @@ export function triangularDiagonalArb(arrArb, n, lda, diagLow = 5, diagHigh = 15
  * Builds a fast-check arbitrary that produces a complete args object for one test run.
  *
  * Scalar params are generated first from their spec types (integer, float, string).
- * For L2 routines (`specs` includes `A`), `lda` is chained after `n` to enforce `lda >= n`.
+ * Every `ld*` field referenced by an array spec's own `dependsOn` (`lda`/`ldb`/`ldc`, ...)
+ * is then chained in `[floor, floor + pad]`, where `floor` is `matrixShape`'s `inner` —
+ * the same formula `ndArrayLen` uses to size the backing array, so e.g. `lda >= n`
+ * (row-major) or `lda >= m` (column-major) is always satisfied. This covers both L2
+ * (one matrix, `lda`) and Level 3 (multiple independently-shaped matrices, `lda`/`ldb`/`ldc`)
+ * routines with a single formula.
+ *
  * All `float32array`/`float64array` params are then sized via `ndArrayLen` which reads
  * each spec's `dependsOn` — the same formula used in validation's `resolveNdArray`. A matrix spec
  * with `triangular: true` (e.g. for `strsv`) additionally gets its diagonal patched via
@@ -171,25 +177,29 @@ export function triangularDiagonalArb(arrArb, n, lda, diagLow = 5, diagHigh = 15
  * @public
  */
 export function buildArb(specs, extras = {}) {
-  const isL2 = "A" in specs;
+  // Every ld* field an array spec actually depends on — sizing formula lives
+  // in matrixShape, keyed off that array's own dependsOn (e.g. A~lda,
+  // B~ldb, C~ldc for sgemm; just A~lda for any L2 routine).
+  const arraySpecs = Object.values(specs).filter((s) => s.type === "float32array" || s.type === "float64array");
+  const ldFields = [...new Set(arraySpecs.map((s) => s.dependsOn?.find((d) => d.startsWith("ld"))).filter(Boolean))];
 
-  // Generate all scalar params; for L2, skip lda here — it's chained off n below.
+  // Generate all scalar params; skip ld* fields here — they're chained below.
   const scalarEntries = Object.entries(specs)
-    .filter(([k, s]) => paramArb(s) !== null && !(isL2 && k === "lda"));
+    .filter(([k, s]) => paramArb(s) !== null && !ldFields.includes(k));
   const scalarRec = fc.record(
     Object.fromEntries(scalarEntries.map(([k, s]) => [k, paramArb(s)]))
   );
 
-  // For L2, chain lda in [floor, floor + ldaPad] so lda >= n (row-major) or
-  // lda >= m (column-major) is always satisfied — same swap ndArrayLen uses.
-  // Symmetric/triangular routines (ssymv, ssyr, strmv, ...) have no `m` —
-  // square matrices need lda >= n regardless of layout, so `s.m ?? s.n` falls
-  // back correctly.
-  const dimsArb = isL2 && specs.lda
+  const dimsArb = ldFields.length
     ? scalarRec.chain((s) => {
-        const ldaPad = specs.lda.range.max - specs.lda.range.min;
-        const ldaFloor = s.layout === "column-major" ? (s.m ?? s.n) : s.n;
-        return fc.integer({ min: ldaFloor, max: ldaFloor + ldaPad }).map((lda) => ({ ...s, lda }));
+        const ldArbs = {};
+        for (const ldKey of ldFields) {
+          const pad = specs[ldKey].range.max - specs[ldKey].range.min;
+          const arraySpec = arraySpecs.find((sp) => sp.dependsOn?.includes(ldKey));
+          const floor = matrixShape(arraySpec.dependsOn, s).inner;
+          ldArbs[ldKey] = fc.integer({ min: floor, max: floor + pad });
+        }
+        return fc.record(ldArbs).map((generated) => ({ ...s, ...generated }));
       })
     : scalarRec;
 

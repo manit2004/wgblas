@@ -30,7 +30,7 @@ const validationSpecs = {
   incy:   loadParam("incy"),
   x:      loadParam("x"),
   y:      loadParam("y"),
-  c:      loadParam("c"),
+  c:      loadParam("cosine"),
   s:      loadParam("s"),
 };
 

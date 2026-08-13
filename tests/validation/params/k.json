@@ -1,0 +1,17 @@
+{
+  "_note": "k is sgemm's shared inner dimension — columns of op(A), rows of op(B).",
+  "type": "integer",
+  "baseline": 2,
+  "range": { "min": 1, "max": 200 },
+  "invalid": [
+    { "value": 1.5,           "error": "must be integers", "label": "fractional" },
+    { "special": "NaN",       "error": "must be integers", "label": "NaN" },
+    { "special": "Infinity",  "error": "must be integers", "label": "Infinity" },
+    { "special": "string",    "error": "must be integers", "label": "string '100'" },
+    { "special": "null",      "error": "must be integers", "label": "null" },
+    { "value": -1,            "error": "must be non-negative", "label": "negative" }
+  ],
+  "edge": [
+    { "value": 1, "label": "k=1 single accumulation term" }
+  ]
+}

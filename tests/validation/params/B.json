@@ -1,0 +1,18 @@
+{
+  "_note": "Matrix B",
+  "type": "float32array",
+  "baseline": [1, 0, 0, 1, 0, 0],
+  "dependsOn": ["k", "n", "ldb", "transB"],
+  "range": { "elementMin": -10.0, "elementMax": 10.0 },
+  "invalid": [
+    { "special": "null",      "error": "B must be a Float32Array or GpuMatrix", "label": "null" },
+    { "special": "undefined", "error": "B must be a Float32Array or GpuMatrix", "label": "undefined" },
+    { "special": "array",     "error": "B must be a Float32Array or GpuMatrix", "label": "plain Array []" },
+    { "special": "object",    "error": "B must be a Float32Array or GpuMatrix", "label": "plain object {}" },
+    { "special": "number",    "error": "B must be a Float32Array or GpuMatrix", "label": "number" },
+    { "value": [1, 0, 0],     "error": "B does not have enough elements", "label": "3 of 4 required elements (baseline k=n=2, ldb=2) — one short" }
+  ],
+  "edge": [
+    { "value": [1, 0, 0, 1], "label": "exactly 4 elements — minimum valid at k=n=2, ldb=2" }
+  ]
+}
