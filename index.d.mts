@@ -38,6 +38,10 @@ export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
  *   and `"low-power"` favors the integrated one.
  *   See [MDN: GPU.requestAdapter()](https://developer.mozilla.org/en-US/docs/Web/API/GPU/requestAdapter).
  * @param options.benchmark - enable GPU timestamp queries; BLAS functions return `{ result, gpuTimeMs }` (default: `false`)
+ * @param options.dumpShaders - Node-only. Forwards Dawn's `dump_shaders` debug toggle, printing
+ *   each pipeline's WGSL and compiled backend IR (SPIR-V/Vulkan, MSL/Metal, or HLSL/D3D12,
+ *   whichever Dawn picked) to stderr as it compiles. A Dawn passthrough, not a wgblas format —
+ *   no effect in the browser, which gives pages no API to request compiled shader IR (default: `false`)
  *
  * @example Default (high-performance GPU)
  * ```js
@@ -72,6 +76,7 @@ export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
 export declare function init(options?: {
   powerPreference?: GPUPowerPreference;
   benchmark?: boolean;
+  dumpShaders?: boolean;
 }): Promise<GPUDevice>;
 
 /**

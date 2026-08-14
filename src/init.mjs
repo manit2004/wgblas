@@ -11,6 +11,7 @@ let _benchmarkEnabled = false;
 export async function init({
   powerPreference = "high-performance",
   benchmark = false,
+  dumpShaders = false,
 } = {}) {
   if (_device) {
     return _device;
@@ -23,9 +24,16 @@ export async function init({
   if (typeof window === "undefined") {
     const { create, globals } = await import("webgpu");
     Object.assign(globalThis, globals);
-    gpu = create([]);
+    // dumpShaders forwards Dawn's own debug toggle — prints each pipeline's
+    // WGSL and compiled backend IR to stderr. Node-only; see index.d.mts.
+    const toggles = dumpShaders
+      ? ["enable-dawn-features=dump_shaders,disable_symbol_renaming"]
+      : [];
+    gpu = create(toggles);
     _gpu = gpu;
   } else {
+    if (dumpShaders)
+      console.warn("dumpShaders has no effect in the browser — see init()'s docs.");
     gpu = navigator.gpu;
   }
 
