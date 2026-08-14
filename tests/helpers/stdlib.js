@@ -133,6 +133,27 @@ function makeMatMatReference(stdlibFn, dims) {
   };
 }
 
+// Wraps a full "gemm"-shaped reference (e.g. sgemmReference) to keep only
+// the `a.uplo`-selected triangle of C, leaving the rest untouched — for
+// Level 3 routines with no CPU oracle package.
+function makeMatMatTriangularReference(matMatFn) {
+  return (a) => {
+    const { C: full } = matMatFn(a);
+    const isCM = (a.layout ?? "row-major") === "column-major";
+    const out = a.C.slice();
+    const isLower = a.uplo === "lower";
+    for (let i = 0; i < a.m; i++) {
+      const jStart = isLower ? 0 : i;
+      const jEnd = isLower ? Math.min(i + 1, a.n) : a.n;
+      for (let j = jStart; j < jEnd; j++) {
+        const idx = isCM ? j * a.ldc + i : i * a.ldc + j;
+        out[idx] = full[idx];
+      }
+    }
+    return { C: out };
+  };
+}
+
 // sscal mutates x in place (with a leading alpha) and returns x directly,
 // not wrapped — the one mutate-only-x shape, distinct from the others above.
 export const sscalReference = (a) => {
@@ -180,3 +201,5 @@ export const ssyrReference = makeSymMatrixReference(stdlibSsyr, (a) => [a.uplo, 
 export const ssyr2Reference = makeSymMatrix2Reference(stdlibSsyr2, (a) => [a.uplo, a.n]);
 
 export const sgemmReference = makeMatMatReference(stdlibSgemm, (a) => [a.transA, a.transB, a.m, a.n, a.k]);
+
+export const sgemmtrReference = makeMatMatTriangularReference(sgemmReference);

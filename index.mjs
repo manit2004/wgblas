@@ -26,3 +26,4 @@ export { sger } from "./src/sger/sger.mjs";
 export { ssyr } from "./src/ssyr/ssyr.mjs";
 export { ssyr2 } from "./src/ssyr2/ssyr2.mjs";
 export { sgemm } from "./src/sgemm/sgemm.mjs";
+export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";

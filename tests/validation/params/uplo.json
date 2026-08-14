@@ -1,5 +1,5 @@
 {
-  "_note": "uplo specifies which triangle of A is stored: 'lower' or 'upper'.",
+  "_note": "uplo selects which triangle is read/written: 'lower' or 'upper'.",
   "type": "string",
   "values": ["lower", "upper"],
   "baseline": "lower",

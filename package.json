@@ -102,6 +102,10 @@
     "./sgemm": {
       "import": "./src/sgemm/sgemm.mjs",
       "types": "./src/sgemm/sgemm.d.mts"
+    },
+    "./sgemmtr": {
+      "import": "./src/sgemmtr/sgemmtr.mjs",
+      "types": "./src/sgemmtr/sgemmtr.d.mts"
     }
   },
   "files": [

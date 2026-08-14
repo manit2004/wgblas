@@ -32,6 +32,8 @@ import strsv_apply_inverse from "./strsv_apply_inverse.wgsl";
 import strsv_update from "./strsv_update.wgsl";
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
+import sgemmtr_small from "./sgemmtr_small.wgsl";
+import sgemmtr_large from "./sgemmtr_large.wgsl";
 
 export const shaderSources = {
   "reduction/argmax": argmax,
@@ -68,4 +70,6 @@ export const shaderSources = {
   strsv_update,
   sgemm_small,
   sgemm_large,
+  sgemmtr_small,
+  sgemmtr_large,
 };
