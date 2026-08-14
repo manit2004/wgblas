@@ -30,6 +30,12 @@ BASE_URL = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/benchmarks/result
 ROOT = Path(__file__).parent.parent
 RESULTS_DIR = ROOT / "benchmarks" / "results"
 OUT_DIR = ROOT / "benchmarks" / "bench-result"
+SVG_DIR = ROOT / "assets" / "benchmarks"
+
+# .mjs files always live at benchmarks/bench-result/<gpu>/<routine>.mjs, so the
+# relative path back up to the repo root (and into assets/benchmarks/<gpu>/)
+# is the same fixed depth for every one of them.
+SVG_LINK_PREFIX = "../../../assets/benchmarks"
 
 
 def discover_routines():
@@ -445,12 +451,42 @@ def _build_chart_svg(wgblas_rows, cuda_series, all_ns, xp,
     return "\n".join(out)
 
 
-def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
-    """Return two stacked SVG charts (GB/s then ms) separated by a spacer.
+def write_svg(gpu_slug, routine, metric, config, svg_text):
+    """Writes one chart's SVG to assets/benchmarks/<gpu>/<routine>/<metric>-
+    <config>.svg (metric is "gbps" or "ms"; config is "default" for the main
+    benchmark or a sweep label like "stride4") and returns the markdown image
+    link to it, relative to a .mjs file living at
+    benchmarks/bench-result/<gpu>/<routine>.mjs — TypeDoc auto-detects
+    relative image links in doc comments and copies the target into
+    docs/media/, so this needs no typedoc.json changes.
+
+    Note: TypeDoc's media copy flattens every file into one shared
+    docs/media/ folder keyed only by basename (see FileRegistry.getName), so
+    same-named files (e.g. every routine's "gbps-default.svg") collide there
+    and get auto-disambiguated to "gbps-default-2.svg" etc. That's harmless —
+    docs/media/ is a regenerated build artifact nobody browses directly, and
+    each page's <img> still resolves to its own correct file — but it does
+    mean the gpu/routine directories here are purely for keeping this source
+    tree organized, not for uniqueness in the published output.
+    """
+    fname = f"{metric}-{config}.svg"
+    path = SVG_DIR / gpu_slug / routine / fname
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(svg_text)
+    return f"{SVG_LINK_PREFIX}/{gpu_slug}/{routine}/{fname}"
+
+
+def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug, config="default"):
+    """Writes two chart SVGs (GB/s then ms) to
+    assets/benchmarks/<gpu>/<routine>/ and returns markdown linking both,
+    stacked. `config` identifies which benchmark configuration is plotted —
+    "default" for the main (unswept) benchmark, or a sweep label like
+    "stride4" / "uplo-lower" for sweep subsections.
 
     Filters out rows with null compute_GBs or compute_ms before charting.
     """
     slug = gpu_slug.replace("-", "_")
+    chart_id = f"{routine}-{config}"
 
     # Filter rows that have valid values for both metrics so both charts share
     # the same x-axis points
@@ -483,15 +519,21 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug):
     gbs_svg = _build_chart_svg(
         wgblas_rows, cuda_series, all_ns, xp,
         "compute_GBs", "GB/s", _fmt_axis_gbs,
-        f"bc-{routine}-{slug}-gbs", show_legend=True,
+        f"bc-{chart_id}-{slug}-gbs", show_legend=True,
     )
     ms_svg = _build_chart_svg(
         wgblas_rows, cuda_series, all_ns, xp,
         "compute_ms", "ms", _fmt_axis_ms,
-        f"bc-{routine}-{slug}-ms", show_legend=False,
+        f"bc-{chart_id}-{slug}-ms", show_legend=False,
     )
 
-    return gbs_svg + "\n\n<br>\n\n" + ms_svg
+    gbs_link = write_svg(gpu_slug, routine, "gbps", config, gbs_svg)
+    ms_link = write_svg(gpu_slug, routine, "ms", config, ms_svg)
+
+    return (
+        f"![{chart_id} GB/s chart]({gbs_link})\n\n"
+        f"![{chart_id} ms chart]({ms_link})"
+    )
 
 
 def fmt_ms(v):
@@ -570,7 +612,7 @@ def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
             else make_wgblas_only_table(wrows)
         )
         parts.append("")
-        chart = make_svg_chart(wrows, crows, f"{routine}-stride{stride}", gpu)
+        chart = make_svg_chart(wrows, crows, routine, gpu, config=f"stride{stride}")
         if chart:
             parts.append(chart)
         parts.append("")
@@ -620,7 +662,7 @@ def make_trans_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
                 else make_wgblas_only_table(wrows)
             )
             parts.append("")
-            chart = make_svg_chart(wrows, crows, f"{routine}-trans-{trans}-m{m}", gpu)
+            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans-{trans}-m{m}")
             if chart:
                 parts.append(chart)
             parts.append("")
@@ -664,7 +706,7 @@ def make_trans_simple_section(wgblas_trans, cuda_trans, routine, gpu, display, g
             else make_wgblas_only_table(wrows)
         )
         parts.append("")
-        chart = make_svg_chart(wrows, crows, f"{routine}-trans{trans}", gpu)
+        chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans{trans}")
         if chart:
             parts.append(chart)
         parts.append("")
@@ -721,7 +763,7 @@ def make_transab_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
                 else make_wgblas_only_table(wrows)
             )
             parts.append("")
-            chart = make_svg_chart(wrows, crows, f"{routine}-trans-{transA}-{transB}", gpu)
+            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans-{transA}-{transB}")
             if chart:
                 parts.append(chart)
             parts.append("")
@@ -771,7 +813,7 @@ def make_ldb_section(wgblas_ldb, cuda_ldb, routine, gpu, display, gh):
                 else make_wgblas_only_table(wrows)
             )
             parts.append("")
-            chart = make_svg_chart(wrows, crows, f"{routine}-ldb-{transB}-pad{pad}", gpu)
+            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"ldb-{transB}-pad{pad}")
             if chart:
                 parts.append(chart)
             parts.append("")
@@ -818,7 +860,7 @@ def make_uplo_section(wgblas_uplo, cuda_uplo, routine, gpu, display, gh):
             else make_wgblas_only_table(wrows)
         )
         parts.append("")
-        chart = make_svg_chart(wrows, crows, f"{routine}-uplo{uplo}", gpu)
+        chart = make_svg_chart(wrows, crows, routine, gpu, config=f"uplo{uplo}")
         if chart:
             parts.append(chart)
         parts.append("")
@@ -862,7 +904,7 @@ def make_lda_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
             else make_wgblas_only_table(wrows)
         )
         parts.append("")
-        chart = make_svg_chart(wrows, crows, f"{routine}-pad{pad}", gpu)
+        chart = make_svg_chart(wrows, crows, routine, gpu, config=f"pad{pad}")
         if chart:
             parts.append(chart)
         parts.append("")
@@ -910,7 +952,7 @@ def make_lda_trans_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
                 else make_wgblas_only_table(wrows)
             )
             parts.append("")
-            chart = make_svg_chart(wrows, crows, f"{routine}-lda-{trans}-pad{pad}", gpu)
+            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"lda-{trans}-pad{pad}")
             if chart:
                 parts.append(chart)
             parts.append("")
