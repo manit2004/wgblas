@@ -106,8 +106,10 @@ const SPECIALS = {
  * (no `ld*` in `dependsOn`).
  *
  * - `dependsOn` has a `trans*` field and `"k"` → Level 3 matrix whose shape
- *   swaps between (m,k)/(k,m) (A~transA) or (k,n)/(n,k) (B~transB) with its
- *   own trans flag — see A.json's "level-3" section / B.json.
+ *   swaps between (m,k)/(k,m) (A~transA, or a single-operand routine like
+ *   ssyrk whose `A` depends on "lda" with no separate "m" — its own `n`
+ *   plays that role, ssyrk's C being square) or (k,n)/(n,k) (B~transB) with
+ *   its own trans flag — see A.json's "level-3" section / B.json.
  * - `dependsOn` has `"m"` and `"n"` (no trans) → plain matrix: m×n
  *   (row-major) or n×m (column-major) — sgemv/ssyr2/etc.'s A, sgemm's C.
  * - `dependsOn` has `"n"` alone → symmetric: square n×n (ssymv/ssyr's A).
@@ -121,7 +123,12 @@ export function matrixShape(dependsOn, dims) {
   const transKey = dependsOn?.find((d) => d.startsWith("trans"));
   const isCM = dims.layout === "column-major";
   if (transKey && deps.has("k")) {
-    const [dim1, dim2] = deps.has("m") ? [dims.m, dims.k] : [dims.k, dims.n];
+    // "m"-like (row-like) operand: has a real "m", or is a single-operand
+    // routine's own "A" (identified by depending on "lda" specifically,
+    // not "ldb") — ssyrk has no separate m, so dims.m falls back to dims.n.
+    const [dim1, dim2] = (deps.has("m") || deps.has("lda"))
+      ? [dims.m ?? dims.n, dims.k]
+      : [dims.k, dims.n];
     const rows = isCM ? dim2 : dim1;
     const cols = isCM ? dim1 : dim2;
     const isNoTrans = (dims[transKey] ?? "no-transpose") === "no-transpose";

@@ -1,0 +1,62 @@
+[
+  {
+    "label": "[column-major] alpha=0 — output is beta*C on the lower triangle",
+    "layout": "column-major",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 2, "k": 2, "alpha": 0,
+    "A": [9, 9, 9, 9], "lda": 2,
+    "beta": 2,
+    "C": [1, 3, 2, 4], "ldc": 2
+  },
+  {
+    "label": "[column-major] beta=0 — output is alpha*A*A^T on the upper triangle",
+    "layout": "column-major",
+    "uplo": "upper",
+    "trans": "no-transpose",
+    "n": 2, "k": 2, "alpha": 1,
+    "A": [1, 0, 0, 1], "lda": 2,
+    "beta": 0,
+    "C": [99, 99, 99, 99], "ldc": 2
+  },
+  {
+    "label": "[column-major] uplo=lower: A*A^T, only col<=row kept",
+    "layout": "column-major",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 4, 2, 5, 3, 6], "lda": 2,
+    "beta": 0,
+    "C": [0, 0, 0, 0], "ldc": 2
+  },
+  {
+    "label": "[column-major] trans=transpose: A stored n×k, op(A) = A^T",
+    "layout": "column-major",
+    "uplo": "upper",
+    "trans": "transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 2, 3, 4, 5, 6], "lda": 3,
+    "beta": 0,
+    "C": [0, 0, 0, 0], "ldc": 2
+  },
+  {
+    "label": "[column-major] lda > n (NoTrans A) — padding elements in stride gaps are ignored",
+    "layout": "column-major",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 4, 99, 2, 5, 99, 3, 6, 99], "lda": 3,
+    "beta": 0,
+    "C": [0, 0, 0, 0], "ldc": 2
+  },
+  {
+    "label": "[column-major] ldc > n — padding in output stride (write positions correct, gaps unchanged)",
+    "layout": "column-major",
+    "uplo": "upper",
+    "trans": "no-transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 4, 2, 5, 3, 6], "lda": 2,
+    "beta": 0,
+    "C": [0, 0, 99, 0, 0, 99], "ldc": 3
+  }
+]

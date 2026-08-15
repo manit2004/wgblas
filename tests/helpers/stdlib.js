@@ -142,7 +142,8 @@ function makeMatMatTriangularReference(matMatFn) {
     const isCM = (a.layout ?? "row-major") === "column-major";
     const out = a.C.slice();
     const isLower = a.uplo === "lower";
-    for (let i = 0; i < a.m; i++) {
+    const m = a.m ?? a.n; // square-C routines (ssyrk) have no separate m
+    for (let i = 0; i < m; i++) {
       const jStart = isLower ? 0 : i;
       const jEnd = isLower ? Math.min(i + 1, a.n) : a.n;
       for (let j = jStart; j < jEnd; j++) {
@@ -203,3 +204,15 @@ export const ssyr2Reference = makeSymMatrix2Reference(stdlibSsyr2, (a) => [a.upl
 export const sgemmReference = makeMatMatReference(stdlibSgemm, (a) => [a.transA, a.transB, a.m, a.n, a.k]);
 
 export const sgemmtrReference = makeMatMatTriangularReference(sgemmReference);
+
+// ssyrk: C := uplo(alpha*op(A)*op(A)^T + beta*C) — reuses sgemmReference with
+// B := A (same mapping ssyrk.mjs itself uses: transB is the opposite of
+// trans, m := n since C is always square), then masks to the uplo triangle.
+export const ssyrkReference = makeMatMatTriangularReference((a) => {
+  const transB = a.trans === "no-transpose" ? "transpose" : "no-transpose";
+  return sgemmReference({
+    transA: a.trans, transB, m: a.n, n: a.n, k: a.k,
+    alpha: a.alpha, A: a.A, lda: a.lda, B: a.A, ldb: a.lda,
+    beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
+  });
+});
