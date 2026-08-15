@@ -24,6 +24,8 @@
 - [ssyr](https://manit2004.github.io/wgblas/functions/docs.ssyr.html)
 - [ssyr2](https://manit2004.github.io/wgblas/functions/docs.ssyr2.html)
 - [sgemm](https://manit2004.github.io/wgblas/functions/docs.sgemm.html)
+- [sgemmtr](https://manit2004.github.io/wgblas/functions/docs.sgemmtr.html)
+- [ssyrk](https://manit2004.github.io/wgblas/functions/docs.ssyrk.html)
    
 ## Browser Support
 

@@ -62,15 +62,17 @@ export function uploadBuffer(data, label = "blas-input", readback = false) {
  * that are written by a shader before being read.
  * @param {number} size - byte size
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
+ * @param {number} [extraUsage=0] - additional `GPUBufferUsage` flags OR'd in alongside `STORAGE`
+ *   (e.g. `GPUBufferUsage.COPY_DST` for a buffer that's also a `copyBufferToBuffer` destination)
  * @returns {GPUBuffer}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer GPUDevice.createBuffer()}
  */
-export function createStorageBuffer(size, label = "blas-storage") {
+export function createStorageBuffer(size, label = "blas-storage", extraUsage = 0) {
   const device = getDevice();
   return device.createBuffer({
     label,
     size,
-    usage: GPUBufferUsage.STORAGE,
+    usage: GPUBufferUsage.STORAGE | extraUsage,
   });
 }
 

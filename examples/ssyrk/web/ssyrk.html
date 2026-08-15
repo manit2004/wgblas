@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ssyrk — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, ssyrk, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 4, k = 4;
+        const lda = k, ldc = n;
+        const alpha = 1.0, beta = 0.0;
+        const A = randomFloat32Array(n * lda, -10, 10);
+        const C = randomFloat32Array(n * ldc, -10, 10);
+
+        const { C: result } = await ssyrk(device, "lower", "no-transpose", n, k, alpha, A, lda, beta, C, ldc, "row-major");
+
+        document.getElementById("out").textContent =
+          "A: " + Array.from(A).map(v => v.toFixed(4)).join(", ") +
+          "\nC (only lower triangle updated): " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

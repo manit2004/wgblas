@@ -29,6 +29,7 @@ export { ssyr } from "./src/ssyr/ssyr.mjs";
 export { ssyr2 } from "./src/ssyr2/ssyr2.mjs";
 export { sgemm } from "./src/sgemm/sgemm.mjs";
 export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
+export { ssyrk } from "./src/ssyrk/ssyrk.mjs";
 
 /**
  * Initializes the WebGPU device.
