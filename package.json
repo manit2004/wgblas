@@ -110,6 +110,10 @@
     "./ssyrk": {
       "import": "./src/ssyrk/ssyrk.mjs",
       "types": "./src/ssyrk/ssyrk.d.mts"
+    },
+    "./ssyr2k": {
+      "import": "./src/ssyr2k/ssyr2k.mjs",
+      "types": "./src/ssyr2k/ssyr2k.d.mts"
     }
   },
   "files": [
