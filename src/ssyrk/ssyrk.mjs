@@ -1,13 +1,14 @@
 import {
   uploadBuffer,
+  createStorageBuffer,
   createParamsBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
-import { extractTimestamp } from "../util/benchmark.mjs";
+import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
@@ -16,8 +17,7 @@ const BM_LARGE = 64, BN_LARGE = 64; // sgemmtr_large.wgsl's block tile
 const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // same threshold sgemm/sgemmtr use
 
 // ssyrk: C := uplo(alpha*op(A)*op(A)^T + beta*C). No dedicated shader —
-// sgemmtr's kernel with A aliased into both operand slots (B := A). Verified
-// against sgemmtr directly; see sgemmtr_small.wgsl/sgemmtr_large.wgsl.
+// sgemmtr's kernel with A duplicated into a separate B buffer (B := A).
 export async function ssyrk(
   device, uplo, trans, n, k, alpha, A, lda, beta, C, ldc, layout = "row-major",
 ) {
@@ -90,7 +90,6 @@ export async function ssyrk(
   let transB = transA === "no-transpose" ? "transpose" : "no-transpose";
 
   // Column-major C: same swap trick sgemm/sgemmtr use, simplified since A === B and m=n.
-
   let uploEff = uplo;
   if (effLayoutC === "column-major") {
     [transA, transB] = [
@@ -109,6 +108,11 @@ export async function ssyrk(
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "ssyrk-A", false);
   const CBuffer = CIsGpu ? C._buf : uploadBuffer(C, "ssyrk-C", true);
+  // B := A, but as a genuinely separate buffer — re-uploaded for Float32Array,
+  // GPU-copied (see below) for GpuMatrix, since the caller owns ABuffer.
+  const BBuffer = AIsGpu
+    ? createStorageBuffer(ABuffer.size, "ssyrk-B", GPUBufferUsage.COPY_DST)
+    : uploadBuffer(A, "ssyrk-B", false);
   const paramsBuffer = createParamsBuffer(
     [
       { value: n,   type: "u32" }, // gemmtr's m
@@ -129,7 +133,7 @@ export async function ssyrk(
   try {
     const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
       ABuffer,
-      ABuffer, // B := A — same physical buffer bound to both operand slots
+      BBuffer,
       CBuffer,
       paramsBuffer,
     ]);
@@ -143,7 +147,12 @@ export async function ssyrk(
         x: Math.min(Math.ceil(n / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
         y: Math.min(Math.ceil(n / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
       };
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
+    // Manual encoder (not runComputePass) so the A->B duplicate copy lands
+    // on the same command encoder, strictly before the compute pass reads B.
+    const { commandEncoder, querySet, passDescriptor } = beginTimedEncoder();
+    if (AIsGpu) commandEncoder.copyBufferToBuffer(ABuffer, 0, BBuffer, 0, ABuffer.size);
+    encodePass(commandEncoder, pipeline, bindGroup, wgCount, passDescriptor);
+    const ts = resolveTimestamp(commandEncoder, querySet);
     const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
 
     submit(commandEncoder);
@@ -160,6 +169,7 @@ export async function ssyrk(
     return { C: result };
   } finally {
     if (!AIsGpu) destroyBuffers(ABuffer);
+    destroyBuffers(BBuffer); // always our own buffer, never the caller's
     if (!CIsGpu) destroyBuffers(CBuffer);
     destroyBuffers(paramsBuffer);
   }
