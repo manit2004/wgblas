@@ -50,8 +50,16 @@ jobs:
 
       - name: Download kernel output
         run: |
-          kaggle kernels output "manitroy/wgblas-bench" \
-            -p /tmp/bench-output
+          n=0
+          until kaggle kernels output "manitroy/wgblas-bench" -p /tmp/bench-output; do
+            n=$((n+1))
+            if [ $n -ge 3 ]; then
+              echo "Download failed after 3 attempts"
+              exit 1
+            fi
+            echo "Download attempt $n failed (Kaggle API is occasionally flaky) — retrying in 10s..."
+            sleep 10
+          done
           echo "Output files:"
           find /tmp/bench-output -type f
 

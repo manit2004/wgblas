@@ -50,6 +50,15 @@ jobs:
 
       - name: Download test output
         run: |
-          kaggle kernels output "manitroy/wgblas-test" -p /tmp/test-output
+          n=0
+          until kaggle kernels output "manitroy/wgblas-test" -p /tmp/test-output; do
+            n=$((n+1))
+            if [ $n -ge 3 ]; then
+              echo "Download failed after 3 attempts"
+              exit 1
+            fi
+            echo "Download attempt $n failed (Kaggle API is occasionally flaky) — retrying in 10s..."
+            sleep 10
+          done
           echo "--- Test output ---"
           cat /tmp/test-output/test-output.txt || echo "(no output file found)"
