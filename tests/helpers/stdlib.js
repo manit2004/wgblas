@@ -216,3 +216,21 @@ export const ssyrkReference = makeMatMatTriangularReference((a) => {
     beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
   });
 });
+
+// ssyr2k: C := uplo(alpha*op(A)*op(B)^T + alpha*op(B)*op(A)^T + beta*C) —
+// same mapping ssyr2k.mjs itself uses: two sgemmReference calls, term 2
+// accumulating onto term 1's full result with beta=1, then masks to the
+// uplo triangle.
+export const ssyr2kReference = makeMatMatTriangularReference((a) => {
+  const transOther = a.trans === "no-transpose" ? "transpose" : "no-transpose";
+  const { C: afterTerm1 } = sgemmReference({
+    transA: a.trans, transB: transOther, m: a.n, n: a.n, k: a.k,
+    alpha: a.alpha, A: a.A, lda: a.lda, B: a.B, ldb: a.ldb,
+    beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
+  });
+  return sgemmReference({
+    transA: a.trans, transB: transOther, m: a.n, n: a.n, k: a.k,
+    alpha: a.alpha, A: a.B, lda: a.ldb, B: a.A, ldb: a.lda,
+    beta: 1.0, C: afterTerm1, ldc: a.ldc, layout: a.layout,
+  });
+});
