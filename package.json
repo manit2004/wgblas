@@ -106,6 +106,10 @@
     "./sgemmtr": {
       "import": "./src/sgemmtr/sgemmtr.mjs",
       "types": "./src/sgemmtr/sgemmtr.d.mts"
+    },
+    "./ssyrk": {
+      "import": "./src/ssyrk/ssyrk.mjs",
+      "types": "./src/ssyrk/ssyrk.d.mts"
     }
   },
   "files": [
