@@ -114,6 +114,10 @@
     "./ssyr2k": {
       "import": "./src/ssyr2k/ssyr2k.mjs",
       "types": "./src/ssyr2k/ssyr2k.d.mts"
+    },
+    "./ssymm": {
+      "import": "./src/ssymm/ssymm.mjs",
+      "types": "./src/ssymm/ssymm.d.mts"
     }
   },
   "files": [
