@@ -30,7 +30,8 @@
       "wgblas/ssyr2": ["./src/ssyr2/ssyr2.d.mts"],
       "wgblas/sgemm": ["./src/sgemm/sgemm.d.mts"],
       "wgblas/sgemmtr": ["./src/sgemmtr/sgemmtr.d.mts"],
-      "wgblas/ssyrk": ["./src/ssyrk/ssyrk.d.mts"]
+      "wgblas/ssyrk": ["./src/ssyrk/ssyrk.d.mts"],
+      "wgblas/ssyr2k": ["./src/ssyr2k/ssyr2k.d.mts"]
     }
   }
 }

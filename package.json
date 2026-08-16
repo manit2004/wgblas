@@ -110,6 +110,10 @@
     "./ssyrk": {
       "import": "./src/ssyrk/ssyrk.mjs",
       "types": "./src/ssyrk/ssyrk.d.mts"
+    },
+    "./ssyr2k": {
+      "import": "./src/ssyr2k/ssyr2k.mjs",
+      "types": "./src/ssyr2k/ssyr2k.d.mts"
     }
   },
   "files": [
@@ -126,7 +130,26 @@
   },
   "keywords": [
     "BLAS",
-    "WebGPU"
+    "WebGPU",
+    "linear-algebra",
+    "linear",
+    "algebra",
+    "subroutines",
+    "level 1",
+    "level 2",
+    "level 3",
+    "gpu",
+    "gpgpu",
+    "wgsl",
+    "compute-shader",
+    "matrix",
+    "vector",
+    "matmul",
+    "dot product",
+    "float32",
+    "float64",
+    "numerical-computing",
+    "scientific-computing"
   ],
   "author": "Manit Roy",
   "license": "Apache-2.0",

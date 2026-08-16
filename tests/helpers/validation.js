@@ -106,10 +106,14 @@ const SPECIALS = {
  * (no `ld*` in `dependsOn`).
  *
  * - `dependsOn` has a `trans*` field and `"k"` → Level 3 matrix whose shape
- *   swaps between (m,k)/(k,m) (A~transA, or a single-operand routine like
- *   ssyrk whose `A` depends on "lda" with no separate "m" — its own `n`
- *   plays that role, ssyrk's C being square) or (k,n)/(n,k) (B~transB) with
- *   its own trans flag — see A.json's "level-3" section / B.json.
+ *   swaps between (dim1,k)/(k,dim1) with its own trans flag, where `dim1` is
+ *   whichever of `"m"`/`"n"` appears *first* in `dependsOn` — e.g. `["m","k",
+ *   "lda","transA"]` (sgemm's A) is (m,k)/(k,m); `["k","n","ldb","transB"]`
+ *   (sgemm's B) is (k,n)/(n,k); `["n","k","lda","trans"]` (ssyrk's A, no
+ *   separate m — its own n plays that role) is (n,k)/(k,n) — the array's own
+ *   order carries the distinction, not the specific field/ld names, since a
+ *   field name alone (e.g. `"ldb"`) isn't enough — ssyr2k's B also depends
+ *   on `"ldb"` but is (n,k)-shaped like an A, not (k,n)-shaped like sgemm's B.
  * - `dependsOn` has `"m"` and `"n"` (no trans) → plain matrix: m×n
  *   (row-major) or n×m (column-major) — sgemv/ssyr2/etc.'s A, sgemm's C.
  * - `dependsOn` has `"n"` alone → symmetric: square n×n (ssymv/ssyr's A).
@@ -123,12 +127,10 @@ export function matrixShape(dependsOn, dims) {
   const transKey = dependsOn?.find((d) => d.startsWith("trans"));
   const isCM = dims.layout === "column-major";
   if (transKey && deps.has("k")) {
-    // "m"-like (row-like) operand: has a real "m", or is a single-operand
-    // routine's own "A" (identified by depending on "lda" specifically,
-    // not "ldb") — ssyrk has no separate m, so dims.m falls back to dims.n.
-    const [dim1, dim2] = (deps.has("m") || deps.has("lda"))
-      ? [dims.m ?? dims.n, dims.k]
-      : [dims.k, dims.n];
+    // The two dimension fields, in (outer,inner)-for-no-transpose order —
+    // dependsOn's own order carries this, so no field-name special-casing.
+    const [dim1Name, dim2Name] = dependsOn.filter((d) => d === "m" || d === "n" || d === "k");
+    const dim1 = dims[dim1Name], dim2 = dims[dim2Name];
     const rows = isCM ? dim2 : dim1;
     const cols = isCM ? dim1 : dim2;
     const isNoTrans = (dims[transKey] ?? "no-transpose") === "no-transpose";

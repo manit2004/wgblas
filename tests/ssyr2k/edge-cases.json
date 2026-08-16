@@ -1,0 +1,92 @@
+[
+  {
+    "label": "alpha=0 — output is beta*C on the lower triangle, upper untouched",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 2, "k": 2, "alpha": 0,
+    "A": [9, 9, 9, 9], "lda": 2,
+    "B": [8, 8, 8, 8], "ldb": 2,
+    "beta": 2,
+    "C": [1, 2, 3, 4], "ldc": 2
+  },
+  {
+    "label": "beta=0 — output is alpha*(A*B^T+B*A^T) on the upper triangle, lower untouched",
+    "uplo": "upper",
+    "trans": "no-transpose",
+    "n": 2, "k": 2, "alpha": 1,
+    "A": [1, 0, 0, 1], "lda": 2,
+    "B": [2, 0, 0, 3], "ldb": 2,
+    "beta": 0,
+    "C": [99, 99, 99, 99], "ldc": 2
+  },
+  {
+    "label": "uplo=lower: A*B^T + B*A^T, only col<=row kept",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 3, "k": 3, "alpha": 1,
+    "A": [1, 2, 3, 4, 5, 6, 7, 8, 9], "lda": 3,
+    "B": [9, 8, 7, 6, 5, 4, 3, 2, 1], "ldb": 3,
+    "beta": 0,
+    "C": [0, 0, 0, 0, 0, 0, 0, 0, 0], "ldc": 3
+  },
+  {
+    "label": "uplo=upper: same A,B, only col>=row kept",
+    "uplo": "upper",
+    "trans": "no-transpose",
+    "n": 3, "k": 3, "alpha": 1,
+    "A": [1, 2, 3, 4, 5, 6, 7, 8, 9], "lda": 3,
+    "B": [9, 8, 7, 6, 5, 4, 3, 2, 1], "ldb": 3,
+    "beta": 0,
+    "C": [0, 0, 0, 0, 0, 0, 0, 0, 0], "ldc": 3
+  },
+  {
+    "label": "trans=transpose: A, B stored k×n, op(A)=A^T, op(B)=B^T",
+    "uplo": "lower",
+    "trans": "transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 4, 2, 5, 3, 6], "lda": 2,
+    "B": [1, 0, 0, 1, 1, 1], "ldb": 2,
+    "beta": 0,
+    "C": [0, 0, 0, 0], "ldc": 2
+  },
+  {
+    "label": "lda > k (NoTrans A) — padding elements in stride gaps are ignored",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 2, 3, 99, 4, 5, 6, 99], "lda": 4,
+    "B": [1, 0, 1, 0, 1, 1], "ldb": 3,
+    "beta": 0,
+    "C": [0, 0, 0, 0], "ldc": 2
+  },
+  {
+    "label": "ldb > k (NoTrans B) — padding elements in stride gaps are ignored",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 2, 3, 4, 5, 6], "lda": 3,
+    "B": [1, 0, 1, 99, 0, 1, 1, 99], "ldb": 4,
+    "beta": 0,
+    "C": [0, 0, 0, 0], "ldc": 2
+  },
+  {
+    "label": "ldc > n — padding in output stride (write positions correct, gaps unchanged)",
+    "uplo": "upper",
+    "trans": "no-transpose",
+    "n": 2, "k": 3, "alpha": 1,
+    "A": [1, 2, 3, 4, 5, 6], "lda": 3,
+    "B": [1, 0, 1, 0, 1, 1], "ldb": 3,
+    "beta": 0,
+    "C": [0, 0, 99, 0, 0, 99], "ldc": 3
+  },
+  {
+    "label": "k=1 — single accumulation term per product",
+    "uplo": "lower",
+    "trans": "no-transpose",
+    "n": 3, "k": 1, "alpha": 1,
+    "A": [2, 3, 4], "lda": 1,
+    "B": [5, 6, 7], "ldb": 1,
+    "beta": 0,
+    "C": [0, 0, 0, 0, 0, 0, 0, 0, 0], "ldc": 3
+  }
+]

@@ -22,10 +22,13 @@ whichever <code>ld*</code> field it depends on. Returns <code>null</code> for no
 (no <code>ld*</code> in <code>dependsOn</code>).</p>
 <ul>
 <li><code>dependsOn</code> has a <code>trans*</code> field and <code>&quot;k&quot;</code> → Level 3 matrix whose shape
-swaps between (m,k)/(k,m) (A~transA, or a single-operand routine like
-ssyrk whose <code>A</code> depends on &quot;lda&quot; with no separate &quot;m&quot; — its own <code>n</code>
-plays that role, ssyrk's C being square) or (k,n)/(n,k) (B~transB) with
-its own trans flag — see A.json's &quot;level-3&quot; section / B.json.</li>
+swaps between (dim1,k)/(k,dim1) with its own trans flag, where <code>dim1</code> is
+whichever of <code>&quot;m&quot;</code>/<code>&quot;n&quot;</code> appears <em>first</em> in <code>dependsOn</code> — e.g. <code>[&quot;m&quot;,&quot;k&quot;, &quot;lda&quot;,&quot;transA&quot;]</code> (sgemm's A) is (m,k)/(k,m); <code>[&quot;k&quot;,&quot;n&quot;,&quot;ldb&quot;,&quot;transB&quot;]</code>
+(sgemm's B) is (k,n)/(n,k); <code>[&quot;n&quot;,&quot;k&quot;,&quot;lda&quot;,&quot;trans&quot;]</code> (ssyrk's A, no
+separate m — its own n plays that role) is (n,k)/(k,n) — the array's own
+order carries the distinction, not the specific field/ld names, since a
+field name alone (e.g. <code>&quot;ldb&quot;</code>) isn't enough — ssyr2k's B also depends
+on <code>&quot;ldb&quot;</code> but is (n,k)-shaped like an A, not (k,n)-shaped like sgemm's B.</li>
 <li><code>dependsOn</code> has <code>&quot;m&quot;</code> and <code>&quot;n&quot;</code> (no trans) → plain matrix: m×n
 (row-major) or n×m (column-major) — sgemv/ssyr2/etc.'s A, sgemm's C.</li>
 <li><code>dependsOn</code> has <code>&quot;n&quot;</code> alone → symmetric: square n×n (ssymv/ssyr's A).</li>
@@ -40,7 +43,7 @@ its own trans flag — see A.json's &quot;level-3&quot; section / B.json.</li>
 <li><span><span class="tsd-kind-parameter">dims</span>: <span class="tsd-signature-type">any</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">inner</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">outer</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span> <span class="tsd-signature-symbol">}</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/3283efb8c993cb37e9197801b3684079f66b87b0/tests/helpers/validation.js#L121">tests/helpers/validation.js:121</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/6409264ff2ca823d1a177d0d4c08976198b804b9/tests/helpers/validation.js#L125">tests/helpers/validation.js:125</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
