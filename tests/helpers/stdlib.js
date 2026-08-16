@@ -234,3 +234,41 @@ export const ssyr2kReference = makeMatMatTriangularReference((a) => {
     beta: 1.0, C: afterTerm1, ldc: a.ldc, layout: a.layout,
   });
 });
+
+// Mirror-expands a symmetric matrix's `uplo` triangle into a full order×order
+// dense array, tightly packed row-major. Since the result is symmetric and
+// square with ld === order, that same flat array is *also* valid
+// column-major storage of the same matrix (A[i,j]===A[j,i] means the
+// row-major and column-major index formulas agree) — so, unlike sgemm's own
+// operands, this dense copy needs no layout-specific handling downstream.
+function denseSymmetric(A, lda, order, uplo, layout) {
+  const isCM = (layout ?? "row-major") === "column-major";
+  const out = new Float32Array(order * order);
+  for (let i = 0; i < order; i++) {
+    for (let j = 0; j < order; j++) {
+      const isStored = uplo === "lower" ? j <= i : j >= i;
+      const sr = isStored ? i : j;
+      const sc = isStored ? j : i;
+      out[i * order + j] = isCM ? A[sc * lda + sr] : A[sr * lda + sc];
+    }
+  }
+  return out;
+}
+
+// ssymm: C := alpha*A*B + beta*C (side='left') or alpha*B*A + beta*C
+// (side='right'), A symmetric — same composition ssymm.mjs itself uses:
+// mirror-expand A to a dense operand, then a plain gemm. No triangular
+// masking afterward: unlike ssyrk/ssyr2k, ssymm's C is a general dense
+// matrix, not itself symmetric.
+export const ssymmReference = (a) => {
+  const aOrder = a.side === "left" ? a.m : a.n;
+  const denseA = denseSymmetric(a.A, a.lda, aOrder, a.uplo, a.layout);
+  const [matA, ldA, matB, ldB] = a.side === "left"
+    ? [denseA, aOrder, a.B, a.ldb]
+    : [a.B, a.ldb, denseA, aOrder];
+  return sgemmReference({
+    transA: "no-transpose", transB: "no-transpose", m: a.m, n: a.n, k: aOrder,
+    alpha: a.alpha, A: matA, lda: ldA, B: matB, ldb: ldB,
+    beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
+  });
+};

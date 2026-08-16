@@ -117,6 +117,9 @@ const SPECIALS = {
  * - `dependsOn` has `"m"` and `"n"` (no trans) → plain matrix: m×n
  *   (row-major) or n×m (column-major) — sgemv/ssyr2/etc.'s A, sgemm's C.
  * - `dependsOn` has `"n"` alone → symmetric: square n×n (ssymv/ssyr's A).
+ * - `dependsOn` has `"side"` (and `"m"`/`"n"`) → symmetric whose order is
+ *   picked by `dims.side` at read time — m (`'left'`) or n (`'right'`) —
+ *   e.g. ssymm's A. Square either way, so layout doesn't affect the shape.
  *
  * Shared by `ndArrayLen` (array sizing) and `buildArb` (fixtures, to chain
  * `ld*` in `[inner, inner+pad]`) so the two never drift apart.
@@ -135,6 +138,10 @@ export function matrixShape(dependsOn, dims) {
     const cols = isCM ? dim1 : dim2;
     const isNoTrans = (dims[transKey] ?? "no-transpose") === "no-transpose";
     return isNoTrans ? { outer: rows, inner: cols } : { outer: cols, inner: rows };
+  }
+  if (deps.has("side") && deps.has("m") && deps.has("n")) {
+    const aOrder = dims.side === "right" ? dims.n : dims.m;
+    return { outer: aOrder, inner: aOrder };
   }
   if (deps.has("m") && deps.has("n"))
     return isCM ? { outer: dims.n, inner: dims.m } : { outer: dims.m, inner: dims.n };
