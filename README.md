@@ -26,6 +26,7 @@
 - [sgemm](https://manit2004.github.io/wgblas/functions/docs.sgemm.html)
 - [sgemmtr](https://manit2004.github.io/wgblas/functions/docs.sgemmtr.html)
 - [ssyrk](https://manit2004.github.io/wgblas/functions/docs.ssyrk.html)
+- [ssyr2k](https://manit2004.github.io/wgblas/functions/docs.ssyr2k.html)
    
 ## Browser Support
 
