@@ -1,18 +1,20 @@
-<svg id="bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
-<style>#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .bg{fill:#fcfcfb}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .bg{fill:#1a1a19}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .gr{stroke:#2c2c2a}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ax{stroke:#383835}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .at{fill:#898781}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .lt{fill:#c3c2b7}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln1{stroke:#3987e5}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln2{stroke:#008300}#bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-srotm-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk2{stroke:#1a1a19}</style>
+<svg id="bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
+<style>#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .bg{fill:#fcfcfb}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .bg{fill:#1a1a19}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .gr{stroke:#2c2c2a}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ax{stroke:#383835}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .at{fill:#898781}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .lt{fill:#c3c2b7}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln1{stroke:#3987e5}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln2{stroke:#008300}#bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-snrm2-default-nvidia_geforce_rtx_4060_laptop_gpu-gbs .mk2{stroke:#1a1a19}</style>
 <rect class="bg" width="600" height="260"/>
 <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
-<line class="gr" x1="58" y1="170.0" x2="584" y2="170.0"/>
-<line class="gr" x1="58" y1="120.0" x2="584" y2="120.0"/>
-<line class="gr" x1="58" y1="70.0" x2="584" y2="70.0"/>
+<line class="gr" x1="58" y1="180.0" x2="584" y2="180.0"/>
+<line class="gr" x1="58" y1="140.0" x2="584" y2="140.0"/>
+<line class="gr" x1="58" y1="100.0" x2="584" y2="100.0"/>
+<line class="gr" x1="58" y1="60.0" x2="584" y2="60.0"/>
 <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
 <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
 <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
 <text class="at" x="52" y="224.0" text-anchor="end">0</text>
-<text class="at" x="52" y="174.0" text-anchor="end">200</text>
-<text class="at" x="52" y="124.0" text-anchor="end">400</text>
-<text class="at" x="52" y="74.0" text-anchor="end">600</text>
-<text class="at" x="52" y="24.0" text-anchor="end">800</text>
+<text class="at" x="52" y="184.0" text-anchor="end">100</text>
+<text class="at" x="52" y="144.0" text-anchor="end">200</text>
+<text class="at" x="52" y="104.0" text-anchor="end">300</text>
+<text class="at" x="52" y="64.0" text-anchor="end">400</text>
+<text class="at" x="52" y="24.0" text-anchor="end">500</text>
 <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">GB/s</text>
 <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
 <text class="at" x="85.7" y="236" text-anchor="middle">64</text>
@@ -26,32 +28,32 @@
 <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
 <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
-<polyline class="ln1" points="58.0,220.0 85.7,220.0 113.4,219.9 168.7,219.6 196.4,219.2 251.8,216.8 307.2,209.3 362.5,183.4 417.9,117.6 473.3,25.0 528.6,35.9 584.0,166.6"/>
-<polyline class="ln2" points="58.0,220.0 85.7,219.9 113.4,219.9 168.7,219.5 196.4,219.0 251.8,216.0 307.2,204.0 362.5,183.3 417.9,106.2 473.3,83.5 528.6,109.3 584.0,171.5"/>
+<polyline class="ln1" points="58.0,220.0 85.7,220.0 113.4,220.0 168.7,219.9 196.4,219.9 251.8,219.6 307.2,218.3 362.5,213.2 417.9,194.4 473.3,142.0 528.6,38.0 584.0,139.6"/>
+<polyline class="ln2" points="58.0,220.0 85.7,220.0 113.4,220.0 168.7,220.0 196.4,219.9 251.8,219.7 307.2,218.8 362.5,215.5 417.9,202.1 473.3,148.9 528.6,52.8 584.0,129.0"/>
 <circle class="mk1" cx="58.0" cy="220.0" r="4"/>
 <circle class="mk1" cx="85.7" cy="220.0" r="4"/>
-<circle class="mk1" cx="113.4" cy="219.9" r="4"/>
-<circle class="mk1" cx="168.7" cy="219.6" r="4"/>
-<circle class="mk1" cx="196.4" cy="219.2" r="4"/>
-<circle class="mk1" cx="251.8" cy="216.8" r="4"/>
-<circle class="mk1" cx="307.2" cy="209.3" r="4"/>
-<circle class="mk1" cx="362.5" cy="183.4" r="4"/>
-<circle class="mk1" cx="417.9" cy="117.6" r="4"/>
-<circle class="mk1" cx="473.3" cy="25.0" r="4"/>
-<circle class="mk1" cx="528.6" cy="35.9" r="4"/>
-<circle class="mk1" cx="584.0" cy="166.6" r="4"/>
+<circle class="mk1" cx="113.4" cy="220.0" r="4"/>
+<circle class="mk1" cx="168.7" cy="219.9" r="4"/>
+<circle class="mk1" cx="196.4" cy="219.9" r="4"/>
+<circle class="mk1" cx="251.8" cy="219.6" r="4"/>
+<circle class="mk1" cx="307.2" cy="218.3" r="4"/>
+<circle class="mk1" cx="362.5" cy="213.2" r="4"/>
+<circle class="mk1" cx="417.9" cy="194.4" r="4"/>
+<circle class="mk1" cx="473.3" cy="142.0" r="4"/>
+<circle class="mk1" cx="528.6" cy="38.0" r="4"/>
+<circle class="mk1" cx="584.0" cy="139.6" r="4"/>
 <circle class="mk2" cx="58.0" cy="220.0" r="4"/>
-<circle class="mk2" cx="85.7" cy="219.9" r="4"/>
-<circle class="mk2" cx="113.4" cy="219.9" r="4"/>
-<circle class="mk2" cx="168.7" cy="219.5" r="4"/>
-<circle class="mk2" cx="196.4" cy="219.0" r="4"/>
-<circle class="mk2" cx="251.8" cy="216.0" r="4"/>
-<circle class="mk2" cx="307.2" cy="204.0" r="4"/>
-<circle class="mk2" cx="362.5" cy="183.3" r="4"/>
-<circle class="mk2" cx="417.9" cy="106.2" r="4"/>
-<circle class="mk2" cx="473.3" cy="83.5" r="4"/>
-<circle class="mk2" cx="528.6" cy="109.3" r="4"/>
-<circle class="mk2" cx="584.0" cy="171.5" r="4"/>
+<circle class="mk2" cx="85.7" cy="220.0" r="4"/>
+<circle class="mk2" cx="113.4" cy="220.0" r="4"/>
+<circle class="mk2" cx="168.7" cy="220.0" r="4"/>
+<circle class="mk2" cx="196.4" cy="219.9" r="4"/>
+<circle class="mk2" cx="251.8" cy="219.7" r="4"/>
+<circle class="mk2" cx="307.2" cy="218.8" r="4"/>
+<circle class="mk2" cx="362.5" cy="215.5" r="4"/>
+<circle class="mk2" cx="417.9" cy="202.1" r="4"/>
+<circle class="mk2" cx="473.3" cy="148.9" r="4"/>
+<circle class="mk2" cx="528.6" cy="52.8" r="4"/>
+<circle class="mk2" cx="584.0" cy="129.0" r="4"/>
 <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
 <circle class="mk1" cx="66" cy="252" r="4"/>
 <text class="lt" x="80" y="256">wgblas</text>
