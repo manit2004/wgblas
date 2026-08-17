@@ -118,6 +118,10 @@
     "./ssymm": {
       "import": "./src/ssymm/ssymm.mjs",
       "types": "./src/ssymm/ssymm.d.mts"
+    },
+    "./strmm": {
+      "import": "./src/strmm/strmm.mjs",
+      "types": "./src/strmm/strmm.d.mts"
     }
   },
   "files": [

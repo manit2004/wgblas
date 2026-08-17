@@ -30,3 +30,4 @@ export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
 export { ssyrk } from "./src/ssyrk/ssyrk.mjs";
 export { ssyr2k } from "./src/ssyr2k/ssyr2k.mjs";
 export { ssymm } from "./src/ssymm/ssymm.mjs";
+export { strmm } from "./src/strmm/strmm.mjs";

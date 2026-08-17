@@ -32,7 +32,8 @@
       "wgblas/sgemmtr": ["./src/sgemmtr/sgemmtr.d.mts"],
       "wgblas/ssyrk": ["./src/ssyrk/ssyrk.d.mts"],
       "wgblas/ssyr2k": ["./src/ssyr2k/ssyr2k.d.mts"],
-      "wgblas/ssymm": ["./src/ssymm/ssymm.d.mts"]
+      "wgblas/ssymm": ["./src/ssymm/ssymm.d.mts"],
+      "wgblas/strmm": ["./src/strmm/strmm.d.mts"]
     }
   }
 }
