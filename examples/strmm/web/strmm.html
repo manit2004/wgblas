@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>strmm — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, strmm, randomFloat32Array, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const m = 4, n = 3;
+        const lda = m, ldb = n;
+        const alpha = 1.0;
+        const A = randomFloat32Array(m * lda, -10, 10);
+        const B = randomFloat32Array(m * ldb, -10, 10);
+
+        const { B: result } = await strmm(device, "left", "lower", "no-transpose", "non-unit", m, n, alpha, A, lda, B, ldb, "row-major");
+
+        document.getElementById("out").textContent =
+          "A: " + Array.from(A).map(v => v.toFixed(4)).join(", ") +
+          "\nB (before): " + Array.from(B).map(v => v.toFixed(4)).join(", ") +
+          "\nB (after, = A*B): " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>
