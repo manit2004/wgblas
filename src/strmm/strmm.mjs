@@ -2,7 +2,6 @@ import {
   uploadBuffer,
   createParamsBuffer,
   createStorageBuffer,
-  createResultBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
@@ -120,9 +119,15 @@ export async function strmm(
     };
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strmm-A", false);
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strmm-B", false);
+  // readback=true (COPY_SRC): BBuffer is also the source that seeds outBuffer.
+  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strmm-B", true);
   const AdenseBuffer = createStorageBuffer(aOrder * ldDense * 4, "strmm-Adense");
-  const outBuffer = createResultBuffer(bOuter * ldb * 4, "strmm-out");
+  // COPY_DST: seeded from B's own content before gemm runs, so stride-padding
+  // gaps (never written by gemm's tight m x n loop) keep B's original bytes
+  // instead of reading back as zero. COPY_SRC: read back / adopted by B after.
+  const outBuffer = createStorageBuffer(
+    bOuter * ldb * 4, "strmm-out", GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+  );
   let triParams = null, gemmParams = null;
   let outBufferAdopted = false; // true once B._buf is repointed at outBuffer
 
@@ -164,6 +169,11 @@ export async function strmm(
     const gemmBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [XBuffer, YBuffer, outBuffer, gemmParams]);
 
     const { commandEncoder, querySet } = beginTimedEncoder();
+    // Seed outBuffer with B's own bytes first, so gemm's tight m x n write
+    // leaves stride-padding gaps holding B's original content, not zero.
+    // BBuffer may be larger than outBuffer (e.g. a validation-test baseline
+    // over-provisioned for a bigger ldb it might later be substituted with).
+    commandEncoder.copyBufferToBuffer(BBuffer, 0, outBuffer, 0, Math.min(BBuffer.size, outBuffer.size));
     const triDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
     const gemmDesc = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
     encodePass(commandEncoder, triPipeline, triBindGroup, { x: Math.ceil(aOrder / TRI_WG), y: Math.ceil(aOrder / TRI_WG) }, triDesc);

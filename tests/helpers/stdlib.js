@@ -272,3 +272,45 @@ export const ssymmReference = (a) => {
     beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
   });
 };
+
+// Zero-fills a triangular matrix's unstored triangle into a full order×order
+// dense array representing op(A) directly (unlike denseSymmetric, this is
+// NOT layout-invariant — A isn't symmetric — so it's written out in the same
+// layout as `layout` so the result can share that layout with B/C downstream).
+function denseTriangular(A, lda, order, uplo, transA, diag, layout) {
+  const isCM = (layout ?? "row-major") === "column-major";
+  const readA = (row, col) => (isCM ? A[col * lda + row] : A[row * lda + col]);
+  const out = new Float32Array(order * order);
+  const writeOut = (row, col, v) => { out[isCM ? col * order + row : row * order + col] = v; };
+  for (let i = 0; i < order; i++) {
+    for (let j = 0; j < order; j++) {
+      if (i === j) { writeOut(i, j, diag === "unit" ? 1 : readA(i, i)); continue; }
+      const meaningful = transA === "no-transpose"
+        ? (uplo === "lower" ? j <= i : j >= i)
+        : (uplo === "lower" ? j >= i : j <= i);
+      writeOut(i, j, meaningful ? readA(transA === "no-transpose" ? i : j, transA === "no-transpose" ? j : i) : 0);
+    }
+  }
+  return out;
+}
+
+// strmm: B := alpha*op(A)*B (side='left') or alpha*B*op(A) (side='right'), A
+// triangular — same composition strmm.mjs itself uses: zero-fill op(A) to a
+// dense operand, then a plain gemm with beta=0 (no C term). Seeds the gemm's
+// "C" with B itself (not a fresh zero array) so stride-padding gaps — never
+// touched by gemm's tight m x n write — keep B's own original bytes,
+// matching strmm.mjs's actual in-place-mutation behavior.
+export const strmmReference = (a) => {
+  const layout = a.layout ?? "row-major";
+  const aOrder = a.side === "left" ? a.m : a.n;
+  const denseA = denseTriangular(a.A, a.lda, aOrder, a.uplo, a.transA, a.diag, layout);
+  const [matA, ldA, matB, ldB] = a.side === "left"
+    ? [denseA, aOrder, a.B, a.ldb]
+    : [a.B, a.ldb, denseA, aOrder];
+  const { C } = sgemmReference({
+    transA: "no-transpose", transB: "no-transpose", m: a.m, n: a.n, k: aOrder,
+    alpha: a.alpha, A: matA, lda: ldA, B: matB, ldb: ldB,
+    beta: 0.0, C: a.B, ldc: a.ldb, layout,
+  });
+  return { B: C };
+};
