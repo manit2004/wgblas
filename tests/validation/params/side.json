@@ -1,0 +1,17 @@
+{
+  "_note": "side selects whether the symmetric operand premultiplies ('left') or postmultiplies ('right').",
+  "type": "string",
+  "values": ["left", "right"],
+  "baseline": "left",
+  "invalid": [
+    { "value": "L",                  "error": "side must be 'left' or 'right'", "label": "shorthand 'L'" },
+    { "value": "leftside",           "error": "side must be 'left' or 'right'", "label": "expanded string" },
+    { "special": "null",             "error": "side must be 'left' or 'right'", "label": "null" },
+    { "special": "undefined",        "error": "side must be 'left' or 'right'", "label": "undefined" },
+    { "special": "number",           "error": "side must be 'left' or 'right'", "label": "number 42" }
+  ],
+  "edge": [
+    { "value": "left",  "label": "A premultiplies B" },
+    { "value": "right", "label": "A postmultiplies B" }
+  ]
+}
