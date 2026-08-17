@@ -30,7 +30,8 @@
 - [ssyrk](https://manit2004.github.io/wgblas/functions/docs.ssyrk.html)
 - [ssyr2k](https://manit2004.github.io/wgblas/functions/docs.ssyr2k.html)
 - [ssymm](https://manit2004.github.io/wgblas/functions/docs.ssymm.html)
-   
+- [strmm](https://manit2004.github.io/wgblas/functions/docs.strmm.html)
+
 ## Browser Support
 
 wgblas runs in any browser with WebGPU enabled. Check if it's working in your browser at [webgpureport.org](https://webgpureport.org).

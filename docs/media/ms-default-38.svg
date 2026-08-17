@@ -1,5 +1,5 @@
-<svg id="bc-saxpy-default-nvidia_geforce_gtx_1650-ms" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="ms vs n">
-<style>#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .bg{fill:#fcfcfb}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .at{fill:#898781}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300}#bc-saxpy-default-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-saxpy-default-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}:root[data-theme=dark] #bc-saxpy-default-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}:root[data-theme=dark] #bc-saxpy-default-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-saxpy-default-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-saxpy-default-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-saxpy-default-nvidia_geforce_gtx_1650-ms .mk2{stroke:#1a1a19}</style>
+<svg id="bc-sasum-default-nvidia_geforce_gtx_1650-ms" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="ms vs n">
+<style>#bc-sasum-default-nvidia_geforce_gtx_1650-ms .bg{fill:#fcfcfb}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-sasum-default-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .at{fill:#898781}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .ln2{stroke:#008300}#bc-sasum-default-nvidia_geforce_gtx_1650-ms .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-sasum-default-nvidia_geforce_gtx_1650-ms .bg{fill:#1a1a19}:root[data-theme=dark] #bc-sasum-default-nvidia_geforce_gtx_1650-ms .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-sasum-default-nvidia_geforce_gtx_1650-ms .ax{stroke:#383835}:root[data-theme=dark] #bc-sasum-default-nvidia_geforce_gtx_1650-ms .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-sasum-default-nvidia_geforce_gtx_1650-ms .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-sasum-default-nvidia_geforce_gtx_1650-ms .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-sasum-default-nvidia_geforce_gtx_1650-ms .mk2{stroke:#1a1a19}</style>
 <rect class="bg" width="600" height="260"/>
 <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
 <line class="gr" x1="58" y1="186.7" x2="584" y2="186.7"/>
@@ -11,12 +11,12 @@
 <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
 <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
 <text class="at" x="52" y="224.0" text-anchor="end">0</text>
-<text class="at" x="52" y="190.7" text-anchor="end">0.200</text>
-<text class="at" x="52" y="157.3" text-anchor="end">0.400</text>
-<text class="at" x="52" y="124.0" text-anchor="end">0.600</text>
-<text class="at" x="52" y="90.7" text-anchor="end">0.800</text>
-<text class="at" x="52" y="57.3" text-anchor="end">1.00</text>
-<text class="at" x="52" y="24.0" text-anchor="end">1.20</text>
+<text class="at" x="52" y="190.7" text-anchor="end">0.100</text>
+<text class="at" x="52" y="157.3" text-anchor="end">0.200</text>
+<text class="at" x="52" y="124.0" text-anchor="end">0.300</text>
+<text class="at" x="52" y="90.7" text-anchor="end">0.400</text>
+<text class="at" x="52" y="57.3" text-anchor="end">0.500</text>
+<text class="at" x="52" y="24.0" text-anchor="end">0.600</text>
 <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">ms</text>
 <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
 <text class="at" x="85.7" y="236" text-anchor="middle">64</text>
@@ -30,30 +30,30 @@
 <text class="at" x="473.3" y="236" text-anchor="middle">1.0M</text>
 <text class="at" x="528.6" y="236" text-anchor="middle">4.2M</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
-<polyline class="ln1" points="58.0,218.8 85.7,218.9 113.4,218.8 168.7,218.8 196.4,218.8 251.8,218.8 307.2,218.6 362.5,218.3 417.9,215.9 473.3,207.0 528.6,171.3 584.0,28.5"/>
-<polyline class="ln2" points="58.0,219.5 85.7,219.5 113.4,219.5 168.7,219.4 196.4,219.4 251.8,219.4 307.2,219.3 362.5,219.0 417.9,216.5 473.3,207.7 528.6,172.3 584.0,31.3"/>
-<circle class="mk1" cx="58.0" cy="218.8" r="4"/>
-<circle class="mk1" cx="85.7" cy="218.9" r="4"/>
-<circle class="mk1" cx="113.4" cy="218.8" r="4"/>
-<circle class="mk1" cx="168.7" cy="218.8" r="4"/>
-<circle class="mk1" cx="196.4" cy="218.8" r="4"/>
-<circle class="mk1" cx="251.8" cy="218.8" r="4"/>
-<circle class="mk1" cx="307.2" cy="218.6" r="4"/>
-<circle class="mk1" cx="362.5" cy="218.3" r="4"/>
-<circle class="mk1" cx="417.9" cy="215.9" r="4"/>
-<circle class="mk1" cx="473.3" cy="207.0" r="4"/>
-<circle class="mk1" cx="528.6" cy="171.3" r="4"/>
-<circle class="mk1" cx="584.0" cy="28.5" r="4"/>
-<circle class="mk2" cx="58.0" cy="219.5" r="4"/>
-<circle class="mk2" cx="85.7" cy="219.5" r="4"/>
-<circle class="mk2" cx="113.4" cy="219.5" r="4"/>
-<circle class="mk2" cx="168.7" cy="219.4" r="4"/>
-<circle class="mk2" cx="196.4" cy="219.4" r="4"/>
-<circle class="mk2" cx="251.8" cy="219.4" r="4"/>
-<circle class="mk2" cx="307.2" cy="219.3" r="4"/>
-<circle class="mk2" cx="362.5" cy="219.0" r="4"/>
-<circle class="mk2" cx="417.9" cy="216.5" r="4"/>
-<circle class="mk2" cx="473.3" cy="207.7" r="4"/>
-<circle class="mk2" cx="528.6" cy="172.3" r="4"/>
-<circle class="mk2" cx="584.0" cy="31.3" r="4"/>
+<polyline class="ln1" points="58.0,213.8 85.7,213.7 113.4,213.8 168.7,213.6 196.4,213.7 251.8,213.6 307.2,213.4 362.5,213.4 417.9,211.4 473.3,204.9 528.6,181.3 584.0,84.5"/>
+<polyline class="ln2" points="58.0,214.1 85.7,213.8 113.4,213.9 168.7,213.9 196.4,214.1 251.8,214.0 307.2,214.0 362.5,213.8 417.9,213.6 473.3,205.6 528.6,176.3 584.0,42.0"/>
+<circle class="mk1" cx="58.0" cy="213.8" r="4"/>
+<circle class="mk1" cx="85.7" cy="213.7" r="4"/>
+<circle class="mk1" cx="113.4" cy="213.8" r="4"/>
+<circle class="mk1" cx="168.7" cy="213.6" r="4"/>
+<circle class="mk1" cx="196.4" cy="213.7" r="4"/>
+<circle class="mk1" cx="251.8" cy="213.6" r="4"/>
+<circle class="mk1" cx="307.2" cy="213.4" r="4"/>
+<circle class="mk1" cx="362.5" cy="213.4" r="4"/>
+<circle class="mk1" cx="417.9" cy="211.4" r="4"/>
+<circle class="mk1" cx="473.3" cy="204.9" r="4"/>
+<circle class="mk1" cx="528.6" cy="181.3" r="4"/>
+<circle class="mk1" cx="584.0" cy="84.5" r="4"/>
+<circle class="mk2" cx="58.0" cy="214.1" r="4"/>
+<circle class="mk2" cx="85.7" cy="213.8" r="4"/>
+<circle class="mk2" cx="113.4" cy="213.9" r="4"/>
+<circle class="mk2" cx="168.7" cy="213.9" r="4"/>
+<circle class="mk2" cx="196.4" cy="214.1" r="4"/>
+<circle class="mk2" cx="251.8" cy="214.0" r="4"/>
+<circle class="mk2" cx="307.2" cy="214.0" r="4"/>
+<circle class="mk2" cx="362.5" cy="213.8" r="4"/>
+<circle class="mk2" cx="417.9" cy="213.6" r="4"/>
+<circle class="mk2" cx="473.3" cy="205.6" r="4"/>
+<circle class="mk2" cx="528.6" cy="176.3" r="4"/>
+<circle class="mk2" cx="584.0" cy="42.0" r="4"/>
 </svg>

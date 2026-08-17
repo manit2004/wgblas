@@ -35,6 +35,7 @@ import sgemm_large from "./sgemm_large.wgsl";
 import sgemmtr_small from "./sgemmtr_small.wgsl";
 import sgemmtr_large from "./sgemmtr_large.wgsl";
 import symmetrize from "./symmetrize.wgsl";
+import triangularize from "./triangularize.wgsl";
 
 export const shaderSources = {
   "reduction/argmax": argmax,
@@ -74,4 +75,5 @@ export const shaderSources = {
   sgemmtr_small,
   sgemmtr_large,
   symmetrize,
+  triangularize,
 };
