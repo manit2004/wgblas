@@ -32,6 +32,9 @@ on <code>&quot;ldb&quot;</code> but is (n,k)-shaped like an A, not (k,n)-shaped 
 <li><code>dependsOn</code> has <code>&quot;m&quot;</code> and <code>&quot;n&quot;</code> (no trans) → plain matrix: m×n
 (row-major) or n×m (column-major) — sgemv/ssyr2/etc.'s A, sgemm's C.</li>
 <li><code>dependsOn</code> has <code>&quot;n&quot;</code> alone → symmetric: square n×n (ssymv/ssyr's A).</li>
+<li><code>dependsOn</code> has <code>&quot;side&quot;</code> (and <code>&quot;m&quot;</code>/<code>&quot;n&quot;</code>) → symmetric whose order is
+picked by <code>dims.side</code> at read time — m (<code>'left'</code>) or n (<code>'right'</code>) —
+e.g. ssymm's A. Square either way, so layout doesn't affect the shape.</li>
 </ul>
 <p>Shared by <code>ndArrayLen</code> (array sizing) and <code>buildArb</code> (fixtures, to chain
 <code>ld*</code> in <code>[inner, inner+pad]</code>) so the two never drift apart.</p>
@@ -43,7 +46,7 @@ on <code>&quot;ldb&quot;</code> but is (n,k)-shaped like an A, not (k,n)-shaped 
 <li><span><span class="tsd-kind-parameter">dims</span>: <span class="tsd-signature-type">any</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">inner</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">outer</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span> <span class="tsd-signature-symbol">}</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/6409264ff2ca823d1a177d0d4c08976198b804b9/tests/helpers/validation.js#L125">tests/helpers/validation.js:125</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/41dcc18d494db2983c5d4ad4c8369303a45b1ed3/tests/helpers/validation.js#L128">tests/helpers/validation.js:128</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
