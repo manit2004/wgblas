@@ -1,5 +1,7 @@
 # wgblas
 
+[![Tests](https://github.com/manit2004/wgblas/actions/workflows/test-gpu.yml/badge.svg)](https://github.com/manit2004/wgblas/actions/workflows/test-gpu.yml)
+
 `wgblas` is an initiative to implement all the standard level 1, 2, 3 BLAS functions on the top of webgpu.
 
 ## Available Functions
