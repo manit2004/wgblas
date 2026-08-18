@@ -120,13 +120,18 @@ export async function strsm(
     return buf;
   }
 
+  // Minimal valid length for B's own buffer (matches its own validation
+  // above) — NOT bOuter*ldb, which can exceed a Float32Array-path buffer's
+  // actual allocation (only guaranteed padded up to GpuMatrix's own size).
+  const bScaleLen = (bOuter - 1) * ldb + bInner;
+
   try {
     // Pre-scale B by alpha once (reuses sscal, so no per-block alpha handling).
     let preScaleBindGroup = null;
     if (alpha !== 1.0) {
       const scaleParams = params(
         [
-          { value: bOuter * ldb, type: "u32" },
+          { value: bScaleLen, type: "u32" },
           { value: alpha, type: "f32" },
           { value: 1, type: "u32" },
         ],

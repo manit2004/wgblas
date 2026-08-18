@@ -499,11 +499,11 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug, config="default"):
         if r.get("compute_GBs") is not None and r.get("compute_ms") not in (None, 0)
     ] if cuda_rows else []
 
-    all_ns = sorted(r["n"] for r in wgblas_rows)
+    all_ns = sorted(r["n"] for r in wgblas_rows if "n" in r)
     if not all_ns:
         return ""
 
-    cuda_by_n = {r["n"]: r for r in cuda_rows}
+    cuda_by_n = {r["n"]: r for r in cuda_rows if "n" in r}
     cuda_series = [cuda_by_n[r["n"]] for r in wgblas_rows if r["n"] in cuda_by_n]
 
     lx_min = math.log10(all_ns[0])
@@ -549,12 +549,14 @@ def fmt_pct(v):
 
 
 def make_comparison_table(wgblas_rows, cuda_rows):
-    cuda_by_n = {r["n"]: r for r in cuda_rows}
+    cuda_by_n = {r["n"]: r for r in cuda_rows if "n" in r}
     lines = [
         "| n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |",
         "|---|-----------|-------------|-----------|-------------|------------|",
     ]
     for row in wgblas_rows:
+        if "n" not in row:
+            continue
         n = row["n"]
         wms = row["compute_ms"]
         wgbs = row["compute_GBs"]
