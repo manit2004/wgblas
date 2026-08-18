@@ -31,6 +31,7 @@
 - [ssyr2k](https://manit2004.github.io/wgblas/functions/docs.ssyr2k.html)
 - [ssymm](https://manit2004.github.io/wgblas/functions/docs.ssymm.html)
 - [strmm](https://manit2004.github.io/wgblas/functions/docs.strmm.html)
+- [strsm](https://manit2004.github.io/wgblas/functions/docs.strsm.html)
 
 ## Browser Support
 
