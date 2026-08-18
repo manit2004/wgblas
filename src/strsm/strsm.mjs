@@ -153,15 +153,26 @@ export async function strsm(
     );
     const invertBindGroup = createBindGroup(invertPipeline.getBindGroupLayout(0), [ABuffer, AinvBuffer, invertParams]);
 
+    // Reusable scratch buffers, sized for the worst case, bound at offset 0.
+    const Bblock = scratch(BLOCK_SIZE * otherLen * 4, "strsm-Bblock");
+    const Xblock = scratch(BLOCK_SIZE * otherLen * 4, "strsm-Xblock");
+    const Aoff = scratch(aOrder * BLOCK_SIZE * 4, "strsm-Aoff");
+    const delta = scratch(aOrder * otherLen * 4, "strsm-delta");
+
     const { commandEncoder, querySet } = beginTimedEncoder();
 
-    if (preScaleBindGroup) {
-      encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(bOuter * ldb));
-    }
-    const invertDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
-    encodePass(commandEncoder, invertPipeline, invertBindGroup, { x: BLOCK_SIZE, y: numBlocks }, invertDesc);
+    if (alpha === 0) {
+      // BLAS: alpha=0 means A is not referenced — skip straight to B:=0.
+      const zeroDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : undefined;
+      encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(bScaleLen), zeroDesc);
+    } else {
+      if (preScaleBindGroup) {
+        encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(bScaleLen));
+      }
+      const invertDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
+      encodePass(commandEncoder, invertPipeline, invertBindGroup, { x: BLOCK_SIZE, y: numBlocks }, invertDesc);
 
-    for (let bi = 0; bi < blockStarts.length; bi++) {
+      for (let bi = 0; bi < blockStarts.length; bi++) {
       const blockStart = blockStarts[bi];
       const blockEnd = Math.min(blockStart + BLOCK_SIZE, aOrder);
       const blockLen = blockEnd - blockStart;
@@ -169,7 +180,6 @@ export async function strsm(
       const isLastPass = bi === blockStarts.length - 1;
 
       // 1) gather B's current block into a tight scratch buffer.
-      const Bblock = scratch(blockLen * otherLen * 4, "strsm-Bblock");
       const gatherBParams = params(
         [
           { value: blockStart, type: "u32" },
@@ -188,7 +198,6 @@ export async function strsm(
 
       // 2) apply: Xblock := op(Ainv_block) @ Bblock (side='left'), or the
       // transpose-trick equivalent for side='right' (same trick strmm uses).
-      const Xblock = scratch(blockLen * otherLen * 4, "strsm-Xblock");
       {
         const mg = blockLen, ng = otherLen, kg = blockLen;
         const largeWgX = Math.ceil(ng / BN_LARGE), largeWgY = Math.ceil(mg / BM_LARGE);
@@ -246,7 +255,6 @@ export async function strsm(
       if (!hasRemaining) continue;
       const remCount = rangeEnd - rangeStart;
 
-      const Aoff = scratch(remCount * blockLen * 4, "strsm-Aoff");
       const gatherAParams = params(
         [
           { value: rangeStart, type: "u32" },
@@ -263,7 +271,6 @@ export async function strsm(
       const gatherABindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [Aoff, ABuffer, gatherAParams]);
       encodePass(commandEncoder, transferPipeline, gatherABindGroup, calcWorkgroups(remCount, blockLen));
 
-      const delta = scratch(remCount * otherLen * 4, "strsm-delta");
       {
         const mg = remCount, ng = otherLen, kg = blockLen;
         const largeWgX = Math.ceil(ng / BN_LARGE), largeWgY = Math.ceil(mg / BM_LARGE);
@@ -307,6 +314,7 @@ export async function strsm(
       const scatterSubBindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [delta, BBuffer, scatterSubParams]);
       const subDesc = isLastPass && querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
       encodePass(commandEncoder, transferPipeline, scatterSubBindGroup, calcWorkgroups(remCount, otherLen), subDesc);
+      }
     }
 
     const ts = resolveTimestamp(commandEncoder, querySet);
