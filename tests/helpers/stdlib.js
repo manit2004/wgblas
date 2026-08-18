@@ -314,3 +314,48 @@ export const strmmReference = (a) => {
   });
   return { B: C };
 };
+
+// Solves denseA@X=alpha*B (side='left') or X@denseA=alpha*B (side='right')
+// via direct forward/backward substitution on the already zero-filled
+// op(A) — simple and independent of strsm.mjs's own block-inversion
+// technique, so it's a genuine cross-check, not just a restatement.
+function solveTriangular(denseA, aOrder, B, ldb, layout, m, n, side, alpha, opIsLower) {
+  const isCM = layout === "column-major";
+  const aElem = (row, col) => (isCM ? denseA[col * aOrder + row] : denseA[row * aOrder + col]);
+  const idxOf = (row, col) => (isCM ? col * ldb + row : row * ldb + col);
+  const out = Float32Array.from(B);
+
+  if (side === "left") {
+    for (let step = 0; step < aOrder; step++) {
+      const i = opIsLower ? step : aOrder - 1 - step;
+      for (let j = 0; j < n; j++) {
+        let acc = alpha * B[idxOf(i, j)];
+        if (opIsLower) { for (let k = 0; k < i; k++) acc -= aElem(i, k) * out[idxOf(k, j)]; }
+        else { for (let k = i + 1; k < aOrder; k++) acc -= aElem(i, k) * out[idxOf(k, j)]; }
+        out[idxOf(i, j)] = acc / aElem(i, i);
+      }
+    }
+  } else {
+    for (let step = 0; step < aOrder; step++) {
+      const j = opIsLower ? aOrder - 1 - step : step;
+      for (let i = 0; i < m; i++) {
+        let acc = alpha * B[idxOf(i, j)];
+        if (opIsLower) { for (let k = j + 1; k < aOrder; k++) acc -= out[idxOf(i, k)] * aElem(k, j); }
+        else { for (let k = 0; k < j; k++) acc -= out[idxOf(i, k)] * aElem(k, j); }
+        out[idxOf(i, j)] = acc / aElem(j, j);
+      }
+    }
+  }
+  return out;
+}
+
+// strsm: solves op(A)*X=alpha*B (side='left') or X*op(A)=alpha*B
+// (side='right') for X, overwriting B. A triangular.
+export const strsmReference = (a) => {
+  const layout = a.layout ?? "row-major";
+  const aOrder = a.side === "left" ? a.m : a.n;
+  const denseA = denseTriangular(a.A, a.lda, aOrder, a.uplo, a.transA, a.diag, layout);
+  const opIsLower = (a.transA === "no-transpose") === (a.uplo === "lower");
+  const B = solveTriangular(denseA, aOrder, a.B, a.ldb, layout, a.m, a.n, a.side, a.alpha, opIsLower);
+  return { B };
+};

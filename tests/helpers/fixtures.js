@@ -210,7 +210,13 @@ export function buildArb(specs, extras = {}) {
       if (spec.type !== "float32array" && spec.type !== "float64array") continue;
       const arrArb = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
       fields[name] = spec.triangular
-        ? triangularDiagonalArb(arrArb, dims.n, dims.lda, spec.diagLow, spec.diagHigh)
+        ? triangularDiagonalArb(
+            arrArb,
+            matrixShape(spec.dependsOn, dims).inner, // order — side-aware via matrixShape, not just dims.n
+            dims[spec.dependsOn.find((d) => d.startsWith("ld"))],
+            spec.diagLow,
+            spec.diagHigh,
+          )
         : arrArb;
     }
     for (const [k, arb] of Object.entries(extras)) fields[k] = arb;
