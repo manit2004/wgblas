@@ -2,70 +2,7 @@
 
 [![Tests](https://github.com/manit2004/wgblas/actions/workflows/test-gpu.yml/badge.svg)](https://github.com/manit2004/wgblas/actions/workflows/test-gpu.yml)
 
-`wgblas` is an initiative to implement all the standard level 1, 2, 3 BLAS functions on the top of webgpu.
-
-## Available Functions
-
-- [sscal](https://manit2004.github.io/wgblas/functions/docs.sscal.html)
-- [sswap](https://manit2004.github.io/wgblas/functions/docs.sswap.html)
-- [saxpy](https://manit2004.github.io/wgblas/functions/docs.saxpy.html)
-- [scopy](https://manit2004.github.io/wgblas/functions/docs.scopy.html)
-- [sdot](https://manit2004.github.io/wgblas/functions/docs.sdot.html)
-- [sasum](https://manit2004.github.io/wgblas/functions/docs.sasum.html)
-- [dasum](https://manit2004.github.io/wgblas/functions/docs.dasum.html)
-- [snrm2](https://manit2004.github.io/wgblas/functions/docs.snrm2.html)
-- [isamax](https://manit2004.github.io/wgblas/functions/docs.isamax.html)
-- [idamax](https://manit2004.github.io/wgblas/functions/docs.idamax.html)
-- [srot](https://manit2004.github.io/wgblas/functions/docs.srot.html)
-- [srotm](https://manit2004.github.io/wgblas/functions/docs.srotm.html)
-- [sgemv](https://manit2004.github.io/wgblas/functions/docs.sgemv.html)
-- [ssymv](https://manit2004.github.io/wgblas/functions/docs.ssymv.html)
-- [strmv](https://manit2004.github.io/wgblas/functions/docs.strmv.html)
-- [strsv](https://manit2004.github.io/wgblas/functions/docs.strsv.html)
-- [sger](https://manit2004.github.io/wgblas/functions/docs.sger.html)
-- [ssyr](https://manit2004.github.io/wgblas/functions/docs.ssyr.html)
-- [ssyr2](https://manit2004.github.io/wgblas/functions/docs.ssyr2.html)
-- [sgemm](https://manit2004.github.io/wgblas/functions/docs.sgemm.html)
-- [sgemmtr](https://manit2004.github.io/wgblas/functions/docs.sgemmtr.html)
-- [ssyrk](https://manit2004.github.io/wgblas/functions/docs.ssyrk.html)
-- [ssyr2k](https://manit2004.github.io/wgblas/functions/docs.ssyr2k.html)
-- [ssymm](https://manit2004.github.io/wgblas/functions/docs.ssymm.html)
-- [strmm](https://manit2004.github.io/wgblas/functions/docs.strmm.html)
-- [strsm](https://manit2004.github.io/wgblas/functions/docs.strsm.html)
-
-## Browser Support
-
-wgblas runs in any browser with WebGPU enabled. Check if it's working in your browser at [webgpureport.org](https://webgpureport.org).
-
-### Chrome (recommended)
-
-For full WebGPU control, enable all three flags at `chrome://flags` and relaunch:
-
-| Flag | What it does |
-|------|--------------|
-| `#enable-unsafe-webgpu` | Enables WebGPU |
-| `#force-enable-webgpu-interop` | Uses the real GPU via Vulkan (Linux) — without this Chrome may fall back to SwiftShader, a CPU-based software renderer |
-| `#enable-webgpu-developer-features` | Unlocks additional GPU features |
-
-You can verify which GPU is being used at [webgpureport.org](https://webgpureport.org) — if the adapter name shows **SwiftShader**, the real GPU is not being used.
-
-### Firefox
-
-WebGPU must be enabled manually via `about:config`. Search for each preference and set it:
-
-| Preference | Value | What it does |
-|------------|-------|--------------|
-| `dom.webgpu.enabled` | `true` | Enables WebGPU |
-| `dom.webgpu.wgpu-backend` | `vulkan` | Forces the real GPU via Vulkan — without this Firefox may use a software renderer |
-| `gfx.webgpu.ignore-blocklist` | `true` | Bypasses the GPU blocklist |
-
-Note: `dom.webgpu.wgpu-backend` is a **string** preference — click the pencil icon to edit it and type `vulkan`.
-
-Restart Firefox after making changes.
-
-> **Note:** Firefox's WebGPU implementation is incomplete and some routines may not work correctly. Chrome is recommended.
->
-> **Multi-GPU:** Firefox only exposes one WebGPU adapter (the display GPU, typically integrated) even on dual-GPU systems — verified via `about:support` → Graphics → WebGPU Default Adapter. Chrome picks the discrete GPU via `powerPreference: "high-performance"`; Firefox does not.
+`wgblas` implements all the standard single-precision level 1, 2, and 3 BLAS routines on top of WebGPU. Next up: double-precision routines, and single- and double-precision complex routines.
 
 ## Requirements
 
@@ -173,3 +110,37 @@ yGpu.destroy();
 
 cleanup();
 ```
+
+## Browser Support
+
+wgblas runs in any browser with WebGPU enabled. Check if it's working in your browser at [webgpureport.org](https://webgpureport.org).
+
+### Chrome (recommended)
+
+For full WebGPU control, enable all three flags at `chrome://flags` and relaunch:
+
+| Flag | What it does |
+|------|--------------|
+| `#enable-unsafe-webgpu` | Enables WebGPU |
+| `#force-enable-webgpu-interop` | Uses the real GPU via Vulkan (Linux) — without this Chrome may fall back to SwiftShader, a CPU-based software renderer |
+| `#enable-webgpu-developer-features` | Unlocks additional GPU features |
+
+You can verify which GPU is being used at [webgpureport.org](https://webgpureport.org) — if the adapter name shows **SwiftShader**, the real GPU is not being used.
+
+### Firefox
+
+WebGPU must be enabled manually via `about:config`. Search for each preference and set it:
+
+| Preference | Value | What it does |
+|------------|-------|--------------|
+| `dom.webgpu.enabled` | `true` | Enables WebGPU |
+| `dom.webgpu.wgpu-backend` | `vulkan` | Forces the real GPU via Vulkan — without this Firefox may use a software renderer |
+| `gfx.webgpu.ignore-blocklist` | `true` | Bypasses the GPU blocklist |
+
+Note: `dom.webgpu.wgpu-backend` is a **string** preference — click the pencil icon to edit it and type `vulkan`.
+
+Restart Firefox after making changes.
+
+> **Note:** Firefox's WebGPU implementation is incomplete and some routines may not work correctly. Chrome is recommended.
+>
+> **Multi-GPU:** Firefox only exposes one WebGPU adapter (the display GPU, typically integrated) even on dual-GPU systems — verified via `about:support` → Graphics → WebGPU Default Adapter. Chrome picks the discrete GPU via `powerPreference: "high-performance"`; Firefox does not.
