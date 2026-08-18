@@ -1,0 +1,51 @@
+[
+  {
+    "order": 64,
+    "numBlocks": 1,
+    "compute_ms": 0.092144,
+    "ms_per_block": 0.092144,
+    "compute_GBs": 0.44591074839381833
+  },
+  {
+    "order": 128,
+    "numBlocks": 2,
+    "compute_ms": 0.126976,
+    "ms_per_block": 0.063488,
+    "compute_GBs": 0.7762096774193549
+  },
+  {
+    "order": 256,
+    "numBlocks": 4,
+    "compute_ms": 0.225248,
+    "ms_per_block": 0.056312,
+    "compute_GBs": 1.166074726523654
+  },
+  {
+    "order": 512,
+    "numBlocks": 8,
+    "compute_ms": 0.477456,
+    "ms_per_block": 0.059682,
+    "compute_GBs": 1.6492744881203711
+  },
+  {
+    "order": 1024,
+    "numBlocks": 16,
+    "compute_ms": 1.023504,
+    "ms_per_block": 0.063969,
+    "compute_GBs": 2.563241570135535
+  },
+  {
+    "order": 2048,
+    "numBlocks": 32,
+    "compute_ms": 2.469888,
+    "ms_per_block": 0.077184,
+    "compute_GBs": 3.8225538971807627
+  },
+  {
+    "order": 4096,
+    "numBlocks": 64,
+    "compute_ms": 6.683232,
+    "ms_per_block": 0.1044255,
+    "compute_GBs": 5.335708232184667
+  }
+]
