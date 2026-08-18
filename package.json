@@ -122,6 +122,10 @@
     "./strmm": {
       "import": "./src/strmm/strmm.mjs",
       "types": "./src/strmm/strmm.d.mts"
+    },
+    "./strsm": {
+      "import": "./src/strsm/strsm.mjs",
+      "types": "./src/strsm/strsm.d.mts"
     }
   },
   "files": [

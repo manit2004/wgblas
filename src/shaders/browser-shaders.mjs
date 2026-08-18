@@ -36,6 +36,7 @@ import sgemmtr_small from "./sgemmtr_small.wgsl";
 import sgemmtr_large from "./sgemmtr_large.wgsl";
 import symmetrize from "./symmetrize.wgsl";
 import triangularize from "./triangularize.wgsl";
+import blockTransfer from "./block_transfer.wgsl";
 
 export const shaderSources = {
   "reduction/argmax": argmax,
@@ -76,4 +77,5 @@ export const shaderSources = {
   sgemmtr_large,
   symmetrize,
   triangularize,
+  block_transfer: blockTransfer,
 };
