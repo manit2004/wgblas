@@ -1,7 +1,7 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Swaps the elements of two single-precision vectors: x <-> y
+ * Swaps the elements of two single-precision vectors: $$x \leftrightarrow y$$
  *
  * {@includeCode ../../examples/sswap/sswap.js}
  *
@@ -27,7 +27,7 @@ export declare function sswap(
 ): Promise<{ x: Float32Array; y: Float32Array } | { x: Float32Array; y: Float32Array; gpuTimeMs: number }>;
 
 /**
- * Swaps the elements of two single-precision vectors: x <-> y
+ * Swaps the elements of two single-precision vectors: $$x \leftrightarrow y$$
  *
  * {@includeCode ../../examples/sswap/gpu.sswap.js}
  *

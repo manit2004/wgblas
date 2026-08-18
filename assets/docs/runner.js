@@ -33,6 +33,92 @@
     document.head.appendChild(s);
   }
 
+  // CodeMirror 5 (classic <script>-tag build, no bundler needed) turns each
+  // runnable example into an in-place editor. Loaded once, lazily, the first
+  // time a runnable block is found on the page.
+  var CM_VERSION = "5.65.21";
+  var cmCallbacks = null;
+
+  function loadCodeMirror(cb) {
+    if (window.CodeMirror) { cb(); return; }
+    if (cmCallbacks) { cmCallbacks.push(cb); return; }
+    cmCallbacks = [cb];
+
+    var base = "https://unpkg.com/codemirror@" + CM_VERSION + "/";
+    [base + "lib/codemirror.css", base + "theme/material-darker.css"].forEach(function (href) {
+      var l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = href;
+      document.head.appendChild(l);
+    });
+
+    var style = document.createElement("style");
+    // TypeDoc's built-in "Copy" button sits at `top:10px;right:10px` on every
+    // <pre>. Once a block is tall enough for CodeMirror's own scrollbar to
+    // show, the two visually overlap — nudge Copy left, only on blocks that
+    // actually have an editor in them.
+    style.textContent =
+      ".CodeMirror{height:auto;border-radius:4px;font-family:inherit;font-size:13px;}" +
+      ".CodeMirror-scroll{max-height:400px;}" +
+      "pre:has(.CodeMirror) > button{right:28px;}";
+    document.head.appendChild(style);
+
+    function chain(scripts, done) {
+      if (!scripts.length) { done(); return; }
+      var s = document.createElement("script");
+      s.src = scripts[0];
+      s.onload = function () { chain(scripts.slice(1), done); };
+      s.onerror = function () {
+        console.error("[wgblas] Failed to load " + scripts[0]);
+        chain(scripts.slice(1), done);
+      };
+      document.head.appendChild(s);
+    }
+
+    chain(
+      [
+        base + "lib/codemirror.js",
+        base + "mode/xml/xml.js",
+        base + "mode/javascript/javascript.js",
+        base + "mode/css/css.js",
+        base + "mode/htmlmixed/htmlmixed.js",
+      ],
+      function () {
+        var cbs = cmCallbacks;
+        cmCallbacks = null;
+        cbs.forEach(function (fn) { fn(); });
+      },
+    );
+  }
+
+  // Replaces the static, syntax-highlighted `code` block with an editable
+  // CodeMirror instance once the library has loaded. Until then (and if it
+  // fails to load), `getter.getValue()` falls back to the original static
+  // text, so the Run button works immediately either way.
+  function makeEditor(code, mode, getter) {
+    loadCodeMirror(function () {
+      var textarea = document.createElement("textarea");
+      textarea.value = code.innerText;
+      code.insertAdjacentElement("afterend", textarea);
+
+      var cm = CodeMirror.fromTextArea(textarea, {
+        mode: mode,
+        lineNumbers: true,
+        theme: previewIsDark() ? "material-darker" : "default",
+        viewportMargin: Infinity,
+        tabSize: 2,
+        indentUnit: 2,
+      });
+      code.style.display = "none";
+      getter.getValue = function () { return cm.getValue(); };
+
+      // Keep the editor's theme in sync if the reader flips the site theme.
+      new MutationObserver(function () {
+        cm.setOption("theme", previewIsDark() ? "material-darker" : "default");
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    });
+  }
+
   function transformCode(code) {
     var imports = [];
     var transformed = code.replace(
@@ -88,6 +174,9 @@
 
     pre.dataset.runAdded = "1";
 
+    // Falls back to the static text until makeEditor() swaps this in below.
+    var getter = { getValue: function () { return code.innerText; } };
+
     var btn = document.createElement("button");
     btn.textContent = "▶ Run";
     btn.setAttribute("style",
@@ -115,7 +204,7 @@
       output.style.display = "block";
       output.textContent = "";
       loadBundle(function () {
-        var transformed = transformCode(code.innerText);
+        var transformed = transformCode(getter.getValue());
         var logs = [];
         var origLog = console.log;
         var origWarn = console.warn;
@@ -156,10 +245,73 @@
 
     pre.insertAdjacentElement("afterend", output);
     pre.appendChild(btn);
+
+    makeEditor(code, "javascript", getter);
+  }
+
+  // TypeDoc's own theme toggle stores "light" | "dark" | "os" and reflects the
+  // resolved choice onto <html data-theme>; "os" leaves the attribute unset and
+  // falls back to the OS/browser preference — mirror that here so the iframe's
+  // separate document (which doesn't inherit the parent's CSS) matches it.
+  function previewIsDark() {
+    var t = document.documentElement.dataset.theme;
+    if (t === "dark") return true;
+    if (t === "light") return false;
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+
+  function withPreviewTheme(html) {
+    var style = previewIsDark()
+      ? "<style>html,body{background:#1e1e1e;color:#e6e6e6;color-scheme:dark;}</style>"
+      : "<style>html,body{background:#ffffff;color:#1b1b1b;color-scheme:light;}</style>";
+    return /<head[^>]*>/i.test(html)
+      ? html.replace(/<head[^>]*>/i, function (m) { return m + style; })
+      : style + html;
+  }
+
+  function addHtmlPreview(pre) {
+    if (pre.dataset.htmlPreviewAdded) return;
+    var code = pre.querySelector("code.html");
+    if (!code) return;
+    if (!/^\s*<!doctype html>/i.test(code.innerText)) return;
+
+    pre.dataset.htmlPreviewAdded = "1";
+
+    // Falls back to the static text until makeEditor() swaps this in below.
+    var getter = { getValue: function () { return code.innerText; } };
+
+    var btn = document.createElement("button");
+    btn.textContent = "▶ Run";
+    btn.setAttribute("style",
+      "position:absolute;top:10px;left:10px;right:auto;padding:2px 10px;" +
+      "background:var(--color-link);color:var(--color-background);border:none;border-radius:4px;" +
+      "font-size:12px;cursor:pointer;font-weight:600;line-height:1.5;"
+    );
+
+    var frame = document.createElement("iframe");
+    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("title", "Live preview");
+    frame.setAttribute("style",
+      "display:none;width:100%;height:180px;margin:4px 0 8px;" +
+      "background:var(--color-background);border-radius:4px;border:1px solid var(--color-accent);"
+    );
+
+    btn.addEventListener("click", function () {
+      frame.style.display = "block";
+      // Reassigning srcdoc reloads the iframe, re-running the example fresh each click.
+      frame.srcdoc = withPreviewTheme(getter.getValue());
+      btn.textContent = "↻ Re-run";
+    });
+
+    pre.insertAdjacentElement("afterend", frame);
+    pre.appendChild(btn);
+
+    makeEditor(code, "htmlmixed", getter);
   }
 
   function init() {
     document.querySelectorAll("pre").forEach(addRunButton);
+    document.querySelectorAll("pre").forEach(addHtmlPreview);
   }
 
   init();

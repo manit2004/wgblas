@@ -2,8 +2,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Applies a Givens plane rotation to vectors x and y:
- *   x = c*x + s*y
- *   y = -s*x + c*y
+ * $$\begin{aligned} x &\leftarrow cx + sy \\\\ y &\leftarrow -sx + cy \end{aligned}$$
  *
  * {@includeCode ../../examples/srot/srot.js}
  *
@@ -34,8 +33,7 @@ export declare function srot(
 
 /**
  * Applies a Givens plane rotation to vectors x and y:
- *   x = c*x + s*y
- *   y = -s*x + c*y
+ * $$\begin{aligned} x &\leftarrow cx + sy \\\\ y &\leftarrow -sx + cy \end{aligned}$$
  *
  * {@includeCode ../../examples/srot/gpu.srot.js}
  *

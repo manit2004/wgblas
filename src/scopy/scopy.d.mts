@@ -1,7 +1,7 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Performs the operation y = x
+ * Performs the operation $$y \leftarrow x$$
  *
  * {@includeCode ../../examples/scopy/scopy.js}
  *
@@ -27,7 +27,7 @@ export declare function scopy(
 ): Promise<{ y: Float32Array } | { y: Float32Array; gpuTimeMs: number }>;
 
 /**
- * Performs the operation y = x
+ * Performs the operation $$y \leftarrow x$$
  *
  * {@includeCode ../../examples/scopy/gpu.scopy.js}
  *

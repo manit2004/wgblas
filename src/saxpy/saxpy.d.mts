@@ -1,7 +1,7 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Performs the operation y = alpha * x + y
+ * Performs the operation $$y \leftarrow \alpha x + y$$
  *
  * {@includeCode ../../examples/saxpy/saxpy.js}
  *
@@ -29,7 +29,7 @@ export declare function saxpy(
 ): Promise<{ y: Float32Array } | { y: Float32Array; gpuTimeMs: number }>;
 
 /**
- * Performs the operation y = alpha * x + y
+ * Performs the operation $$y \leftarrow \alpha x + y$$
  *
  * {@includeCode ../../examples/saxpy/gpu.saxpy.js}
  *

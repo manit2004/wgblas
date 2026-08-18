@@ -1,7 +1,7 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Computes the dot product of two vectors: result = sum(x[i] * y[i])
+ * Computes the dot product of two vectors: $$\text{result} = \sum_{i} x_i y_i$$
  *
  * {@includeCode ../../examples/sdot/sdot.js}
  *
@@ -28,7 +28,7 @@ export declare function sdot(
 ): Promise<{ dot: number } | { dot: number; gpuTimeMs: number }>;
 
 /**
- * Computes the dot product of two vectors: result = sum(x[i] * y[i])
+ * Computes the dot product of two vectors: $$\text{result} = \sum_{i} x_i y_i$$
  *
  * {@includeCode ../../examples/sdot/gpu.sdot.js}
  *

@@ -27,5 +27,14 @@
     "includeGroups": false
   },
   "customJs": "assets/docs/runner.js",
-"sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/{gitRevision}/{path}#L{line}"
+"sourceLinkTemplate": "https://github.com/manit2004/wgblas/blob/{gitRevision}/{path}#L{line}",
+  "plugin": ["typedoc-plugin-katex"],
+  "katex": {
+    "options": {
+      "delimiters": [
+        { "left": "$$", "right": "$$", "display": true },
+        { "left": "$", "right": "$", "display": false }
+      ]
+    }
+  }
 }
