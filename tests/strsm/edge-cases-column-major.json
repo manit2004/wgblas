@@ -1,0 +1,50 @@
+[
+  {
+    "label": "[column-major] side=left, uplo=lower, non-unit diag",
+    "layout": "column-major",
+    "side": "left", "uplo": "lower", "transA": "no-transpose", "diag": "non-unit",
+    "m": 2, "n": 2, "alpha": 1,
+    "A": [3, 1, 99, 2], "lda": 2,
+    "B": [5, 7, 6, 8], "ldb": 2
+  },
+  {
+    "label": "[column-major] side=left, uplo=upper, unit diag",
+    "layout": "column-major",
+    "side": "left", "uplo": "upper", "transA": "no-transpose", "diag": "unit",
+    "m": 2, "n": 2, "alpha": 2,
+    "A": [99, 99, 2, 99], "lda": 2,
+    "B": [4, 2, 3, 1], "ldb": 2
+  },
+  {
+    "label": "[column-major] side=right, uplo=lower, m!=n — A is n x n",
+    "layout": "column-major",
+    "side": "right", "uplo": "lower", "transA": "no-transpose", "diag": "non-unit",
+    "m": 2, "n": 3, "alpha": 1,
+    "A": [4, 1, 2, 99, 3, 1, 99, 99, 5], "lda": 3,
+    "B": [1, 0, 0, 1, 1, 1], "ldb": 2
+  },
+  {
+    "label": "[column-major] lda > aOrder — padding elements in stride gaps are ignored",
+    "layout": "column-major",
+    "side": "left", "uplo": "lower", "transA": "no-transpose", "diag": "non-unit",
+    "m": 2, "n": 2, "alpha": 1,
+    "A": [3, 1, 99, 99, 2, 99], "lda": 3,
+    "B": [1, 0, 0, 1], "ldb": 2
+  },
+  {
+    "label": "[column-major] ldb > m — padding in stride gaps is ignored",
+    "layout": "column-major",
+    "side": "left", "uplo": "upper", "transA": "no-transpose", "diag": "unit",
+    "m": 2, "n": 3, "alpha": 1,
+    "A": [99, 99, 2, 99], "lda": 2,
+    "B": [1, 0, 99, 0, 1, 99, 1, 1, 99], "ldb": 3
+  },
+  {
+    "label": "[column-major] side=right, uplo=upper, transA=transpose",
+    "layout": "column-major",
+    "side": "right", "uplo": "upper", "transA": "transpose", "diag": "non-unit",
+    "m": 2, "n": 2, "alpha": 1,
+    "A": [3, 99, 1, 4], "lda": 2,
+    "B": [1, 0, 0, 1], "ldb": 2
+  }
+]

@@ -2,7 +2,7 @@ import repl from "node:repl";
 import {
   init, cleanup,
   GpuVector, GpuMatrix,
-  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
 } from "wgblas";
 
 const device = await init();
@@ -13,7 +13,7 @@ Object.assign(r.context, {
   device,
   GpuVector, GpuMatrix,
   Float32Array, Float64Array,
-  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm,
+  sscal, sswap, saxpy, scopy, sdot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
 });
 
 r.defineCommand("help", {
@@ -45,6 +45,7 @@ r.defineCommand("help", {
   ssyr2k(device, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
   ssymm (device, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc)
   strmm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
+  strsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
   GpuVector.from(Float64Array)   v.read()  v.destroy()  (for dasum)

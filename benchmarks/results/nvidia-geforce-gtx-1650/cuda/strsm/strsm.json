@@ -1,0 +1,9 @@
+[
+  { "order": 64, "compute_ms": 0.0128, "compute_GBs": 3.2180 },
+  { "order": 128, "compute_ms": 0.0269, "compute_GBs": 3.6601 },
+  { "order": 256, "compute_ms": 0.0784, "compute_GBs": 3.3502 },
+  { "order": 512, "compute_ms": 0.1921, "compute_GBs": 4.1000 },
+  { "order": 1024, "compute_ms": 0.4537, "compute_GBs": 5.7821 },
+  { "order": 2048, "compute_ms": 1.0105, "compute_GBs": 9.3428 },
+  { "order": 4096, "compute_ms": 2.3839, "compute_GBs": 14.9588 }
+]
