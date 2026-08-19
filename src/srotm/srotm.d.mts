@@ -2,8 +2,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Applies a modified Givens plane rotation H to vectors x and y:
- *   x = H[0][0]*x + H[0][1]*y
- *   y = H[1][0]*x + H[1][1]*y
+ * $$\begin{pmatrix} x \\\\ y \end{pmatrix} \leftarrow \begin{pmatrix} h_{11} & h_{12} \\\\ h_{21} & h_{22} \end{pmatrix} \begin{pmatrix} x \\\\ y \end{pmatrix}$$
  *
  * {@includeCode ../../examples/srotm/srotm.js}
  *
@@ -33,8 +32,7 @@ export declare function srotm(
 
 /**
  * Applies a modified Givens plane rotation H to vectors x and y:
- *   x = H[0][0]*x + H[0][1]*y
- *   y = H[1][0]*x + H[1][1]*y
+ * $$\begin{pmatrix} x \\\\ y \end{pmatrix} \leftarrow \begin{pmatrix} h_{11} & h_{12} \\\\ h_{21} & h_{22} \end{pmatrix} \begin{pmatrix} x \\\\ y \end{pmatrix}$$
  *
  * {@includeCode ../../examples/srotm/gpu.srotm.js}
  *

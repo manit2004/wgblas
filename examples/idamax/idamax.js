@@ -1,11 +1,10 @@
 import { init, cleanup } from "wgblas";
 import { idamax } from "wgblas/idamax";
-import { randomFloat64Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const x = randomFloat64Array(n, -10, 10);
+const n = 5;
+const x = new Float64Array([3, -7, 2, 5, -1]);
 
 console.log("x:     ", x);
 const { index } = await idamax(device, n, x, 1);

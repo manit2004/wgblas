@@ -2,7 +2,8 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
  * Returns the 0-based index of the element with the largest absolute value,
- * for a vector of doubles. Each element of `x` is split into a (hi, lo)
+ * for a vector of doubles: $$\text{index} = \arg\max_{i} |x_i|$$
+ * Each element of `x` is split into a (hi, lo)
  * double-double f32 pair (see `splitDoubleDouble`/`f64.mjs`) since WGSL has
  * no f64 type; comparisons use the double-double pair directly (hi, falling
  * back to lo on an exact tie), giving ~48 bits of discriminating precision —
@@ -30,7 +31,8 @@ export declare function idamax(
 ): Promise<{ index: number } | { index: number; gpuTimeMs: number }>;
 
 /**
- * Returns the 0-based index of the element with the largest absolute value.
+ * Returns the 0-based index of the element with the largest absolute value:
+ * $$\text{index} = \arg\max_{i} |x_i|$$
  * Ties are broken in favour of the lower index, matching CBLAS behaviour.
  *
  * {@includeCode ../../examples/idamax/gpu.idamax.js}

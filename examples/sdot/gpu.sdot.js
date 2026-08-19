@@ -2,14 +2,13 @@ import { init, cleanup } from "wgblas";
 import { sdot } from "wgblas/sdot";
 import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
+const n = 5;
 const scale = 2.0;
-const x = randomFloat32Array(n, -10, 10);
-const y = randomFloat32Array(n, -10, 10);
+const x = new Float32Array([1, 2, 3, 4, 5]);
+const y = new Float32Array([1, 1, 1, 1, 1]);
 
 const xGpu = GpuVector.from(x);
 const yGpu = GpuVector.from(y);

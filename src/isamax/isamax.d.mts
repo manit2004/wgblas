@@ -1,7 +1,8 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Returns the 0-based index of the element with the largest absolute value.
+ * Returns the 0-based index of the element with the largest absolute value:
+ * $$\text{index} = \arg\max_{i} |x_i|$$
  * Ties are broken in favour of the lower index, matching CBLAS behaviour.
  *
  * {@includeCode ../../examples/isamax/isamax.js}
@@ -25,7 +26,8 @@ export declare function isamax(
 ): Promise<{ index: number } | { index: number; gpuTimeMs: number }>;
 
 /**
- * Returns the 0-based index of the element with the largest absolute value.
+ * Returns the 0-based index of the element with the largest absolute value:
+ * $$\text{index} = \arg\max_{i} |x_i|$$
  * Ties are broken in favour of the lower index, matching CBLAS behaviour.
  *
  * {@includeCode ../../examples/isamax/gpu.isamax.js}

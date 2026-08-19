@@ -1,7 +1,7 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Computes the Euclidean norm of a vector: result = sqrt(sum(x[i] * x[i]))
+ * Computes the Euclidean norm of a vector: $$\text{result} = \sqrt{\sum_{i} x_i^2}$$
  *
  * {@includeCode ../../examples/snrm2/snrm2.js}
  *
@@ -24,7 +24,7 @@ export declare function snrm2(
 ): Promise<{ nrm2: number } | { nrm2: number; gpuTimeMs: number }>;
 
 /**
- * Computes the Euclidean norm of a vector: result = sqrt(sum(x[i] * x[i]))
+ * Computes the Euclidean norm of a vector: $$\text{result} = \sqrt{\sum_{i} x_i^2}$$
  *
  * {@includeCode ../../examples/snrm2/gpu.snrm2.js}
  *

@@ -1,7 +1,7 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Computes the sum of absolute values of a vector: result = sum(|x[i]|)
+ * Computes the sum of absolute values of a vector: $$\text{result} = \sum_{i} |x_i|$$
  *
  * {@includeCode ../../examples/sasum/sasum.js}
  *
@@ -24,7 +24,7 @@ export declare function sasum(
 ): Promise<{ asum: number } | { asum: number; gpuTimeMs: number }>;
 
 /**
- * Computes the sum of absolute values of a vector: result = sum(|x[i]|)
+ * Computes the sum of absolute values of a vector: $$\text{result} = \sum_{i} |x_i|$$
  *
  * {@includeCode ../../examples/sasum/gpu.sasum.js}
  *

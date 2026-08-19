@@ -2,13 +2,13 @@ import { init, cleanup } from "wgblas";
 import { snrm2 } from "wgblas/snrm2";
 import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
+// 2^2 + 3^2 + 6^2 = 49 = 7^2, so the norm comes out to a clean 7 (14 once scaled).
+const n = 3;
 const scale = 2.0;
-const x = randomFloat32Array(n, -10, 10);
+const x = new Float32Array([2, 3, 6]);
 
 const xGpu = GpuVector.from(x);
 

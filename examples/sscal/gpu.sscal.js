@@ -2,14 +2,13 @@ import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
 import { saxpy } from "wgblas/saxpy";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const alpha = 2.0;
-const x = randomFloat32Array(n, -10, 10);
-const y = randomFloat32Array(n, -10, 10);
+const n = 5;
+const alpha = 3;
+const x = new Float32Array([1, 2, 3, 4, 5]);
+const y = new Float32Array([10, 20, 30, 40, 50]);
 
 const xGpu = GpuVector.from(x);
 const yGpu = GpuVector.from(y);
@@ -21,7 +20,7 @@ await sscal(device, n, alpha, xGpu, 1);
 await saxpy(device, n, 1.0, xGpu, 1, yGpu, 1);
 
 const result = await yGpu.read();
-console.log("result (2x + y):", result);
+console.log("result (3x + y):", result);
 
 xGpu.destroy();
 yGpu.destroy();

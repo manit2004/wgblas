@@ -8,13 +8,14 @@
   <body>
     <pre id="out">Running…</pre>
     <script>
-      const { init, snrm2, randomFloat32Array, cleanup } = window.wgblas;
+      const { init, snrm2, cleanup } = window.wgblas;
 
       (async () => {
         const device = await init();
 
-        const n = 10;
-        const x = randomFloat32Array(n, -10, 10);
+        // 2^2 + 3^2 + 6^2 = 49 = 7^2, so the norm comes out to a clean 7.
+        const n = 3;
+        const x = new Float32Array([2, 3, 6]);
 
         const { nrm2 } = await snrm2(device, n, x, 1);
 

@@ -1,7 +1,7 @@
 import { GpuVector } from "../classes/GpuVector.mjs";
 
 /**
- * Scales a single-precision vector by a constant: x = alpha * x
+ * Scales a single-precision vector by a constant: $$x \leftarrow \alpha x$$
  *
  * {@includeCode ../../examples/sscal/sscal.js}
  *
@@ -25,7 +25,7 @@ export declare function sscal(
 ): Promise<Float32Array | { result: Float32Array; gpuTimeMs: number }>;
 
 /**
- * Scales a single-precision vector by a constant: x = alpha * x
+ * Scales a single-precision vector by a constant: $$x \leftarrow \alpha x$$
  *
  * {@includeCode ../../examples/sscal/gpu.sscal.js}
  *

@@ -2,13 +2,12 @@ import { init, cleanup } from "wgblas";
 import { srotm } from "wgblas/srotm";
 import { saxpy } from "wgblas/saxpy";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const xCpu = randomFloat32Array(n, -10, 10);
-const yCpu = randomFloat32Array(n, -10, 10);
+const n = 5;
+const xCpu = new Float32Array([1, 2, 3, 4, 5]);
+const yCpu = new Float32Array([10, 20, 30, 40, 50]);
 
 const xGpu = GpuVector.from(xCpu);
 const yGpu = GpuVector.from(yCpu);
@@ -16,9 +15,9 @@ const yGpu = GpuVector.from(yCpu);
 console.log("x (cpu):   ", xCpu);
 console.log("y (cpu):   ", yCpu);
 
-// flag = 0: unit diagonal — H = [ 1    h12 ]
-//                                [ h21   1  ]
-const param = new Float32Array([0, 1, -0.5, 0.5, 1]);
+// flag = 0: unit diagonal — H = [ 1    h12 ]  =  [ 1  1 ]
+//                                [ h21   1  ]     [ 2  1 ]
+const param = new Float32Array([0, 1, 2, 1, 1]);
 
 // shift y by adding 2*x on GPU, then apply modified rotation
 await saxpy(device, n, 2.0, xGpu, 1, yGpu, 1);
