@@ -19,18 +19,18 @@ npm install wgblas
 ### Example Code Snippet
 
 ```js
-import { init, cleanup, randomFloat32Array } from "wgblas";
+import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
 
 const device = await init();
 
-const n = 10;
-const alpha = 2.0;
-const x = randomFloat32Array(n, -10, 10);
+const n = 5;
+const alpha = 3;
+const x = new Float32Array([1, 2, 3, 4, 5]);
 
 console.log("before:", x);
 const result = await sscal(device, n, alpha, x, 1);
-console.log("after: ", result);
+console.log("after: ", result); // [3, 6, 9, 12, 15]
 cleanup();
 ```
 
@@ -49,14 +49,14 @@ No bundler needed. Load the pre-built browser bundle from the CDN and use `windo
   <body>
     <pre id="out">Running…</pre>
     <script>
-      const { init, sscal, randomFloat32Array, cleanup } = window.wgblas;
+      const { init, sscal, cleanup } = window.wgblas;
 
       (async () => {
         const device = await init();
 
-        const n = 10;
-        const alpha = 2.0;
-        const x = randomFloat32Array(n, -10, 10);
+        const n = 5;
+        const alpha = 3;
+        const x = new Float32Array([1, 2, 3, 4, 5]);
 
         const xBefore = Array.from(x).map(v => v.toFixed(4)).join(", ");
 
@@ -78,18 +78,18 @@ No bundler needed. Load the pre-built browser bundle from the CDN and use `windo
 `GpuVector` keeps data resident on the GPU between operations — upload once, chain any number of operations, read back once. This eliminates the redundant uploads and readbacks between steps, which are often more expensive than the compute itself.
 
 ```js
-import { init, cleanup, randomFloat32Array } from "wgblas";
+import { init, cleanup } from "wgblas";
 import { saxpy } from "wgblas/saxpy";
 import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
 
 const device = await init();
 
-const n = 10;
+const n = 5;
 const alpha = 2;
 const scale = 0.5;
-const x = randomFloat32Array(n, -10, 10);
-const y = randomFloat32Array(n, -10, 10);
+const x = new Float32Array([1, 2, 3, 4, 5]);
+const y = new Float32Array([10, 20, 30, 40, 50]);
 
 const xGpu = GpuVector.from(x);
 const yGpu = GpuVector.from(y);
@@ -98,12 +98,12 @@ console.log("x:      ", x);
 console.log("y:      ", y);
 
 // results stay in the GPU.
-await saxpy(device, n, alpha, xGpu, 1, yGpu, 1);
-await sscal(device, n, scale, yGpu, 1);
+await saxpy(device, n, alpha, xGpu, 1, yGpu, 1); // y = 2x + y = [12, 24, 36, 48, 60]
+await sscal(device, n, scale, yGpu, 1);          // y = 0.5y = [6, 12, 18, 24, 30]
 
 // single readback
 const result = await yGpu.read();
-console.log("result: ", result);
+console.log("result: ", result); // [6, 12, 18, 24, 30]
 
 xGpu.destroy();
 yGpu.destroy();
