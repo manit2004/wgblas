@@ -1,0 +1,424 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>benchmarks/nvidia-geforce-gtx-1650/dasum | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css"/><script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script><script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script><script>
+					window.__typeDocPluginKatexOptions={"delimiters":[{"left":"$$","right":"$$","display":true},{"left":"$","right":"$","display":false}]};
+					window.addEventListener('load', () => window.renderMathInElement(document.body, window.__typeDocPluginKatexOptions));
+				</script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">wgblas</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">benchmarks/nvidia-geforce-gtx-1650/dasum</a></li></ul>
+<h1>Module benchmarks/nvidia-geforce-gtx-1650/dasum</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Benchmark results for dasum on Nvidia Geforce Gtx 1650.</p>
+<h2 id="nvidia-geforce-gtx-1650-wgblas-vs-cublas" class="tsd-anchor-link">Nvidia Geforce Gtx 1650 — wgblas vs cuBLAS<a href="#nvidia-geforce-gtx-1650-wgblas-vs-cublas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0226</td>
+<td>0.0113</td>
+<td>0.0181</td>
+<td>0.0141</td>
+<td>80.4%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0226</td>
+<td>0.0226</td>
+<td>0.0180</td>
+<td>0.0285</td>
+<td>79.4%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0225</td>
+<td>0.0456</td>
+<td>0.0180</td>
+<td>0.0567</td>
+<td>80.4%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0229</td>
+<td>0.1791</td>
+<td>0.0180</td>
+<td>0.2272</td>
+<td>78.8%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0226</td>
+<td>0.3631</td>
+<td>0.0180</td>
+<td>0.4563</td>
+<td>79.6%</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0228</td>
+<td>1.4402</td>
+<td>0.0181</td>
+<td>1.8076</td>
+<td>79.7%</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.0237</td>
+<td>5.5277</td>
+<td>0.0182</td>
+<td>7.2049</td>
+<td>76.7%</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.0265</td>
+<td>19.7755</td>
+<td>0.0182</td>
+<td>28.8705</td>
+<td>68.5%</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>0.0398</td>
+<td>52.7029</td>
+<td>0.0347</td>
+<td>60.4297</td>
+<td>87.2%</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>0.0755</td>
+<td>111.1251</td>
+<td>0.0772</td>
+<td>108.6833</td>
+<td>102.2%</td>
+</tr>
+<tr>
+<td>4194304</td>
+<td>0.2153</td>
+<td>155.8757</td>
+<td>0.2365</td>
+<td>141.8816</td>
+<td>109.9%</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>0.7864</td>
+<td>170.6736</td>
+<td>0.8782</td>
+<td>152.8314</td>
+<td>111.7%</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.</p>
+</blockquote>
+<p><img src="../media/gbps-default-35.svg" alt="dasum-default GB/s chart"></p>
+<p><img src="../media/ms-default-35.svg" alt="dasum-default ms chart"></p>
+<h2 id="see-also" class="tsd-anchor-link">See also<a href="#see-also" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/dasum/wgblas/dasum.js">dasum.js</a> — WebGPU benchmark script</li>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/dasum/cuda/dasum.c">dasum.c</a> — CUDA / cuBLAS reference script</li>
+</ul>
+<h2 id="stride-sweep" class="tsd-anchor-link">Stride sweep<a href="#stride-sweep" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Unless noted otherwise, every result above uses unit stride (<code>incx = incy = 1</code>) — the normal case, and the coalesced, best-case GPU access pattern. Real usage sometimes passes a non-unit stride (e.g. operating on a row or column of a larger matrix, where <code>incx = lda</code>), which breaks memory coalescing and costs measurably more. This section sweeps a few representative strides to characterize that cost separately, collapsed below by default — expand a stride to see its table and chart.</p>
+<details>
+<summary>Nvidia Geforce Gtx 1650 — stride = 4</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0225</td>
+<td>0.0114</td>
+<td>0.0184</td>
+<td>0.0139</td>
+<td>81.8%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0225</td>
+<td>0.0228</td>
+<td>0.0187</td>
+<td>0.0274</td>
+<td>83.2%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0221</td>
+<td>0.0464</td>
+<td>0.0190</td>
+<td>0.0538</td>
+<td>86.2%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0222</td>
+<td>0.1843</td>
+<td>0.0189</td>
+<td>0.2166</td>
+<td>85.1%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0220</td>
+<td>0.3724</td>
+<td>0.0180</td>
+<td>0.4539</td>
+<td>82.0%</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0226</td>
+<td>1.4484</td>
+<td>0.0181</td>
+<td>1.8140</td>
+<td>79.8%</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.0254</td>
+<td>5.1652</td>
+<td>0.0187</td>
+<td>7.0197</td>
+<td>73.6%</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.0379</td>
+<td>13.8262</td>
+<td>0.0314</td>
+<td>16.6843</td>
+<td>82.9%</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>0.0716</td>
+<td>29.2702</td>
+<td>0.0642</td>
+<td>32.6700</td>
+<td>89.6%</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>0.2061</td>
+<td>40.6961</td>
+<td>0.1993</td>
+<td>42.0811</td>
+<td>96.7%</td>
+</tr>
+<tr>
+<td>4194304</td>
+<td>0.7434</td>
+<td>45.1389</td>
+<td>0.7347</td>
+<td>45.6697</td>
+<td>98.8%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride4.svg" alt="dasum-stride4 GB/s chart"></p>
+<p><img src="../media/ms-stride4.svg" alt="dasum-stride4 ms chart"></p>
+</details>
+<details>
+<summary>Nvidia Geforce Gtx 1650 — stride = 32</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0228</td>
+<td>0.0112</td>
+<td>0.0182</td>
+<td>0.0141</td>
+<td>79.5%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0228</td>
+<td>0.0224</td>
+<td>0.0181</td>
+<td>0.0282</td>
+<td>79.5%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0225</td>
+<td>0.0455</td>
+<td>0.0180</td>
+<td>0.0569</td>
+<td>79.9%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0228</td>
+<td>0.1799</td>
+<td>0.0173</td>
+<td>0.2370</td>
+<td>75.9%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0225</td>
+<td>0.3642</td>
+<td>0.0179</td>
+<td>0.4580</td>
+<td>79.5%</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0279</td>
+<td>1.1757</td>
+<td>0.0179</td>
+<td>1.8286</td>
+<td>64.3%</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.0408</td>
+<td>3.2151</td>
+<td>0.0211</td>
+<td>6.2249</td>
+<td>51.6%</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.0743</td>
+<td>7.0590</td>
+<td>0.0393</td>
+<td>13.3420</td>
+<td>52.9%</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>0.2141</td>
+<td>9.7939</td>
+<td>0.1064</td>
+<td>19.7071</td>
+<td>49.7%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride32.svg" alt="dasum-stride32 GB/s chart"></p>
+<p><img src="../media/ms-stride32.svg" alt="dasum-stride32 ms chart"></p>
+</details>
+<details>
+<summary>Nvidia Geforce Gtx 1650 — stride = 256</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>512</td>
+<td>0.0299</td>
+<td>0.1371</td>
+<td>0.0181</td>
+<td>0.2261</td>
+<td>60.6%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0303</td>
+<td>0.2705</td>
+<td>0.0175</td>
+<td>0.4693</td>
+<td>57.6%</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0336</td>
+<td>0.9743</td>
+<td>0.0180</td>
+<td>1.8253</td>
+<td>53.4%</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.0508</td>
+<td>2.5810</td>
+<td>0.0221</td>
+<td>5.9362</td>
+<td>43.5%</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.1176</td>
+<td>4.4594</td>
+<td>0.0503</td>
+<td>10.4257</td>
+<td>42.8%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride256.svg" alt="dasum-stride256 GB/s chart"></p>
+<p><img src="../media/ms-stride256.svg" alt="dasum-stride256 ms chart"></p>
+</details>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/dasum/wgblas/stride.dasum.js">stride.dasum.js</a> — WebGPU stride-sweep benchmark script</li>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/dasum/cuda/stride.dasum.c">stride.dasum.c</a> — CUDA / cuBLAS stride-sweep reference script</li>
+</ul>
+</div></section></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#nvidia-geforce-gtx-1650-wgblas-vs-cublas"><span>Nvidia <wbr/>Geforce <wbr/>Gtx 1650 — wgblas vs cu<wbr/>BLAS</span></a><a href="#see-also"><span>See also</span></a><a href="#stride-sweep"><span>Stride sweep</span></a></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

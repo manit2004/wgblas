@@ -2,20 +2,19 @@ import { init, cleanup } from "wgblas";
 import { srot } from "wgblas/srot";
 import { sscal } from "wgblas/sscal";
 import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const xCpu = randomFloat32Array(n, -10, 10);
-const yCpu = randomFloat32Array(n, -10, 10);
+const n = 5;
+const xCpu = new Float32Array([1, 2, 3, 4, 5]);
+const yCpu = new Float32Array([10, 20, 30, 40, 50]);
 
 const xGpu = GpuVector.from(xCpu);
 const yGpu = GpuVector.from(yCpu);
 
-// 45-degree rotation
-const c = Math.cos(Math.PI / 4);
-const s = Math.sin(Math.PI / 4);
+// c = 0, s = 1: a clean 90-degree rotation, so x' = y and y' = -x.
+const c = 0;
+const s = 1;
 
 console.log("x (cpu):   ", xCpu);
 console.log("y (cpu):   ", yCpu);

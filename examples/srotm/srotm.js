@@ -1,17 +1,16 @@
 import { init, cleanup } from "wgblas";
 import { srotm } from "wgblas/srotm";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const x = randomFloat32Array(n, -10, 10);
-const y = randomFloat32Array(n, -10, 10);
+const n = 5;
+const x = new Float32Array([1, 2, 3, 4, 5]);
+const y = new Float32Array([10, 20, 30, 40, 50]);
 
 // flag = -1: full 2x2 matrix H
-// H = [ h11  h12 ]  =  [ 0.6  0.8 ]
-//     [ h21  h22 ]     [-0.8  0.6 ]
-const param = new Float32Array([-1, 0.6, -0.8, 0.8, 0.6]);
+// H = [ h11  h12 ]  =  [ 2   1 ]
+//     [ h21  h22 ]     [ 1  -1 ]
+const param = new Float32Array([-1, 2, 1, 1, -1]);
 
 console.log("x (before):", x);
 console.log("y (before):", y);

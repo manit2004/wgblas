@@ -8,13 +8,13 @@
   <body>
     <pre id="out">Running…</pre>
     <script>
-      const { init, idamax, randomFloat64Array, cleanup } = window.wgblas;
+      const { init, idamax, cleanup } = window.wgblas;
 
       (async () => {
         const device = await init();
 
-        const n = 10;
-        const x = randomFloat64Array(n, -10, 10);
+        const n = 5;
+        const x = new Float64Array([3, -7, 2, 5, -1]);
 
         const { index } = await idamax(device, n, x, 1);
 

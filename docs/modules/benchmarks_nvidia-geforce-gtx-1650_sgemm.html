@@ -1,0 +1,1210 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>benchmarks/nvidia-geforce-gtx-1650/sgemm | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css"/><script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script><script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script><script>
+					window.__typeDocPluginKatexOptions={"delimiters":[{"left":"$$","right":"$$","display":true},{"left":"$","right":"$","display":false}]};
+					window.addEventListener('load', () => window.renderMathInElement(document.body, window.__typeDocPluginKatexOptions));
+				</script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">wgblas</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">benchmarks/nvidia-geforce-gtx-1650/sgemm</a></li></ul>
+<h1>Module benchmarks/nvidia-geforce-gtx-1650/sgemm</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Benchmark results for sgemm on Nvidia Geforce Gtx 1650.</p>
+<h2 id="nvidia-geforce-gtx-1650-wgblas-vs-cublas" class="tsd-anchor-link">Nvidia Geforce Gtx 1650 — wgblas vs cuBLAS<a href="#nvidia-geforce-gtx-1650-wgblas-vs-cublas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0106</td>
+<td>1.5515</td>
+<td>0.0090</td>
+<td>1.8221</td>
+<td>85.1%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0101</td>
+<td>6.4606</td>
+<td>70.8%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0237</td>
+<td>11.0553</td>
+<td>0.0134</td>
+<td>19.5513</td>
+<td>56.5%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0796</td>
+<td>13.1651</td>
+<td>0.0438</td>
+<td>23.9445</td>
+<td>55.0%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2985</td>
+<td>14.0515</td>
+<td>0.1998</td>
+<td>20.9917</td>
+<td>66.9%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0314</td>
+<td>8.2588</td>
+<td>0.9976</td>
+<td>16.8168</td>
+<td>49.1%</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.</p>
+</blockquote>
+<p><img src="../media/gbps-default-42.svg" alt="sgemm-default GB/s chart"></p>
+<p><img src="../media/ms-default-42.svg" alt="sgemm-default ms chart"></p>
+<h2 id="see-also" class="tsd-anchor-link">See also<a href="#see-also" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/wgblas/sgemm.js">sgemm.js</a> — WebGPU benchmark script</li>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/cuda/sgemm.c">sgemm.c</a> — CUDA / cuBLAS reference script</li>
+</ul>
+<h2 id="transpose-sweep" class="tsd-anchor-link">Transpose sweep<a href="#transpose-sweep" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Unless noted otherwise, every result above uses <code>transA = transB = &quot;no-transpose&quot;</code>. Both shaders load A/B into shared memory with a transpose-dependent index that scatters what would otherwise be a coalesced load — but it's asymmetric: <code>transB</code> dominates (measured +22-57% at n=1024) while <code>transA</code> is small and can even be <em>faster</em> than no-transpose, because B's tile dimension spans a full warp in the coalesced case (so transpose scatters every warp) while A's never gets a full-warp-coalesced load to begin with. All 4 <code>(transA, transB)</code> combinations are swept — collapsed below by default, expand a <code>transA</code> value, then a <code>transB</code>, to see its table and chart (4 combinations total).</p>
+<details>
+<summary>Nvidia Geforce Gtx 1650 — transA = no-transpose (2 transB values)</summary>
+<details>
+<summary>transB = no-transpose</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0105</td>
+<td>1.5657</td>
+<td>0.0083</td>
+<td>1.9807</td>
+<td>79.1%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0096</td>
+<td>6.8495</td>
+<td>66.7%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0238</td>
+<td>11.0256</td>
+<td>0.0127</td>
+<td>20.6088</td>
+<td>53.5%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0797</td>
+<td>13.1625</td>
+<td>0.0432</td>
+<td>24.2816</td>
+<td>54.2%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2990</td>
+<td>14.0274</td>
+<td>0.1987</td>
+<td>21.1134</td>
+<td>66.4%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0347</td>
+<td>8.2456</td>
+<td>0.9964</td>
+<td>16.8386</td>
+<td>49.0%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-trans-no-transpose-no-transpose.svg" alt="sgemm-trans-no-transpose-no-transpose GB/s chart"></p>
+<p><img src="../media/ms-trans-no-transpose-no-transpose.svg" alt="sgemm-trans-no-transpose-no-transpose ms chart"></p>
+</details>
+<details>
+<summary>transB = transpose</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0115</td>
+<td>1.4202</td>
+<td>0.0086</td>
+<td>1.8998</td>
+<td>74.8%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0150</td>
+<td>4.3574</td>
+<td>0.0096</td>
+<td>6.8040</td>
+<td>64.0%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0287</td>
+<td>9.1429</td>
+<td>0.0122</td>
+<td>21.4731</td>
+<td>42.6%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.1331</td>
+<td>7.8769</td>
+<td>0.0330</td>
+<td>31.7366</td>
+<td>24.8%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.4396</td>
+<td>9.5405</td>
+<td>0.1868</td>
+<td>22.4573</td>
+<td>42.5%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>3.1890</td>
+<td>5.2609</td>
+<td>0.9844</td>
+<td>17.0425</td>
+<td>30.9%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-trans-no-transpose-transpose.svg" alt="sgemm-trans-no-transpose-transpose GB/s chart"></p>
+<p><img src="../media/ms-trans-no-transpose-transpose.svg" alt="sgemm-trans-no-transpose-transpose ms chart"></p>
+</details>
+</details>
+<details>
+<summary>Nvidia Geforce Gtx 1650 — transA = transpose (2 transB values)</summary>
+<details>
+<summary>transB = no-transpose</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0107</td>
+<td>1.5329</td>
+<td>0.0084</td>
+<td>1.9431</td>
+<td>78.9%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0148</td>
+<td>4.4329</td>
+<td>0.0098</td>
+<td>6.7148</td>
+<td>66.0%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0246</td>
+<td>10.6667</td>
+<td>0.0136</td>
+<td>19.2980</td>
+<td>55.3%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0856</td>
+<td>12.2520</td>
+<td>0.0492</td>
+<td>21.3333</td>
+<td>57.4%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.3052</td>
+<td>13.7421</td>
+<td>0.2439</td>
+<td>17.1988</td>
+<td>79.9%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.1678</td>
+<td>7.7392</td>
+<td>1.0079</td>
+<td>16.6451</td>
+<td>46.5%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-trans-transpose-no-transpose.svg" alt="sgemm-trans-transpose-no-transpose GB/s chart"></p>
+<p><img src="../media/ms-trans-transpose-no-transpose.svg" alt="sgemm-trans-transpose-no-transpose ms chart"></p>
+</details>
+<details>
+<summary>transB = transpose</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0115</td>
+<td>1.4222</td>
+<td>0.0084</td>
+<td>1.9431</td>
+<td>73.2%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0156</td>
+<td>4.2010</td>
+<td>0.0099</td>
+<td>6.5958</td>
+<td>63.7%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0294</td>
+<td>8.9043</td>
+<td>0.0125</td>
+<td>20.8980</td>
+<td>42.6%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.1396</td>
+<td>7.5096</td>
+<td>0.0562</td>
+<td>18.6553</td>
+<td>40.3%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.4631</td>
+<td>9.0576</td>
+<td>0.2336</td>
+<td>17.9588</td>
+<td>50.4%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>3.3841</td>
+<td>4.9576</td>
+<td>0.9873</td>
+<td>16.9934</td>
+<td>29.2%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-trans-transpose-transpose.svg" alt="sgemm-trans-transpose-transpose GB/s chart"></p>
+<p><img src="../media/ms-trans-transpose-transpose.svg" alt="sgemm-trans-transpose-transpose ms chart"></p>
+</details>
+</details>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/wgblas/trans.sgemm.js">trans.sgemm.js</a> — WebGPU trans-sweep benchmark script</li>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/cuda/trans.sgemm.c">trans.sgemm.c</a> — CUDA / cuBLAS trans-sweep reference script</li>
+</ul>
+<h2 id="ldb-sweep" class="tsd-anchor-link">Ldb sweep<a href="#ldb-sweep" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Unless noted otherwise, every result above uses a tight <code>lda</code>/<code>ldb</code>/<code>ldc</code> (no padding). <code>lda</code> and <code>ldc</code> were scoped and found to be non-effects; padding <code>ldb</code> only matters for <code>transB = &quot;transpose&quot;</code> here (swept at both <code>transB</code> values below so that's visible in the data). Collapsed below by default — expand a <code>transB</code> value, then a <code>pad</code>, to see its table and chart.</p>
+<details>
+<summary>Nvidia Geforce Gtx 1650 — transB = no-transpose (6 pads)</summary>
+<details>
+<summary>pad = 0</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0103</td>
+<td>1.5876</td>
+<td>0.0086</td>
+<td>1.9033</td>
+<td>83.4%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0097</td>
+<td>6.7479</td>
+<td>67.7%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0233</td>
+<td>11.2605</td>
+<td>0.0134</td>
+<td>19.5981</td>
+<td>57.5%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0795</td>
+<td>13.1969</td>
+<td>0.0436</td>
+<td>24.0587</td>
+<td>54.9%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2970</td>
+<td>14.1241</td>
+<td>0.1986</td>
+<td>21.1219</td>
+<td>66.9%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0308</td>
+<td>8.2613</td>
+<td>0.9967</td>
+<td>16.8327</td>
+<td>49.1%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-no-transpose-pad0.svg" alt="sgemm-ldb-no-transpose-pad0 GB/s chart"></p>
+<p><img src="../media/ms-ldb-no-transpose-pad0.svg" alt="sgemm-ldb-no-transpose-pad0 ms chart"></p>
+</details>
+<details>
+<summary>pad = 1</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0105</td>
+<td>1.5657</td>
+<td>0.0083</td>
+<td>1.9807</td>
+<td>79.1%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0097</td>
+<td>6.7702</td>
+<td>67.5%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0238</td>
+<td>11.0182</td>
+<td>0.0136</td>
+<td>19.2980</td>
+<td>57.1%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0795</td>
+<td>13.1969</td>
+<td>0.0444</td>
+<td>23.6251</td>
+<td>55.9%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2985</td>
+<td>14.0530</td>
+<td>0.2009</td>
+<td>20.8780</td>
+<td>67.3%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0350</td>
+<td>8.2445</td>
+<td>1.0002</td>
+<td>16.7735</td>
+<td>49.2%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-no-transpose-pad1.svg" alt="sgemm-ldb-no-transpose-pad1 GB/s chart"></p>
+<p><img src="../media/ms-ldb-no-transpose-pad1.svg" alt="sgemm-ldb-no-transpose-pad1 ms chart"></p>
+</details>
+<details>
+<summary>pad = 8</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0105</td>
+<td>1.5657</td>
+<td>0.0085</td>
+<td>1.9357</td>
+<td>80.9%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0100</td>
+<td>6.5746</td>
+<td>69.5%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0236</td>
+<td>11.1153</td>
+<td>0.0130</td>
+<td>20.2022</td>
+<td>55.0%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0794</td>
+<td>13.1996</td>
+<td>0.0431</td>
+<td>24.3357</td>
+<td>54.2%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2970</td>
+<td>14.1241</td>
+<td>0.1923</td>
+<td>21.8090</td>
+<td>64.8%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0316</td>
+<td>8.2581</td>
+<td>0.9891</td>
+<td>16.9626</td>
+<td>48.7%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-no-transpose-pad8.svg" alt="sgemm-ldb-no-transpose-pad8 GB/s chart"></p>
+<p><img src="../media/ms-ldb-no-transpose-pad8.svg" alt="sgemm-ldb-no-transpose-pad8 ms chart"></p>
+</details>
+<details>
+<summary>pad = 16</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0105</td>
+<td>1.5586</td>
+<td>0.0087</td>
+<td>1.8928</td>
+<td>82.3%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0100</td>
+<td>6.5641</td>
+<td>69.6%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0235</td>
+<td>11.1380</td>
+<td>0.0126</td>
+<td>20.8183</td>
+<td>53.5%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0792</td>
+<td>13.2369</td>
+<td>0.0430</td>
+<td>24.3810</td>
+<td>54.3%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2967</td>
+<td>14.1356</td>
+<td>0.1950</td>
+<td>21.5137</td>
+<td>65.7%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0383</td>
+<td>8.2309</td>
+<td>0.9892</td>
+<td>16.9609</td>
+<td>48.5%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-no-transpose-pad16.svg" alt="sgemm-ldb-no-transpose-pad16 GB/s chart"></p>
+<p><img src="../media/ms-ldb-no-transpose-pad16.svg" alt="sgemm-ldb-no-transpose-pad16 ms chart"></p>
+</details>
+<details>
+<summary>pad = 32</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0105</td>
+<td>1.5586</td>
+<td>0.0083</td>
+<td>1.9692</td>
+<td>79.1%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0096</td>
+<td>6.8495</td>
+<td>66.7%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0236</td>
+<td>11.1304</td>
+<td>0.0125</td>
+<td>20.9782</td>
+<td>53.1%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0792</td>
+<td>13.2369</td>
+<td>0.0432</td>
+<td>24.2726</td>
+<td>54.5%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2978</td>
+<td>14.0862</td>
+<td>0.1987</td>
+<td>21.1134</td>
+<td>66.7%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0366</td>
+<td>8.2378</td>
+<td>0.9942</td>
+<td>16.8752</td>
+<td>48.8%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-no-transpose-pad32.svg" alt="sgemm-ldb-no-transpose-pad32 GB/s chart"></p>
+<p><img src="../media/ms-ldb-no-transpose-pad32.svg" alt="sgemm-ldb-no-transpose-pad32 ms chart"></p>
+</details>
+<details>
+<summary>pad = 64</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0113</td>
+<td>1.4484</td>
+<td>0.0083</td>
+<td>1.9730</td>
+<td>73.4%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0143</td>
+<td>4.5714</td>
+<td>0.0097</td>
+<td>6.7368</td>
+<td>67.9%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0235</td>
+<td>11.1532</td>
+<td>0.0125</td>
+<td>20.8980</td>
+<td>53.4%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0792</td>
+<td>13.2316</td>
+<td>0.0430</td>
+<td>24.3810</td>
+<td>54.3%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2977</td>
+<td>14.0900</td>
+<td>0.1984</td>
+<td>21.1372</td>
+<td>66.7%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.0375</td>
+<td>8.2344</td>
+<td>0.9950</td>
+<td>16.8622</td>
+<td>48.8%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-no-transpose-pad64.svg" alt="sgemm-ldb-no-transpose-pad64 GB/s chart"></p>
+<p><img src="../media/ms-ldb-no-transpose-pad64.svg" alt="sgemm-ldb-no-transpose-pad64 ms chart"></p>
+</details>
+</details>
+<details>
+<summary>Nvidia Geforce Gtx 1650 — transB = transpose (6 pads)</summary>
+<details>
+<summary>pad = 0</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0111</td>
+<td>1.4734</td>
+<td>0.0082</td>
+<td>2.0000</td>
+<td>73.7%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0159</td>
+<td>4.1207</td>
+<td>0.0098</td>
+<td>6.6928</td>
+<td>61.6%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0287</td>
+<td>9.1480</td>
+<td>0.0124</td>
+<td>21.1953</td>
+<td>43.2%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.1332</td>
+<td>7.8694</td>
+<td>0.0329</td>
+<td>31.8290</td>
+<td>24.7%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.4389</td>
+<td>9.5561</td>
+<td>0.1864</td>
+<td>22.5055</td>
+<td>42.5%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>3.1770</td>
+<td>5.2808</td>
+<td>0.9851</td>
+<td>17.0317</td>
+<td>31.0%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-transpose-pad0.svg" alt="sgemm-ldb-transpose-pad0 GB/s chart"></p>
+<p><img src="../media/ms-ldb-transpose-pad0.svg" alt="sgemm-ldb-transpose-pad0 ms chart"></p>
+</details>
+<details>
+<summary>pad = 1</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0100</td>
+<td>1.6463</td>
+<td>0.0084</td>
+<td>1.9542</td>
+<td>84.2%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0123</td>
+<td>5.3333</td>
+<td>0.0098</td>
+<td>6.6819</td>
+<td>79.8%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0208</td>
+<td>12.6031</td>
+<td>0.0123</td>
+<td>21.3333</td>
+<td>59.1%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0771</td>
+<td>13.5939</td>
+<td>0.0341</td>
+<td>30.7536</td>
+<td>44.2%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2668</td>
+<td>15.7236</td>
+<td>0.1864</td>
+<td>22.5055</td>
+<td>69.9%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>1.9606</td>
+<td>8.5572</td>
+<td>0.9851</td>
+<td>17.0309</td>
+<td>50.2%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-transpose-pad1.svg" alt="sgemm-ldb-transpose-pad1 GB/s chart"></p>
+<p><img src="../media/ms-ldb-transpose-pad1.svg" alt="sgemm-ldb-transpose-pad1 ms chart"></p>
+</details>
+<details>
+<summary>pad = 8</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0101</td>
+<td>1.6254</td>
+<td>0.0083</td>
+<td>1.9655</td>
+<td>82.7%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0123</td>
+<td>5.3333</td>
+<td>0.0099</td>
+<td>6.6494</td>
+<td>80.2%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0219</td>
+<td>11.9766</td>
+<td>0.0123</td>
+<td>21.3333</td>
+<td>56.1%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.0906</td>
+<td>11.5768</td>
+<td>0.0336</td>
+<td>31.1779</td>
+<td>37.1%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2499</td>
+<td>16.7869</td>
+<td>0.1867</td>
+<td>22.4650</td>
+<td>74.7%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>1.8726</td>
+<td>8.9592</td>
+<td>0.9835</td>
+<td>17.0583</td>
+<td>52.5%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-transpose-pad8.svg" alt="sgemm-ldb-transpose-pad8 GB/s chart"></p>
+<p><img src="../media/ms-ldb-transpose-pad8.svg" alt="sgemm-ldb-transpose-pad8 ms chart"></p>
+</details>
+<details>
+<summary>pad = 16</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0100</td>
+<td>1.6358</td>
+<td>0.0084</td>
+<td>1.9468</td>
+<td>84.0%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0128</td>
+<td>5.1393</td>
+<td>0.0096</td>
+<td>6.8040</td>
+<td>75.5%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0228</td>
+<td>11.5137</td>
+<td>0.0122</td>
+<td>21.4731</td>
+<td>53.6%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.1018</td>
+<td>10.3012</td>
+<td>0.0331</td>
+<td>31.6599</td>
+<td>32.5%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.2888</td>
+<td>14.5248</td>
+<td>0.1864</td>
+<td>22.5055</td>
+<td>64.5%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.1069</td>
+<td>7.9629</td>
+<td>0.9836</td>
+<td>17.0575</td>
+<td>46.7%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-transpose-pad16.svg" alt="sgemm-ldb-transpose-pad16 GB/s chart"></p>
+<p><img src="../media/ms-ldb-transpose-pad16.svg" alt="sgemm-ldb-transpose-pad16 ms chart"></p>
+</details>
+<details>
+<summary>pad = 32</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0102</td>
+<td>1.6101</td>
+<td>0.0082</td>
+<td>1.9961</td>
+<td>80.7%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0136</td>
+<td>4.8245</td>
+<td>0.0102</td>
+<td>6.4000</td>
+<td>75.4%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0246</td>
+<td>10.6667</td>
+<td>0.0122</td>
+<td>21.4731</td>
+<td>49.7%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.1132</td>
+<td>9.2630</td>
+<td>0.0341</td>
+<td>30.7392</td>
+<td>30.1%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.3740</td>
+<td>11.2142</td>
+<td>0.1864</td>
+<td>22.5036</td>
+<td>49.8%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.7133</td>
+<td>6.1833</td>
+<td>0.9851</td>
+<td>17.0312</td>
+<td>36.3%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-transpose-pad32.svg" alt="sgemm-ldb-transpose-pad32 GB/s chart"></p>
+<p><img src="../media/ms-ldb-transpose-pad32.svg" alt="sgemm-ldb-transpose-pad32 ms chart"></p>
+</details>
+<details>
+<summary>pad = 64</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>wgblas ms</th>
+<th>wgblas GB/s</th>
+<th>cuBLAS ms</th>
+<th>cuBLAS GB/s</th>
+<th>efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0102</td>
+<td>1.6000</td>
+<td>0.0083</td>
+<td>1.9655</td>
+<td>81.4%</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0135</td>
+<td>4.8473</td>
+<td>0.0098</td>
+<td>6.6928</td>
+<td>72.4%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0246</td>
+<td>10.6667</td>
+<td>0.0121</td>
+<td>21.7294</td>
+<td>49.1%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.1147</td>
+<td>9.1429</td>
+<td>0.0337</td>
+<td>31.1187</td>
+<td>29.4%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.3735</td>
+<td>11.2301</td>
+<td>0.1866</td>
+<td>22.4804</td>
+<td>50.0%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.7383</td>
+<td>6.1269</td>
+<td>0.9846</td>
+<td>17.0403</td>
+<td>36.0%</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-ldb-transpose-pad64.svg" alt="sgemm-ldb-transpose-pad64 GB/s chart"></p>
+<p><img src="../media/ms-ldb-transpose-pad64.svg" alt="sgemm-ldb-transpose-pad64 ms chart"></p>
+</details>
+</details>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/wgblas/ldb.sgemm.js">ldb.sgemm.js</a> — WebGPU ldb-sweep benchmark script</li>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/cuda/ldb.sgemm.c">ldb.sgemm.c</a> — CUDA / cuBLAS ldb-sweep reference script</li>
+</ul>
+</div></section></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#nvidia-geforce-gtx-1650-wgblas-vs-cublas"><span>Nvidia <wbr/>Geforce <wbr/>Gtx 1650 — wgblas vs cu<wbr/>BLAS</span></a><a href="#see-also"><span>See also</span></a><a href="#transpose-sweep"><span>Transpose sweep</span></a><a href="#ldb-sweep"><span>Ldb sweep</span></a></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

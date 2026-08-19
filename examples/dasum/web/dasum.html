@@ -3,18 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <title>dasum — wgblas browser example</title>
-    <script src="https://manit2004.github.io/wgblas/wgblas.browser.js"></script>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
   </head>
   <body>
     <pre id="out">Running…</pre>
     <script>
-      const { init, dasum, randomFloat64Array, cleanup } = window.wgblas;
+      const { init, dasum, cleanup } = window.wgblas;
 
       (async () => {
         const device = await init();
 
-        const n = 10;
-        const x = randomFloat64Array(n, -10, 10);
+        const n = 5;
+        const x = new Float64Array([1, -2, 3, -4, 5]);
 
         const { asum } = await dasum(device, n, x, 1);
 

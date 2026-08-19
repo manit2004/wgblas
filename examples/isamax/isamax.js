@@ -1,11 +1,10 @@
 import { init, cleanup } from "wgblas";
 import { isamax } from "wgblas/isamax";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const x = randomFloat32Array(n, -10, 10);
+const n = 5;
+const x = new Float32Array([3, -7, 2, 5, -1]);
 
 console.log("x:     ", x);
 const { index } = await isamax(device, n, x, 1);

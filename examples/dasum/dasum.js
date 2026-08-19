@@ -1,11 +1,10 @@
 import { init, cleanup } from "wgblas";
 import { dasum } from "wgblas/dasum";
-import { randomFloat64Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const x = randomFloat64Array(n, -10, 10);
+const n = 5;
+const x = new Float64Array([1, -2, 3, -4, 5]);
 
 console.log("x:    ", x);
 const { asum } = await dasum(device, n, x, 1);

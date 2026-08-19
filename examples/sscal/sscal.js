@@ -1,12 +1,11 @@
 import { init, cleanup } from "wgblas";
 import { sscal } from "wgblas/sscal";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 10;
-const alpha = 2.0;
-const x = randomFloat32Array(n, -10, 10);
+const n = 5;
+const alpha = 3;
+const x = new Float32Array([1, 2, 3, 4, 5]);
 
 console.log("before:", x);
 const result = await sscal(device, n, alpha, x, 1);
