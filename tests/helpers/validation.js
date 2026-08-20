@@ -98,6 +98,18 @@ const SPECIALS = {
   number: 42,
 };
 
+/** `"float64array"` → `Float64Array`, anything else (including the default `"float32array"`) → `Float32Array`. */
+function typedArrayCtor(type) {
+  return type === "float64array" ? Float64Array : Float32Array;
+}
+
+/**
+ * The stride a vector param is walked with — `incx` if the param depends on
+ * it, `incy` otherwise — defaulting to 1 (contiguous) when unset.
+ */
+function strideOf(deps, dims) {
+  return deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
+}
 
 /**
  * Computes the logical `{ outer, inner }` shape of a matrix param from its
@@ -129,6 +141,8 @@ export function matrixShape(dependsOn, dims) {
   const deps = new Set(dependsOn ?? []);
   const transKey = dependsOn?.find((d) => d.startsWith("trans"));
   const isCM = dims.layout === "column-major";
+
+  // Case 1: Level 3 matrix (has its own trans flag and shares inner dim "k").
   if (transKey && deps.has("k")) {
     // The two dimension fields, in (outer,inner)-for-no-transpose order —
     // dependsOn's own order carries this, so no field-name special-casing.
@@ -139,14 +153,22 @@ export function matrixShape(dependsOn, dims) {
     const isNoTrans = (dims[transKey] ?? "no-transpose") === "no-transpose";
     return isNoTrans ? { outer: rows, inner: cols } : { outer: cols, inner: rows };
   }
+
+  // Case 2: symmetric matrix whose square order is picked by "side" (e.g. ssymm's A).
   if (deps.has("side") && deps.has("m") && deps.has("n")) {
     const aOrder = dims.side === "right" ? dims.n : dims.m;
     return { outer: aOrder, inner: aOrder };
   }
+
+  // Case 3: plain m×n matrix, no trans/side involved (sgemv/ssyr2/etc.'s A, sgemm's C).
   if (deps.has("m") && deps.has("n"))
     return isCM ? { outer: dims.n, inner: dims.m } : { outer: dims.m, inner: dims.n };
+
+  // Case 4: symmetric matrix sized by n alone (ssymv/ssyr's A) — always square.
   if (deps.has("n"))
     return { outer: dims.n, inner: dims.n };
+
+  // Not a matrix param at all (no ld* dependency) — nothing to size here.
   return null;
 }
 
@@ -164,26 +186,30 @@ export function matrixShape(dependsOn, dims) {
 export function ndArrayLen(dependsOn, dims) {
   const deps = new Set(dependsOn ?? []);
   const ldKey = dependsOn?.find((d) => d.startsWith("ld"));
+
+  // Case 1: matrix (depends on some ld*) — defer the shape to matrixShape.
   if (ldKey) {
     const shape = matrixShape(dependsOn, dims);
     if (shape) return Math.max(0, (shape.outer - 1) * dims[ldKey] + shape.inner);
   }
+
+  // Case 2: Level 2 vector — its length flips between m and n depending on trans
+  // (e.g. sgemv's x is length n untransposed, length m transposed).
   if (deps.has("trans") && deps.has("m") && deps.has("n") && "m" in dims) {
     const isNoTrans = (dims.trans ?? "no-transpose") === "no-transpose";
     const dim = deps.has("incx")
       ? (isNoTrans ? dims.n : dims.m)
       : (isNoTrans ? dims.m : dims.n);
-    const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
-    return (dim - 1) * inc + 1;
+    return (dim - 1) * strideOf(deps, dims) + 1;
   }
-  // Vector sized by m alone, no trans involved (sger's x: length m, independent of n).
-  if (deps.has("m") && !deps.has("n") && !ldKey && !deps.has("trans")) {
-    const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
-    return (dims.m - 1) * inc + 1;
-  }
+
+  // Case 3: vector sized by m alone, no trans involved (sger's x: length m, independent of n).
+  if (deps.has("m") && !deps.has("n") && !ldKey && !deps.has("trans"))
+    return (dims.m - 1) * strideOf(deps, dims) + 1;
+
+  // Case 4: plain Level 1 vector — length n.
   const n = dims.n ?? 4;
-  const inc = deps.has("incx") ? (dims.incx ?? 1) : (dims.incy ?? 1);
-  return (n - 1) * inc + 1;
+  return (n - 1) * strideOf(deps, dims) + 1;
 }
 
 /**
@@ -198,13 +224,12 @@ function resolveNdArray(scenario, dependsOn, baselines, oversize = false, type =
   let minLen;
   if (oversize && deps.has("trans") && deps.has("m") && deps.has("n") && "m" in baselines) {
     const dim = deps.has("incx") ? (baselines.xN ?? baselines.n) : (baselines.yN ?? baselines.n);
-    const inc = deps.has("incx") ? (baselines.incx ?? 1) : (baselines.incy ?? 1);
-    minLen = (dim - 1) * inc + 1;
+    minLen = (dim - 1) * strideOf(deps, baselines) + 1;
   } else {
     minLen = ndArrayLen(dependsOn, baselines);
   }
 
-  const Ctor = type === "float64array" ? Float64Array : Float32Array;
+  const Ctor = typedArrayCtor(type);
   if (scenario === "minimal")  return new Ctor(minLen).fill(1);
   if (scenario === "tooShort") return new Ctor(Math.max(0, minLen - 1)).fill(1);
   throw new Error(`Unknown array scenario: "${scenario}"`);
@@ -250,10 +275,8 @@ export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
     return resolveNdArray(entry.scenario, dependsOn, baselines, false, type);
   }
   if ("value" in entry) {
-    if (Array.isArray(entry.value) && (type === "float32array" || type === "float64array")) {
-      const Ctor = type === "float64array" ? Float64Array : Float32Array;
-      return new Ctor(entry.value);
-    }
+    if (Array.isArray(entry.value) && (type === "float32array" || type === "float64array"))
+      return new (typedArrayCtor(type))(entry.value);
     return entry.value;
   }
   if ("special" in entry) {
@@ -326,8 +349,7 @@ export async function runValidation(t, specs, call, runtimeBaselines = {}) {
   for (const [name, spec] of Object.entries(specs)) {
     if ("baseline" in spec) {
       if (Array.isArray(spec.baseline)) {
-        const Ctor = spec.type === "float64array" ? Float64Array : Float32Array;
-        baselines[name] = new Ctor(spec.baseline);
+        baselines[name] = new (typedArrayCtor(spec.type))(spec.baseline);
       } else {
         baselines[name] = spec.baseline;
       }
