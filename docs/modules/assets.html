@@ -1,0 +1,103 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>assets | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css"/><script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script><script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script><script>
+					window.__typeDocPluginKatexOptions={"delimiters":[{"left":"$$","right":"$$","display":true},{"left":"$","right":"$","display":false}]};
+					window.addEventListener('load', () => window.renderMathInElement(document.body, window.__typeDocPluginKatexOptions));
+				</script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">wgblas</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">assets</a></li></ul>
+<h1>Module assets</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Static assets embedded in the wgblas docs site.</p>
+<h2 id="folder-structure" class="tsd-anchor-link">Folder Structure<a href="#folder-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-4">assets</span><span class="hl-1">/</span><br/><span class="hl-1">  </span><span class="hl-4">docs</span><span class="hl-1">/</span><br/><span class="hl-1">    </span><span class="hl-4">runner</span><span class="hl-1">.</span><span class="hl-4">js</span><span class="hl-1">       — </span><span class="hl-4">browser</span><span class="hl-1"> </span><span class="hl-4">execution</span><span class="hl-1"> </span><span class="hl-4">layer</span><span class="hl-1">, </span><span class="hl-4">injected</span><span class="hl-1"> </span><span class="hl-4">into</span><span class="hl-1"> </span><span class="hl-4">every</span><span class="hl-1"> </span><span class="hl-4">docs</span><span class="hl-1"> </span><span class="hl-4">page</span><br/><span class="hl-1">  </span><span class="hl-4">benchmarks</span><span class="hl-1">/</span><br/><span class="hl-1">    &lt;</span><span class="hl-4">gpu</span><span class="hl-1">-</span><span class="hl-4">slug</span><span class="hl-1">&gt;/</span><br/><span class="hl-1">      &lt;</span><span class="hl-15">routine</span><span class="hl-1">&gt;/</span><br/><span class="hl-1">        </span><span class="hl-4">gbps</span><span class="hl-1">-</span><span class="hl-4">default</span><span class="hl-1">.</span><span class="hl-4">svg</span><span class="hl-1">, </span><span class="hl-4">ms</span><span class="hl-1">-</span><span class="hl-4">default</span><span class="hl-1">.</span><span class="hl-4">svg</span><span class="hl-1">, ...   — </span><span class="hl-4">generated</span><span class="hl-1"> </span><span class="hl-4">chart</span><span class="hl-1"> </span><span class="hl-4">images</span>
+</code><button>Copy</button></pre>
+
+<p><code>benchmarks/</code> holds the chart images <code>scripts/gen-bench-tables.py</code> generates
+from <code>benchmarks/results/</code> — one <code>&lt;gpu-slug&gt;/&lt;routine&gt;/</code> folder per GPU ×
+routine pair, each with a GB/s and a ms chart per sweep variant (<code>-default</code>,
+<code>-stride32</code>, <code>-transno-transpose</code>, etc.). These are pure generated output —
+see <code>benchmarks/index.mjs</code> for how they're produced and linked into the
+<code>benchmarks</code> module's tables. <code>docs/runner.js</code> is the one file here with
+actual logic, detailed below.</p>
+<h2 id="_" class="tsd-anchor-link"><code>docs/runner.js</code><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Loaded by TypeDoc as a custom JS file on every docs page. It scans the page
+for two kinds of code blocks and turns each into a live, editable, runnable
+example — no leaving the page:</p>
+<ul>
+<li><strong>JS blocks</strong> containing an <code>import</code> statement — edited and run against
+the real <code>wgblas</code> bundle, with console output captured below the block.</li>
+<li><strong>Standalone HTML blocks</strong> starting with <code>&lt;!doctype html&gt;</code> — edited and
+rendered live in a sandboxed <code>&lt;iframe&gt;</code> below the block.</li>
+</ul>
+<h3 id="how-it-works" class="tsd-anchor-link">How It Works<a href="#how-it-works" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>On page load <code>runner.js</code> walks all <code>&lt;pre&gt;</code> elements looking for a
+qualifying <code>code.js</code> or <code>code.html</code> block. For each match it:</p>
+<ol>
+<li><strong>Injects a ▶ Run button</strong> — appended to the code block's container,
+positioned so it clears TypeDoc's own top-right &quot;Copy&quot; button.</li>
+<li><strong>Swaps in an editable CodeMirror instance</strong> — lazily loaded once from
+a CDN (unpkg) and shared across every block on the page. Until it
+finishes loading (or if it fails to), Run still works against the
+original static text — the editor is progressive enhancement, not a
+dependency.</li>
+<li><strong>On click</strong>, for a JS block:
+<ul>
+<li><strong>Transforms imports</strong> — rewrites every
+<code>import { a, b } from &quot;wgblas/...&quot;</code> line in the <em>current editor
+contents</em> into <code>const { a, b } = window.wgblas;</code>, pointing at the
+IIFE bundle <code>build-browser.mjs</code> publishes as <code>docs/wgblas.browser.js</code>.</li>
+<li>Wraps the transformed source in an <code>async</code> IIFE and runs it via
+<code>eval</code>, capturing <code>console.log</code>/<code>warn</code>/<code>error</code>/<code>table</code> output
+(typed arrays and tables formatted for readability) into a panel
+injected directly below the block. Bails out early with a warning if
+<code>navigator.gpu</code> isn't available.</li>
+</ul>
+</li>
+<li><strong>On click</strong>, for an HTML block:
+<ul>
+<li>Takes the current editor contents, injects a small <code>&lt;style&gt;</code> block
+matching the site's active light/dark theme (the iframe's document is
+separate from the parent page and doesn't inherit its CSS), and
+assigns it to an <code>&lt;iframe srcdoc&gt;</code> — reassigning <code>srcdoc</code> reloads the
+iframe, so re-running executes the page fresh each click.</li>
+</ul>
+</li>
+</ol>
+<h3 id="why" class="tsd-anchor-link">Why <code>window.wgblas</code><a href="#why" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>ES module <code>import</code> statements cannot be evaluated at runtime via <code>eval</code>
+because they are static declarations resolved at parse time. The transform
+replaces them with destructuring assignments against <code>window.wgblas</code>, which
+is the global the IIFE bundle registers on load. This gives eval-able code
+that still reads like normal module imports in the source.</p>
+</div></section></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#folder-structure"><span>Folder <wbr/>Structure</span></a><a href="#_"><span></span></a>
+<ul>
+<li><a href="#how-it-works"><span>How <wbr/>It <wbr/>Works</span></a></li>
+<li><a href="#why"><span>Why </span></a></li></ul></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

@@ -4,6 +4,19 @@
  * repository and explains the reasoning behind it — not just what the code
  * does, but why it is shaped the way it is.
  *
+ * ## How These Docs Are Organized
+ *
+ * The sidebar's top-level modules mirror the repository's top-level folders.
+ * `devdocs` stands in for `src/` — the module you're reading right now is a
+ * narrated walkthrough of it, with `devdocs/blas-routines` and
+ * `devdocs/shaders` covering `src/index.mjs` and `src/shaders/`
+ * respectively. Its siblings — `assets`, `benchmarks`, `examples`, `scripts`,
+ * `tests` — each document the identically-named top-level folder.
+ *
+ * `docs` is the one exception: it's the public API reference generated from
+ * `index.d.mts`, not a tour of the top-level `docs/` folder. That folder is
+ * this site's own generated output — the two just happen to share a name.
+ *
  * ## What is BLAS?
  *
  * BLAS (Basic Linear Algebra Subprograms) is a standard API for vector and

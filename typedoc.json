@@ -16,8 +16,8 @@
     "benchmarks/index.mjs",
     "benchmarks/utils/helpers.mjs",
     "benchmarks/bench-result/**/*.mjs",
-    "examples/assets/index.mjs",
-    "examples/scripts/index.mjs"
+    "assets/index.mjs",
+    "scripts/index.mjs"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.typedoc.json",

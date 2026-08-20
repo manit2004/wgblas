@@ -83,6 +83,7 @@ export declare function randomFloat64Array(
  *
  * const n = 4, lda = n;
  * const A = randomTriangularFloat32Array(n, lda, "lower");
+ * console.log(A);
  * ```
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L13">Source code: random.mjs (L13)</a>
  * @category Utilities
