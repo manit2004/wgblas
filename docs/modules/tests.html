@@ -14,84 +14,256 @@
 <li><a href="" aria-current="page">tests</a></li></ul>
 <h1>Module tests</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Test suite for wgblas — 10 BLAS Level 1 routines, each covered by three tests.</p>
-<p><strong>validation</strong> — rejects every class of bad input defined in
-<code>tests/validation/params/*.json</code>: wrong type, wrong size, out-of-range value.</p>
-<p><strong>fixtures</strong> — 100 property-based random runs via fast-check, comparing the
-GPU result against <code>@stdlib</code> as the CPU reference. Inputs avoid subnormals
-to stay safe under WGSL's flush-to-zero (FTZ) rule.</p>
-<p><strong>edge cases</strong> — deterministic checks for routine-specific behaviour: ties,
-strides, identity parameters, exact Pythagorean results, per-flag srotm paths.</p>
+<div class="tsd-comment tsd-typography"><p>Test suite for wgblas — 26 BLAS Level 1, 2, and 3 routines, each covered
+by four kinds of test.</p>
+<h2 id="test-types" class="tsd-anchor-link">Test Types<a href="#test-types" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The first three live in <code>test.&lt;routine&gt;.js</code>; the fourth is a separate file:</p>
+<ol>
+<li><strong>validation</strong> — rejects every class of bad input defined in
+<code>tests/validation/params/*.json</code>: wrong type, wrong size, out-of-range
+value. Catches guard-clause bugs before any GPU work begins.</li>
+<li><strong>fixtures</strong> — 100 property-based random runs via fast-check, comparing
+the GPU result against <code>@stdlib</code> (or a hand-written reference, for
+routines <code>@stdlib</code> doesn't cover) as the CPU oracle, using a
+routine-specific error metric — see below. Inputs avoid subnormals to
+stay safe under WGSL's flush-to-zero (FTZ) rule.</li>
+<li><strong>edge cases</strong> — deterministic checks for routine-specific behaviour:
+ties, strides, identity parameters, exact Pythagorean results, per-flag
+srotm paths. The 14 routines with a <code>layout</code> parameter (matrix
+routines that accept row-major or column-major storage) get a second
+edge-cases pass — <code>edge-cases-column-major.json</code> — run as its own test.</li>
+<li><strong>GPU-resident coverage</strong> (<code>gpustorage.&lt;routine&gt;.js</code>) — the same
+fixtures inputs and stdlib oracle as test 2 and 3, but run through the
+<code>GpuVector</code>/<code>GpuMatrix</code>-resident overload instead of the plain-array
+one. Runs via <code>make test-gpu</code>/<code>make test-gpu-&lt;routine&gt;</code>, a separate
+invocation from <code>make test</code> — and not part of the Kaggle CI kernel,
+which only runs <code>make test</code>.</li>
+</ol>
 <h2 id="error-metrics" class="tsd-anchor-link">Error Metrics<a href="#error-metrics" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Four metric families, chosen per routine by what kind of floating-point
+error the operation can legitimately produce:</p>
+<ul>
+<li><strong>exact match</strong> — the operation has no rounding to tolerate (a copy, a
+swap, a single multiply, an index) so GPU and CPU must agree bit-for-bit
+(or index-for-index); threshold <code>0</code>.</li>
+<li><strong>reduction ULP</strong> (<code>ulpDiff</code>/<code>ulpDiff64</code>) — GPU sum/norm routines use a
+tree reduction while the CPU reference sums sequentially; different
+summation order gives a different (still correct) rounding, bounded in
+ULPs rather than required to match exactly.</li>
+<li><strong>forward-error factor</strong> (<code>forwardFactor</code>) — normalizes the raw error by
+a routine-derived rounding-error bound instead of counting ULPs, so a
+legal FMA fusion or a cancellation-shrunk result doesn't read as a
+failure:
+$$\text{factor} = \max_i \frac{|\text{err}_i|}{\varepsilon \cdot \text{bound}_i}, \qquad \varepsilon = 2^{-23}$$
+<code>err_i = |gpu_i - ref_i|</code> at each output index <code>i</code> (or <code>i,j</code> for a
+matrix output) — <code>bound_i</code> is routine-specific; every routine's is in
+the Equation column of the table below.</li>
+<li><strong>backward-residual factor</strong> (<code>backwardResidualFactor</code>) — for
+triangular solves, forward-comparing to a computed &quot;true&quot; <code>x</code> is the
+wrong question (a solve can be ill-conditioned without being wrong).
+Plugs the GPU's answer back into the original equation and checks the
+residual instead, LAPACK-style — same shape as forward-error factor
+above, but <code>err_i</code> is now a residual, not a <code>gpu</code>-vs-<code>ref</code> difference:
+$$\text{factor} = \max_i \frac{|\text{err}_i|}{\varepsilon \cdot \text{bound}_i}, \qquad \text{err}_i = \left|(\operatorname{op}(A)x_{\text{gpu}})_i - b_i\right|$$
+(<code>strsm</code>'s right-hand side is <code>\alpha B_{ij}</code>, indexed <code>i,j</code> — a matrix,
+not a vector <code>b</code>). <code>bound_i</code> is again routine-specific — <code>strsv</code>'s and
+<code>strsm</code>'s are in the table below, and differ for the reason given there.</li>
+</ul>
+<p><code>n</code>/<code>k</code> below are each routine's own reduction length; <code>r</code> = <code>aOrder</code>, the
+shared dimension <code>A</code> is read over (<code>m</code> for <code>side=&quot;left&quot;</code>, <code>n</code> for
+<code>side=&quot;right&quot;</code>, in ssymm/strmm/strsm).</p>
 <table>
 <thead>
 <tr>
 <th>Routine</th>
+<th>Level</th>
 <th>Metric</th>
 <th>Threshold</th>
-<th>Reason</th>
+<th>Equation (bound, or backward residual ÷ ε)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>isamax</td>
+<td>1</td>
 <td>exact index match</td>
 <td>0</td>
-<td>index must be exact</td>
+<td>—</td>
+</tr>
+<tr>
+<td>idamax</td>
+<td>1</td>
+<td>exact index match</td>
+<td>0</td>
+<td>—</td>
 </tr>
 <tr>
 <td>scopy</td>
+<td>1</td>
 <td>maxUlp</td>
 <td>0</td>
-<td>bitwise copy, no rounding</td>
+<td>—</td>
 </tr>
 <tr>
 <td>sswap</td>
+<td>1</td>
 <td>maxUlp</td>
 <td>0</td>
-<td>bitwise swap, no rounding</td>
+<td>—</td>
 </tr>
 <tr>
 <td>sscal</td>
+<td>1</td>
 <td>maxUlp</td>
 <td>0</td>
-<td>single multiply, exact at f32</td>
+<td>—</td>
 </tr>
 <tr>
 <td>sasum</td>
+<td>1</td>
 <td>ulpDiff</td>
 <td>50</td>
-<td>tree reduction; GPU and CPU use different summation orders</td>
+<td>—</td>
 </tr>
 <tr>
 <td>snrm2</td>
+<td>1</td>
 <td>ulpDiff</td>
 <td>50</td>
-<td>tree reduction; GPU and CPU use different summation orders</td>
+<td>—</td>
+</tr>
+<tr>
+<td>dasum</td>
+<td>1</td>
+<td>ulpDiff64</td>
+<td>64</td>
+<td>—</td>
 </tr>
 <tr>
 <td>saxpy</td>
+<td>1</td>
 <td>forwardFactor</td>
 <td>1</td>
-<td>FMA: GPU may fuse α×x+y into a single rounding</td>
+<td>$|\alpha x_i|+|y_i|$</td>
 </tr>
 <tr>
 <td>sdot</td>
+<td>1</td>
 <td>forwardFactor</td>
 <td>1</td>
-<td>near cancellation makes raw ULP unbounded even when correct</td>
+<td>$n\sum_i|x_iy_i|$</td>
 </tr>
 <tr>
 <td>srot</td>
+<td>1</td>
 <td>forwardFactor</td>
 <td>1</td>
-<td>near cancellation makes raw ULP unbounded even when correct</td>
+<td>$|cx_i|{+}|sy_i|$ (x), $|cy_i|{+}|sx_i|$ (y)</td>
 </tr>
 <tr>
 <td>srotm</td>
+<td>1</td>
 <td>forwardFactor</td>
 <td>1</td>
-<td>near cancellation makes raw ULP unbounded even when correct</td>
+<td>$|h_{11}x_i|{+}|h_{12}y_i|$ (x), $|h_{21}x_i|{+}|h_{22}y_i|$ (y)</td>
+</tr>
+<tr>
+<td>ssymv</td>
+<td>2</td>
+<td>forwardFactor</td>
+<td>2</td>
+<td>$(n{+}2)|\alpha|\sum_j|A_{ij}||x_j|+2|\beta||y_i|$</td>
+</tr>
+<tr>
+<td>strmv</td>
+<td>2</td>
+<td>forwardFactor</td>
+<td>2</td>
+<td>$(n{+}1)\sum_j|A_{ij}||x_j|$</td>
+</tr>
+<tr>
+<td>sger</td>
+<td>2</td>
+<td>forwardFactor</td>
+<td>2</td>
+<td>$|\alpha x_iy_j|+|A_{ij}|$</td>
+</tr>
+<tr>
+<td>ssyr</td>
+<td>2</td>
+<td>forwardFactor</td>
+<td>2</td>
+<td>$|\alpha x_ix_j|+|A_{ij}|$</td>
+</tr>
+<tr>
+<td>ssyr2</td>
+<td>2</td>
+<td>forwardFactor</td>
+<td>2</td>
+<td>$|\alpha x_iy_j|+|\alpha y_ix_j|+|A_{ij}|$</td>
+</tr>
+<tr>
+<td>sgemv</td>
+<td>2</td>
+<td>forwardFactor</td>
+<td>4</td>
+<td>$(n{+}1)|\alpha|\sum_j|A_{ij}||x_j|+|\beta||y_i|$</td>
+</tr>
+<tr>
+<td>strsv</td>
+<td>2</td>
+<td>backwardResidualFactor</td>
+<td>2</td>
+<td>$(n{+}1)\sum_j|A_{ij}||x_j|$</td>
+</tr>
+<tr>
+<td>sgemm</td>
+<td>3</td>
+<td>forwardFactor</td>
+<td>1</td>
+<td>$(k{+}1)|\alpha|\sum_p|A_{ip}||B_{pj}|+|\beta||C_{ij}|$</td>
+</tr>
+<tr>
+<td>sgemmtr</td>
+<td>3</td>
+<td>forwardFactor</td>
+<td>1</td>
+<td>same as sgemm, restricted to the uplo triangle</td>
+</tr>
+<tr>
+<td>ssyrk</td>
+<td>3</td>
+<td>forwardFactor</td>
+<td>1</td>
+<td>$(k{+}1)|\alpha|\sum_p|A_{ip}||A_{jp}|+|\beta||C_{ij}|$</td>
+</tr>
+<tr>
+<td>ssyr2k</td>
+<td>3</td>
+<td>forwardFactor</td>
+<td>1</td>
+<td>$(k{+}1)|\alpha|\left(\sum_p|A_{ip}||B_{jp}|+\sum_p|B_{ip}||A_{jp}|\right)+|\beta||C_{ij}|$</td>
+</tr>
+<tr>
+<td>ssymm</td>
+<td>3</td>
+<td>forwardFactor</td>
+<td>1</td>
+<td>$(r{+}1)|\alpha|\sum_p|A_{ip}||B_{pj}|+|\beta||C_{ij}|$</td>
+</tr>
+<tr>
+<td>strmm</td>
+<td>3</td>
+<td>forwardFactor</td>
+<td>1</td>
+<td>$(r{+}1)|\alpha|\sum_p|A_{ip}||B_{pj}|$</td>
+</tr>
+<tr>
+<td>strsm</td>
+<td>3</td>
+<td>backwardResidualFactor</td>
+<td>5</td>
+<td>$(r{+}1)\sum_k|A_{ik}||X_{kj}|$</td>
 </tr>
 </tbody>
 </table>
@@ -106,14 +278,27 @@ strides, identity parameters, exact Pythagorean results, per-flag srotm paths.</
 <tbody>
 <tr>
 <td><code>make test</code></td>
-<td>Runs all 10 routines with the <code>spec</code> reporter</td>
+<td>Runs validation + fixtures + edge cases for all 26 routines (<code>test.*.js</code>)</td>
 </tr>
 <tr>
 <td><code>make test-&lt;routine&gt;</code></td>
-<td>Runs one routine, e.g. <code>make test-saxpy</code></td>
+<td>Runs one routine's <code>test.&lt;routine&gt;.js</code>, e.g. <code>make test-saxpy</code></td>
+</tr>
+<tr>
+<td><code>make test-gpu</code></td>
+<td>Runs GPU-resident coverage for all 26 routines (<code>gpustorage.*.js</code>)</td>
+</tr>
+<tr>
+<td><code>make test-gpu-&lt;routine&gt;</code></td>
+<td>Runs one routine's <code>gpustorage.&lt;routine&gt;.js</code></td>
 </tr>
 </tbody>
 </table>
+<p>Pass <code>ARGS=low-power</code> to prefer the integrated GPU on dual-GPU machines:
+<code>make test-saxpy ARGS=low-power</code>. Node's test runner doesn't forward
+trailing CLI args the way a plain <code>node script.js</code> invocation does, so
+this goes through the <code>WGBLAS_POWER_PREFERENCE</code> env var instead — see
+<code>tests/helpers/device.js</code>.</p>
 </div></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
@@ -129,7 +314,7 @@ strides, identity parameters, exact Pythagorean results, per-flag srotm paths.</
 <div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
 <details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h3>On This Page</h3></summary>
-<div class="tsd-accordion-details"><a href="#error-metrics"><span>Error <wbr/>Metrics</span></a><a href="#make-commands"><span>Make <wbr/>Commands</span></a></div></details></div>
+<div class="tsd-accordion-details"><a href="#test-types"><span>Test <wbr/>Types</span></a><a href="#error-metrics"><span>Error <wbr/>Metrics</span></a><a href="#make-commands"><span>Make <wbr/>Commands</span></a></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
