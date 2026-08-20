@@ -30,7 +30,7 @@
     "C": [0, 0, 0, 0], "ldc": 2
   },
   {
-    "label": "[column-major] trans=transpose: A stored n×k, op(A) = A^T",
+    "label": "[column-major] trans=transpose: A stored k×n, op(A) = A^T",
     "layout": "column-major",
     "uplo": "upper",
     "trans": "transpose",

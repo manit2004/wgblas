@@ -7,8 +7,12 @@ export function forwardFactor(gpu, ref, a) {
     h11 = a.param[1]; h21 = a.param[2]; h12 = a.param[3]; h22 = a.param[4];
   } else if (flag === 0) {
     h11 = 1.0; h21 = a.param[2]; h12 = a.param[3]; h22 = 1.0;
-  } else {
+  } else if (flag === 1) {
     h11 = a.param[1]; h21 = -1.0; h12 = 1.0; h22 = a.param[4];
+  } else if (flag === -2) {
+    h11 = 1.0; h21 = 0.0; h12 = 0.0; h22 = 1.0;
+  } else {
+    throw new Error(`Unknown srotm flag: ${flag}`);
   }
   let maxFactor = 0;
   for (let i = 0; i < a.n; i++) {

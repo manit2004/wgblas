@@ -27,9 +27,11 @@
  *
  * ## Error Metrics and Thresholds
  *
- * `runFixtures` accepts a `computeUlp` function and a `threshold`. Each run
- * passes if `computeUlp(gpuResult, refResult, args) <= threshold`. See
- * `tests/index.mjs` for the full per-routine table.
+ * `runFixtures` accepts an `errorMetric` function and a `threshold`. Each run
+ * passes if `errorMetric(gpuResult, refResult, args) <= threshold`. Despite
+ * the name, it isn't always a ULP count — it's `maxUlp`/`ulpDiff` for exact
+ * and reduction routines, but `forwardFactor`/`backwardResidualFactor` for
+ * everything else (see `tests/index.mjs` for the full per-routine table).
  *
  * @module tests/helpers/fixtures
  */
@@ -226,18 +228,21 @@ export function buildArb(specs, extras = {}) {
 
 /**
  * Runs `numRuns` property-based random tests comparing the GPU routine against
- * a CPU reference. Passes if `computeUlp(gpuResult, refResult, args) <= threshold`
+ * a CPU reference. Passes if `errorMetric(gpuResult, refResult, args) <= threshold`
  * for every run. Emits a diagnostic with the maximum observed value.
  *
  * @param t - node:test context
  * @param routineName - used in the diagnostic label
  * @param device - WebGPU device instance
  * @param numRuns - number of random inputs to generate (typically 100)
- * @param threshold - maximum allowed value from `computeUlp`
+ * @param threshold - maximum allowed value from `errorMetric`
  * @param specsOrArb - param specs from `loadParam`, or a pre-built fc arbitrary
  * @param callGpu - async function that calls the GPU routine
  * @param callRef - function that calls the CPU reference
- * @param computeUlp - error metric: `(gpuResult, refResult, args) => number`
+ * @param errorMetric - `(gpuResult, refResult, args) => number`; e.g. `maxUlp`/
+ *   `ulpDiff` for exact/reduction routines, `forwardFactor`/`backwardResidualFactor`
+ *   for the rest — not always a ULP count despite routines commonly naming their
+ *   own version `...Ulp`/`...Diff`
  * @param extras - optional extra arbitraries for routine-specific params (e.g. srotm's param)
  * @returns promise that resolves when all runs pass, or rejects on the first failing run
  * @public
@@ -251,7 +256,7 @@ export async function runFixtures(
   specsOrArb,   // either a specs object (L1: uses buildArb) or a pre-built fc arbitrary (L2)
   callGpu,
   callRef,
-  computeUlp,
+  errorMetric,
   extras = {}
 ) {
   // fc arbitraries have both generate and filter; plain spec objects have neither.
@@ -264,14 +269,14 @@ export async function runFixtures(
     fc.asyncProperty(arb, async (args) => {
       const gpuResult = await callGpu(device, args);
       const refResult = callRef(args);
-      const diff = computeUlp(gpuResult, refResult, args);
-      if (diff > maxObserved) maxObserved = diff;
-return diff <= threshold;
+      const metric = errorMetric(gpuResult, refResult, args);
+      if (metric > maxObserved) maxObserved = metric;
+      return metric <= threshold;
     }),
     { numRuns, verbose: true }
   );
 
   t.diagnostic(
-    `${routineName} max ULP: ${maxObserved} / threshold ${threshold} (${numRuns} runs)`
+    `${routineName} max metric: ${maxObserved} / threshold ${threshold} (${numRuns} runs)`
   );
 }

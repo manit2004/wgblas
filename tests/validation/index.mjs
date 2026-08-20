@@ -81,7 +81,11 @@
  * under test. The device is the only param with no static baseline; it's
  * supplied at runtime via `runtimeBaselines`.
  *
- * ## The 23 Params
+ * ## The 25 Params
+ *
+ * 25 logical parameter names, though only 23 files — `ldb`/`ldc` don't get
+ * their own file, they just reuse `ld.json` (loaded via `loadParam("ld")`)
+ * for the same generic leading-dimension check.
  *
  * - **Integers**: `n`, `m`, `k`, `incx`, `incy`, `lda`, `ldb`, `ldc`, `ld`
  *   (generic Level 3 leading-dimension check reused across routines)
