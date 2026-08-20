@@ -85,7 +85,7 @@
  * | sgemm | 3 | forwardFactor | 1 | $(k{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|+\|\beta\|\|C&#95;{ij}\|$ |
  * | sgemmtr | 3 | forwardFactor | 1 | same as sgemm, restricted to the uplo triangle |
  * | ssyrk | 3 | forwardFactor | 1 | $(k{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|A&#95;{jp}\|+\|\beta\|\|C&#95;{ij}\|$ |
- * | ssyr2k | 3 | forwardFactor | 1 | $(k{+}1)\|\alpha\|\left(\sum&#95;p\|A&#95;{ip}\|\|B&#95;{jp}\|+\sum&#95;p\|B&#95;{ip}\|\|A&#95;{jp}\|\right)+\|\beta\|\|C&#95;{ij}\|$ |
+ * | ssyr2k | 3 | forwardFactor | 1 | $(k{+}3)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{jp}\|+(k{+}2)\|\alpha\|\sum&#95;p\|B&#95;{ip}\|\|A&#95;{jp}\|+3\|\beta\|\|C&#95;{ij}\|$ |
  * | ssymm | 3 | forwardFactor | 1 | $(r{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|+\|\beta\|\|C&#95;{ij}\|$ |
  * | strmm | 3 | forwardFactor | 1 | $(r{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|$ |
  * | strsm | 3 | backwardResidualFactor | 5 | $(r{+}1)\sum&#95;k\|A&#95;{ik}\|\|X&#95;{kj}\|$ |
