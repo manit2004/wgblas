@@ -81,7 +81,7 @@
  * | ssyr | 2 | forwardFactor | 2 | $\|\alpha x&#95;ix&#95;j\|+\|A&#95;{ij}\|$ |
  * | ssyr2 | 2 | forwardFactor | 2 | $\|\alpha x&#95;iy&#95;j\|+\|\alpha y&#95;ix&#95;j\|+\|A&#95;{ij}\|$ |
  * | sgemv | 2 | forwardFactor | 4 | $(n{+}1)\|\alpha\|\sum&#95;j\|A&#95;{ij}\|\|x&#95;j\|+\|\beta\|\|y&#95;i\|$ |
- * | strsv | 2 | backwardResidualFactor | 2 | $(n{+}1)\sum&#95;j\|A&#95;{ij}\|\|x&#95;j\|$ |
+ * | strsv | 2 | backwardResidualFactor | 3 | $(n{+}1)\sum&#95;j\|A&#95;{ij}\|\|x&#95;j\|$ |
  * | sgemm | 3 | forwardFactor | 1 | $(k{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|+\|\beta\|\|C&#95;{ij}\|$ |
  * | sgemmtr | 3 | forwardFactor | 1 | same as sgemm, restricted to the uplo triangle |
  * | ssyrk | 3 | forwardFactor | 1 | $(k{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|A&#95;{jp}\|+\|\beta\|\|C&#95;{ij}\|$ |

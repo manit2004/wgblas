@@ -1,21 +1,12 @@
-// Forward error factor for ssyr2k, restricted to the uplo-selected triangle
-// of the (square) C.
+// Forward error factor for ssyr2k, restricted to the uplo-selected triangle.
 //
-// Unlike ssyrk, ssyr2k has no dedicated shader: it's two separate sgemmtr
-// GPU passes writing the same C buffer (see ssyr2k.mjs) —
+// ssyr2k has no dedicated shader — it's two sgemmtr passes on one C buffer:
 //   pass 1: C := alpha*op(A)*op(B)^T + beta*C_in
 //   pass 2: C := alpha*op(B)*op(A)^T + 1.0*C_intermediate
-// Pass 2 reads back pass 1's already-rounded output and adds to it again —
-// an independent rounding pass 1's own bound says nothing about. Bounding
-// |C_intermediate| via the triangle inequality on pass 1's own terms
-// (|alpha|*dotBound1 + |beta|*|C_in|) and adding pass 2's own dot-product
-// rounding gives, combining both passes:
+// Pass 2 re-reads and re-adds pass 1's already-rounded output — an
+// independent rounding a single-pass bound misses. Bounding
+// |C_intermediate| ~ |alpha|*dotBound1 + |beta|*|C_in| gives:
 //   eps*((k+2)*|alpha|*dotBound1 + (k+1)*|alpha|*dotBound2 + 2*|beta|*|C_in|)
-// where dotBound1 = Σ|op(A)[i,p]*op(B)[j,p]| (pass 1's dot product) and
-// dotBound2 = Σ|op(B)[i,p]*op(A)[j,p]| (pass 2's). Confirmed against a real
-// counterexample (n=2, k=17, tiny alpha, beta-dominated C): the missing
-// eps*|C_intermediate| term alone accounted for the observed error almost
-// exactly (see the discussion this was derived from).
 const eps = 2 ** -23;
 
 // op(M)[row,col] — accounts for trans and layout independently.

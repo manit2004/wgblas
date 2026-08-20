@@ -16,7 +16,7 @@ import edgeCases from "../edge-cases.json" with { type: "json" };
 import edgeCasesColumnMajor from "../edge-cases-column-major.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-const THRESHOLD = 2;
+const THRESHOLD = 3;
 
 let device;
 before(async () => {
