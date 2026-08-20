@@ -5,17 +5,6 @@
  * per routine. Run locally with `make example-<routine>` or
  * `make example-gpu-<routine>`.
  *
- * ## Common Conventions
- *
- * All examples share the same parameter choices so they are easy to compare:
- *
- * | Parameter | Value | Why |
- * |---|---|---|
- * | `n` | 10 | Small enough to print, large enough to show parallel dispatch |
- * | element range | −10 to 10 | Fits f32 exactly; avoids overflow in multi-step examples |
- * | `incx`, `incy` | 1 | Contiguous stride — the most common production use case |
- * | `alpha`, scalar | 2.0 or −0.5 | Non-trivial but easy to verify mentally |
- *
  * ## The Cleanup Guard
  *
  * ```js

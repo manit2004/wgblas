@@ -42,7 +42,9 @@ export { strsm } from "./src/strsm/strsm.mjs";
  *   This is a hint to the browser: on dual-GPU systems, `"high-performance"` typically favors the discrete GPU
  *   and `"low-power"` favors the integrated one.
  *   See [MDN: GPU.requestAdapter()](https://developer.mozilla.org/en-US/docs/Web/API/GPU/requestAdapter).
- * @param options.benchmark - enable GPU timestamp queries; BLAS functions return `{ result, gpuTimeMs }` (default: `false`)
+ * @param options.benchmark - enable GPU timestamp queries; BLAS functions then also return `gpuTimeMs`
+ *   alongside their normal result (e.g. sscal returns `{ x, gpuTimeMs }`, saxpy returns `{ y, gpuTimeMs }`) —
+ *   see each routine's own docs for its exact return shape (default: `false`)
  * @param options.dumpShaders - Node-only. Forwards Dawn's `dump_shaders` debug toggle, printing
  *   each pipeline's WGSL and compiled backend IR (SPIR-V/Vulkan, MSL/Metal, or HLSL/D3D12,
  *   whichever Dawn picked) to stderr as it compiles. A Dawn passthrough, not a wgblas format —
@@ -71,7 +73,7 @@ export { strsm } from "./src/strsm/strsm.mjs";
  * const n = 5;
  * const alpha = 2.0;
  * const x = new Float32Array([1, 2, 3, 4, 5]);
- * const { result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
+ * const { x: result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
  * console.log(`Result: [${Array.from(result).join(", ")}]`);
  * console.log(`GPU time: ${gpuTimeMs.toFixed(3)} ms`);
  * ```

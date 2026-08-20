@@ -16,21 +16,47 @@
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><p>Browser execution layer for the wgblas docs site.</p>
 <p><code>assets/docs/runner.js</code> is loaded by TypeDoc as a custom JS file on every
-docs page. It scans the page for code blocks and injects a <strong>▶ Run</strong> button
-next to any block that contains an <code>import</code> statement, making every example
-in these docs live-executable in the browser without leaving the page.</p>
+docs page. It scans the page for two kinds of code blocks and turns each
+into a live, editable, runnable example — no leaving the page:</p>
+<ul>
+<li><strong>JS blocks</strong> containing an <code>import</code> statement — edited and run against
+the real <code>wgblas</code> bundle, with console output captured below the block.</li>
+<li><strong>Standalone HTML blocks</strong> starting with <code>&lt;!doctype html&gt;</code> — edited and
+rendered live in a sandboxed <code>&lt;iframe&gt;</code> below the block.</li>
+</ul>
 <h2 id="how-it-works" class="tsd-anchor-link">How It Works<a href="#how-it-works" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>On page load <code>runner.js</code> walks all <code>&lt;pre&gt;</code> elements. For each one that
-contains at least one <code>import</code> line it:</p>
+<p>On page load <code>runner.js</code> walks all <code>&lt;pre&gt;</code> elements looking for a
+qualifying <code>code.js</code> or <code>code.html</code> block. For each match it:</p>
 <ol>
+<li><strong>Injects a ▶ Run button</strong> — appended to the code block's container,
+positioned so it clears TypeDoc's own top-right &quot;Copy&quot; button.</li>
+<li><strong>Swaps in an editable CodeMirror instance</strong> — lazily loaded once from
+a CDN (unpkg) and shared across every block on the page. Until it
+finishes loading (or if it fails to), Run still works against the
+original static text — the editor is progressive enhancement, not a
+dependency.</li>
+<li><strong>On click</strong>, for a JS block:
+<ul>
 <li><strong>Transforms imports</strong> — rewrites every
-<code>import { a, b } from &quot;wgblas/...&quot;</code> line into
-<code>const { a, b } = window.wgblas;</code>, pointing at the IIFE bundle that
-<code>build-browser.mjs</code> publishes as <code>docs/wgblas.browser.js</code>.</li>
-<li><strong>Injects a ▶ Run button</strong> — appended to the code block's container.</li>
-<li><strong>On click</strong> — wraps the transformed source in an <code>async</code> IIFE, runs it
-via <code>eval</code>, and captures <code>console.log</code>, <code>console.warn</code>, and
-<code>console.error</code> output into a panel injected directly below the block.</li>
+<code>import { a, b } from &quot;wgblas/...&quot;</code> line in the <em>current editor
+contents</em> into <code>const { a, b } = window.wgblas;</code>, pointing at the
+IIFE bundle <code>build-browser.mjs</code> publishes as <code>docs/wgblas.browser.js</code>.</li>
+<li>Wraps the transformed source in an <code>async</code> IIFE and runs it via
+<code>eval</code>, capturing <code>console.log</code>/<code>warn</code>/<code>error</code>/<code>table</code> output
+(typed arrays and tables formatted for readability) into a panel
+injected directly below the block. Bails out early with a warning if
+<code>navigator.gpu</code> isn't available.</li>
+</ul>
+</li>
+<li><strong>On click</strong>, for an HTML block:
+<ul>
+<li>Takes the current editor contents, injects a small <code>&lt;style&gt;</code> block
+matching the site's active light/dark theme (the iframe's document is
+separate from the parent page and doesn't inherit its CSS), and
+assigns it to an <code>&lt;iframe srcdoc&gt;</code> — reassigning <code>srcdoc</code> reloads the
+iframe, so re-running executes the page fresh each click.</li>
+</ul>
+</li>
 </ol>
 <h2 id="why" class="tsd-anchor-link">Why <code>window.wgblas</code><a href="#why" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>ES module <code>import</code> statements cannot be evaluated at runtime via <code>eval</code>
