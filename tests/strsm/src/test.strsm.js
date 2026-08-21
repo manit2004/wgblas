@@ -11,7 +11,7 @@ import edgeCases from "../edge-cases.json" with { type: "json" };
 import edgeCasesColumnMajor from "../edge-cases-column-major.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Higher than strsv's THRESHOLD=2 — strsm's explicit block inverse adds a
+// Higher than strsv's THRESHOLD=3 — strsm's explicit block inverse adds a
 // rounding layer strsv's direct substitution doesn't have.
 const THRESHOLD = 5;
 

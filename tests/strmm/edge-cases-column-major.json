@@ -44,7 +44,7 @@
     "layout": "column-major",
     "side": "right", "uplo": "upper", "transA": "transpose", "diag": "non-unit",
     "m": 2, "n": 2, "alpha": 1,
-    "A": [1, 99, 0, 1], "lda": 2,
+    "A": [1, 99, 2, 1], "lda": 2,
     "B": [1, 0, 0, 1], "ldb": 2
   }
 ]
