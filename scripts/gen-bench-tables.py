@@ -37,6 +37,16 @@ SVG_DIR = ROOT / "assets" / "benchmarks"
 # is the same fixed depth for every one of them.
 SVG_LINK_PREFIX = "../../../assets/benchmarks"
 
+# Every routine's base benchmark rows are keyed by "n" — except strsm, whose
+# blocked triangular solve sweeps matrix "order" instead (see
+# benchmarks/strsm/wgblas/strsm.js's own COLS). Without this, every "n" in row
+# filter below silently drops all of strsm's rows and produces an empty table.
+X_KEY_OVERRIDES = {"strsm": "order"}
+
+
+def x_key(routine):
+    return X_KEY_OVERRIDES.get(routine, "n")
+
 
 def discover_routines():
     src_dir = ROOT / "src"
@@ -336,8 +346,10 @@ def _fmt_axis_ms(v):
 
 
 def _build_chart_svg(wgblas_rows, cuda_series, all_ns, xp,
-                     y_key, y_label, y_fmt_fn, cid, show_legend):
-    """Render one SVG panel. xp(n) maps n → x pixel; caller owns filtering."""
+                     y_key, y_label, y_fmt_fn, cid, show_legend, xk="n"):
+    """Render one SVG panel. xp(n) maps n → x pixel; caller owns filtering.
+    xk is the row key plotted on the x-axis — "n" for every routine except
+    strsm ("order"), see X_KEY_OVERRIDES."""
     W, H = 600, 260
     ML, MR, MT, MB = 58, 16, 20, 40
     PW = W - ML - MR
@@ -393,7 +405,7 @@ def _build_chart_svg(wgblas_rows, cuda_series, all_ns, xp,
     out = [
         f'<svg id="{cid}" xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
-        f'role="img" aria-label="{y_label} vs n">',
+        f'role="img" aria-label="{y_label} vs {xk}">',
         f'<style>{css}</style>',
         f'<rect class="bg" width="{W}" height="{H}"/>',
     ]
@@ -425,17 +437,17 @@ def _build_chart_svg(wgblas_rows, cuda_series, all_ns, xp,
         )
 
     def pts(rows):
-        return " ".join(f"{xp(r['n']):.1f},{yp(r[y_key]):.1f}" for r in rows)
+        return " ".join(f"{xp(r[xk]):.1f},{yp(r[y_key]):.1f}" for r in rows)
 
     out.append(f'<polyline class="ln1" points="{pts(wgblas_rows)}"/>')
     if cuda_series:
         out.append(f'<polyline class="ln2" points="{pts(cuda_series)}"/>')
 
     for row in wgblas_rows:
-        xx, yy = xp(row["n"]), yp(row[y_key])
+        xx, yy = xp(row[xk]), yp(row[y_key])
         out.append(f'<circle class="mk1" cx="{xx:.1f}" cy="{yy:.1f}" r="4"/>')
     for row in cuda_series:
-        xx, yy = xp(row["n"]), yp(row[y_key])
+        xx, yy = xp(row[xk]), yp(row[y_key])
         out.append(f'<circle class="mk2" cx="{xx:.1f}" cy="{yy:.1f}" r="4"/>')
 
     if show_legend and cuda_series:
@@ -487,6 +499,7 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug, config="default"):
     """
     slug = gpu_slug.replace("-", "_")
     chart_id = f"{routine}-{config}"
+    xk = x_key(routine)
 
     # Filter rows that have valid values for both metrics so both charts share
     # the same x-axis points
@@ -499,12 +512,12 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug, config="default"):
         if r.get("compute_GBs") is not None and r.get("compute_ms") not in (None, 0)
     ] if cuda_rows else []
 
-    all_ns = sorted(r["n"] for r in wgblas_rows if "n" in r)
+    all_ns = sorted(r[xk] for r in wgblas_rows if xk in r)
     if not all_ns:
         return ""
 
-    cuda_by_n = {r["n"]: r for r in cuda_rows if "n" in r}
-    cuda_series = [cuda_by_n[r["n"]] for r in wgblas_rows if r["n"] in cuda_by_n]
+    cuda_by_n = {r[xk]: r for r in cuda_rows if xk in r}
+    cuda_series = [cuda_by_n[r[xk]] for r in wgblas_rows if r[xk] in cuda_by_n]
 
     lx_min = math.log10(all_ns[0])
     lx_max = math.log10(all_ns[-1])
@@ -519,12 +532,12 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug, config="default"):
     gbs_svg = _build_chart_svg(
         wgblas_rows, cuda_series, all_ns, xp,
         "compute_GBs", "GB/s", _fmt_axis_gbs,
-        f"bc-{chart_id}-{slug}-gbs", show_legend=True,
+        f"bc-{chart_id}-{slug}-gbs", show_legend=True, xk=xk,
     )
     ms_svg = _build_chart_svg(
         wgblas_rows, cuda_series, all_ns, xp,
         "compute_ms", "ms", _fmt_axis_ms,
-        f"bc-{chart_id}-{slug}-ms", show_legend=False,
+        f"bc-{chart_id}-{slug}-ms", show_legend=False, xk=xk,
     )
 
     gbs_link = write_svg(gpu_slug, routine, "gbps", config, gbs_svg)
@@ -548,19 +561,20 @@ def fmt_pct(v):
     return f"{v:.1f}%" if v is not None else "—"
 
 
-def make_comparison_table(wgblas_rows, cuda_rows):
-    cuda_by_n = {r["n"]: r for r in cuda_rows if "n" in r}
+def make_comparison_table(wgblas_rows, cuda_rows, routine=None):
+    xk = x_key(routine)
+    cuda_by_x = {r[xk]: r for r in cuda_rows if xk in r}
     lines = [
-        "| n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |",
+        f"| {xk} | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |",
         "|---|-----------|-------------|-----------|-------------|------------|",
     ]
     for row in wgblas_rows:
-        if "n" not in row:
+        if xk not in row:
             continue
-        n = row["n"]
+        n = row[xk]
         wms = row["compute_ms"]
         wgbs = row["compute_GBs"]
-        c = cuda_by_n.get(n)
+        c = cuda_by_x.get(n)
         if c:
             cms = c["compute_ms"]
             cgbs = c["compute_GBs"]
@@ -576,14 +590,15 @@ def make_comparison_table(wgblas_rows, cuda_rows):
     return "\n".join(lines)
 
 
-def make_wgblas_only_table(wgblas_rows):
+def make_wgblas_only_table(wgblas_rows, routine=None):
+    xk = x_key(routine)
     lines = [
-        "| n | compute ms | GB/s |",
+        f"| {xk} | compute ms | GB/s |",
         "|---|------------|------|",
     ]
     for row in wgblas_rows:
         lines.append(
-            f"| {row['n']} | {fmt_ms(row['compute_ms'])} | {fmt_gbs(row['compute_GBs'])} |"
+            f"| {row[xk]} | {fmt_ms(row['compute_ms'])} | {fmt_gbs(row['compute_GBs'])} |"
         )
     return "\n".join(lines)
 
@@ -610,8 +625,8 @@ def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
         crows = cuda_groups.get(stride, [])
         parts.append(f"<details>\n<summary>{display} — stride = {stride}</summary>\n")
         parts.append(
-            make_comparison_table(wrows, crows) if crows
-            else make_wgblas_only_table(wrows)
+            make_comparison_table(wrows, crows, routine) if crows
+            else make_wgblas_only_table(wrows, routine)
         )
         parts.append("")
         chart = make_svg_chart(wrows, crows, routine, gpu, config=f"stride{stride}")
@@ -660,8 +675,8 @@ def make_trans_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
             crows = cuda_by_m.get(m, [])
             parts.append(f"<details>\n<summary>m = {m}</summary>\n")
             parts.append(
-                make_comparison_table(wrows, crows) if crows
-                else make_wgblas_only_table(wrows)
+                make_comparison_table(wrows, crows, routine) if crows
+                else make_wgblas_only_table(wrows, routine)
             )
             parts.append("")
             chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans-{trans}-m{m}")
@@ -704,8 +719,8 @@ def make_trans_simple_section(wgblas_trans, cuda_trans, routine, gpu, display, g
         crows = cuda_groups.get(trans, [])
         parts.append(f"<details>\n<summary>{display} — trans = {trans}</summary>\n")
         parts.append(
-            make_comparison_table(wrows, crows) if crows
-            else make_wgblas_only_table(wrows)
+            make_comparison_table(wrows, crows, routine) if crows
+            else make_wgblas_only_table(wrows, routine)
         )
         parts.append("")
         chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans{trans}")
@@ -761,8 +776,8 @@ def make_transab_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
             crows = cuda_by_tb.get(transB, [])
             parts.append(f"<details>\n<summary>transB = {transB}</summary>\n")
             parts.append(
-                make_comparison_table(wrows, crows) if crows
-                else make_wgblas_only_table(wrows)
+                make_comparison_table(wrows, crows, routine) if crows
+                else make_wgblas_only_table(wrows, routine)
             )
             parts.append("")
             chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans-{transA}-{transB}")
@@ -811,8 +826,8 @@ def make_ldb_section(wgblas_ldb, cuda_ldb, routine, gpu, display, gh):
             crows = cuda_by_pad.get(pad, [])
             parts.append(f"<details>\n<summary>pad = {pad}</summary>\n")
             parts.append(
-                make_comparison_table(wrows, crows) if crows
-                else make_wgblas_only_table(wrows)
+                make_comparison_table(wrows, crows, routine) if crows
+                else make_wgblas_only_table(wrows, routine)
             )
             parts.append("")
             chart = make_svg_chart(wrows, crows, routine, gpu, config=f"ldb-{transB}-pad{pad}")
@@ -858,8 +873,8 @@ def make_uplo_section(wgblas_uplo, cuda_uplo, routine, gpu, display, gh):
         crows = cuda_groups.get(uplo, [])
         parts.append(f"<details>\n<summary>{display} — uplo = {uplo}</summary>\n")
         parts.append(
-            make_comparison_table(wrows, crows) if crows
-            else make_wgblas_only_table(wrows)
+            make_comparison_table(wrows, crows, routine) if crows
+            else make_wgblas_only_table(wrows, routine)
         )
         parts.append("")
         chart = make_svg_chart(wrows, crows, routine, gpu, config=f"uplo{uplo}")
@@ -902,8 +917,8 @@ def make_lda_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
         crows = cuda_groups.get(pad, [])
         parts.append(f"<details>\n<summary>{display} — pad = {pad}</summary>\n")
         parts.append(
-            make_comparison_table(wrows, crows) if crows
-            else make_wgblas_only_table(wrows)
+            make_comparison_table(wrows, crows, routine) if crows
+            else make_wgblas_only_table(wrows, routine)
         )
         parts.append("")
         chart = make_svg_chart(wrows, crows, routine, gpu, config=f"pad{pad}")
@@ -950,8 +965,8 @@ def make_lda_trans_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
             crows = cuda_by_pad.get(pad, [])
             parts.append(f"<details>\n<summary>pad = {pad}</summary>\n")
             parts.append(
-                make_comparison_table(wrows, crows) if crows
-                else make_wgblas_only_table(wrows)
+                make_comparison_table(wrows, crows, routine) if crows
+                else make_wgblas_only_table(wrows, routine)
             )
             parts.append("")
             chart = make_svg_chart(wrows, crows, routine, gpu, config=f"lda-{trans}-pad{pad}")
@@ -1070,7 +1085,7 @@ def main():
             wgblas_script_name = script_path(routine, "wgblas").rsplit("/", 1)[-1]
 
             if cuda:
-                table = make_comparison_table(wgblas, cuda)
+                table = make_comparison_table(wgblas, cuda, routine)
                 cuda_link = f"{gh}/{script_path(routine, 'cuda')}"
                 cuda_script_name = script_path(routine, "cuda").rsplit("/", 1)[-1]
                 body = (
@@ -1084,7 +1099,7 @@ def main():
                     f"- [{cuda_script_name}]({cuda_link}) — CUDA / cuBLAS reference script"
                 )
             else:
-                table = make_wgblas_only_table(wgblas)
+                table = make_wgblas_only_table(wgblas, routine)
                 body = (
                     f"## {display}\n\n"
                     + table

@@ -19,7 +19,7 @@
 <table>
 <thead>
 <tr>
-<th>n</th>
+<th>order</th>
 <th>wgblas ms</th>
 <th>wgblas GB/s</th>
 <th>cuBLAS ms</th>
@@ -27,10 +27,70 @@
 <th>efficiency</th>
 </tr>
 </thead>
+<tbody>
+<tr>
+<td>64</td>
+<td>0.0926</td>
+<td>0.4439</td>
+<td>0.0105</td>
+<td>3.9206</td>
+<td>11.3%</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.1271</td>
+<td>0.7755</td>
+<td>0.0223</td>
+<td>4.4285</td>
+<td>17.5%</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.2265</td>
+<td>1.1596</td>
+<td>0.0634</td>
+<td>4.1413</td>
+<td>28.0%</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.4833</td>
+<td>1.6294</td>
+<td>0.1473</td>
+<td>5.3443</td>
+<td>30.5%</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>1.0300</td>
+<td>2.5470</td>
+<td>0.3574</td>
+<td>7.3406</td>
+<td>34.7%</td>
+</tr>
+<tr>
+<td>2048</td>
+<td>2.4944</td>
+<td>3.7849</td>
+<td>1.5066</td>
+<td>6.2667</td>
+<td>60.4%</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>6.7320</td>
+<td>5.2970</td>
+<td>5.6108</td>
+<td>6.3556</td>
+<td>83.3%</td>
+</tr>
+</tbody>
 </table>
 <blockquote>
 <p>Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.</p>
 </blockquote>
+<p><img src="../media/gbps-default-59.svg" alt="strsm-default GB/s chart"></p>
+<p><img src="../media/ms-default-59.svg" alt="strsm-default ms chart"></p>
 <h2 id="see-also" class="tsd-anchor-link">See also<a href="#see-also" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <ul>
 <li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/strsm/wgblas/strsm.js">strsm.js</a> — WebGPU benchmark script</li>
