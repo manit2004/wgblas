@@ -10,8 +10,6 @@
     "tests/helpers/fixtures.js",
     "tests/helpers/validation.js",
     "tests/validation/index.mjs",
-    "tests/routines/index.mjs",
-    "tests/routines/helpers.mjs",
     "examples/index.mjs",
     "benchmarks/index.mjs",
     "benchmarks/utils/helpers.mjs",

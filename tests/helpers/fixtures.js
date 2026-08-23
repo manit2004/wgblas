@@ -125,9 +125,7 @@ export function ndArrayArb(spec, len) {
   const isF64 = spec.type === "float64array";
   const arb = isF64 ? float64Arb(min, max) : floatArb(min, max);
   const Ctor = isF64 ? Float64Array : Float32Array;
-  return fc
-    .array(arb, { minLength: len, maxLength: len })
-    .map((a) => new Ctor(a));
+  return fc.array(arb, { minLength: len, maxLength: len }).map((a) => new Ctor(a));
 }
 
 /**

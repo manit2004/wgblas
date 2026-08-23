@@ -1,0 +1,77 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>routineShaders | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css"/><script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script><script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script><script>
+					window.__typeDocPluginKatexOptions={"delimiters":[{"left":"$$","right":"$$","display":true},{"left":"$","right":"$","display":false}]};
+					window.addEventListener('load', () => window.renderMathInElement(document.body, window.__typeDocPluginKatexOptions));
+				</script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">wgblas</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="../modules/devdocs_shaders.html">devdocs/shaders</a></li>
+<li><a href="" aria-current="page">routineShaders</a></li></ul>
+<h1>Variable routineShaders<code class="tsd-tag">Const</code></h1></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">routineShaders</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">typeof</span> <a href="" class="tsd-signature-type tsd-kind-variable">routineShaders</a><span class="tsd-signature-symbol"> = {}</span></div>
+<div class="tsd-comment tsd-typography"><p>Routine name → the WGSL source(s) its <code>getPipeline()</code> calls reference. Keys are the exact
+shader names <code>getPipeline(device, name)</code> is called with — most routines have one, some pick
+one of several conditionally (e.g. sgemv's <code>sgemv_n</code>/<code>sgemv_t</code>, by <code>trans</code>), and some have no
+dedicated shader at all:</p>
+<ul>
+<li><code>sgemmtr</code>/<code>ssyrk</code>/<code>ssyr2k</code> all dispatch through <code>sgemmtr_small</code>/<code>sgemmtr_large</code>.</li>
+<li><code>strsm</code> reuses <code>strsv_invert_block</code> and <code>sscal</code>, plus its own <code>block_transfer</code> and the
+shared <code>sgemm_small</code>/<code>sgemm_large</code>.</li>
+<li><code>dasum</code>/<code>idamax</code> concatenate several f64 utility shaders with their own — see
+<code>getPipeline</code>'s <code>shaderName: string[]</code> behaviour.</li>
+<li><code>random</code> has no entry — CPU-only, no <code>getPipeline()</code> call.</li>
+</ul>
+<p>Built up entry by entry so each import sits next to the mapping entry that uses it.</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L51">src/shaders/index.mjs:51</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L54">src/shaders/index.mjs:54</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L57">src/shaders/index.mjs:57</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L60">src/shaders/index.mjs:60</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L63">src/shaders/index.mjs:63</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L67">src/shaders/index.mjs:67</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L70">src/shaders/index.mjs:70</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L73">src/shaders/index.mjs:73</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L77">src/shaders/index.mjs:77</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L84">src/shaders/index.mjs:84</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L96">src/shaders/index.mjs:96</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L106">src/shaders/index.mjs:106</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L109">src/shaders/index.mjs:109</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L113">src/shaders/index.mjs:113</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L116">src/shaders/index.mjs:116</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L119">src/shaders/index.mjs:119</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L124">src/shaders/index.mjs:124</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L127">src/shaders/index.mjs:127</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L130">src/shaders/index.mjs:130</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L133">src/shaders/index.mjs:133</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L137">src/shaders/index.mjs:137</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L141">src/shaders/index.mjs:141</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L143">src/shaders/index.mjs:143</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L144">src/shaders/index.mjs:144</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L147">src/shaders/index.mjs:147</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L150">src/shaders/index.mjs:150</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/shaders/index.mjs#L153">src/shaders/index.mjs:153</a></li></ul></aside></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

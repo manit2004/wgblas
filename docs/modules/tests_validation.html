@@ -101,7 +101,10 @@ each test case, exactly one param is replaced with the invalid or edge
 value while everything else stays at baseline — isolating the parameter
 under test. The device is the only param with no static baseline; it's
 supplied at runtime via <code>runtimeBaselines</code>.</p>
-<h2 id="the-23-params" class="tsd-anchor-link">The 23 Params<a href="#the-23-params" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h2 id="the-25-params" class="tsd-anchor-link">The 25 Params<a href="#the-25-params" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>25 logical parameter names, though only 23 files — <code>ldb</code>/<code>ldc</code> don't get
+their own file, they just reuse <code>ld.json</code> (loaded via <code>loadParam(&quot;ld&quot;)</code>)
+for the same generic leading-dimension check.</p>
 <ul>
 <li><strong>Integers</strong>: <code>n</code>, <code>m</code>, <code>k</code>, <code>incx</code>, <code>incy</code>, <code>lda</code>, <code>ldb</code>, <code>ldc</code>, <code>ld</code>
 (generic Level 3 leading-dimension check reused across routines)</li>
@@ -126,7 +129,7 @@ supplied at runtime via <code>runtimeBaselines</code>.</p>
 <div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
 <details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h3>On This Page</h3></summary>
-<div class="tsd-accordion-details"><a href="#param-spec-json-format"><span>Param <wbr/>Spec <wbr/>JSON <wbr/>Format</span></a><a href="#and-its-matching-shape"><span> and <wbr/>Its <wbr/>Matching  <wbr/>Shape</span></a><a href="#entry-types"><span>Entry <wbr/>Types</span></a><a href="#baseline-substitution"><span>Baseline <wbr/>Substitution</span></a><a href="#the-23-params"><span>The 23 <wbr/>Params</span></a></div></details></div>
+<div class="tsd-accordion-details"><a href="#param-spec-json-format"><span>Param <wbr/>Spec <wbr/>JSON <wbr/>Format</span></a><a href="#and-its-matching-shape"><span> and <wbr/>Its <wbr/>Matching  <wbr/>Shape</span></a><a href="#entry-types"><span>Entry <wbr/>Types</span></a><a href="#baseline-substitution"><span>Baseline <wbr/>Substitution</span></a><a href="#the-25-params"><span>The 25 <wbr/>Params</span></a></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

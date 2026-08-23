@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["index.d.mts", "src/**/*.d.mts", "src/util/*.mjs", "src/shaders/index.mjs", "src/devdocs.mjs", "src/index.mjs", "tests/index.mjs", "tests/helpers/ulp.js", "tests/helpers/fixtures.js", "tests/helpers/validation.js", "tests/validation/index.mjs", "tests/routines/index.mjs", "tests/routines/helpers.mjs", "examples/index.mjs", "benchmarks/index.mjs", "benchmarks/utils/helpers.mjs", "benchmarks/bench-result/**/*.mjs", "assets/index.mjs", "scripts/index.mjs"],
+  "include": ["index.d.mts", "src/**/*.d.mts", "src/util/*.mjs", "src/shaders/index.mjs", "src/devdocs.mjs", "src/index.mjs", "tests/index.mjs", "tests/helpers/ulp.js", "tests/helpers/fixtures.js", "tests/helpers/validation.js", "tests/validation/index.mjs", "examples/index.mjs", "benchmarks/index.mjs", "benchmarks/utils/helpers.mjs", "benchmarks/bench-result/**/*.mjs", "assets/index.mjs", "scripts/index.mjs"],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": false,

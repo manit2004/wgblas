@@ -16,21 +16,32 @@
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><h2 id="structure" class="tsd-anchor-link">Structure<a href="#structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p><code>shaders/*.wgsl</code> — one WGSL compute shader per BLAS routine (sscal, saxpy, sdot, …).</p>
-<p><code>shaders/browser-shaders.mjs</code> — the browser's runtime shader source. In Node.js, shaders are
-read directly from disk via <code>readFileSync</code>. In the browser there is no filesystem, so this file
-provides all shader strings inline. Vite bundles it by importing each <code>.wgsl</code> file as a string.</p>
+<p><code>routineShaders</code> below is the single source of truth: routine name → the WGSL source(s)
+its <code>getPipeline()</code> calls actually reference, verified against every <code>src/&lt;routine&gt;/&lt;routine&gt;.mjs</code>
+rather than inferred from naming convention (see its doc comment for the exceptions). Each
+shader is imported right above the line that adds it — the import <em>is</em> the mapping entry, no
+separate block to cross-reference. <code>shaderSources</code>, the flat name → source registry the
+browser bundle's runtime lookup needs, is <em>derived</em> from <code>routineShaders</code> rather than
+hand-duplicated, so the two can never drift apart. In Node.js neither is read — shaders are
+<code>readFileSync</code> from disk directly; <code>scripts/build-browser.mjs</code> inlines this module into the
+browser's IIFE bundle via esbuild instead.</p>
 <h2 id="cross-shader-patterns" class="tsd-anchor-link">Cross-shader patterns<a href="#cross-shader-patterns" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p><strong>Fixed workgroup size of 64.</strong> Every shader declares <code>const WGS: u32 = 64</code> and
-<code>@workgroup_size(64)</code>. 64 is the minimum <code>maxComputeInvocationsPerWorkgroup</code> guaranteed across
-all WebGPU devices, so this works everywhere without querying device limits.</p>
-<p><strong>Single bind group.</strong> All bindings use <code>@group(0)</code>. This means the JS side always calls
-<code>pipeline.getBindGroupLayout(0)</code> — no secondary groups to track.</p>
-<p>The <code>@binding</code> indices must match the position of each resource in the array passed to
-<code>createBindGroup</code> — it assigns <code>binding: 0, 1, 2 …</code> sequentially, with <code>resultBuffer</code> appended last.</p>
-<p><strong>All counts and strides are <code>u32</code>.</strong> <code>n</code>, <code>x_inc</code>, <code>y_inc</code>, and any other index fields in the
-<code>Params</code> uniform struct are unsigned. This avoids implicit sign-extension when they appear in
-index expressions like <code>id * params.x_inc</code>.</p>
-</div></section></div>
+<p><strong>Single bind group.</strong> Every shader with bindings uses <code>@group(0)</code> only — the JS side always
+calls <code>pipeline.getBindGroupLayout(0)</code>, no secondary groups to track. Binding order is
+consistent too: any read-only storage buffers come before read_write ones, with the
+<code>uniform Params</code> struct always last. <code>@binding</code> indices match the position of each resource in
+the array passed to <code>createBindGroup</code>, which appends <code>resultBuffer</code> last.</p>
+<p><strong>All counts and strides are <code>u32</code>.</strong> <code>n</code>, <code>x_inc</code>, <code>y_inc</code>, and every other index/count field
+in a <code>Params</code> struct is unsigned, avoiding implicit sign-extension in index expressions like
+<code>id * params.x_inc</code>.</p>
+<p><strong>Entry points don't have to be named <code>main</code>.</strong> <code>loadShader</code> (<code>util/pipeline.mjs</code>)
+auto-detects the sole <code>@compute</code> function in a module instead of requiring a fixed name, so
+<code>dasum_main</code>, <code>strsv_invert_block_main</code>, etc. work without renaming.</p>
+</div></section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Namespaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="namespaces">Namespaces<a href="#namespaces" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="routineshaders"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Namespace"><use href="../assets/icons.svg#icon-4"></use></svg><a href="devdocs_shaders.routineShaders.html">routineShaders</a><a href="#routineshaders" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Variables"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="variables">Variables<a href="#variables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="routineshaders-1"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><a href="../variables/devdocs_shaders.routineShaders.html">routineShaders</a><a href="#routineshaders-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="shadersources"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><a href="../variables/devdocs_shaders.shaderSources.html">shaderSources</a><a href="#shadersources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -45,7 +56,11 @@ index expressions like <code>id * params.x_inc</code>.</p>
 <div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
 <details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h3>On This Page</h3></summary>
-<div class="tsd-accordion-details"><a href="#structure"><span>Structure</span></a><a href="#cross-shader-patterns"><span>Cross-<wbr/>shader patterns</span></a></div></details></div>
+<div class="tsd-accordion-details"><a href="#structure"><span>Structure</span></a><a href="#cross-shader-patterns"><span>Cross-<wbr/>shader patterns</span></a>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Namespaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Namespaces</summary>
+<div><a href="#routineshaders"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Namespace"><use href="../assets/icons.svg#icon-4"></use></svg><span>routine<wbr/>Shaders</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Variables"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Variables</summary>
+<div><a href="#routineshaders-1"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><span>routine<wbr/>Shaders</span></a><a href="#shadersources"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><span>shader<wbr/>Sources</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
