@@ -26,72 +26,17 @@ hand-duplicated, so the two can never drift apart. In Node.js neither is read �
 <code>readFileSync</code> from disk directly; <code>scripts/build-browser.mjs</code> inlines this module into the
 browser's IIFE bundle via esbuild instead.</p>
 <h2 id="cross-shader-patterns" class="tsd-anchor-link">Cross-shader patterns<a href="#cross-shader-patterns" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p><strong>Workgroup size: 64 by default, tuned upward for tiled matmul.</strong> Every 1D shader (all of
-Level 1, the row-per-workgroup Level 2 kernels, the reduction/f64 families, strsv's three
-stages) declares <code>const WGS: u32 = 64</code> and <code>@workgroup_size(64)</code> — 64 is the minimum
-<code>maxComputeInvocationsPerWorkgroup</code> guaranteed across all WebGPU devices, so it works
-everywhere without querying device limits. The one-thread-per-matrix-element 2D shaders
-(<code>symmetrize</code>, <code>triangularize</code>, <code>block_transfer</code>) use <code>@workgroup_size(8, 8)</code> — still 64
-threads total, just addressed as <code>(row, col)</code> via <code>global_invocation_id.yx</code> instead of a flat
-index. <code>sgemm</code>/<code>sgemmtr</code>'s tiled kernels break the pattern deliberately: 256 threads
-(<code>sgemm_small</code>, <code>BM=BN=32</code>) or 128 (<code>sgemm_large</code>, <code>BM=BN=64</code>) — sizes an autotuning sweep
-(see <code>sgemm_large.wgsl</code>'s header) found faster than 64 for register-blocked matmul, which
-needs enough threads per workgroup to hide shared-memory tile loads.</p>
-<p><strong>Single bind group.</strong> All bindings use <code>@group(0)</code>. This means the JS side always calls
-<code>pipeline.getBindGroupLayout(0)</code> — no secondary groups to track. Binding order is consistent
-everywhere too: read-only inputs first, then in-place/output <code>read_write</code> buffers, with the
-<code>uniform Params</code> struct always last.</p>
-<p>The <code>@binding</code> indices must match the position of each resource in the array passed to
-<code>createBindGroup</code> — it assigns <code>binding: 0, 1, 2 …</code> sequentially, with <code>resultBuffer</code> appended last.</p>
-<p><strong>All counts and strides are <code>u32</code>.</strong> <code>n</code>, <code>x_inc</code>, <code>y_inc</code>, and any other index fields in the
-<code>Params</code> uniform struct are unsigned. This avoids implicit sign-extension when they appear in
-index expressions like <code>id * params.x_inc</code>.</p>
-<p><strong>Grid-stride loops, not one-thread-per-element.</strong> Elementwise and row-per-workgroup kernels
-loop <code>for (var id = gid.x; id &lt; params.n; id += num_wg.x * WGS)</code> (or the <code>wgid</code>/<code>nwg</code> row
-equivalent) rather than dispatching exactly <code>n</code> threads — so JS can dispatch a workgroup count
-decoupled from problem size, staying under <code>maxComputeWorkgroupsPerDimension</code> regardless of
-how large <code>n</code>/<code>m</code> gets (see <code>sgemv_n.wgsl</code>'s header for this in the row-per-workgroup case).</p>
-<p><strong>4-way ILP unrolling with a scalar tail.</strong> Every reduction, <code>sgemv</code>/<code>sger</code>/<code>ssyr</code>/<code>ssyr2</code>,
-and their f64 counterparts split their range into <code>n4_floor = (n / (4*stride)) * (4*stride)</code>,
-processed 4 elements per iteration through four independent accumulators (<code>acc0</code>..<code>acc3</code>,
-naming consistent across files) so the GPU can pipeline memory requests instead of serializing
-them behind one dependency chain, then fall back to a plain scalar loop for the remainder.</p>
-<p><strong>One parallel tree reduction shape, reused everywhere.</strong> Any kernel that turns per-thread
-partial results into one per-workgroup value — every Level 1 reduction, the row-per-workgroup
-Level 2 kernels, <code>strsv_update</code>, and the standalone <code>reduction/*.wgsl</code> second-pass shaders —
-writes into a <code>var&lt;workgroup&gt; scratch</code>/<code>tile: array&lt;f32, 64&gt;</code>, then runs the identical
-<code>for (var s = WGS/2; s &gt; 0; s &gt;&gt;= 1) { if (lid.x &lt; s) { … } ; workgroupBarrier(); }</code> halving
-loop. <code>isamax</code>/<code>idamax</code> and the two <code>argmax</code> reduction shaders carry a parallel <code>tile_idx</code>
-array through the same shape, breaking ties toward the lower index.</p>
-<p><strong>Two-pass reduction dispatch.</strong> <code>sdot</code>/<code>sasum</code>/<code>snrm2</code>/<code>isamax</code> and their f64 counterparts
-<code>dasum</code>/<code>idamax</code> are always pass 1: dispatched as exactly <code>2 * WGS</code> workgroups, each writing
-one partial. <code>reduction/sum.wgsl</code>/<code>argmax.wgsl</code> (and their <code>*F64</code> twins) are always pass 2:
-one workgroup, reducing those <code>2 * WGS</code> partials to the final scalar — documented explicitly
-in each pass-1 shader's header.</p>
-<p><strong>Shared numeric conventions for flag fields.</strong> <code>uplo</code> is always <code>0 = lower, 1 = upper</code>;
-<code>trans</code> is always <code>0 = no-transpose, 1 = transpose</code>; <code>diag</code> is always <code>0 = non-unit, 1 = unit</code> (substitute <code>1.0</code> for the diagonal without reading it). Identical meaning in every
-shader that has the field — <code>ssymv</code>, <code>strmv</code>, <code>ssyr</code>/<code>ssyr2</code>, <code>sgemm</code>/<code>sgemmtr</code> (as
-<code>transA</code>/<code>transB</code>), <code>symmetrize</code>, <code>triangularize</code>, and the whole <code>strsv_*</code> family.</p>
-<p><strong><code>select()</code> over branching for uniform control flow.</strong> The tiled/2D kernels
-(<code>sgemm</code>/<code>sgemmtr</code>/<code>symmetrize</code>/<code>triangularize</code>/<code>block_transfer</code>) and <code>dasum</code>'s tail lean on
-<code>select(falseVal, trueVal, cond)</code> rather than <code>if</code>, particularly right before a
-<code>workgroupBarrier()</code> — WGSL requires uniform control flow across a barrier, so a value needed
-conditionally is computed unconditionally via <code>select()</code> and only the <em>write</em> is guarded.</p>
-<p><strong>f64 shaders mirror their f32 twin, arithmetic swapped for double-double safety.</strong>
-<code>dasum</code>/<code>idamax</code>/<code>reduction/sumF64</code>/<code>reduction/argmaxF64</code> are structurally identical to
-<code>sasum</code>/<code>isamax</code>/<code>reduction/sum</code>/<code>reduction/argmax</code> — same loop shape, same tree reduction —
-with plain <code>+</code>/<code>&gt;</code>/<code>==</code> replaced by <code>ddAddProtected</code>/<code>ddGreater</code>/<code>ddEqual</code> on <code>DD</code> (hi, lo)
-pairs (Dekker's algorithm, <code>f64/dekker.wgsl</code>). Those f64 helper files have no bindings or
-entry point of their own — pure function libraries concatenated into a consumer's module by
-<code>getPipeline</code>'s array-of-names form (WGSL has no <code>#include</code>), with <code>f64/dekker.wgsl</code> always
-concatenated first since it defines the <code>DD</code> struct the others use but don't redefine (WGSL
-errors on a duplicate struct once concatenated).</p>
-<p><strong>Entry points don't need to be named <code>main</code>.</strong> <code>loadShader</code> (see <code>util/pipeline.mjs</code>) omits
-an explicit <code>entryPoint</code> whenever it's the default <code>&quot;main&quot;</code>, letting WebGPU auto-detect the
-single <code>@compute</code> function in the (possibly multi-file-concatenated) module regardless of its
-real name — so <code>dasum_main</code>, <code>strsv_invert_block_main</code>, etc. work without every shader having
-to literally be called <code>main</code>; names beyond that are for readability in devtools/profiler
-output, not a functional requirement.</p>
+<p><strong>Single bind group.</strong> Every shader with bindings uses <code>@group(0)</code> only — the JS side always
+calls <code>pipeline.getBindGroupLayout(0)</code>, no secondary groups to track. Binding order is
+consistent too: any read-only storage buffers come before read_write ones, with the
+<code>uniform Params</code> struct always last. <code>@binding</code> indices match the position of each resource in
+the array passed to <code>createBindGroup</code>, which appends <code>resultBuffer</code> last.</p>
+<p><strong>All counts and strides are <code>u32</code>.</strong> <code>n</code>, <code>x_inc</code>, <code>y_inc</code>, and every other index/count field
+in a <code>Params</code> struct is unsigned, avoiding implicit sign-extension in index expressions like
+<code>id * params.x_inc</code>.</p>
+<p><strong>Entry points don't have to be named <code>main</code>.</strong> <code>loadShader</code> (<code>util/pipeline.mjs</code>)
+auto-detects the sole <code>@compute</code> function in a module instead of requiring a fixed name, so
+<code>dasum_main</code>, <code>strsv_invert_block_main</code>, etc. work without renaming.</p>
 </div></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Namespaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="namespaces">Namespaces<a href="#namespaces" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="routineshaders"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Namespace"><use href="../assets/icons.svg#icon-4"></use></svg><a href="devdocs_shaders.routineShaders.html">routineShaders</a><a href="#routineshaders" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>

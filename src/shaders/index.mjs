@@ -15,19 +15,19 @@
  *
  * ## Cross-shader patterns
  *
- * **Fixed workgroup size of 64.** Every shader declares `const WGS: u32 = 64` and
- * `@workgroup_size(64)`. 64 is the minimum `maxComputeInvocationsPerWorkgroup` guaranteed across
- * all WebGPU devices, so this works everywhere without querying device limits.
+ * **Single bind group.** Every shader with bindings uses `@group(0)` only — the JS side always
+ * calls `pipeline.getBindGroupLayout(0)`, no secondary groups to track. Binding order is
+ * consistent too: any read-only storage buffers come before read_write ones, with the
+ * `uniform Params` struct always last. `@binding` indices match the position of each resource in
+ * the array passed to `createBindGroup`, which appends `resultBuffer` last.
  *
- * **Single bind group.** All bindings use `@group(0)`. This means the JS side always calls
- * `pipeline.getBindGroupLayout(0)` — no secondary groups to track.
+ * **All counts and strides are `u32`.** `n`, `x_inc`, `y_inc`, and every other index/count field
+ * in a `Params` struct is unsigned, avoiding implicit sign-extension in index expressions like
+ * `id * params.x_inc`.
  *
- * The `@binding` indices must match the position of each resource in the array passed to
- * `createBindGroup` — it assigns `binding: 0, 1, 2 …` sequentially, with `resultBuffer` appended last.
- *
- * **All counts and strides are `u32`.** `n`, `x_inc`, `y_inc`, and any other index fields in the
- * `Params` uniform struct are unsigned. This avoids implicit sign-extension when they appear in
- * index expressions like `id * params.x_inc`.
+ * **Entry points don't have to be named `main`.** `loadShader` (`util/pipeline.mjs`)
+ * auto-detects the sole `@compute` function in a module instead of requiring a fixed name, so
+ * `dasum_main`, `strsv_invert_block_main`, etc. work without renaming.
  *
  * @module devdocs/shaders
  */
