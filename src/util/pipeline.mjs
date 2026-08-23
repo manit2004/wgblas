@@ -31,14 +31,14 @@ export async function getPipeline(device, shaderName, entryPoint = "main") {
 
 /**
  * Loads WGSL source for `shaderName`. In the browser, reads from the inline bundle
- * (`browser-shaders.mjs`); in Node.js, reads the `.wgsl` file directly from disk.
+ * (`shaders/index.mjs`'s `shaderSources`); in Node.js, reads the `.wgsl` file directly from disk.
  * @param {string} shaderName
  * @returns {Promise<string>}
  */
 async function loadCode(shaderName) {
   // Check for Node.js explicitly — `window` is undefined in Web Workers too, so it's not a reliable signal.
   if (typeof process === "undefined" || !process.versions?.node) {
-    const { shaderSources } = await import("../shaders/browser-shaders.mjs");
+    const { shaderSources } = await import("../shaders/index.mjs");
     const src = shaderSources[shaderName];
     if (!src) throw new Error(`Shader "${shaderName}" not found in browser bundle.`);
     return src;
