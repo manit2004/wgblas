@@ -104,7 +104,10 @@ fn main(
         let col = blockCol + threadCol * TN + resIdxN;
         if (col < params.n) {
           let cIdx = row * params.ldc + col;
-          C[cIdx] = params.alpha * threadResults[resIdxM * TN + resIdxN] + params.beta * C[cIdx];
+          // BLAS beta==0 semantics: C is written, not accumulated — must not
+          // read C (stale NaN/Inf bits would survive 0 * C as NaN).
+          let acc = params.alpha * threadResults[resIdxM * TN + resIdxN];
+          C[cIdx] = select(acc, acc + params.beta * C[cIdx], params.beta != 0.0);
         }
       }
     }

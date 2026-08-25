@@ -67,7 +67,9 @@ fn main(
 
     if lid.x == 0u {
       let yi = row * params.incy;
-      y[yi] = params.alpha * scratch[0] + params.beta * y[yi];
+      // BLAS beta==0 semantics: y is written, not accumulated — must not read y.
+      let acc = params.alpha * scratch[0];
+      y[yi] = select(acc, acc + params.beta * y[yi], params.beta != 0.0);
     }
     // All 64 threads must agree before the next row reuses scratch[].
     workgroupBarrier();

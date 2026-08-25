@@ -60,6 +60,8 @@ fn main(
       acc0 += A[k * params.lda + col] * x[k * params.incx];
     }
     let yi = col * params.incy;
-    y[yi] = params.alpha * (acc0 + acc1 + acc2 + acc3) + params.beta * y[yi];
+    // BLAS beta==0 semantics: y is written, not accumulated — must not read y.
+    let acc = params.alpha * (acc0 + acc1 + acc2 + acc3);
+    y[yi] = select(acc, acc + params.beta * y[yi], params.beta != 0.0);
   }
 }
