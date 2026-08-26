@@ -65,6 +65,8 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
     throw new Error("A must be a GpuMatrix when x is a GpuVector.");
   if (AIsGpu && !xIsGpu)
     throw new Error("x must be a GpuVector when A is a GpuMatrix.");
+  if (AIsGpu && xIsGpu && A._buf === x._buf)
+    throw new Error("A and x must not reference the same GPU buffer.");
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
   if (AIsGpu && (A.rows < n || A.cols < n))

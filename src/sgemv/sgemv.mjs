@@ -62,6 +62,8 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     );
   if (xIsGpu && x._buf === y._buf)
     throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");
+  if (AIsGpu && yIsGpu && A._buf === y._buf)
+    throw new Error("A and y must not reference the same GPU buffer.");
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
   if (AIsGpu && (A.rows < m || A.cols < n))
