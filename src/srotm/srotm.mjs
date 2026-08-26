@@ -26,6 +26,13 @@ export async function srotm(device, n, x, incx, y, incy, param) {
     throw new Error("n, incx, and incy must be integers.");
   if (!(param instanceof Float32Array) || param.length !== 5)
     throw new Error("param must be a Float32Array of length 5.");
+  if (
+    param[0] !== -2 &&
+    param[0] !== -1 &&
+    param[0] !== 0 &&
+    param[0] !== 1
+  )
+    throw new Error("param[0] (flag) must be one of -2, -1, 0, or 1.");
   if (incx <= 0 || incy <= 0)
     throw new Error("incx and incy must be positive.");
   if (!xIsGpu && !(x instanceof Float32Array))
