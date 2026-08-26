@@ -26,7 +26,7 @@ export async function sscal(device, n, alpha, x, incx) {
   if (incx <= 0) throw new Error("incx must be positive.");
   if (!(x instanceof Float32Array) && !(x instanceof GpuVector))
     throw new Error("x must be a Float32Array or GpuVector.");
-  if (n <= 0) return xIsGpu ? {} : x;
+  if (n <= 0) return xIsGpu ? {} : { x };
   if (x.length < (n - 1) * incx + 1)
     throw new Error(
       "x does not have enough elements for the given n and incx.",
@@ -72,7 +72,7 @@ export async function sscal(device, n, alpha, x, incx) {
     const result = await extractResult(readBuffer, Float32Array);
     readBuffer = null; // extractResult already destroyed it
     if (gpuTimeMs !== undefined) return { x: result, gpuTimeMs };
-    return result;
+    return { x: result };
   } finally {
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);

@@ -33,7 +33,7 @@ const validationSpecs = {
 async function callGpuResident(dev, a) {
   return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {
     await sscal(dev, a.n, a.alpha, x, a.incx);
-    return await x.read();
+    return { x: await x.read() };
   });
 }
 
@@ -47,7 +47,7 @@ test("sscal fixtures (GPU-resident)", async (t) => {
     validationSpecs,        // param specs used to generate random inputs
     callGpuResident,        // GPU call — wraps x into a GpuVector
     stdlibReference,        // CPU reference
-    (gpu, ref) => maxUlp(gpu, ref).max, // max ULP across all elements of x
+    (gpu, ref) => maxUlp(gpu.x, ref.x).max, // max ULP across all elements of x
   );
 });
 
@@ -62,7 +62,7 @@ test("sscal edge cases (GPU-resident)", async (t) => {
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
-      assert.deepEqual(got, expected);
+      assert.deepEqual(got.x, expected.x);
     });
   }
 });

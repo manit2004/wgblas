@@ -22,7 +22,7 @@ export declare function sscal(
   alpha: number,
   x: Float32Array,
   incx: number,
-): Promise<Float32Array | { result: Float32Array; gpuTimeMs: number }>;
+): Promise<{ x: Float32Array } | { x: Float32Array; gpuTimeMs: number }>;
 
 /**
  * Scales a single-precision vector by a constant: $$x \leftarrow \alpha x$$

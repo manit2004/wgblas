@@ -43,7 +43,7 @@ test("sscal fixtures", async (t) => {
     validationSpecs,   // param specs used to generate random inputs
     async (dev, a) => sscal(dev, a.n, a.alpha, a.x, a.incx),  // GPU call
     stdlibReference,   // CPU reference
-    (gpu, ref) => maxUlp(gpu, ref).max,                         // max ULP across all elements of x
+    (gpu, ref) => maxUlp(gpu.x, ref.x).max,                     // max ULP across all elements of x
   );
 });
 
@@ -66,7 +66,7 @@ test("sscal edge cases", async (t) => {
         a.incx,   // stride through x
       );
       const expected = stdlibReference(a);
-      assert.deepEqual(got, expected);
+      assert.deepEqual(got.x, expected.x);
     });
   }
 });
