@@ -32,17 +32,23 @@ export async function snrm2(device, n, x, incx) {
     );
 
   const pipelineMain = await getPipeline(device, "snrm2");
-  const pipelineReduce = await getPipeline(device, "reduction/sum");
+  const pipelineReduce = await getPipeline(device, "reduction/scaledSum");
 
   let xBuffer = null;
-  let partialsBuffer = null;
+  let partialsScaleBuffer = null;
+  let partialsSsqBuffer = null;
   let resultBuffer = null;
   let paramsBuffer = null;
   let readBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "snrm2-x", false);
-    partialsBuffer = createStorageBuffer(2 * WGS * 4, "snrm2-partials"); // 2*WGS partial sums of f32
+    // 2*WGS partial (scale, ssq) pairs — see snrm2.wgsl for what they represent.
+    partialsScaleBuffer = createStorageBuffer(
+      2 * WGS * 4,
+      "snrm2-partials-scale",
+    );
+    partialsSsqBuffer = createStorageBuffer(2 * WGS * 4, "snrm2-partials-ssq");
     resultBuffer = createResultBuffer(4, "snrm2-result"); // final f32 scalar
     paramsBuffer = createParamsBuffer(
       [
@@ -54,7 +60,8 @@ export async function snrm2(device, n, x, incx) {
 
     const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [
       xBuffer,
-      partialsBuffer,
+      partialsScaleBuffer,
+      partialsSsqBuffer,
       paramsBuffer,
     ]);
     const { commandEncoder: enc1, ts: ts1 } = runComputePass(
@@ -66,7 +73,8 @@ export async function snrm2(device, n, x, incx) {
     submit(enc1);
 
     const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [
-      partialsBuffer,
+      partialsScaleBuffer,
+      partialsSsqBuffer,
       resultBuffer,
     ]);
     const { commandEncoder: enc2, ts: ts2 } = runComputePass(
@@ -81,21 +89,23 @@ export async function snrm2(device, n, x, incx) {
     const resultPromise = extractResult(readBuffer, Float32Array);
     readBuffer = null; // ownership transferred — extractResult's own finally destroys it
 
-    const [gpuTime1, gpuTime2, sqsumArr] = await Promise.all([
+    const [gpuTime1, gpuTime2, resultArr] = await Promise.all([
       extractTimestamp(ts1),
       extractTimestamp(ts2),
       resultPromise,
     ]);
 
-    // sqrt is taken on CPU after the GPU sum-of-squares reduction
-    const nrm2 = Math.sqrt(sqsumArr[0]);
+    // reduction/scaledSum.wgsl already computes scale·sqrt(ssq) on the GPU —
+    // unlike the old naive-sum version, there's no separate sqrt step here.
+    const nrm2 = resultArr[0];
 
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
       return { nrm2, gpuTimeMs: gpuTime1 + gpuTime2 };
     return { nrm2 };
   } finally {
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
-    if (partialsBuffer) destroyBuffers(partialsBuffer);
+    if (partialsScaleBuffer) destroyBuffers(partialsScaleBuffer);
+    if (partialsSsqBuffer) destroyBuffers(partialsSsqBuffer);
     if (resultBuffer) destroyBuffers(resultBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
     // Only reached if submit(enc2) threw before ownership was transferred above.

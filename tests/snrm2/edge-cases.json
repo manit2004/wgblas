@@ -1,8 +1,46 @@
 [
-  { "label": "Pythagorean triple — exact integer result", "n": 2, "x": [3, 4], "incx": 1 },
-  { "label": "all negatives — same result as positives", "n": 2, "x": [-3, -4], "incx": 1 },
+  {
+    "label": "Pythagorean triple — exact integer result",
+    "n": 2,
+    "x": [3, 4],
+    "incx": 1
+  },
+  {
+    "label": "all negatives — same result as positives",
+    "n": 2,
+    "x": [-3, -4],
+    "incx": 1
+  },
   { "label": "unit vector — norm = 1", "n": 3, "x": [1, 0, 0], "incx": 1 },
   { "label": "all zeros — norm = 0", "n": 3, "x": [0, 0, 0], "incx": 1 },
-  { "label": "n=1 negative element — norm is non-negative", "n": 1, "x": [-5], "incx": 1 },
-  { "label": "incx=2 — Pythagorean triple on strided elements", "n": 2, "x": [3, 99, 4], "incx": 2 }
+  {
+    "label": "n=1 negative element — norm is non-negative",
+    "n": 1,
+    "x": [-5],
+    "incx": 1
+  },
+  {
+    "label": "incx=2 — Pythagorean triple on strided elements",
+    "n": 2,
+    "x": [3, 99, 4],
+    "incx": 2
+  },
+  {
+    "label": "magnitude above naive-squaring overflow threshold (~1.8e19) — must not return Infinity",
+    "n": 1,
+    "x": [3e19],
+    "incx": 1
+  },
+  {
+    "label": "huge element mixed with tiny ones — huge must dominate without overflowing",
+    "n": 2,
+    "x": [3e19, 1e-20],
+    "incx": 1
+  },
+  {
+    "label": "tiny magnitudes — must not lose all precision squaring into the denormal range",
+    "n": 3,
+    "x": [1e-20, 1e-20, 1e-20],
+    "incx": 1
+  }
 ]
