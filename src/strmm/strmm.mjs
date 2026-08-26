@@ -4,6 +4,7 @@ import {
   createStorageBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -166,7 +167,14 @@ export async function strmm(
       ],
       "strmm-gemm-params",
     );
-    const gemmBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [XBuffer, YBuffer, outBuffer, gemmParams]);
+    const gemmBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [
+      XBuffer,
+      vec4ViewBinding(XBuffer),
+      YBuffer,
+      vec4ViewBinding(YBuffer),
+      outBuffer,
+      gemmParams,
+    ]);
 
     const { commandEncoder, querySet } = beginTimedEncoder();
     // Seed outBuffer with B's own bytes first, so gemm's tight m x n write

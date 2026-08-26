@@ -4,6 +4,7 @@ import {
   createStorageBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -218,9 +219,12 @@ export async function strsm(
           ],
           "strsm-apply-params",
         );
+        const ainvBlock = { buffer: AinvBuffer, offset: blockIndex * BLOCK_SIZE * BLOCK_SIZE * 4, size: BLOCK_SIZE * BLOCK_SIZE * 4 };
         const applyBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [
-          { buffer: AinvBuffer, offset: blockIndex * BLOCK_SIZE * BLOCK_SIZE * 4, size: BLOCK_SIZE * BLOCK_SIZE * 4 },
+          ainvBlock,
+          vec4ViewBinding(ainvBlock),
           Bblock,
+          vec4ViewBinding(Bblock),
           Xblock,
           applyParams,
         ]);
@@ -291,7 +295,14 @@ export async function strsm(
           ],
           "strsm-update-params",
         );
-        const updateBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [Aoff, Xblock, delta, updateParams]);
+        const updateBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [
+          Aoff,
+          vec4ViewBinding(Aoff),
+          Xblock,
+          vec4ViewBinding(Xblock),
+          delta,
+          updateParams,
+        ]);
         const wg = useLarge
           ? { x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension), y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension) }
           : { x: Math.min(Math.ceil(ng / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension), y: Math.min(Math.ceil(mg / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension) };

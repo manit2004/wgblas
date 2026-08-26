@@ -6,9 +6,13 @@
 // single-tier baseline at n=512, +84% at n=1024. But BM=64 loses to BM=32
 // below a 6x6=36 workgroup grid (not enough workgroups to fill the GPU at
 // that tile size), hence the two-tier split rather than one global config.
-// Neither vectorized loads (kernel 6) nor warp-tiling (kernel 10) beat this
-// at the sizes tried, including warp-tiled variants in the same sweep at
-// BM=64/128.
+//
+// A and B are bound twice — scalar array<f32> and array<vec4<f32>> views of
+// the same GPUBuffer (see vec4ViewBinding) — so each tile load can issue
+// 16-byte vector reads along op(A)/op(B)'s contiguous dimension when the
+// stride allows it (stride % 4 == 0 keeps every row base 16-byte aligned).
+// Transposed or odd-stride operands take the scalar path; both paths
+// zero-fill out-of-bounds components identically.
 
 const BM: u32 = 64u;
 const BN: u32 = 64u;
@@ -21,9 +25,11 @@ const NUM_THREADS: u32 = THREADS_X * THREADS_Y; // 128
 const STRIDE_A: u32 = NUM_THREADS / BK; // rows of As covered per load-loop step
 const STRIDE_B: u32 = NUM_THREADS / BN; // rows of Bs covered per load-loop step
 
-@group(0) @binding(0) var<storage, read>       A: array<f32>;
-@group(0) @binding(1) var<storage, read>       B: array<f32>;
-@group(0) @binding(2) var<storage, read_write> C: array<f32>;
+@group(0) @binding(0) var<storage, read>       A:  array<f32>;
+@group(0) @binding(1) var<storage, read>       A4: array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read>       B:  array<f32>;
+@group(0) @binding(3) var<storage, read>       B4: array<vec4<f32>>;
+@group(0) @binding(4) var<storage, read_write> C:  array<f32>;
 
 struct Params {
   m:      u32,
@@ -36,9 +42,11 @@ struct Params {
   ldc:    u32,
   transA: u32, // 0 = no-transpose, 1 = transpose
   transB: u32,
+  useVecA: u32, // 1 = A's vec4 view covers every in-bounds element (see vec4Usable)
+  useVecB: u32, // 1 = B's vec4 view covers every in-bounds element
 }
 
-@group(0) @binding(3) var<uniform> params: Params;
+@group(0) @binding(5) var<uniform> params: Params;
 
 var<workgroup> As: array<f32, BM * BK>;
 var<workgroup> Bs: array<f32, BK * BN>;
@@ -70,17 +78,95 @@ fn main(
 
   let numTiles = (params.k + BK - 1u) / BK;
   for (var t = 0u; t < numTiles; t++) {
-    for (var loadOffset = 0u; loadOffset < BM; loadOffset += STRIDE_A) {
-      let gRowA = blockRow + innerRowA + loadOffset;
-      let gColA = t * BK + innerColA;
-      let aIdx = select(gRowA * params.lda + gColA, gColA * params.lda + gRowA, params.transA != 0u);
-      As[(innerRowA + loadOffset) * BK + innerColA] = select(0.0, A[aIdx], gRowA < params.m && gColA < params.k);
+    // ── Load the BM×BK A tile into As (vectorized along op(A)'s fast dim
+    // when lda allows; every branch here is dispatch-uniform) ──
+    if (params.useVecA == 1u && params.transA == 0u) {
+      // No-transpose: columns contiguous. Each thread loads one vec4 of 4
+      // columns; 64 rows × 2 column-lanes = NUM_THREADS exactly, single pass.
+      let r4 = tid / (BK / 4u);
+      let c4 = tid % (BK / 4u);
+      let gRow = blockRow + r4;
+      let gCol = t * BK + c4 * 4u;
+      var v = A4[(gRow * params.lda + gCol) / 4u];
+      let rowOK = gRow < params.m;
+      v.x = select(0.0, v.x, rowOK &&  gCol            < params.k);
+      v.y = select(0.0, v.y, rowOK && (gCol + 1u) < params.k);
+      v.z = select(0.0, v.z, rowOK && (gCol + 2u) < params.k);
+      v.w = select(0.0, v.w, rowOK && (gCol + 3u) < params.k);
+      As[r4 * BK + c4 * 4u]      = v.x;
+      As[r4 * BK + c4 * 4u + 1u] = v.y;
+      As[r4 * BK + c4 * 4u + 2u] = v.z;
+      As[r4 * BK + c4 * 4u + 3u] = v.w;
+    } else if (params.useVecA == 1u && params.transA != 0u) {
+      // Transpose: rows contiguous within a column. Each thread loads one
+      // vec4 of 4 rows; 16 row-lanes × 8 columns = NUM_THREADS, single pass.
+      let r4 = tid % (BM / 4u);
+      let c  = tid / (BM / 4u);
+      let gRow = blockRow + r4 * 4u;
+      let gCol = t * BK + c;
+      var v = A4[(gCol * params.lda + gRow) / 4u];
+      let colOK = gCol < params.k;
+      v.x = select(0.0, v.x, colOK &&  gRow            < params.m);
+      v.y = select(0.0, v.y, colOK && (gRow + 1u) < params.m);
+      v.z = select(0.0, v.z, colOK && (gRow + 2u) < params.m);
+      v.w = select(0.0, v.w, colOK && (gRow + 3u) < params.m);
+      As[(r4 * 4u) * BK + c]      = v.x;
+      As[(r4 * 4u + 1u) * BK + c] = v.y;
+      As[(r4 * 4u + 2u) * BK + c] = v.z;
+      As[(r4 * 4u + 3u) * BK + c] = v.w;
+    } else {
+      // Scalar fallback: odd stride or unhandled orientation.
+      for (var loadOffset = 0u; loadOffset < BM; loadOffset += STRIDE_A) {
+        let gRowA = blockRow + innerRowA + loadOffset;
+        let gColA = t * BK + innerColA;
+        let aIdx = select(gRowA * params.lda + gColA, gColA * params.lda + gRowA, params.transA != 0u);
+        As[(innerRowA + loadOffset) * BK + innerColA] = select(0.0, A[aIdx], gRowA < params.m && gColA < params.k);
+      }
     }
-    for (var loadOffset = 0u; loadOffset < BK; loadOffset += STRIDE_B) {
-      let gRowB = t * BK + innerRowB + loadOffset;
-      let gColB = blockCol + innerColB;
-      let bIdx = select(gRowB * params.ldb + gColB, gColB * params.ldb + gRowB, params.transB != 0u);
-      Bs[(innerRowB + loadOffset) * BN + innerColB] = select(0.0, B[bIdx], gRowB < params.k && gColB < params.n);
+
+    // ── Load the BK×BN B tile into Bs ──
+    if (params.useVecB == 1u && params.transB == 0u) {
+      // No-transpose: columns contiguous. 8 rows × 16 column-lanes cover the
+      // tile in one pass (BK = NUM_THREADS / (BN/4)).
+      let r  = tid / (BN / 4u);
+      let c4 = tid % (BN / 4u);
+      let gRow = t * BK + r;
+      let gCol = blockCol + c4 * 4u;
+      var v = B4[(gRow * params.ldb + gCol) / 4u];
+      let rowOK = gRow < params.k;
+      v.x = select(0.0, v.x, rowOK &&  gCol            < params.n);
+      v.y = select(0.0, v.y, rowOK && (gCol + 1u) < params.n);
+      v.z = select(0.0, v.z, rowOK && (gCol + 2u) < params.n);
+      v.w = select(0.0, v.w, rowOK && (gCol + 3u) < params.n);
+      Bs[r * BN + c4 * 4u]      = v.x;
+      Bs[r * BN + c4 * 4u + 1u] = v.y;
+      Bs[r * BN + c4 * 4u + 2u] = v.z;
+      Bs[r * BN + c4 * 4u + 3u] = v.w;
+    } else if (params.useVecB == 1u && params.transB != 0u) {
+      // Transpose: rows contiguous within a column. 2 row-lanes × 64 columns
+      // cover the tile in one pass (BN = NUM_THREADS / (BK/4)).
+      let r4 = tid % (BK / 4u);
+      let c  = tid / (BK / 4u);
+      let gRow = t * BK + r4 * 4u;
+      let gCol = blockCol + c;
+      var v = B4[(gCol * params.ldb + gRow) / 4u];
+      let colOK = gCol < params.n;
+      v.x = select(0.0, v.x, colOK &&  gRow            < params.k);
+      v.y = select(0.0, v.y, colOK && (gRow + 1u) < params.k);
+      v.z = select(0.0, v.z, colOK && (gRow + 2u) < params.k);
+      v.w = select(0.0, v.w, colOK && (gRow + 3u) < params.k);
+      Bs[(r4 * 4u) * BN + c]     = v.x;
+      Bs[(r4 * 4u + 1u) * BN + c] = v.y;
+      Bs[(r4 * 4u + 2u) * BN + c] = v.z;
+      Bs[(r4 * 4u + 3u) * BN + c] = v.w;
+    } else {
+      // Scalar fallback.
+      for (var loadOffset = 0u; loadOffset < BK; loadOffset += STRIDE_B) {
+        let gRowB = t * BK + innerRowB + loadOffset;
+        let gColB = blockCol + innerColB;
+        let bIdx = select(gRowB * params.ldb + gColB, gColB * params.ldb + gRowB, params.transB != 0u);
+        Bs[(innerRowB + loadOffset) * BN + innerColB] = select(0.0, B[bIdx], gRowB < params.k && gColB < params.n);
+      }
     }
 
     workgroupBarrier();

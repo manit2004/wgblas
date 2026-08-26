@@ -3,6 +3,8 @@ import {
   createParamsBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
+  vec4Usable,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { runComputePass, submit } from "../util/compute.mjs";
@@ -138,6 +140,12 @@ export async function sgemm(
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sgemm-A", false);
   const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "sgemm-B", false);
   const CBuffer = CIsGpu ? C._buf : uploadBuffer(C, "sgemm-C", true);
+  // Vectorized-load enablement — kernel-side view after the column-major swap.
+  // op(A) is m×k (no-trans) or k×m (trans); op(B) is k×n or n×k.
+  const aNot = transA === "no-transpose";
+  const bNot = transB === "no-transpose";
+  const useVecA = aNot && vec4Usable(ABuffer, lda, m, k); // transposed-A vec stores bank-conflict smem — measured slower than scalar
+  const useVecB = vec4Usable(BBuffer, ldb, bNot ? k : n, bNot ? n : k);
   const paramsBuffer = createParamsBuffer(
     [
       { value: m,   type: "u32" },
@@ -150,6 +158,8 @@ export async function sgemm(
       { value: ldc, type: "u32" },
       { value: transA === "transpose" ? 1 : 0, type: "u32" },
       { value: transB === "transpose" ? 1 : 0, type: "u32" },
+      { value: useVecA ? 1 : 0, type: "u32" },
+      { value: useVecB ? 1 : 0, type: "u32" },
     ],
     "sgemm-params",
   );
@@ -157,7 +167,9 @@ export async function sgemm(
   try {
     const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
       ABuffer,
+      vec4ViewBinding(ABuffer),
       BBuffer,
+      vec4ViewBinding(BBuffer),
       CBuffer,
       paramsBuffer,
     ]);

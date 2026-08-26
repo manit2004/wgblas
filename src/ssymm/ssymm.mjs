@@ -4,6 +4,7 @@ import {
   createStorageBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -175,7 +176,14 @@ export async function ssymm(
       ],
       "ssymm-gemm-params",
     );
-    const gemmBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [XBuffer, YBuffer, CBuffer, gemmParams]);
+    const gemmBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [
+      XBuffer,
+      vec4ViewBinding(XBuffer),
+      YBuffer,
+      vec4ViewBinding(YBuffer),
+      CBuffer,
+      gemmParams,
+    ]);
 
     const { commandEncoder, querySet } = beginTimedEncoder();
     const symDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;

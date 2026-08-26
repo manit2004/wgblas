@@ -121,6 +121,79 @@ export function stageReadback(commandEncoder, sourceBuffer) {
   return readBuffer;
 }
 
+// Minimum bindable size for an array<vec4<f32>> view: one 16-byte element.
+const VEC4_ELEM_BYTES = 16;
+
+// Dummy STORAGE buffer bound into a kernel's unused vec4-view slot when the
+// real operand can't host even one vec4 (tiny-matrix edge cases, where the
+// stride check forces the scalar path anyway). Cached per device.
+const _vec4Fallbacks = new WeakMap();
+function vec4FallbackBuffer(device) {
+  let b = _vec4Fallbacks.get(device);
+  if (!b) {
+    b = device.createBuffer({
+      label: "blas-vec4-fallback",
+      size: VEC4_ELEM_BYTES,
+      usage: GPUBufferUsage.STORAGE,
+    });
+    _vec4Fallbacks.set(device, b);
+  }
+  return b;
+}
+
+/**
+ * Bind-group entry exposing `buffer`'s bytes as an `array<vec4<f32>>` view —
+ * the twin binding that lets a shader issue 16-byte vector loads alongside
+ * scalar access of the same storage (bind the same GPUBuffer twice: once as
+ * `array<f32>`, once through this). The view's size is rounded down to a
+ * multiple of 16 because some backends reject non-multiple-of-16 ranges for
+ * vec4 arrays; whenever a kernel's vector path is usable (stride % 4 == 0)
+ * the buffer size is itself a multiple of 16, so the rounding never truncates
+ * a component the vector path would actually read. Buffers smaller than one
+ * vec4 element get a shared dummy storage buffer bound instead — the shader
+ * never dereferences it on those shapes.
+ * @param {GPUBuffer|{buffer: GPUBuffer, offset?: number, size?: number}} entry - whole buffer or sub-range, matching what the scalar slot binds
+ * @returns {{buffer: GPUBuffer, offset: number, size: number}}
+ */
+export function vec4ViewBinding(entry) {
+  const buffer = entry instanceof GPUBuffer ? entry : entry.buffer;
+  const offset = entry instanceof GPUBuffer ? 0 : (entry.offset ?? 0);
+  const avail = (entry instanceof GPUBuffer ? entry.size : (entry.size ?? buffer.size - offset));
+  const size = Math.floor(avail / VEC4_ELEM_BYTES) * VEC4_ELEM_BYTES;
+  if (size < VEC4_ELEM_BYTES) {
+    return { buffer: vec4FallbackBuffer(getDevice()), offset: 0, size: VEC4_ELEM_BYTES };
+  }
+  return { buffer, offset, size };
+}
+
+/**
+ * Whether every in-bounds element of a matrix operand is reachable through
+ * the `array<vec4<f32>>` view that {@link vec4ViewBinding} produces for it.
+ * The view truncates the binding down to a multiple of 16 bytes, so a
+ * tightly-uploaded array can hold valid matrix elements past the view's end
+ * even while its stride is 4-aligned (e.g. a column-major m×1 operand with
+ * padded lda uploaded without padding cells). Call this with the kernel-side
+ * dimensions and only take a shader's vectorized path when it returns true;
+ * the scalar fallback reads the full storage and is always correct.
+ * @param {GPUBuffer|{buffer: GPUBuffer, offset?: number, size?: number}} entry - what the scalar slot binds
+ * @param {number} stride - the operand's leading dimension as seen by the kernel
+ * @param {number} outerCount - extent of the stride-multiplied dimension
+ * @param {number} innerCount - extent of the contiguous dimension
+ * @returns {boolean}
+ */
+export function vec4Usable(entry, stride, outerCount, innerCount) {
+  if (stride % 4 !== 0) return false;
+  const buffer = entry instanceof GPUBuffer ? entry : entry.buffer;
+  const offset = entry instanceof GPUBuffer ? 0 : (entry.offset ?? 0);
+  const avail = (entry instanceof GPUBuffer ? buffer.size : (entry.size ?? buffer.size - offset));
+  const viewFloats = Math.floor(avail / VEC4_ELEM_BYTES) * 4;
+  if (viewFloats <= 0) return false;
+  // Highest flat index any masked-in component can touch; usable iff its
+  // containing vec4 ends within the view.
+  const maxFlat = (Math.max(outerCount, 1) - 1) * stride + (Math.max(innerCount, 1) - 1);
+  return Math.floor(maxFlat / 4) * 4 + 4 <= viewFloats;
+}
+
 /**
  * Packs an array of typed scalar values into a uniform buffer aligned to 16 bytes.
  * Each entry specifies the value and its WGSL type (`"f32"`, `"u32"`, or `"i32"`).
