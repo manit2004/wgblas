@@ -9,7 +9,7 @@ import { runComputePass, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
-import { calcWorkgroups } from "../util/workgroup.mjs";
+import { requireWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
@@ -130,10 +130,13 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
       paramsBuffer,
     ]);
 
-    // NoTrans: one workgroup per row (grid-stride handles overflow); Trans: one thread per output column.
+    // NoTrans: one workgroup per row — sgemv_n.wgsl is a grid-stride loop, so
+    // clamping here only costs parallelism. Trans: one thread per output
+    // column, and sgemv_t.wgsl indexes straight off global_invocation_id with
+    // no fallback, so an over-limit dispatch must be refused, not truncated.
     const wgCount = isNoTrans
       ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
-      : calcWorkgroups(yLen);
+      : requireWorkgroups("sgemv", yLen);
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
     const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
 

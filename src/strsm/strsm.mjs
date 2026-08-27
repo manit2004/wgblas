@@ -11,7 +11,7 @@ import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
 import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
-import { calcWorkgroups } from "../util/workgroup.mjs";
+import { calcWorkgroups, requireWorkgroups, requireWorkgroupCount } from "../util/workgroup.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 const BLOCK_SIZE = 64; // must match strsv_invert_block.wgsl's own constant
@@ -202,7 +202,7 @@ export async function strsm(
         "strsm-gather-B-params",
       );
       const gatherBBindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [Bblock, BBuffer, gatherBParams]);
-      encodePass(commandEncoder, transferPipeline, gatherBBindGroup, calcWorkgroups(blockLen, otherLen));
+      encodePass(commandEncoder, transferPipeline, gatherBBindGroup, requireWorkgroups("strsm", blockLen, otherLen));
 
       // 2) apply: Xblock := op(Ainv_block) @ Bblock (side='left'), or the
       // transpose-trick equivalent for side='right' (same trick strmm uses).
@@ -236,8 +236,8 @@ export async function strsm(
           applyParams,
         ]);
         const wg = useLarge
-          ? { x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension), y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension) }
-          : { x: Math.min(Math.ceil(ng / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension), y: Math.min(Math.ceil(mg / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension) };
+          ? { x: requireWorkgroupCount(largeWgX, "strsm", "x"), y: requireWorkgroupCount(largeWgY, "strsm", "y") }
+          : { x: requireWorkgroupCount(Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(Math.ceil(mg / BM_SMALL), "strsm", "y") };
         encodePass(commandEncoder, gemmPipeline, applyBindGroup, wg);
       }
 
@@ -260,7 +260,7 @@ export async function strsm(
       );
       const scatterBindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [Xblock, BBuffer, scatterParams]);
       const scatterDesc = isLastPass && !hasRemaining && querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, transferPipeline, scatterBindGroup, calcWorkgroups(blockLen, otherLen), scatterDesc);
+      encodePass(commandEncoder, transferPipeline, scatterBindGroup, requireWorkgroups("strsm", blockLen, otherLen), scatterDesc);
 
       // 4) trailing update: subtract this block's contribution from B.
       if (!hasRemaining) continue;
@@ -280,7 +280,7 @@ export async function strsm(
         "strsm-gather-A-params",
       );
       const gatherABindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [Aoff, ABuffer, gatherAParams]);
-      encodePass(commandEncoder, transferPipeline, gatherABindGroup, calcWorkgroups(remCount, blockLen));
+      encodePass(commandEncoder, transferPipeline, gatherABindGroup, requireWorkgroups("strsm", remCount, blockLen));
 
       {
         const mg = remCount, ng = otherLen, kg = blockLen;
@@ -311,8 +311,8 @@ export async function strsm(
           updateParams,
         ]);
         const wg = useLarge
-          ? { x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension), y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension) }
-          : { x: Math.min(Math.ceil(ng / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension), y: Math.min(Math.ceil(mg / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension) };
+          ? { x: requireWorkgroupCount(largeWgX, "strsm", "x"), y: requireWorkgroupCount(largeWgY, "strsm", "y") }
+          : { x: requireWorkgroupCount(Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(Math.ceil(mg / BM_SMALL), "strsm", "y") };
         encodePass(commandEncoder, gemmPipeline, updateBindGroup, wg);
       }
 
@@ -331,7 +331,7 @@ export async function strsm(
       );
       const scatterSubBindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [delta, BBuffer, scatterSubParams]);
       const subDesc = isLastPass && querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, transferPipeline, scatterSubBindGroup, calcWorkgroups(remCount, otherLen), subDesc);
+      encodePass(commandEncoder, transferPipeline, scatterSubBindGroup, requireWorkgroups("strsm", remCount, otherLen), subDesc);
       }
     }
 

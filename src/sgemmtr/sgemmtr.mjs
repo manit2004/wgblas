@@ -10,6 +10,7 @@ import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
 
 const BM_SMALL = 32, BN_SMALL = 32; // sgemmtr_small.wgsl's block tile
 const BM_LARGE = 64, BN_LARGE = 64; // sgemmtr_large.wgsl's block tile
@@ -172,12 +173,12 @@ export async function sgemmtr(
 
     const wgCount = useLargeTile
       ? {
-        x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension),
-        y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension),
+        x: requireWorkgroupCount(largeWgX, "sgemmtr", "x"),
+        y: requireWorkgroupCount(largeWgY, "sgemmtr", "y"),
       }
       : {
-        x: Math.min(Math.ceil(n / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
-        y: Math.min(Math.ceil(m / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+        x: requireWorkgroupCount(Math.ceil(n / BN_SMALL), "sgemmtr", "x"),
+        y: requireWorkgroupCount(Math.ceil(m / BM_SMALL), "sgemmtr", "y"),
       };
     const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
     const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);

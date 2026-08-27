@@ -12,6 +12,7 @@ import { extractResult } from "../util/result.mjs";
 import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
 
 const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
 const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
@@ -129,12 +130,12 @@ export async function ssymm(
   const symPipeline = await getPipeline(device, "symmetrize");
   const gemmWgCount = useLargeTile
     ? {
-      x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(largeWgX, "ssymm", "x"),
+      y: requireWorkgroupCount(largeWgY, "ssymm", "y"),
     }
     : {
-      x: Math.min(Math.ceil(ng / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(Math.ceil(mg / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(Math.ceil(ng / BN_SMALL), "ssymm", "x"),
+      y: requireWorkgroupCount(Math.ceil(mg / BM_SMALL), "ssymm", "y"),
     };
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "ssymm-A", false);

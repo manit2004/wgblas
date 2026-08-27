@@ -10,6 +10,7 @@ import { extractResult } from "../util/result.mjs";
 import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
 
 const BM_SMALL = 32, BN_SMALL = 32; // sgemmtr_small.wgsl's block tile
 const BM_LARGE = 64, BN_LARGE = 64; // sgemmtr_large.wgsl's block tile
@@ -131,12 +132,12 @@ export async function ssyr2k(
   const pipeline = await getPipeline(device, useLargeTile ? "sgemmtr_large" : "sgemmtr_small");
   const wgCount = useLargeTile
     ? {
-      x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(largeWgX, "ssyr2k", "x"),
+      y: requireWorkgroupCount(largeWgY, "ssyr2k", "y"),
     }
     : {
-      x: Math.min(Math.ceil(n / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(Math.ceil(n / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(Math.ceil(n / BN_SMALL), "ssyr2k", "x"),
+      y: requireWorkgroupCount(Math.ceil(n / BM_SMALL), "ssyr2k", "y"),
     };
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "ssyr2k-A", false);
