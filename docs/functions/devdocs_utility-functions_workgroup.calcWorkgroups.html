@@ -17,10 +17,16 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="calcworkgroups"><span class="tsd-kind-call-signature">calcWorkgroups</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">rows</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">cols</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">x</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">y</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">}</span><a href="#calcworkgroups" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="calcworkgroups"><span class="tsd-kind-call-signature">calcWorkgroups</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">device</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">rows</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">cols</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">x</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">y</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">}</span><a href="#calcworkgroups" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Calculates the number of workgroups to dispatch, clamped to the device's
 <code>maxComputeWorkgroupsPerDimension</code> limit (default 65535 across most devices).</p>
+<p>ONLY for shaders whose kernel is a grid-stride loop driven by
+<code>num_workgroups</code> — those re-walk the whole domain regardless of how many
+workgroups actually launch, so clamping costs a little parallelism and
+nothing else. A shader that indexes straight off <code>workgroup_id</code> or
+<code>global_invocation_id</code> silently drops every row past the clamp; those must
+use <a href="devdocs_utility-functions_workgroup.requireWorkgroups.html" class="tsd-kind-function">requireWorkgroups</a> / <a href="devdocs_utility-functions_workgroup.requireWorkgroupCount.html" class="tsd-kind-function">requireWorkgroupCount</a> instead.</p>
 <ul>
 <li>1D (pass only <code>rows</code>): returns a single count for <code>dispatchWorkgroups(n)</code>.</li>
 <li>2D (pass both <code>rows</code> and <code>cols</code>): returns <code>{ x, y }</code> for <code>dispatchWorkgroups(x, y)</code>.
@@ -30,6 +36,7 @@
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">device</span>: <span class="tsd-signature-type">any</span></span></li>
 <li><span><span class="tsd-kind-parameter">rows</span>: <span class="tsd-signature-type">number</span></span>
 <div class="tsd-comment tsd-typography"><p>row count (1D: element count)</p>
 </div></li>
@@ -42,7 +49,7 @@
 <h4 class="tsd-anchor-link" id="see">See<a href="#see" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><a href="https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits">GPUSupportedLimits</a> (<code>maxComputeWorkgroupsPerDimension</code>)</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/util/workgroup.mjs#L21">src/util/workgroup.mjs:21</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/682f7ffcca571e3e4acc50856cfe1e122e11d934/src/util/workgroup.mjs#L27">src/util/workgroup.mjs:27</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
