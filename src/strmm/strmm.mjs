@@ -119,20 +119,26 @@ export async function strmm(
       y: Math.min(Math.ceil(mg / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
     };
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strmm-A", false);
-  // readback=true (COPY_SRC): BBuffer is also the source that seeds outBuffer.
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strmm-B", true);
-  const AdenseBuffer = createStorageBuffer(aOrder * ldDense * 4, "strmm-Adense");
-  // COPY_DST: seeded from B's own content before gemm runs, so stride-padding
-  // gaps (never written by gemm's tight m x n loop) keep B's original bytes
-  // instead of reading back as zero. COPY_SRC: read back / adopted by B after.
-  const outBuffer = createStorageBuffer(
-    bOuter * ldb * 4, "strmm-out", GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
-  );
+  // Null-init here and allocate inside the try below, so a throw partway
+  // through the sequence still reaches finally with every handle visible
+  // (strsv.mjs is the reference for this pattern).
+  let ABuffer = null, BBuffer = null;
+  let AdenseBuffer = null, outBuffer = null;
   let triParams = null, gemmParams = null;
   let outBufferAdopted = false; // true once B._buf is repointed at outBuffer
 
   try {
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strmm-A", false);
+    // readback=true (COPY_SRC): BBuffer is also the source that seeds outBuffer.
+    BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strmm-B", true);
+    AdenseBuffer = createStorageBuffer(aOrder * ldDense * 4, "strmm-Adense");
+    // COPY_DST: seeded from B's own content before gemm runs, so stride-padding
+    // gaps (never written by gemm's tight m x n loop) keep B's original bytes
+    // instead of reading back as zero. COPY_SRC: read back / adopted by B after.
+    outBuffer = createStorageBuffer(
+      bOuter * ldb * 4, "strmm-out", GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+    );
+
     triParams = createParamsBuffer(
       [
         { value: aOrder, type: "u32" },
@@ -209,10 +215,10 @@ export async function strmm(
     if (gpuTimeMs !== undefined) return { B: result, gpuTimeMs };
     return { B: result };
   } finally {
-    if (!AIsGpu) destroyBuffers(ABuffer);
-    if (!BIsGpu) destroyBuffers(BBuffer);
-    destroyBuffers(AdenseBuffer);
-    if (!outBufferAdopted) destroyBuffers(outBuffer);
+    if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
+    if (!BIsGpu && BBuffer) destroyBuffers(BBuffer);
+    if (AdenseBuffer) destroyBuffers(AdenseBuffer);
+    if (outBuffer && !outBufferAdopted) destroyBuffers(outBuffer);
     if (triParams) destroyBuffers(triParams);
     if (gemmParams) destroyBuffers(gemmParams);
   }

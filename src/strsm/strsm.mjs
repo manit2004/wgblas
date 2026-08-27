@@ -104,9 +104,12 @@ export async function strsm(
   const transferPipeline = await getPipeline(device, "block_transfer");
   const scalarPipeline = await getPipeline(device, "sscal");
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsm-A", false);
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strsm-B", true);
-  const AinvBuffer = createStorageBuffer(numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4, "strsm-Ainv");
+  // Null-init here and allocate inside the try below, so a throw partway
+  // through the sequence still reaches finally with every handle visible
+  // (strsv.mjs is the reference for this pattern).
+  let ABuffer = null;
+  let BBuffer = null;
+  let AinvBuffer = null;
 
   const paramsBuffers = [];
   const scratchBuffers = [];
@@ -127,6 +130,10 @@ export async function strsm(
   const bScaleLen = (bOuter - 1) * ldb + bInner;
 
   try {
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsm-A", false);
+    BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strsm-B", true);
+    AinvBuffer = createStorageBuffer(numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4, "strsm-Ainv");
+
     // Pre-scale B by alpha once (reuses sscal, so no per-block alpha handling).
     let preScaleBindGroup = null;
     if (alpha !== 1.0) {
@@ -344,9 +351,9 @@ export async function strsm(
     if (gpuTimeMs !== undefined) return { B: result, gpuTimeMs };
     return { B: result };
   } finally {
-    if (!AIsGpu) destroyBuffers(ABuffer);
-    if (!BIsGpu) destroyBuffers(BBuffer);
-    destroyBuffers(AinvBuffer);
+    if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
+    if (!BIsGpu && BBuffer) destroyBuffers(BBuffer);
+    if (AinvBuffer) destroyBuffers(AinvBuffer);
     destroyBuffers(scratchBuffers);
     destroyBuffers(paramsBuffers);
   }
