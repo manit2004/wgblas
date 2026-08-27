@@ -4,6 +4,7 @@ let _device = null;
 let _adapter = null;
 let _gpu = null; // eslint-disable-line no-unused-vars
 let _benchmarkEnabled = false;
+let _initOptions = null; // options the live device was actually created with
 
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -13,7 +14,23 @@ export async function init({
   benchmark = false,
   dumpShaders = false,
 } = {}) {
+  const requested = { powerPreference, benchmark, dumpShaders };
+
   if (_device) {
+    // Same options: idempotent. Different options: refuse — requiredFeatures
+    // are fixed at requestDevice(), so silently returning the cached device
+    // left init({ benchmark: true }) reporting gpuTimeMs undefined forever.
+    const changed = Object.keys(requested).filter((key) => requested[key] !== _initOptions[key]);
+    if (changed.length > 0) {
+      const diff = changed
+        .map((key) => `${key}: ${JSON.stringify(_initOptions[key])} -> ${JSON.stringify(requested[key])}`)
+        .join(", ");
+      throw new Error(
+        `init() was already called with different options (${diff}). The device is created once ` +
+        "and its features are fixed at creation, so the new options cannot take effect. " +
+        "Call cleanup() first if you need to re-initialize with different options.",
+      );
+    }
     return _device;
   }
 
@@ -48,6 +65,7 @@ export async function init({
     throw new Error("No WebGPU adapter found.");
   }
 
+  _initOptions = requested;
   _benchmarkEnabled = benchmark;
   const bmConfig = benchmarkMode(_adapter, benchmark);
   const features = [...(bmConfig.requiredFeatures ?? [])];
@@ -69,6 +87,7 @@ export function cleanup() {
   _adapter = null;
   _gpu = null;
   _benchmarkEnabled = false;
+  _initOptions = null;
 }
 
 export function gpuName() {

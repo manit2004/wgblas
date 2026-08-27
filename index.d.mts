@@ -38,6 +38,12 @@ export { strsm } from "./src/strsm/strsm.mjs";
 /**
  * Initializes the WebGPU device.
  *
+ * The device is created once and cached. Calling `init()` again with the same
+ * options is idempotent and returns that cached device. Calling it with
+ * *different* options throws, because a device's features are fixed when it is
+ * created and cannot be reconfigured afterwards — call {@link cleanup} first,
+ * then `init()` with the new options.
+ *
  * @param options.powerPreference - GPU power preference (default: `"high-performance"`).
  *   This is a hint to the browser: on dual-GPU systems, `"high-performance"` typically favors the discrete GPU
  *   and `"low-power"` favors the integrated one.
@@ -77,6 +83,16 @@ export { strsm } from "./src/strsm/strsm.mjs";
  * console.log(`Result: [${Array.from(result).join(", ")}]`);
  * console.log(`GPU time: ${gpuTimeMs.toFixed(3)} ms`);
  * ```
+ * @example Re-initializing with different options
+ * ```js
+ * import { init, cleanup } from "wgblas";
+ * await init();
+ * // await init({ benchmark: true });  // throws — options differ
+ * cleanup();
+ * const device = await init({ benchmark: true }); // fine
+ * ```
+ *
+ * @throws {Error} if `init()` was already called with different options — call {@link cleanup} first
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
  * @category Core
  */
