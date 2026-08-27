@@ -13,8 +13,8 @@ import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { WGS } from "../util/constants.mjs";
 
-const WGS = 64; // workgroup size
 
 export async function dasum(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;

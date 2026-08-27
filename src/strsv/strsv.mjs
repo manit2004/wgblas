@@ -12,9 +12,9 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { BLOCK_SIZE } from "../util/constants.mjs";
 
 // Blocked triangular solve via explicit block inversion (invert/apply/update passes) instead of barrier-per-row substitution.
-const BLOCK_SIZE = 64;
 
 // One shared buffer holds all blocks' params (offset blockIndex*stride) instead of one buffer per block — avoids the O(numBlocks) createBuffer/writeBuffer calls that dominated CPU time.
 function packBlockParams(numBlocks, stride, fieldsPerBlock) {

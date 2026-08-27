@@ -13,11 +13,9 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups, requireWorkgroups, requireWorkgroupCount } from "../util/workgroup.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { BLOCK_SIZE } from "../util/constants.mjs";
 
-const BLOCK_SIZE = 64; // must match strsv_invert_block.wgsl's own constant
-const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // same threshold sgemm/ssymm/strmm use
 
 // strsm: B := alpha*op(A)^-1*B (side='left') or alpha*B*op(A)^-1 (side='right'),
 // A triangular. Blocked substitution (strsv's own technique, generalized to

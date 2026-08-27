@@ -11,10 +11,8 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
 
-const BM_SMALL = 32, BN_SMALL = 32; // sgemmtr_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemmtr_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // same threshold sgemm/sgemmtr/ssyrk use
 
 // ssyr2k: C := uplo(alpha*op(A)*op(B)^T + alpha*op(B)*op(A)^T + beta*C). No
 // dedicated shader — two sgemmtr passes on one encoder, second with beta=1.

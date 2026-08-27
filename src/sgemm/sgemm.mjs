@@ -13,10 +13,8 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
 
-const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // large tile needs >= a 6x6 grid of its own tiles to beat the small tile
 
 export async function sgemm(
   device, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, layout = "row-major",

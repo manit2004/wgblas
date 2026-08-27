@@ -13,11 +13,9 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { TILE_WG_2D } from "../util/constants.mjs";
 
-const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // same threshold sgemm/sgemmtr/ssyrk/ssymm use
-const TRI_WG = 8; // triangularize.wgsl's @workgroup_size(8, 8)
 
 // strmm: B := alpha*op(A)*B (side='left') or alpha*B*op(A) (side='right'), A
 // triangular. Triangularize then sgemm, one command encoder. B is both
@@ -191,7 +189,7 @@ export async function strmm(
     commandEncoder.copyBufferToBuffer(BBuffer, 0, outBuffer, 0, Math.min(BBuffer.size, outBuffer.size));
     const triDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
     const gemmDesc = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-    encodePass(commandEncoder, triPipeline, triBindGroup, { x: Math.ceil(aOrder / TRI_WG), y: Math.ceil(aOrder / TRI_WG) }, triDesc);
+    encodePass(commandEncoder, triPipeline, triBindGroup, { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) }, triDesc);
     encodePass(commandEncoder, gemmPipeline, gemmBindGroup, gemmWgCount, gemmDesc);
 
     const ts = resolveTimestamp(commandEncoder, querySet);

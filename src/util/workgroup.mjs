@@ -1,9 +1,9 @@
 /** @module devdocs/utility-functions/workgroup */
 import { getDevice } from "../init.mjs";
-
-// Fixed sizes match the shader declarations (WGS = 64 for 1D, 8×8 = 64 threads for 2D).
-const WORKGROUP_SIZE_1D = 64;
-const WORKGROUP_SIZE_2D = 8;
+// Fixed sizes match the shader declarations (WGS = 64 for 1D, 8×8 = 64 threads
+// for 2D) — see constants.mjs, which is where both values are defined and
+// where the WGSL cross-check hangs off.
+import { WGS as WORKGROUP_SIZE_1D, TILE_WG_2D as WORKGROUP_SIZE_2D } from "./constants.mjs";
 
 /**
  * Calculates the number of workgroups to dispatch, clamped to the device's

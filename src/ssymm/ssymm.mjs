@@ -13,11 +13,9 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { TILE_WG_2D } from "../util/constants.mjs";
 
-const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // same threshold sgemm/sgemmtr/ssyrk use
-const SYM_WG = 8; // symmetrize.wgsl's @workgroup_size(8, 8)
 
 // ssymm: C := alpha*A*B + beta*C (side='left') or alpha*B*A + beta*C
 // (side='right'), A symmetric. No fused kernel — symmetrize then sgemm,
@@ -189,7 +187,7 @@ export async function ssymm(
     const { commandEncoder, querySet } = beginTimedEncoder();
     const symDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
     const gemmDesc = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-    encodePass(commandEncoder, symPipeline, symBindGroup, { x: Math.ceil(aOrder / SYM_WG), y: Math.ceil(aOrder / SYM_WG) }, symDesc);
+    encodePass(commandEncoder, symPipeline, symBindGroup, { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) }, symDesc);
     encodePass(commandEncoder, gemmPipeline, gemmBindGroup, gemmWgCount, gemmDesc);
 
     const ts = resolveTimestamp(commandEncoder, querySet);
