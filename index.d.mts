@@ -38,6 +38,13 @@ export { strsm } from "./src/strsm/strsm.mjs";
 /**
  * Initializes the WebGPU device.
  *
+ * Devices are cached per option set: the same options return the same device,
+ * different options a separate one — so one process can drive several GPUs
+ * (`"high-performance"` and `"low-power"` typically resolve to the discrete and
+ * integrated adapters). Each routine dispatches to the device you pass it; GPU
+ * buffers cannot cross devices, so a `GpuVector`/`GpuMatrix` from one is
+ * rejected by another. {@link cleanup} releases them all.
+ *
  * @param options.powerPreference - GPU power preference (default: `"high-performance"`).
  *   This is a hint to the browser: on dual-GPU systems, `"high-performance"` typically favors the discrete GPU
  *   and `"low-power"` favors the integrated one.
@@ -77,6 +84,19 @@ export { strsm } from "./src/strsm/strsm.mjs";
  * console.log(`Result: [${Array.from(result).join(", ")}]`);
  * console.log(`GPU time: ${gpuTimeMs.toFixed(3)} ms`);
  * ```
+ * @example Two GPUs at once
+ * ```js
+ * import { init, cleanup, gpuName, sscal } from "wgblas";
+ * const dGpu = await init({ powerPreference: "high-performance" });
+ * const iGpu = await init({ powerPreference: "low-power" });
+ * console.log(gpuName(dGpu).description, "and", gpuName(iGpu).description);
+ * const [a, b] = await Promise.all([
+ *   sscal(dGpu, 4, 2, new Float32Array([1, 2, 3, 4]), 1),
+ *   sscal(iGpu, 4, 5, new Float32Array([1, 2, 3, 4]), 1),
+ * ]);
+ * cleanup(); // releases both
+ * ```
+ *
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
  * @category Core
  */
@@ -87,8 +107,15 @@ export declare function init(options?: {
 }): Promise<GPUDevice>;
 
 /**
- * Destroys the WebGPU device, releases the adapter, resets benchmark state, and fires all internal
- * cleanup callbacks (e.g. releasing cached GPU pipelines and buffers). Call when done (required in Node.js to prevent crash on exit).
+ * Destroys devices created by {@link init} and releases their cached pipelines and buffers.
+ * Call when done (required in Node.js to prevent crash on exit).
+ *
+ * With no argument, releases every device at once. Pass a device to release
+ * just that one and leave the others usable — handy when driving several GPUs.
+ * Unknown or already-released devices are ignored, so this is safe to call
+ * more than once.
+ *
+ * @param device - the device to release; omit to release all of them.
  *
  * @example
  * ```js
@@ -101,10 +128,13 @@ export declare function init(options?: {
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L56-L65)
  * @category Core
  */
-export declare function cleanup(): void;
+export declare function cleanup(device?: GPUDevice): void;
 
 /**
  * Returns the GPU device name from the WebGPU adapter info. Must be called after `init()`.
+ *
+ * @param device - which device to report on; defaults to the one from the first
+ *   `init()` call. Pass it explicitly when driving more than one GPU.
  *
  * @example
  * ```js
@@ -116,4 +146,4 @@ export declare function cleanup(): void;
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L81-L87)
  * @category Core
  */
-export declare function gpuName(): { description: string; device: string };
+export declare function gpuName(device?: GPUDevice): { description: string; device: string };

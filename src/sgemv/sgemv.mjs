@@ -9,9 +9,10 @@ import { runComputePass, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
-import { calcWorkgroups } from "../util/workgroup.mjs";
+import { requireWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, layout = "row-major") {
   const AIsGpu = A instanceof GpuMatrix;
@@ -20,6 +21,7 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "sgemv", { A, x, y });
   if (trans !== "no-transpose" && trans !== "transpose")
     throw new Error("trans must be 'no-transpose' or 'transpose'.");
   if (layout !== "row-major" && layout !== "column-major")
@@ -62,6 +64,8 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     );
   if (xIsGpu && x._buf === y._buf)
     throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");
+  if (AIsGpu && yIsGpu && A._buf === y._buf)
+    throw new Error("A and y must not reference the same GPU buffer.");
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
   if (AIsGpu && (A.rows < m || A.cols < n))
@@ -99,38 +103,46 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
   const shaderName = isNoTrans ? "sgemv_n" : "sgemv_t";
   const pipeline   = await getPipeline(device, shaderName);
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sgemv-A", false);
-  const xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sgemv-x", false);
-  const yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "sgemv-y", true);
-  const paramsBuffer = createParamsBuffer(
-    [
-      { value: m,     type: "u32" },
-      { value: n,     type: "u32" },
-      { value: alpha, type: "f32" },
-      { value: beta,  type: "f32" },
-      { value: incx,  type: "u32" },
-      { value: incy,  type: "u32" },
-      { value: lda,   type: "u32" },
-    ],
-    "sgemv-params",
-  );
+  let ABuffer = null;
+  let xBuffer = null;
+  let yBuffer = null;
+  let paramsBuffer = null;
 
   try {
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sgemv-A", false);
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sgemv-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sgemv-y", true);
+    paramsBuffer = createParamsBuffer(device,
+      [
+        { value: m,     type: "u32" },
+        { value: n,     type: "u32" },
+        { value: alpha, type: "f32" },
+        { value: beta,  type: "f32" },
+        { value: incx,  type: "u32" },
+        { value: incy,  type: "u32" },
+        { value: lda,   type: "u32" },
+      ],
+      "sgemv-params",
+    );
+
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
       xBuffer,
       yBuffer,
       paramsBuffer,
     ]);
 
-    // NoTrans: one workgroup per row (grid-stride handles overflow); Trans: one thread per output column.
+    // NoTrans: one workgroup per row — sgemv_n.wgsl is a grid-stride loop, so
+    // clamping here only costs parallelism. Trans: one thread per output
+    // column, and sgemv_t.wgsl indexes straight off global_invocation_id with
+    // no fallback, so an over-limit dispatch must be refused, not truncated.
     const wgCount = isNoTrans
       ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
-      : calcWorkgroups(yLen);
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+      : requireWorkgroups(device, "sgemv", yLen);
+    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
+    const readBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 
@@ -143,10 +155,10 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
     return { y: result };
   } finally {
-    if (!AIsGpu) destroyBuffers(ABuffer);
-    if (!xIsGpu) destroyBuffers(xBuffer);
-    if (!yIsGpu) destroyBuffers(yBuffer);
-    destroyBuffers(paramsBuffer);
+    if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
+    if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
+    if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
+    if (paramsBuffer) destroyBuffers(paramsBuffer);
 
   }
 }

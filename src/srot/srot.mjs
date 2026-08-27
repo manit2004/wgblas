@@ -11,6 +11,7 @@ import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function srot(device, n, x, incx, y, incy, c, s) {
   const xIsGpu = x instanceof GpuVector;
@@ -18,6 +19,7 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "srot", { x, y });
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -58,9 +60,9 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
   let readY = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "srot-x", true);
-    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "srot-y", true);
-    paramsBuffer = createParamsBuffer(
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "srot-x", true);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "srot-y", true);
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: n, type: "u32" },
         { value: c, type: "f32" },
@@ -71,19 +73,19 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
       "srot-params",
     );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       xBuffer,
       yBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(
+    const { commandEncoder, ts } = runComputePass(device,
       pipeline,
       bindGroup,
-      calcWorkgroups(n),
+      calcWorkgroups(device, n),
     );
-    readX = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
-    readY = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
-    submit(commandEncoder);
+    readX = xIsGpu ? null : stageReadback(device, commandEncoder, xBuffer);
+    readY = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

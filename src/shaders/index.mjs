@@ -70,7 +70,8 @@ import sasum from "./sasum.wgsl";
 routineShaders.sasum = { sasum, "reduction/sum": sum };
 
 import snrm2 from "./snrm2.wgsl";
-routineShaders.snrm2 = { snrm2, "reduction/sum": sum };
+import scaledSum from "./reduction/scaledSum.wgsl";
+routineShaders.snrm2 = { snrm2, "reduction/scaledSum": scaledSum };
 
 import isamax from "./isamax.wgsl";
 import argmax from "./reduction/argmax.wgsl";
@@ -121,7 +122,11 @@ routineShaders.strmv = { strmv };
 import strsv_invert_block from "./strsv_invert_block.wgsl";
 import strsv_apply_inverse from "./strsv_apply_inverse.wgsl";
 import strsv_update from "./strsv_update.wgsl";
-routineShaders.strsv = { strsv_invert_block, strsv_apply_inverse, strsv_update };
+routineShaders.strsv = {
+  strsv_invert_block,
+  strsv_apply_inverse,
+  strsv_update,
+};
 
 import sger from "./sger.wgsl";
 routineShaders.sger = { sger };
@@ -162,8 +167,11 @@ routineShaders.strsm = {
  * Flat shader-name → WGSL source-string registry — what `getPipeline()`/`loadShader()` (see
  * `util/pipeline.mjs`) actually look shaders up in, in the browser. Derived from
  * `routineShaders` by merging every routine's shaders together; shared shaders (e.g.
- * `"reduction/sum"`, used by three different routines above) collapse harmlessly here since
+ * `"reduction/sum"`, used by two different routines above) collapse harmlessly here since
  * every routine's copy is the same imported string, never independently authored text.
  * @public
  */
-export const shaderSources = Object.assign({}, ...Object.values(routineShaders));
+export const shaderSources = Object.assign(
+  {},
+  ...Object.values(routineShaders),
+);

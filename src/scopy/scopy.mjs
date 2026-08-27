@@ -11,6 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function scopy(device, n, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
@@ -18,6 +19,7 @@ export async function scopy(device, n, x, incx, y, incy) {
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "scopy", { x, y });
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -52,9 +54,9 @@ export async function scopy(device, n, x, incx, y, incy) {
   let readBuffer = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "scopy-x", false);
-    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "scopy-y", true);
-    paramsBuffer = createParamsBuffer(
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "scopy-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "scopy-y", true);
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -63,19 +65,19 @@ export async function scopy(device, n, x, incx, y, incy) {
       "scopy-params",
     );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       xBuffer,
       yBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(
+    const { commandEncoder, ts } = runComputePass(device,
       pipeline,
       bindGroup,
-      calcWorkgroups(n),
+      calcWorkgroups(device, n),
     );
-    readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    readBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

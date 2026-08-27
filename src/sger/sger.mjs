@@ -11,12 +11,14 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout = "row-major") {
   const AIsGpu = A instanceof GpuMatrix;
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "sger", { A, x, y });
   if (layout !== "row-major" && layout !== "column-major")
     throw new Error("layout must be 'row-major' or 'column-major'.");
   if (typeof alpha !== "number")
@@ -89,10 +91,10 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout
   let paramsBuffer = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sger-x", false);
-    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "sger-y", false);
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sger-A", true);
-    paramsBuffer = createParamsBuffer(
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sger-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sger-y", false);
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sger-A", true);
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: m,     type: "u32" },
         { value: n,     type: "u32" },
@@ -104,7 +106,7 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout
       "sger-params",
     );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       xBuffer,
       yBuffer,
       ABuffer,
@@ -114,10 +116,10 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when m > dispatch count.
     const wgCount = Math.min(m, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    const readBuffer = AIsGpu ? null : stageReadback(commandEncoder, ABuffer);
+    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
+    const readBuffer = AIsGpu ? null : stageReadback(device, commandEncoder, ABuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

@@ -12,9 +12,10 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { BLOCK_SIZE } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 // Blocked triangular solve via explicit block inversion (invert/apply/update passes) instead of barrier-per-row substitution.
-const BLOCK_SIZE = 64;
 
 // One shared buffer holds all blocks' params (offset blockIndex*stride) instead of one buffer per block — avoids the O(numBlocks) createBuffer/writeBuffer calls that dominated CPU time.
 function packBlockParams(numBlocks, stride, fieldsPerBlock) {
@@ -45,6 +46,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "strsv", { A, x });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (trans !== "no-transpose" && trans !== "transpose")
@@ -65,6 +67,8 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
     throw new Error("A must be a GpuMatrix when x is a GpuVector.");
   if (AIsGpu && !xIsGpu)
     throw new Error("x must be a GpuVector when A is a GpuMatrix.");
+  if (AIsGpu && xIsGpu && A._buf === x._buf)
+    throw new Error("A and x must not reference the same GPU buffer.");
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
   if (AIsGpu && (A.rows < n || A.cols < n))
@@ -109,11 +113,11 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
   let invertParams = null;
 
   try {
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsv-A", false);
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "strsv-x", true);
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strsv-A", false);
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strsv-x", true);
     // One BLOCK_SIZE x BLOCK_SIZE dense region per block (row-major), even
     // though only a triangular half is ever nonzero — see strsv_invert_block.wgsl.
-    AinvBuffer = createStorageBuffer(
+    AinvBuffer = createStorageBuffer(device,
       numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4,
       "strsv-Ainv",
     );
@@ -135,10 +139,10 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
     });
     updateParamsBuffer = createSharedParamsBuffer(device, updateData, "strsv-update-params");
 
-    const { commandEncoder, querySet } = beginTimedEncoder();
+    const { commandEncoder, querySet } = beginTimedEncoder(device);
 
     // Pre-pass: every block's inverse, fully parallel, one dispatch.
-    invertParams = createParamsBuffer(
+    invertParams = createParamsBuffer(device,
       [
         { value: n,                 type: "u32" },
         { value: lda,               type: "u32" },
@@ -148,7 +152,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       ],
       "strsv-invert-params",
     );
-    const invertBindGroup = createBindGroup(invertPipeline.getBindGroupLayout(0), [
+    const invertBindGroup = createBindGroup(device, invertPipeline.getBindGroupLayout(0), [
       ABuffer, AinvBuffer, invertParams,
     ]);
     const invertDesc = querySet
@@ -163,7 +167,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       const isLastPass = bi === blockStarts.length - 1;
       const paramsOffset = blockIndex * stride;
 
-      const applyBindGroup = createBindGroup(applyPipeline.getBindGroupLayout(0), [
+      const applyBindGroup = createBindGroup(device, applyPipeline.getBindGroupLayout(0), [
         AinvBuffer, xBuffer, { buffer: applyParamsBuffer, offset: paramsOffset, size: 16 },
       ]);
 
@@ -175,7 +179,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       const remaining = forward ? n - blockEnd : blockStart;
       if (remaining === 0) continue;
 
-      const updateBindGroup = createBindGroup(updatePipeline.getBindGroupLayout(0), [
+      const updateBindGroup = createBindGroup(device, updatePipeline.getBindGroupLayout(0), [
         ABuffer, xBuffer, { buffer: updateParamsBuffer, offset: paramsOffset, size: 32 },
       ]);
 
@@ -183,10 +187,10 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       encodePass(commandEncoder, updatePipeline, updateBindGroup, wgCount);
     }
 
-    const ts = resolveTimestamp(commandEncoder, querySet);
-    const readBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
+    const ts = resolveTimestamp(device, commandEncoder, querySet);
+    const readBuffer = xIsGpu ? null : stageReadback(device, commandEncoder, xBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

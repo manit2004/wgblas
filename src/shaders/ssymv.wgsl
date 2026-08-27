@@ -63,7 +63,9 @@ fn main(
     }
 
     if lid.x == 0u {
-      y[i * params.incy] = params.alpha * scratch[0] + params.beta * y[i * params.incy];
+      // BLAS beta==0 semantics: y is written, not accumulated — must not read y.
+      let acc = params.alpha * scratch[0];
+      y[i * params.incy] = select(acc, acc + params.beta * y[i * params.incy], params.beta != 0.0);
     }
   }
 }

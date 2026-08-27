@@ -11,6 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function saxpy(device, n, alpha, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
@@ -18,6 +19,7 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "saxpy", { x, y });
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
@@ -56,9 +58,9 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
   let readBuffer = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "saxpy-x", false);
-    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "saxpy-y", true);
-    paramsBuffer = createParamsBuffer(
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "saxpy-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "saxpy-y", true);
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: n, type: "u32" },
         { value: alpha, type: "f32" },
@@ -68,19 +70,19 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
       "saxpy-params",
     );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       xBuffer,
       yBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(
+    const { commandEncoder, ts } = runComputePass(device,
       pipeline,
       bindGroup,
-      calcWorkgroups(n),
+      calcWorkgroups(device, n),
     );
-    readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    readBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

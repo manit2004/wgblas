@@ -29,7 +29,7 @@ const alpha = 3;
 const x = new Float32Array([1, 2, 3, 4, 5]);
 
 console.log("before:", x);
-const result = await sscal(device, n, alpha, x, 1);
+const { x: result } = await sscal(device, n, alpha, x, 1);
 console.log("after: ", result); // [3, 6, 9, 12, 15]
 cleanup();
 ```
@@ -60,7 +60,7 @@ No bundler needed. Load the pre-built browser bundle from the CDN and use `windo
 
         const xBefore = Array.from(x).map(v => v.toFixed(4)).join(", ");
 
-        const result = await sscal(device, n, alpha, x, 1);
+        const { x: result } = await sscal(device, n, alpha, x, 1);
 
         document.getElementById("out").textContent =
           "before: " + xBefore +

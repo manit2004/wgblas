@@ -17,7 +17,7 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="createresultbuffer"><span class="tsd-kind-call-signature">createResultBuffer</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">size</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">label</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GPUBuffer</span><a href="#createresultbuffer" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="createresultbuffer"><span class="tsd-kind-call-signature">createResultBuffer</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">device</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GPUDevice</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">size</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">label</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GPUBuffer</span><a href="#createresultbuffer" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Creates a GPU storage buffer with <code>COPY_SRC</code> so its contents can be
 copied to a CPU-readable readback buffer after the shader runs.</p>
@@ -25,6 +25,7 @@ copied to a CPU-readable readback buffer after the shader runs.</p>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">device</span>: <span class="tsd-signature-type">GPUDevice</span></span></li>
 <li><span><span class="tsd-kind-parameter">size</span>: <span class="tsd-signature-type">number</span></span>
 <div class="tsd-comment tsd-typography"><p>byte size</p>
 </div></li>
@@ -33,11 +34,14 @@ copied to a CPU-readable readback buffer after the shader runs.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">GPUBuffer</span></h4>
 <div class="tsd-comment tsd-typography">
+<div class="tsd-tag-throws">
+<h4 class="tsd-anchor-link" id="throws">Throws<a href="#throws" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>if <code>size</code> exceeds the device's <code>maxStorageBufferBindingSize</code></p>
+</div>
 <div class="tsd-tag-see">
 <h4 class="tsd-anchor-link" id="see">See<a href="#see" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><a href="https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer">GPUDevice.createBuffer()</a></p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/util/buffer.mjs#L87">src/util/buffer.mjs:87</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/682f7ffcca571e3e4acc50856cfe1e122e11d934/src/util/buffer.mjs#L108">src/util/buffer.mjs:108</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

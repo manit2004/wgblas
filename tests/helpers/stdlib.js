@@ -60,6 +60,16 @@ function makeYReference(stdlibFn, prefix = () => []) {
   };
 }
 
+// (n, ...prefix, x, incx) mutates only x in place — no y at all.
+// `prefix(a)` supplies any leading args (e.g. alpha) before x.
+function makeXReference(stdlibFn, prefix = () => []) {
+  return (a) => {
+    const x = a.x.slice();
+    stdlibFn(a.n, ...prefix(a), x, a.incx);
+    return { x };
+  };
+}
+
 // (order, ...dims, alpha, A, lda, x, incx, beta, y, incy) mutates only y in
 // place. `dims(a)` supplies the trans/uplo + size args. `a.layout` (default
 // "row-major") is forwarded as-is — stdlib's sgemv/ssymv natively support
@@ -155,13 +165,7 @@ function makeMatMatTriangularReference(matMatFn) {
   };
 }
 
-// sscal mutates x in place (with a leading alpha) and returns x directly,
-// not wrapped — the one mutate-only-x shape, distinct from the others above.
-export const sscalReference = (a) => {
-  const x = a.x.slice();
-  stdlibSscal(a.n, a.alpha, x, a.incx);
-  return x;
-};
+export const sscalReference = makeXReference(stdlibSscal, (a) => [a.alpha]);
 
 export const sswapReference = makeXYReference(stdlibSswap);
 export const srotReference = makeXYReference(stdlibSrot, (a) => [a.c, a.s]);

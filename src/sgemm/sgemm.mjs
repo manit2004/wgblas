@@ -3,6 +3,8 @@ import {
   createParamsBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
+  vec4Usable,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { runComputePass, submit } from "../util/compute.mjs";
@@ -10,10 +12,10 @@ import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
-const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // large tile needs >= a 6x6 grid of its own tiles to beat the small tile
 
 export async function sgemm(
   device, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, layout = "row-major",
@@ -24,6 +26,7 @@ export async function sgemm(
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "sgemm", { A, B, C });
   if (transA !== "no-transpose" && transA !== "transpose")
     throw new Error("transA must be 'no-transpose' or 'transpose'.");
   if (transB !== "no-transpose" && transB !== "transpose")
@@ -135,10 +138,16 @@ export async function sgemm(
 
   const pipeline = await getPipeline(device, useLargeTile ? "sgemm_large" : "sgemm_small");
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sgemm-A", false);
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "sgemm-B", false);
-  const CBuffer = CIsGpu ? C._buf : uploadBuffer(C, "sgemm-C", true);
-  const paramsBuffer = createParamsBuffer(
+  const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sgemm-A", false);
+  const BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "sgemm-B", false);
+  const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "sgemm-C", true);
+  // Vectorized-load enablement — kernel-side view after the column-major swap.
+  // op(A) is m×k (no-trans) or k×m (trans); op(B) is k×n or n×k.
+  const aNot = transA === "no-transpose";
+  const bNot = transB === "no-transpose";
+  const useVecA = aNot && vec4Usable(ABuffer, lda, m, k); // transposed-A vec stores bank-conflict smem — measured slower than scalar
+  const useVecB = vec4Usable(BBuffer, ldb, bNot ? k : n, bNot ? n : k);
+  const paramsBuffer = createParamsBuffer(device,
     [
       { value: m,   type: "u32" },
       { value: n,   type: "u32" },
@@ -150,31 +159,35 @@ export async function sgemm(
       { value: ldc, type: "u32" },
       { value: transA === "transpose" ? 1 : 0, type: "u32" },
       { value: transB === "transpose" ? 1 : 0, type: "u32" },
+      { value: useVecA ? 1 : 0, type: "u32" },
+      { value: useVecB ? 1 : 0, type: "u32" },
     ],
     "sgemm-params",
   );
 
   try {
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
+      vec4ViewBinding(device, ABuffer),
       BBuffer,
+      vec4ViewBinding(device, BBuffer),
       CBuffer,
       paramsBuffer,
     ]);
 
     const wgCount = useLargeTile
       ? {
-        x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension),
-        y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension),
+        x: requireWorkgroupCount(device, largeWgX, "sgemm", "x"),
+        y: requireWorkgroupCount(device, largeWgY, "sgemm", "y"),
       }
       : {
-        x: Math.min(Math.ceil(n / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
-        y: Math.min(Math.ceil(m / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+        x: requireWorkgroupCount(device, Math.ceil(n / BN_SMALL), "sgemm", "x"),
+        y: requireWorkgroupCount(device, Math.ceil(m / BM_SMALL), "sgemm", "y"),
       };
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
+    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
+    const readBuffer = CIsGpu ? null : stageReadback(device, commandEncoder, CBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

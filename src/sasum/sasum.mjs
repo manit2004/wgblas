@@ -12,14 +12,16 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
+import { WGS } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
-const WGS = 64; // workgroup size
 
 export async function sasum(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "sasum", { x });
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
   if (incx <= 0) throw new Error("incx must be positive.");
@@ -41,10 +43,10 @@ export async function sasum(device, n, x, incx) {
   let readBuffer = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sasum-x", false);
-    partialsBuffer = createStorageBuffer(2 * WGS * 4, "sasum-partials"); // 2*WGS partial sums of f32
-    resultBuffer = createResultBuffer(4, "sasum-result"); // final f32 scalar
-    paramsBuffer = createParamsBuffer(
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sasum-x", false);
+    partialsBuffer = createStorageBuffer(device, 2 * WGS * 4, "sasum-partials"); // 2*WGS partial sums of f32
+    resultBuffer = createResultBuffer(device, 4, "sasum-result"); // final f32 scalar
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -52,31 +54,31 @@ export async function sasum(device, n, x, incx) {
       "sasum-params",
     );
 
-    const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [
+    const bgMain = createBindGroup(device, pipelineMain.getBindGroupLayout(0), [
       xBuffer,
       partialsBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(device,
       pipelineMain,
       bgMain,
       2 * WGS,
     ); // dispatch 2*WGS workgroups
 
-    submit(enc1);
+    submit(device, enc1);
 
-    const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [
+    const bgReduce = createBindGroup(device, pipelineReduce.getBindGroupLayout(0), [
       partialsBuffer,
       resultBuffer,
     ]);
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(device,
       pipelineReduce,
       bgReduce,
       1,
     ); // dispatch 1 workgroup to reduce the partial sums to a single result
-    readBuffer = stageReadback(enc2, resultBuffer);
+    readBuffer = stageReadback(device, enc2, resultBuffer);
 
-    submit(enc2);
+    submit(device, enc2);
 
     const resultPromise = extractResult(readBuffer, Float32Array);
     readBuffer = null; // ownership transferred — extractResult's own finally destroys it
@@ -96,7 +98,7 @@ export async function sasum(device, n, x, incx) {
     if (partialsBuffer) destroyBuffers(partialsBuffer);
     if (resultBuffer) destroyBuffers(resultBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
-    // Only reached if submit(enc2) threw before ownership was transferred above.
+    // Only reached if submit(device, enc2) threw before ownership was transferred above.
     if (readBuffer) destroyBuffers(readBuffer);
   }
 }

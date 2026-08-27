@@ -4,6 +4,7 @@ import {
   createStorageBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -11,11 +12,11 @@ import { extractResult } from "../util/result.mjs";
 import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { TILE_WG_2D } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
-const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // same threshold sgemm/sgemmtr/ssyrk/ssymm use
-const TRI_WG = 8; // triangularize.wgsl's @workgroup_size(8, 8)
 
 // strmm: B := alpha*op(A)*B (side='left') or alpha*B*op(A) (side='right'), A
 // triangular. Triangularize then sgemm, one command encoder. B is both
@@ -30,6 +31,7 @@ export async function strmm(
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "strmm", { A, B });
   if (side !== "left" && side !== "right")
     throw new Error("side must be 'left' or 'right'.");
   if (uplo !== "lower" && uplo !== "upper")
@@ -110,29 +112,35 @@ export async function strmm(
   const triPipeline = await getPipeline(device, "triangularize");
   const gemmWgCount = useLargeTile
     ? {
-      x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(device, largeWgX, "strmm", "x"),
+      y: requireWorkgroupCount(device, largeWgY, "strmm", "y"),
     }
     : {
-      x: Math.min(Math.ceil(ng / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(Math.ceil(mg / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "strmm", "x"),
+      y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "strmm", "y"),
     };
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strmm-A", false);
-  // readback=true (COPY_SRC): BBuffer is also the source that seeds outBuffer.
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strmm-B", true);
-  const AdenseBuffer = createStorageBuffer(aOrder * ldDense * 4, "strmm-Adense");
-  // COPY_DST: seeded from B's own content before gemm runs, so stride-padding
-  // gaps (never written by gemm's tight m x n loop) keep B's original bytes
-  // instead of reading back as zero. COPY_SRC: read back / adopted by B after.
-  const outBuffer = createStorageBuffer(
-    bOuter * ldb * 4, "strmm-out", GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
-  );
+  // Null-init here and allocate inside the try below, so a throw partway
+  // through the sequence still reaches finally with every handle visible
+  // (strsv.mjs is the reference for this pattern).
+  let ABuffer = null, BBuffer = null;
+  let AdenseBuffer = null, outBuffer = null;
   let triParams = null, gemmParams = null;
   let outBufferAdopted = false; // true once B._buf is repointed at outBuffer
 
   try {
-    triParams = createParamsBuffer(
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strmm-A", false);
+    // readback=true (COPY_SRC): BBuffer is also the source that seeds outBuffer.
+    BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "strmm-B", true);
+    AdenseBuffer = createStorageBuffer(device, aOrder * ldDense * 4, "strmm-Adense");
+    // COPY_DST: seeded from B's own content before gemm runs, so stride-padding
+    // gaps (never written by gemm's tight m x n loop) keep B's original bytes
+    // instead of reading back as zero. COPY_SRC: read back / adopted by B after.
+    outBuffer = createStorageBuffer(device,
+      bOuter * ldb * 4, "strmm-out", GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+    );
+
+    triParams = createParamsBuffer(device,
       [
         { value: aOrder, type: "u32" },
         { value: lda, type: "u32" },
@@ -143,7 +151,7 @@ export async function strmm(
       ],
       "strmm-tri-params",
     );
-    const triBindGroup = createBindGroup(triPipeline.getBindGroupLayout(0), [ABuffer, AdenseBuffer, triParams]);
+    const triBindGroup = createBindGroup(device, triPipeline.getBindGroupLayout(0), [ABuffer, AdenseBuffer, triParams]);
 
     // X/Y buffers and their own ld, matching swapXY above.
     const XBuffer = swapXY ? BBuffer : AdenseBuffer;
@@ -151,7 +159,7 @@ export async function strmm(
     const YBuffer = swapXY ? AdenseBuffer : BBuffer;
     const ldY = swapXY ? ldDense : ldb;
 
-    gemmParams = createParamsBuffer(
+    gemmParams = createParamsBuffer(device,
       [
         { value: mg,  type: "u32" },
         { value: ng,  type: "u32" },
@@ -166,9 +174,16 @@ export async function strmm(
       ],
       "strmm-gemm-params",
     );
-    const gemmBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [XBuffer, YBuffer, outBuffer, gemmParams]);
+    const gemmBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
+      XBuffer,
+      vec4ViewBinding(device, XBuffer),
+      YBuffer,
+      vec4ViewBinding(device, YBuffer),
+      outBuffer,
+      gemmParams,
+    ]);
 
-    const { commandEncoder, querySet } = beginTimedEncoder();
+    const { commandEncoder, querySet } = beginTimedEncoder(device);
     // Seed outBuffer with B's own bytes first, so gemm's tight m x n write
     // leaves stride-padding gaps holding B's original content, not zero.
     // BBuffer may be larger than outBuffer (e.g. a validation-test baseline
@@ -176,13 +191,13 @@ export async function strmm(
     commandEncoder.copyBufferToBuffer(BBuffer, 0, outBuffer, 0, Math.min(BBuffer.size, outBuffer.size));
     const triDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
     const gemmDesc = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-    encodePass(commandEncoder, triPipeline, triBindGroup, { x: Math.ceil(aOrder / TRI_WG), y: Math.ceil(aOrder / TRI_WG) }, triDesc);
+    encodePass(commandEncoder, triPipeline, triBindGroup, { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) }, triDesc);
     encodePass(commandEncoder, gemmPipeline, gemmBindGroup, gemmWgCount, gemmDesc);
 
-    const ts = resolveTimestamp(commandEncoder, querySet);
-    const readBuffer = BIsGpu ? null : stageReadback(commandEncoder, outBuffer);
+    const ts = resolveTimestamp(device, commandEncoder, querySet);
+    const readBuffer = BIsGpu ? null : stageReadback(device, commandEncoder, outBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 
@@ -201,10 +216,10 @@ export async function strmm(
     if (gpuTimeMs !== undefined) return { B: result, gpuTimeMs };
     return { B: result };
   } finally {
-    if (!AIsGpu) destroyBuffers(ABuffer);
-    if (!BIsGpu) destroyBuffers(BBuffer);
-    destroyBuffers(AdenseBuffer);
-    if (!outBufferAdopted) destroyBuffers(outBuffer);
+    if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
+    if (!BIsGpu && BBuffer) destroyBuffers(BBuffer);
+    if (AdenseBuffer) destroyBuffers(AdenseBuffer);
+    if (outBuffer && !outBufferAdopted) destroyBuffers(outBuffer);
     if (triParams) destroyBuffers(triParams);
     if (gemmParams) destroyBuffers(gemmParams);
   }

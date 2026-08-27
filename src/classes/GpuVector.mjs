@@ -4,37 +4,55 @@ import { extractResult } from "../util/result.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 
 export class GpuVector {
-  constructor(buffer, length, dtype = Float32Array, loBuffer = null) {
+  constructor(buffer, length, dtype = Float32Array, loBuffer = null, device = null) {
     this._buf = buffer;
     this._loBuf = loBuffer; // Non-null only for Float64Array-backed vectors
     this.length = length;
     this.dtype = dtype;
+    // A GPUBuffer belongs to exactly one device and WebGPU rejects any attempt
+    // to use it with another, so every handle remembers where it lives. Routines
+    // check this to reject mixed-device operands with a clear message instead of
+    // a raw GPUValidationError.
+    this.device = device ?? getDevice();
   }
 
-  static from(data) {
+  /**
+   * Uploads a vector to GPU memory.
+   *
+   * Pass the target `GPUDevice` first — matching every routine's own
+   * `(device, ...)` convention. Omitting it falls back to the device from the
+   * last `init()`, which is the historical form and only works single-device.
+   *
+   * @param {GPUDevice|Float32Array|Float64Array} deviceOrData
+   */
+  static from(deviceOrData, maybeData) {
+    const explicit = deviceOrData instanceof GPUDevice;
+    const device = explicit ? deviceOrData : getDevice();
+    const data = explicit ? maybeData : deviceOrData;
+
     if (data instanceof Float64Array) {
       const { hi, lo } = splitDoubleDouble(data);
-      const hiBuf = uploadBuffer(hi, "gpu-vector-f64-hi", true);
-      const loBuf = uploadBuffer(lo, "gpu-vector-f64-lo", true);
-      return new GpuVector(hiBuf, data.length, Float64Array, loBuf);
+      const hiBuf = uploadBuffer(device, hi, "gpu-vector-f64-hi", true);
+      const loBuf = uploadBuffer(device, lo, "gpu-vector-f64-lo", true);
+      return new GpuVector(hiBuf, data.length, Float64Array, loBuf, device);
     }
     if (!(data instanceof Float32Array)) {
       throw new Error("GpuVector.from expects a Float32Array or Float64Array.");
     }
-    const buf = uploadBuffer(data, "gpu-vector", true);
-    return new GpuVector(buf, data.length, data.constructor);
+    const buf = uploadBuffer(device, data, "gpu-vector", true);
+    return new GpuVector(buf, data.length, data.constructor, null, device);
   }
 
   async read() {
-    const device = getDevice();
+    const device = this.device;
     const enc = device.createCommandEncoder();
-    const rb = stageReadback(enc, this._buf);
+    const rb = stageReadback(device, enc, this._buf);
     device.queue.submit([enc.finish()]);
 
     if (!this._loBuf) return extractResult(rb, this.dtype);
 
     const encLo = device.createCommandEncoder();
-    const rbLo = stageReadback(encLo, this._loBuf);
+    const rbLo = stageReadback(device, encLo, this._loBuf);
     device.queue.submit([encLo.finish()]);
 
     const [hi, lo] = await Promise.all([

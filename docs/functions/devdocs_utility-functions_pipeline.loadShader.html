@@ -17,7 +17,7 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="loadshader"><span class="tsd-kind-call-signature">loadShader</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">shaderNames</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">entryPoint</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">GPUComputePipeline</span><span class="tsd-signature-symbol">&gt;</span><a href="#loadshader" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="loadshader"><span class="tsd-kind-call-signature">loadShader</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">device</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GPUDevice</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">shaderNames</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">entryPoint</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">GPUComputePipeline</span><span class="tsd-signature-symbol">&gt;</span><a href="#loadshader" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Compiles one or more WGSL shaders (concatenated, in order, into a single module) into a
 <code>GPUComputePipeline</code>. Throws with line-level detail if compilation fails, rather than
@@ -27,6 +27,7 @@ layout from the shader — no manual layout definition needed.</p>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">device</span>: <span class="tsd-signature-type">GPUDevice</span></span></li>
 <li><span><span class="tsd-kind-parameter">shaderNames</span>: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></span>
 <div class="tsd-comment tsd-typography"><p>filenames without <code>.wgsl</code>, concatenated in array order</p>
 </div></li>
@@ -46,7 +47,7 @@ layout from the shader — no manual layout definition needed.</p>
 </ul>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1770a60ff06c84e4eb11dbca17530ddff8c47d65/src/util/pipeline.mjs#L67">src/util/pipeline.mjs:67</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/682f7ffcca571e3e4acc50856cfe1e122e11d934/src/util/pipeline.mjs#L67">src/util/pipeline.mjs:67</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

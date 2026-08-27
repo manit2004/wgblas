@@ -4,6 +4,7 @@ import {
   createStorageBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -11,11 +12,11 @@ import { extractResult } from "../util/result.mjs";
 import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { TILE_WG_2D } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
-const BM_SMALL = 32, BN_SMALL = 32; // sgemm_small.wgsl's block tile
-const BM_LARGE = 64, BN_LARGE = 64; // sgemm_large.wgsl's block tile
-const LARGE_TILE_WORKGROUP_THRESHOLD = 36; // same threshold sgemm/sgemmtr/ssyrk use
-const SYM_WG = 8; // symmetrize.wgsl's @workgroup_size(8, 8)
 
 // ssymm: C := alpha*A*B + beta*C (side='left') or alpha*B*A + beta*C
 // (side='right'), A symmetric. No fused kernel — symmetrize then sgemm,
@@ -29,6 +30,7 @@ export async function ssymm(
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "ssymm", { A, B, C });
   if (side !== "left" && side !== "right")
     throw new Error("side must be 'left' or 'right'.");
   if (uplo !== "lower" && uplo !== "upper")
@@ -128,22 +130,22 @@ export async function ssymm(
   const symPipeline = await getPipeline(device, "symmetrize");
   const gemmWgCount = useLargeTile
     ? {
-      x: Math.min(largeWgX, device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(largeWgY, device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(device, largeWgX, "ssymm", "x"),
+      y: requireWorkgroupCount(device, largeWgY, "ssymm", "y"),
     }
     : {
-      x: Math.min(Math.ceil(ng / BN_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
-      y: Math.min(Math.ceil(mg / BM_SMALL), device.limits.maxComputeWorkgroupsPerDimension),
+      x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "ssymm", "x"),
+      y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "ssymm", "y"),
     };
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "ssymm-A", false);
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "ssymm-B", false);
-  const CBuffer = CIsGpu ? C._buf : uploadBuffer(C, "ssymm-C", true);
-  const AdenseBuffer = createStorageBuffer(aOrder * ldDense * 4, "ssymm-Adense");
+  const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssymm-A", false);
+  const BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "ssymm-B", false);
+  const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "ssymm-C", true);
+  const AdenseBuffer = createStorageBuffer(device, aOrder * ldDense * 4, "ssymm-Adense");
   let symParams = null, gemmParams = null;
 
   try {
-    symParams = createParamsBuffer(
+    symParams = createParamsBuffer(device,
       [
         { value: aOrder, type: "u32" },
         { value: lda, type: "u32" },
@@ -152,7 +154,7 @@ export async function ssymm(
       ],
       "ssymm-sym-params",
     );
-    const symBindGroup = createBindGroup(symPipeline.getBindGroupLayout(0), [ABuffer, AdenseBuffer, symParams]);
+    const symBindGroup = createBindGroup(device, symPipeline.getBindGroupLayout(0), [ABuffer, AdenseBuffer, symParams]);
 
     // X/Y buffers and their own ld, matching swapXY above.
     const XBuffer = swapXY ? BBuffer : AdenseBuffer;
@@ -160,7 +162,7 @@ export async function ssymm(
     const YBuffer = swapXY ? AdenseBuffer : BBuffer;
     const ldY = swapXY ? ldDense : ldb;
 
-    gemmParams = createParamsBuffer(
+    gemmParams = createParamsBuffer(device,
       [
         { value: mg,  type: "u32" },
         { value: ng,  type: "u32" },
@@ -175,18 +177,25 @@ export async function ssymm(
       ],
       "ssymm-gemm-params",
     );
-    const gemmBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [XBuffer, YBuffer, CBuffer, gemmParams]);
+    const gemmBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
+      XBuffer,
+      vec4ViewBinding(device, XBuffer),
+      YBuffer,
+      vec4ViewBinding(device, YBuffer),
+      CBuffer,
+      gemmParams,
+    ]);
 
-    const { commandEncoder, querySet } = beginTimedEncoder();
+    const { commandEncoder, querySet } = beginTimedEncoder(device);
     const symDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
     const gemmDesc = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-    encodePass(commandEncoder, symPipeline, symBindGroup, { x: Math.ceil(aOrder / SYM_WG), y: Math.ceil(aOrder / SYM_WG) }, symDesc);
+    encodePass(commandEncoder, symPipeline, symBindGroup, { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) }, symDesc);
     encodePass(commandEncoder, gemmPipeline, gemmBindGroup, gemmWgCount, gemmDesc);
 
-    const ts = resolveTimestamp(commandEncoder, querySet);
-    const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
+    const ts = resolveTimestamp(device, commandEncoder, querySet);
+    const readBuffer = CIsGpu ? null : stageReadback(device, commandEncoder, CBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 
