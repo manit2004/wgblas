@@ -67,3 +67,33 @@ test("isamax edge cases", async (t) => {
     });
   }
 });
+
+// NaN behaviour is documented in isamax.d.mts, so pin it: the search compares
+// with `>`, which is false for NaN, so NaN is skipped rather than selected.
+// JSON has no NaN literal, so these cannot live in edge-cases.json.
+test("isamax NaN handling", async (t) => {
+  const run = async (arr) => (await isamax(device, arr.length, new Float32Array(arr), 1)).index;
+  const N = NaN, Inf = Infinity;
+
+  await t.test("NaN elements are skipped, not selected", async () => {
+    assert.equal(await run([1, N, 7, 3]), 2, "the largest non-NaN element should win");
+    assert.equal(await run([1, 2, 3, N]), 2, "a trailing NaN must not be selected");
+  });
+
+  await t.test("an all-NaN vector returns index 0", async () => {
+    // Nothing ever beats the -1.0 sentinel, so the initial index survives.
+    assert.equal(await run([N, N, N, N]), 0);
+  });
+
+  await t.test("a leading NaN is skipped — documented divergence from CBLAS", async () => {
+    // CBLAS seeds its running max from x[0]; with x[0] = NaN no later
+    // comparison succeeds, so it returns 0. This skips the NaN instead.
+    assert.equal(await run([N, 5, 2, 3]), 1, "should find the largest finite element");
+    assert.equal(await run([N, Inf, 2, 3]), 1);
+  });
+
+  await t.test("infinities compare normally", async () => {
+    assert.equal(await run([1, Inf, 2, 3]), 1, "+Infinity is the maximum");
+    assert.equal(await run([1, -Inf, 2, 3]), 1, "|-Infinity| is the maximum");
+  });
+});

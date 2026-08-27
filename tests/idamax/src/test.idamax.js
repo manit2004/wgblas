@@ -67,3 +67,29 @@ test("idamax edge cases", async (t) => {
     });
   }
 });
+
+// Mirrors the isamax NaN tests — same `>` comparison, same documented
+// divergence from CBLAS when x[0] is NaN. See idamax.d.mts.
+test("idamax NaN handling", async (t) => {
+  const run = async (arr) => (await idamax(device, arr.length, new Float64Array(arr), 1)).index;
+  const N = NaN, Inf = Infinity;
+
+  await t.test("NaN elements are skipped, not selected", async () => {
+    assert.equal(await run([1, N, 7, 3]), 2);
+    assert.equal(await run([1, 2, 3, N]), 2);
+  });
+
+  await t.test("an all-NaN vector returns index 0", async () => {
+    assert.equal(await run([N, N, N, N]), 0);
+  });
+
+  await t.test("a leading NaN is skipped — documented divergence from CBLAS", async () => {
+    assert.equal(await run([N, 5, 2, 3]), 1);
+    assert.equal(await run([N, Inf, 2, 3]), 1);
+  });
+
+  await t.test("infinities compare normally", async () => {
+    assert.equal(await run([1, Inf, 2, 3]), 1);
+    assert.equal(await run([1, -Inf, 2, 3]), 1);
+  });
+});
