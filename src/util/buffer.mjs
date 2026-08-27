@@ -10,6 +10,31 @@ export function destroyBuffers(...buffers) {
 }
 
 /**
+ * Throws if `byteSize` is more than this device can bind as a storage buffer.
+ *
+ * Every storage buffer the library creates goes through here. WebGPU accepts an
+ * oversized `createBuffer` and only rejects it later, when it is bound — as a
+ * `GPUValidationError` naming a bind group index rather than an operand, which
+ * gives no clue which allocation was at fault. Failing at creation, with the
+ * buffer's own label, points straight at it.
+ *
+ * @param {GPUDevice} device
+ * @param {number} byteSize
+ * @param {string} label - the buffer's debug label, quoted in the error
+ * @throws {Error} if `byteSize` exceeds `maxStorageBufferBindingSize`
+ * @internal
+ */
+function requireStorageSize(device, byteSize, label) {
+  const maxSize = device.limits.maxStorageBufferBindingSize;
+  if (byteSize > maxSize) {
+    throw new Error(
+      `Buffer "${label}" needs ${byteSize} bytes, exceeding this device's ` +
+      `maxStorageBufferBindingSize (${maxSize} bytes). The operands are too large for this device.`,
+    );
+  }
+}
+
+/**
  * Creates a GPU storage buffer and uploads `data` into it via mapped-at-creation.
  * The mapped view is constructed from `data`'s own typed-array constructor, so
  * bits are copied as-is regardless of element type (e.g. a Uint32Array's raw
@@ -27,15 +52,8 @@ export function destroyBuffers(...buffers) {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits GPUSupportedLimits} (`maxStorageBufferBindingSize`)
  */
 export function uploadBuffer(device, data, label = "blas-input", readback = false) {
-
-  // User-facing boundary: give a clear error instead of a cryptic GPUValidationError.
-  const maxSize = device.limits.maxStorageBufferBindingSize;
   const byteSize = data.byteLength;
-  if (byteSize > maxSize) {
-    throw new Error(
-      `Buffer size ${byteSize} bytes exceeds device limit of ${maxSize} bytes.`,
-    );
-  }
+  requireStorageSize(device, byteSize, label);
 
   const usage = readback
     ? GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
@@ -65,9 +83,11 @@ export function uploadBuffer(device, data, label = "blas-input", readback = fals
  * @param {number} [extraUsage=0] - additional `GPUBufferUsage` flags OR'd in alongside `STORAGE`
  *   (e.g. `GPUBufferUsage.COPY_DST` for a buffer that's also a `copyBufferToBuffer` destination)
  * @returns {GPUBuffer}
+ * @throws {Error} if `size` exceeds the device's `maxStorageBufferBindingSize`
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer GPUDevice.createBuffer()}
  */
 export function createStorageBuffer(device, size, label = "blas-storage", extraUsage = 0) {
+  requireStorageSize(device, size, label);
   return device.createBuffer({
     label,
     size,
@@ -82,9 +102,11 @@ export function createStorageBuffer(device, size, label = "blas-storage", extraU
  * @param {number} size - byte size
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
  * @returns {GPUBuffer}
+ * @throws {Error} if `size` exceeds the device's `maxStorageBufferBindingSize`
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer GPUDevice.createBuffer()}
  */
 export function createResultBuffer(device, size, label = "blas-result") {
+  requireStorageSize(device, size, label);
   return device.createBuffer({
     label,
     size,

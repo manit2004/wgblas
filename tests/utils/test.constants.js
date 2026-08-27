@@ -12,9 +12,9 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, WGS, TILE_WG_2D, BLOCK_SIZE,
-} from "../../../src/util/constants.mjs";
+} from "../../src/util/constants.mjs";
 
-const SHADER_DIR = join(dirname(fileURLToPath(import.meta.url)), "../../../src/shaders");
+const SHADER_DIR = join(dirname(fileURLToPath(import.meta.url)), "../../src/shaders");
 
 const source = (name) => readFileSync(join(SHADER_DIR, `${name}.wgsl`), "utf8");
 

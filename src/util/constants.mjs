@@ -9,7 +9,7 @@
  * `BM` in `sgemm_large.wgsl` without changing `BM_LARGE` here and the host
  * dispatches the wrong grid — too few workgroups computes part of the matrix
  * and reports success. Hoisting them here removes the JS-to-JS duplication;
- * `tests/constants/src/test.constants.js` closes the remaining JS-to-WGSL gap
+ * `tests/utils/test.constants.js` closes the remaining JS-to-WGSL gap
  * by parsing the shader sources and asserting they still agree.
  *
  * Every export below names the shader declaration it mirrors. Changing one

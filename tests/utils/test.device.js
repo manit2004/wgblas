@@ -15,7 +15,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup, gpuName, sscal, saxpy, sgemm, GpuVector, GpuMatrix } from "wgblas";
-import { getPowerPreference } from "../../helpers/device.js";
+import { getPowerPreference } from "../helpers/device.js";
 
 // Honour WGBLAS_POWER_PREFERENCE for the primary, as every other suite does,
 // and ask for the opposite preference to get a second device.
