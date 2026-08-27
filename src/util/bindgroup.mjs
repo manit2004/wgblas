@@ -1,5 +1,4 @@
 /** @module devdocs/utility-functions/bindgroup */
-import { getDevice } from "../init.mjs";
 
 /**
  * Creates a `GPUBindGroup` by mapping each buffer to sequential binding indices
@@ -16,8 +15,7 @@ import { getDevice } from "../init.mjs";
  * @returns {GPUBindGroup}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBindGroup GPUDevice.createBindGroup()}
  */
-export function createBindGroup(layout, buffers, startBinding = 0) {
-  const device = getDevice();
+export function createBindGroup(device, layout, buffers, startBinding = 0) {
   const entries = buffers.map((buffer, i) => ({
     binding: startBinding + i,
     resource: buffer instanceof GPUBuffer ? { buffer } : buffer,

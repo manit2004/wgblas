@@ -15,6 +15,7 @@ import { calcWorkgroups, requireWorkgroups, requireWorkgroupCount } from "../uti
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
 import { BLOCK_SIZE } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 
 // strsm: B := alpha*op(A)^-1*B (side='left') or alpha*B*op(A)^-1 (side='right'),
@@ -30,6 +31,7 @@ export async function strsm(
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "strsm", { A, B });
   if (side !== "left" && side !== "right")
     throw new Error("side must be 'left' or 'right'.");
   if (uplo !== "lower" && uplo !== "upper")
@@ -112,12 +114,12 @@ export async function strsm(
   const paramsBuffers = [];
   const scratchBuffers = [];
   function scratch(size, label) {
-    const buf = createStorageBuffer(size, label);
+    const buf = createStorageBuffer(device, size, label);
     scratchBuffers.push(buf);
     return buf;
   }
   function params(entries, label) {
-    const buf = createParamsBuffer(entries, label);
+    const buf = createParamsBuffer(device, entries, label);
     paramsBuffers.push(buf);
     return buf;
   }
@@ -128,9 +130,9 @@ export async function strsm(
   const bScaleLen = (bOuter - 1) * ldb + bInner;
 
   try {
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsm-A", false);
-    BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "strsm-B", true);
-    AinvBuffer = createStorageBuffer(numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4, "strsm-Ainv");
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strsm-A", false);
+    BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "strsm-B", true);
+    AinvBuffer = createStorageBuffer(device, numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4, "strsm-Ainv");
 
     // Pre-scale B by alpha once (reuses sscal, so no per-block alpha handling).
     let preScaleBindGroup = null;
@@ -143,7 +145,7 @@ export async function strsm(
         ],
         "strsm-scale-params",
       );
-      preScaleBindGroup = createBindGroup(scalarPipeline.getBindGroupLayout(0), [BBuffer, scaleParams]);
+      preScaleBindGroup = createBindGroup(device, scalarPipeline.getBindGroupLayout(0), [BBuffer, scaleParams]);
     }
 
     // Every diagonal block's inverse, fully parallel, one dispatch, unchanged.
@@ -157,7 +159,7 @@ export async function strsm(
       ],
       "strsm-invert-params",
     );
-    const invertBindGroup = createBindGroup(invertPipeline.getBindGroupLayout(0), [ABuffer, AinvBuffer, invertParams]);
+    const invertBindGroup = createBindGroup(device, invertPipeline.getBindGroupLayout(0), [ABuffer, AinvBuffer, invertParams]);
 
     // Reusable scratch buffers, sized for the worst case, bound at offset 0.
     const Bblock = scratch(BLOCK_SIZE * otherLen * 4, "strsm-Bblock");
@@ -165,15 +167,15 @@ export async function strsm(
     const Aoff = scratch(aOrder * BLOCK_SIZE * 4, "strsm-Aoff");
     const delta = scratch(aOrder * otherLen * 4, "strsm-delta");
 
-    const { commandEncoder, querySet } = beginTimedEncoder();
+    const { commandEncoder, querySet } = beginTimedEncoder(device);
 
     if (alpha === 0) {
       // BLAS: alpha=0 means A is not referenced — skip straight to B:=0.
       const zeroDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(bScaleLen), zeroDesc);
+      encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(device, bScaleLen), zeroDesc);
     } else {
       if (preScaleBindGroup) {
-        encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(bScaleLen));
+        encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(device, bScaleLen));
       }
       const invertDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
       encodePass(commandEncoder, invertPipeline, invertBindGroup, { x: BLOCK_SIZE, y: numBlocks }, invertDesc);
@@ -199,8 +201,8 @@ export async function strsm(
         ],
         "strsm-gather-B-params",
       );
-      const gatherBBindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [Bblock, BBuffer, gatherBParams]);
-      encodePass(commandEncoder, transferPipeline, gatherBBindGroup, requireWorkgroups("strsm", blockLen, otherLen));
+      const gatherBBindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [Bblock, BBuffer, gatherBParams]);
+      encodePass(commandEncoder, transferPipeline, gatherBBindGroup, requireWorkgroups(device, "strsm", blockLen, otherLen));
 
       // 2) apply: Xblock := op(Ainv_block) @ Bblock (side='left'), or the
       // transpose-trick equivalent for side='right' (same trick strmm uses).
@@ -225,17 +227,17 @@ export async function strsm(
           "strsm-apply-params",
         );
         const ainvBlock = { buffer: AinvBuffer, offset: blockIndex * BLOCK_SIZE * BLOCK_SIZE * 4, size: BLOCK_SIZE * BLOCK_SIZE * 4 };
-        const applyBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [
+        const applyBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
           ainvBlock,
-          vec4ViewBinding(ainvBlock),
+          vec4ViewBinding(device, ainvBlock),
           Bblock,
-          vec4ViewBinding(Bblock),
+          vec4ViewBinding(device, Bblock),
           Xblock,
           applyParams,
         ]);
         const wg = useLarge
-          ? { x: requireWorkgroupCount(largeWgX, "strsm", "x"), y: requireWorkgroupCount(largeWgY, "strsm", "y") }
-          : { x: requireWorkgroupCount(Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(Math.ceil(mg / BM_SMALL), "strsm", "y") };
+          ? { x: requireWorkgroupCount(device, largeWgX, "strsm", "x"), y: requireWorkgroupCount(device, largeWgY, "strsm", "y") }
+          : { x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "strsm", "y") };
         encodePass(commandEncoder, gemmPipeline, applyBindGroup, wg);
       }
 
@@ -256,9 +258,9 @@ export async function strsm(
         ],
         "strsm-scatter-params",
       );
-      const scatterBindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [Xblock, BBuffer, scatterParams]);
+      const scatterBindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [Xblock, BBuffer, scatterParams]);
       const scatterDesc = isLastPass && !hasRemaining && querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, transferPipeline, scatterBindGroup, requireWorkgroups("strsm", blockLen, otherLen), scatterDesc);
+      encodePass(commandEncoder, transferPipeline, scatterBindGroup, requireWorkgroups(device, "strsm", blockLen, otherLen), scatterDesc);
 
       // 4) trailing update: subtract this block's contribution from B.
       if (!hasRemaining) continue;
@@ -277,8 +279,8 @@ export async function strsm(
         ],
         "strsm-gather-A-params",
       );
-      const gatherABindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [Aoff, ABuffer, gatherAParams]);
-      encodePass(commandEncoder, transferPipeline, gatherABindGroup, requireWorkgroups("strsm", remCount, blockLen));
+      const gatherABindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [Aoff, ABuffer, gatherAParams]);
+      encodePass(commandEncoder, transferPipeline, gatherABindGroup, requireWorkgroups(device, "strsm", remCount, blockLen));
 
       {
         const mg = remCount, ng = otherLen, kg = blockLen;
@@ -300,17 +302,17 @@ export async function strsm(
           ],
           "strsm-update-params",
         );
-        const updateBindGroup = createBindGroup(gemmPipeline.getBindGroupLayout(0), [
+        const updateBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
           Aoff,
-          vec4ViewBinding(Aoff),
+          vec4ViewBinding(device, Aoff),
           Xblock,
-          vec4ViewBinding(Xblock),
+          vec4ViewBinding(device, Xblock),
           delta,
           updateParams,
         ]);
         const wg = useLarge
-          ? { x: requireWorkgroupCount(largeWgX, "strsm", "x"), y: requireWorkgroupCount(largeWgY, "strsm", "y") }
-          : { x: requireWorkgroupCount(Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(Math.ceil(mg / BM_SMALL), "strsm", "y") };
+          ? { x: requireWorkgroupCount(device, largeWgX, "strsm", "x"), y: requireWorkgroupCount(device, largeWgY, "strsm", "y") }
+          : { x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "strsm", "y") };
         encodePass(commandEncoder, gemmPipeline, updateBindGroup, wg);
       }
 
@@ -327,16 +329,16 @@ export async function strsm(
         ],
         "strsm-scatter-sub-params",
       );
-      const scatterSubBindGroup = createBindGroup(transferPipeline.getBindGroupLayout(0), [delta, BBuffer, scatterSubParams]);
+      const scatterSubBindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [delta, BBuffer, scatterSubParams]);
       const subDesc = isLastPass && querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, transferPipeline, scatterSubBindGroup, requireWorkgroups("strsm", remCount, otherLen), subDesc);
+      encodePass(commandEncoder, transferPipeline, scatterSubBindGroup, requireWorkgroups(device, "strsm", remCount, otherLen), subDesc);
       }
     }
 
-    const ts = resolveTimestamp(commandEncoder, querySet);
-    const readBuffer = BIsGpu ? null : stageReadback(commandEncoder, BBuffer);
+    const ts = resolveTimestamp(device, commandEncoder, querySet);
+    const readBuffer = BIsGpu ? null : stageReadback(device, commandEncoder, BBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

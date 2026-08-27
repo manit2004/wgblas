@@ -12,6 +12,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { requireWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, layout = "row-major") {
   const AIsGpu = A instanceof GpuMatrix;
@@ -20,6 +21,7 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "sgemv", { A, x, y });
   if (trans !== "no-transpose" && trans !== "transpose")
     throw new Error("trans must be 'no-transpose' or 'transpose'.");
   if (layout !== "row-major" && layout !== "column-major")
@@ -107,10 +109,10 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
   let paramsBuffer = null;
 
   try {
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sgemv-A", false);
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "sgemv-x", false);
-    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "sgemv-y", true);
-    paramsBuffer = createParamsBuffer(
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sgemv-A", false);
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sgemv-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sgemv-y", true);
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: m,     type: "u32" },
         { value: n,     type: "u32" },
@@ -123,7 +125,7 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
       "sgemv-params",
     );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
       xBuffer,
       yBuffer,
@@ -136,11 +138,11 @@ export async function sgemv(device, trans, m, n, alpha, A, lda, x, incx, beta, y
     // no fallback, so an over-limit dispatch must be refused, not truncated.
     const wgCount = isNoTrans
       ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
-      : requireWorkgroups("sgemv", yLen);
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+      : requireWorkgroups(device, "sgemv", yLen);
+    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
+    const readBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

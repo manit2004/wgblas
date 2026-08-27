@@ -1,5 +1,4 @@
 /** @module devdocs/utility-functions/pipeline */
-import { getDevice } from "../init.mjs";
 
 // WeakMap keyed by GPUDevice so pipelines are released automatically when the device is destroyed.
 const _pipelines = new WeakMap();
@@ -24,7 +23,7 @@ export async function getPipeline(device, shaderName, entryPoint = "main") {
   const names = Array.isArray(shaderName) ? shaderName : [shaderName];
   const key = `${names.join("+")}::${entryPoint}`;
   if (!byName.has(key)) {
-    byName.set(key, await loadShader(names, entryPoint));
+    byName.set(key, await loadShader(device, names, entryPoint));
   }
   return byName.get(key);
 }
@@ -56,6 +55,7 @@ async function loadCode(shaderName) {
  * `GPUComputePipeline`. Throws with line-level detail if compilation fails, rather than
  * surfacing a raw GPU error. Uses `layout: "auto"` so the pipeline derives its bind group
  * layout from the shader — no manual layout definition needed.
+ * @param {GPUDevice} device
  * @param {string[]} shaderNames - filenames without `.wgsl`, concatenated in array order
  * @param {string} [entryPoint="main"] - which `@compute` function in the combined module to run
  * @returns {Promise<GPUComputePipeline>}
@@ -64,8 +64,7 @@ async function loadCode(shaderName) {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUShaderModule/getCompilationInfo GPUShaderModule.getCompilationInfo()}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createComputePipeline GPUDevice.createComputePipeline()}
  */
-export async function loadShader(shaderNames, entryPoint = "main") {
-  const device = getDevice();
+export async function loadShader(device, shaderNames, entryPoint = "main") {
   const label = shaderNames.join("+");
   const code = (await Promise.all(shaderNames.map(loadCode))).join("\n");
 

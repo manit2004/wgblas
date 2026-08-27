@@ -1,5 +1,4 @@
 /** @module devdocs/utility-functions/compute */
-import { getDevice } from "../init.mjs";
 import { beginTimestamp, resolveTimestamp } from "./benchmark.mjs";
 
 // Anchors the pass encoder to its command encoder to prevent premature GC.
@@ -10,8 +9,7 @@ const _passEncoders = new WeakMap();
  * @param {GPUCommandEncoder} commandEncoder
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUQueue/submit GPUQueue.submit()}
  */
-export function submit(commandEncoder) {
-  const device = getDevice();
+export function submit(device, commandEncoder) {
   device.queue.submit([commandEncoder.finish()]);
 }
 
@@ -23,9 +21,8 @@ export function submit(commandEncoder) {
  * @returns {{ commandEncoder: GPUCommandEncoder, querySet: GPUQuerySet|null, passDescriptor: object|undefined }}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
  */
-export function beginTimedEncoder() {
-  const device = getDevice();
-  const { querySet, passDescriptor } = beginTimestamp();
+export function beginTimedEncoder(device) {
+  const { querySet, passDescriptor } = beginTimestamp(device);
   const commandEncoder = device.createCommandEncoder();
   return { commandEncoder, querySet, passDescriptor };
 }
@@ -71,11 +68,11 @@ export function encodePass(commandEncoder, pipeline, bindGroup, workgroups, pass
  * @returns {{ commandEncoder: GPUCommandEncoder, ts: any }} encoded commands and timestamp handle
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
  */
-export function runComputePass(pipeline, bindGroup, workgroups) {
-  const { commandEncoder, querySet, passDescriptor } = beginTimedEncoder();
+export function runComputePass(device, pipeline, bindGroup, workgroups) {
+  const { commandEncoder, querySet, passDescriptor } = beginTimedEncoder(device);
   encodePass(commandEncoder, pipeline, bindGroup, workgroups, passDescriptor);
 
-  const ts = resolveTimestamp(commandEncoder, querySet);
+  const ts = resolveTimestamp(device, commandEncoder, querySet);
 
   return { commandEncoder, ts };
 }

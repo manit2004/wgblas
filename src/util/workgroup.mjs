@@ -1,5 +1,4 @@
 /** @module devdocs/utility-functions/workgroup */
-import { getDevice } from "../init.mjs";
 // Fixed sizes match the shader declarations (WGS = 64 for 1D, 8×8 = 64 threads
 // for 2D) — see constants.mjs, which is where both values are defined and
 // where the WGSL cross-check hangs off.
@@ -25,8 +24,8 @@ import { WGS as WORKGROUP_SIZE_1D, TILE_WG_2D as WORKGROUP_SIZE_2D } from "./con
  * @returns {number | { x: number, y: number }}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits GPUSupportedLimits} (`maxComputeWorkgroupsPerDimension`)
  */
-export function calcWorkgroups(rows, cols) {
-  const max = getDevice().limits.maxComputeWorkgroupsPerDimension;
+export function calcWorkgroups(device, rows, cols) {
+  const max = device.limits.maxComputeWorkgroupsPerDimension;
   if (cols === undefined) {
     return Math.min(Math.ceil(rows / WORKGROUP_SIZE_1D), max);
   } else {
@@ -49,8 +48,8 @@ export function calcWorkgroups(rows, cols) {
  * @returns {number} `count`
  * @throws {Error} when `count` exceeds `maxComputeWorkgroupsPerDimension`
  */
-export function requireWorkgroupCount(count, routine, dim = "x") {
-  const max = getDevice().limits.maxComputeWorkgroupsPerDimension;
+export function requireWorkgroupCount(device, count, routine, dim = "x") {
+  const max = device.limits.maxComputeWorkgroupsPerDimension;
   if (count > max)
     throw new Error(
       `${routine}: this problem needs ${count} workgroups in ${dim}, but the device allows ` +
@@ -70,11 +69,11 @@ export function requireWorkgroupCount(count, routine, dim = "x") {
  * @returns {number | { x: number, y: number }}
  * @throws {Error} when either dimension exceeds `maxComputeWorkgroupsPerDimension`
  */
-export function requireWorkgroups(routine, rows, cols) {
+export function requireWorkgroups(device, routine, rows, cols) {
   if (cols === undefined)
-    return requireWorkgroupCount(Math.ceil(rows / WORKGROUP_SIZE_1D), routine);
+    return requireWorkgroupCount(device, Math.ceil(rows / WORKGROUP_SIZE_1D), routine);
   return {
-    x: requireWorkgroupCount(Math.ceil(cols / WORKGROUP_SIZE_2D), routine, "x"),
-    y: requireWorkgroupCount(Math.ceil(rows / WORKGROUP_SIZE_2D), routine, "y"),
+    x: requireWorkgroupCount(device, Math.ceil(cols / WORKGROUP_SIZE_2D), routine, "x"),
+    y: requireWorkgroupCount(device, Math.ceil(rows / WORKGROUP_SIZE_2D), routine, "y"),
   };
 }

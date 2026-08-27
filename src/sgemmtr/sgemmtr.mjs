@@ -12,6 +12,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
 import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 
 export async function sgemmtr(
@@ -23,6 +24,7 @@ export async function sgemmtr(
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "sgemmtr", { A, B, C });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (transA !== "no-transpose" && transA !== "transpose")
@@ -141,10 +143,10 @@ export async function sgemmtr(
 
   const pipeline = await getPipeline(device, useLargeTile ? "sgemmtr_large" : "sgemmtr_small");
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "sgemmtr-A", false);
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "sgemmtr-B", false);
-  const CBuffer = CIsGpu ? C._buf : uploadBuffer(C, "sgemmtr-C", true);
-  const paramsBuffer = createParamsBuffer(
+  const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sgemmtr-A", false);
+  const BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "sgemmtr-B", false);
+  const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "sgemmtr-C", true);
+  const paramsBuffer = createParamsBuffer(device,
     [
       { value: m,   type: "u32" },
       { value: n,   type: "u32" },
@@ -162,7 +164,7 @@ export async function sgemmtr(
   );
 
   try {
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
       BBuffer,
       CBuffer,
@@ -171,17 +173,17 @@ export async function sgemmtr(
 
     const wgCount = useLargeTile
       ? {
-        x: requireWorkgroupCount(largeWgX, "sgemmtr", "x"),
-        y: requireWorkgroupCount(largeWgY, "sgemmtr", "y"),
+        x: requireWorkgroupCount(device, largeWgX, "sgemmtr", "x"),
+        y: requireWorkgroupCount(device, largeWgY, "sgemmtr", "y"),
       }
       : {
-        x: requireWorkgroupCount(Math.ceil(n / BN_SMALL), "sgemmtr", "x"),
-        y: requireWorkgroupCount(Math.ceil(m / BM_SMALL), "sgemmtr", "y"),
+        x: requireWorkgroupCount(device, Math.ceil(n / BN_SMALL), "sgemmtr", "x"),
+        y: requireWorkgroupCount(device, Math.ceil(m / BM_SMALL), "sgemmtr", "y"),
       };
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
+    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
+    const readBuffer = CIsGpu ? null : stageReadback(device, commandEncoder, CBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

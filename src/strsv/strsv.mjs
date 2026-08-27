@@ -13,6 +13,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { BLOCK_SIZE } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 // Blocked triangular solve via explicit block inversion (invert/apply/update passes) instead of barrier-per-row substitution.
 
@@ -45,6 +46,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "strsv", { A, x });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (trans !== "no-transpose" && trans !== "transpose")
@@ -111,11 +113,11 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
   let invertParams = null;
 
   try {
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strsv-A", false);
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "strsv-x", true);
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strsv-A", false);
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strsv-x", true);
     // One BLOCK_SIZE x BLOCK_SIZE dense region per block (row-major), even
     // though only a triangular half is ever nonzero — see strsv_invert_block.wgsl.
-    AinvBuffer = createStorageBuffer(
+    AinvBuffer = createStorageBuffer(device,
       numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4,
       "strsv-Ainv",
     );
@@ -137,10 +139,10 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
     });
     updateParamsBuffer = createSharedParamsBuffer(device, updateData, "strsv-update-params");
 
-    const { commandEncoder, querySet } = beginTimedEncoder();
+    const { commandEncoder, querySet } = beginTimedEncoder(device);
 
     // Pre-pass: every block's inverse, fully parallel, one dispatch.
-    invertParams = createParamsBuffer(
+    invertParams = createParamsBuffer(device,
       [
         { value: n,                 type: "u32" },
         { value: lda,               type: "u32" },
@@ -150,7 +152,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       ],
       "strsv-invert-params",
     );
-    const invertBindGroup = createBindGroup(invertPipeline.getBindGroupLayout(0), [
+    const invertBindGroup = createBindGroup(device, invertPipeline.getBindGroupLayout(0), [
       ABuffer, AinvBuffer, invertParams,
     ]);
     const invertDesc = querySet
@@ -165,7 +167,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       const isLastPass = bi === blockStarts.length - 1;
       const paramsOffset = blockIndex * stride;
 
-      const applyBindGroup = createBindGroup(applyPipeline.getBindGroupLayout(0), [
+      const applyBindGroup = createBindGroup(device, applyPipeline.getBindGroupLayout(0), [
         AinvBuffer, xBuffer, { buffer: applyParamsBuffer, offset: paramsOffset, size: 16 },
       ]);
 
@@ -177,7 +179,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       const remaining = forward ? n - blockEnd : blockStart;
       if (remaining === 0) continue;
 
-      const updateBindGroup = createBindGroup(updatePipeline.getBindGroupLayout(0), [
+      const updateBindGroup = createBindGroup(device, updatePipeline.getBindGroupLayout(0), [
         ABuffer, xBuffer, { buffer: updateParamsBuffer, offset: paramsOffset, size: 32 },
       ]);
 
@@ -185,10 +187,10 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       encodePass(commandEncoder, updatePipeline, updateBindGroup, wgCount);
     }
 
-    const ts = resolveTimestamp(commandEncoder, querySet);
-    const readBuffer = xIsGpu ? null : stageReadback(commandEncoder, xBuffer);
+    const ts = resolveTimestamp(device, commandEncoder, querySet);
+    const readBuffer = xIsGpu ? null : stageReadback(device, commandEncoder, xBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

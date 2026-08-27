@@ -1,5 +1,5 @@
 /** @module devdocs/utility-functions/benchmark */
-import { getDevice, isBenchmarkEnabled } from "../init.mjs";
+import { isBenchmarkEnabled } from "../init.mjs";
 
 /**
  * Returns the `requestDevice` descriptor to pass to `adapter.requestDevice()`.
@@ -29,10 +29,9 @@ export function benchmarkMode(adapter, enabled) {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUQuerySet GPUQuerySet}
  * @see {@link https://developer.chrome.com/blog/new-in-webgpu-121 Chrome 121 — timestamp queries (querySet + timestampWrites pattern, quantization caveat)}
  */
-export function beginTimestamp() {
-  if (!isBenchmarkEnabled())
+export function beginTimestamp(device) {
+  if (!isBenchmarkEnabled(device))
     return { querySet: null, passDescriptor: undefined };
-  const device = getDevice();
   // Two slots: index 0 written when the pass begins, index 1 when it ends.
   const querySet = device.createQuerySet({ type: "timestamp", count: 2 });
   const passDescriptor = {
@@ -55,9 +54,8 @@ export function beginTimestamp() {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUCommandEncoder/resolveQuerySet GPUCommandEncoder.resolveQuerySet()}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUCommandEncoder/copyBufferToBuffer GPUCommandEncoder.copyBufferToBuffer()}
  */
-export function resolveTimestamp(commandEncoder, querySet) {
+export function resolveTimestamp(device, commandEncoder, querySet) {
   if (!querySet) return null;
-  const device = getDevice();
   // QUERY_RESOLVE and MAP_READ cannot be combined — two buffers are required.
   // resolveBuffer: GPU writes resolved nanosecond timestamps here.
   const resolveBuffer = device.createBuffer({

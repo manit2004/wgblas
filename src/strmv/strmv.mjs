@@ -11,6 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, incy, layout = "row-major") {
   const xIsGpu = x instanceof GpuVector;
@@ -20,6 +21,7 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "strmv", { A, x, y });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (trans !== "no-transpose" && trans !== "transpose")
@@ -92,10 +94,10 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
   let paramsBuffer = null;
 
   try {
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "strmv-A", false);
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "strmv-x", false);
-    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "strmv-y", true);
-    paramsBuffer = createParamsBuffer(
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strmv-A", false);
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strmv-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "strmv-y", true);
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: n,             type: "u32" },
         { value: incx,          type: "u32" },
@@ -108,7 +110,7 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
       "strmv-params",
     );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
       xBuffer,
       yBuffer,
@@ -116,10 +118,10 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
     ]);
 
     const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    const readBuffer = yIsGpu ? null : stageReadback(commandEncoder, yBuffer);
+    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
+    const readBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

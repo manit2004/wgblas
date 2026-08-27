@@ -13,6 +13,7 @@ import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { WGS } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 
 export async function snrm2(device, n, x, incx) {
@@ -20,6 +21,7 @@ export async function snrm2(device, n, x, incx) {
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "snrm2", { x });
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
   if (incx <= 0) throw new Error("incx must be positive.");
@@ -42,15 +44,15 @@ export async function snrm2(device, n, x, incx) {
   let readBuffer = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "snrm2-x", false);
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "snrm2-x", false);
     // 2*WGS partial (scale, ssq) pairs — see snrm2.wgsl for what they represent.
-    partialsScaleBuffer = createStorageBuffer(
+    partialsScaleBuffer = createStorageBuffer(device,
       2 * WGS * 4,
       "snrm2-partials-scale",
     );
-    partialsSsqBuffer = createStorageBuffer(2 * WGS * 4, "snrm2-partials-ssq");
-    resultBuffer = createResultBuffer(4, "snrm2-result"); // final f32 scalar
-    paramsBuffer = createParamsBuffer(
+    partialsSsqBuffer = createStorageBuffer(device, 2 * WGS * 4, "snrm2-partials-ssq");
+    resultBuffer = createResultBuffer(device, 4, "snrm2-result"); // final f32 scalar
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -58,33 +60,33 @@ export async function snrm2(device, n, x, incx) {
       "snrm2-params",
     );
 
-    const bgMain = createBindGroup(pipelineMain.getBindGroupLayout(0), [
+    const bgMain = createBindGroup(device, pipelineMain.getBindGroupLayout(0), [
       xBuffer,
       partialsScaleBuffer,
       partialsSsqBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(device,
       pipelineMain,
       bgMain,
       2 * WGS,
     ); // dispatch 2*WGS workgroups
 
-    submit(enc1);
+    submit(device, enc1);
 
-    const bgReduce = createBindGroup(pipelineReduce.getBindGroupLayout(0), [
+    const bgReduce = createBindGroup(device, pipelineReduce.getBindGroupLayout(0), [
       partialsScaleBuffer,
       partialsSsqBuffer,
       resultBuffer,
     ]);
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(device,
       pipelineReduce,
       bgReduce,
       1,
     ); // reduce partials to single result
-    readBuffer = stageReadback(enc2, resultBuffer);
+    readBuffer = stageReadback(device, enc2, resultBuffer);
 
-    submit(enc2);
+    submit(device, enc2);
 
     const resultPromise = extractResult(readBuffer, Float32Array);
     readBuffer = null; // ownership transferred — extractResult's own finally destroys it
@@ -108,7 +110,7 @@ export async function snrm2(device, n, x, incx) {
     if (partialsSsqBuffer) destroyBuffers(partialsSsqBuffer);
     if (resultBuffer) destroyBuffers(resultBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
-    // Only reached if submit(enc2) threw before ownership was transferred above.
+    // Only reached if submit(device, enc2) threw before ownership was transferred above.
     if (readBuffer) destroyBuffers(readBuffer);
   }
 }

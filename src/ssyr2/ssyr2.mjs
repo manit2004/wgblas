@@ -11,6 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda, layout = "row-major") {
   const xIsGpu = x instanceof GpuVector;
@@ -19,6 +20,7 @@ export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda, la
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "ssyr2", { A, x, y });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (layout !== "row-major" && layout !== "column-major")
@@ -83,10 +85,10 @@ export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda, la
   let paramsBuffer = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(x, "ssyr2-x", false);
-    yBuffer = yIsGpu ? y._buf : uploadBuffer(y, "ssyr2-y", false);
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "ssyr2-A", true);
-    paramsBuffer = createParamsBuffer(
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "ssyr2-x", false);
+    yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "ssyr2-y", false);
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssyr2-A", true);
+    paramsBuffer = createParamsBuffer(device,
       [
         { value: n,               type: "u32" },
         { value: alpha,           type: "f32" },
@@ -98,7 +100,7 @@ export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda, la
       "ssyr2-params",
     );
 
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       xBuffer,
       yBuffer,
       ABuffer,
@@ -108,10 +110,10 @@ export async function ssyr2(device, uplo, n, alpha, x, incx, y, incy, A, lda, la
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when n > dispatch count.
     const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(pipeline, bindGroup, wgCount);
-    const readBuffer = AIsGpu ? null : stageReadback(commandEncoder, ABuffer);
+    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
+    const readBuffer = AIsGpu ? null : stageReadback(device, commandEncoder, ABuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

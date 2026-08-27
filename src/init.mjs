@@ -1,11 +1,27 @@
 import { benchmarkMode } from "./util/benchmark.mjs";
 
-let _device = null;
-let _adapter = null;
-let _gpu = null; // eslint-disable-line no-unused-vars
-let _benchmarkEnabled = false;
-let _initOptions = null; // options the live device was actually created with
+// One WebGPU instance for the whole process, never released. A GPUAdapter
+// yields at most one working device, so a second device needs a second
+// adapter — but creating a second *instance* aborts Dawn during native
+// teardown (std::system_error), whether the instances overlap or are made one
+// after another. So the instance is built once and every adapter comes from
+// it; cleanup() releases devices, not this.
+let _gpu = null;
+let _dumpShaders = false; // instance-level Dawn toggle, fixed when _gpu is made
 
+// Resolved-options key -> GPUDevice. init() returns the cached device for a
+// given option set and creates one per distinct set, so a process can drive
+// several GPUs at once (e.g. discrete via "high-performance", integrated via
+// "low-power").
+const _devices = new Map();
+// GPUDevice -> { adapter, benchmark, options }. Benchmark support is a
+// property of the device (its requiredFeatures), not of the library.
+const _meta = new WeakMap();
+// The device from the first init(); what getDevice() returns for callers that
+// never mention one (GpuVector.from(data), GpuMatrix.from(data, ...)).
+let _primary = null;
+
+const optionsKey = ({ powerPreference, benchmark }) => `${powerPreference}::${benchmark}`;
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -14,121 +30,144 @@ export async function init({
   benchmark = false,
   dumpShaders = false,
 } = {}) {
-  const requested = { powerPreference, benchmark, dumpShaders };
+  const options = { powerPreference, benchmark, dumpShaders };
+  const key = optionsKey(options);
 
-  if (_device) {
-    // Same options: idempotent. Different options: refuse — requiredFeatures
-    // are fixed at requestDevice(), so silently returning the cached device
-    // left init({ benchmark: true }) reporting gpuTimeMs undefined forever.
-    const changed = Object.keys(requested).filter((key) => requested[key] !== _initOptions[key]);
-    if (changed.length > 0) {
-      const diff = changed
-        .map((key) => `${key}: ${JSON.stringify(_initOptions[key])} -> ${JSON.stringify(requested[key])}`)
-        .join(", ");
-      throw new Error(
-        `init() was already called with different options (${diff}). The device is created once ` +
-        "and its features are fixed at creation, so the new options cannot take effect. " +
-        "Call cleanup() first if you need to re-initialize with different options.",
-      );
-    }
-    return _device;
-  }
+  // Same options: idempotent, hand back the device already built for them.
+  const cached = _devices.get(key);
+  if (cached) return cached;
 
-  let gpu;
   // Browser exposes WebGPU natively via navigator.gpu.
   // Node.js has no navigator, so we polyfill using the "webgpu" npm package which also
   // injects WebGPU globals (GPUBufferUsage, GPUShaderStage, etc.) into globalThis.
-  if (typeof window === "undefined") {
-    const { create, globals } = await import("webgpu");
-    Object.assign(globalThis, globals);
-    // dumpShaders forwards Dawn's own debug toggle — prints each pipeline's
-    // WGSL and compiled backend IR to stderr. Node-only; see index.d.mts.
-    const toggles = dumpShaders
-      ? ["enable-dawn-features=dump_shaders,disable_symbol_renaming"]
-      : [];
-    gpu = create(toggles);
-    _gpu = gpu;
-  } else {
-    if (dumpShaders)
-      console.warn("dumpShaders has no effect in the browser — see init()'s docs.");
-    gpu = navigator.gpu;
+  if (!_gpu) {
+    if (typeof window === "undefined") {
+      const { create, globals } = await import("webgpu");
+      Object.assign(globalThis, globals);
+      // dumpShaders forwards Dawn's own debug toggle — prints each pipeline's
+      // WGSL and compiled backend IR to stderr. Node-only; see index.d.mts.
+      const toggles = dumpShaders
+        ? ["enable-dawn-features=dump_shaders,disable_symbol_renaming"]
+        : [];
+      _gpu = create(toggles);
+      _dumpShaders = dumpShaders;
+    } else {
+      if (dumpShaders)
+        console.warn("dumpShaders has no effect in the browser — see init()'s docs.");
+      _gpu = navigator.gpu;
+    }
+  } else if (dumpShaders !== _dumpShaders && typeof window === "undefined") {
+    // Unlike powerPreference and benchmark, dumpShaders is a toggle on the Dawn
+    // instance rather than the device, and the instance is shared, so a later
+    // init() cannot change it.
+    console.warn(
+      `dumpShaders: ${dumpShaders} was requested, but the WebGPU instance was already created with ` +
+      `dumpShaders: ${_dumpShaders}. The first init() call fixes this for the process.`,
+    );
   }
 
-  if (!gpu) {
+  if (!_gpu) {
     throw new Error("WebGPU not supported in this environment.");
   }
 
-  _adapter =
-    (await gpu.requestAdapter({ powerPreference })) ??
-    (await gpu.requestAdapter());
-  if (!_adapter) {
+  // A fresh adapter per device: requesting a device consumes its adapter, so
+  // reusing one would hand back an already-lost device.
+  const adapter =
+    (await _gpu.requestAdapter({ powerPreference })) ??
+    (await _gpu.requestAdapter());
+  if (!adapter) {
     throw new Error("No WebGPU adapter found.");
   }
 
-  _initOptions = requested;
-  _benchmarkEnabled = benchmark;
-  const bmConfig = benchmarkMode(_adapter, benchmark);
+  const bmConfig = benchmarkMode(adapter, benchmark);
   const features = [...(bmConfig.requiredFeatures ?? [])];
-  _device = await _adapter.requestDevice({ requiredFeatures: features });
+  const device = await adapter.requestDevice({ requiredFeatures: features });
   // Fires for any GPU error not caught by a pushErrorScope/popErrorScope pair — surfaces silent GPU failures to the console.
   // See: https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/uncapturederror_event
-  _device.addEventListener("uncapturederror", (e) => {
+  device.addEventListener("uncapturederror", (e) => {
     console.error("Uncaptured GPU error:", e.error.message);
   });
 
-  return _device;
+  // benchmarkMode() drops the feature when the adapter can't do timestamp
+  // queries, so record what was actually granted rather than what was asked
+  // for — otherwise beginTimestamp() would build a query set on a device that
+  // never requested the feature.
+  const benchmarkGranted = features.includes("timestamp-query");
+  _meta.set(device, { adapter, benchmark: benchmarkGranted, options });
+  _devices.set(key, device);
+  if (!_primary) _primary = device;
+
+  return device;
 }
 
-export function cleanup() {
-  if (_device) {
-    _device.destroy();
-    _device = null;
+export function cleanup(device) {
+  if (device === undefined) {
+    for (const d of _devices.values()) d.destroy();
+    _devices.clear();
+    _primary = null;
+    return;
   }
-  _adapter = null;
-  _gpu = null;
-  _benchmarkEnabled = false;
-  _initOptions = null;
+
+  // Releasing one device of several. Unknown or already-released devices are a
+  // no-op so teardown paths can call this unguarded.
+  const meta = _meta.get(device);
+  if (!meta) return;
+  _devices.delete(optionsKey(meta.options));
+  _meta.delete(device);
+  device.destroy();
+
+  // getDevice() must keep answering while any device is left, so promote a
+  // survivor when the primary is the one being released.
+  if (_primary === device) _primary = _devices.values().next().value ?? null;
 }
 
-export function gpuName() {
-  if (!_adapter) {
+export function gpuName(device = _primary) {
+  const meta = device && _meta.get(device);
+  if (!meta) {
     throw new Error("WebGPU adapter not initialized — call init() first.");
   }
-  const { device, description } = _adapter.info;
+  const { device: deviceName, description } = meta.adapter.info;
   return {
     description: description || "unknown",
-    device: device || "unknown",
+    device: deviceName || "unknown",
   };
 }
 
 // ── Library internals (not part of the public API) ───────────────────────────
 
-/** @returns {boolean} whether benchmark mode was enabled in the last `init()` call */
-export function isBenchmarkEnabled() {
-  return _benchmarkEnabled;
+/**
+ * Whether benchmark mode is active for `device` — i.e. it was created with
+ * `benchmark: true` *and* its adapter actually supports timestamp queries.
+ * @param {GPUDevice} [device] - defaults to the first-initialized device
+ * @returns {boolean}
+ */
+export function isBenchmarkEnabled(device = _primary) {
+  return _meta.get(device)?.benchmark ?? false;
 }
 
 /**
- * Returns the active `GPUDevice`. Throws if `init()` has not been called.
+ * Returns the device from the first `init()` call — the default for callers
+ * that don't name one. Throws if `init()` has not been called.
  * @returns {GPUDevice}
- * @throws {Error} if the device is not initialized
+ * @throws {Error} if no device is initialized
  */
 export function getDevice() {
-  if (!_device) {
+  if (!_primary) {
     throw new Error("WebGPU device not initialized — call init() first.");
   }
-  return _device;
+  return _primary;
 }
 
 /**
- * Returns the active `GPUAdapter`. Throws if `init()` has not been called.
+ * Returns the `GPUAdapter` backing `device`. Throws if it isn't initialized.
+ * @param {GPUDevice} [device] - defaults to the first-initialized device
  * @returns {GPUAdapter}
  * @throws {Error} if the adapter is not initialized
  */
-export function getAdapter() {
-  if (!_adapter) {
+export function getAdapter(device = _primary) {
+  const meta = device && _meta.get(device);
+  if (!meta) {
     throw new Error("WebGPU adapter not initialized — call init() first.");
   }
-  return _adapter;
+  return meta.adapter;
 }
-

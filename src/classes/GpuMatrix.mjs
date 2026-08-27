@@ -4,13 +4,15 @@ import { extractResult } from "../util/result.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 
 export class GpuMatrix {
-  constructor(buffer, rows, cols, lda, loBuffer = null, layout = "row-major") {
+  constructor(buffer, rows, cols, lda, loBuffer = null, layout = "row-major", device = null) {
     this._buf = buffer;
     this._loBuf = loBuffer; // Non-null only for Float64Array-backed matrices
     this.rows = rows;
     this.cols = cols;
     this.lda  = lda;
     this.layout = layout;
+    // See GpuVector: a GPUBuffer is bound to one device for life.
+    this.device = device ?? getDevice();
   }
 
   /**
@@ -21,7 +23,12 @@ export class GpuMatrix {
    * no padding). `data` must have at least `rows * lda` (row-major) or
    * `cols * lda` (column-major) elements.
    */
-  static from(data, rows, cols, lda, layout = "row-major") {
+  static from(deviceOrData, ...rest) {
+    const explicit = deviceOrData instanceof GPUDevice;
+    const device = explicit ? deviceOrData : getDevice();
+    const data = explicit ? rest.shift() : deviceOrData;
+    let [rows, cols, lda, layout = "row-major"] = rest;
+
     if (layout !== "row-major" && layout !== "column-major")
       throw new Error("layout must be 'row-major' or 'column-major'.");
     const isRowMajor = layout === "row-major";
@@ -48,19 +55,19 @@ export class GpuMatrix {
     if (data instanceof Float64Array) {
       const n = outerCount * lda;
       const { hi, lo } = splitDoubleDouble(data.subarray(0, n));
-      const hiBuf = uploadBuffer(hi, "gpu-matrix-f64-hi", true);
-      const loBuf = uploadBuffer(lo, "gpu-matrix-f64-lo", true);
-      return new GpuMatrix(hiBuf, rows, cols, lda, loBuf, layout);
+      const hiBuf = uploadBuffer(device, hi, "gpu-matrix-f64-hi", true);
+      const loBuf = uploadBuffer(device, lo, "gpu-matrix-f64-lo", true);
+      return new GpuMatrix(hiBuf, rows, cols, lda, loBuf, layout, device);
     }
 
-    const buf = uploadBuffer(data.subarray(0, outerCount * lda), "gpu-matrix", true);
-    return new GpuMatrix(buf, rows, cols, lda, null, layout);
+    const buf = uploadBuffer(device, data.subarray(0, outerCount * lda), "gpu-matrix", true);
+    return new GpuMatrix(buf, rows, cols, lda, null, layout, device);
   }
 
   async read() {
-    const device = getDevice();
+    const device = this.device;
     const enc = device.createCommandEncoder();
-    const rb = stageReadback(enc, this._buf);
+    const rb = stageReadback(device, enc, this._buf);
     device.queue.submit([enc.finish()]);
 
     const isRowMajor = this.layout !== "column-major";
@@ -69,7 +76,7 @@ export class GpuMatrix {
 
     if (this._loBuf) {
       const encLo = device.createCommandEncoder();
-      const rbLo = stageReadback(encLo, this._loBuf);
+      const rbLo = stageReadback(device, encLo, this._loBuf);
       device.queue.submit([encLo.finish()]);
 
       const [hi, lo] = await Promise.all([

@@ -1,5 +1,4 @@
 /** @module devdocs/utility-functions/buffer */
-import { getDevice } from "../init.mjs";
 
 /**
  * Destroys one or more GPU buffers. Accepts individual buffers or arrays of buffers.
@@ -16,6 +15,7 @@ export function destroyBuffers(...buffers) {
  * bits are copied as-is regardless of element type (e.g. a Uint32Array's raw
  * bit patterns are preserved — critical for dasum's aux half, which must
  * never pass through a Float32Array view and risk NaN-bit-pattern canonicalization).
+ * @param {GPUDevice} device
  * @param {Float32Array|Uint32Array|Int32Array} data
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
  * @param {boolean} [readback=false] - add `COPY_SRC` so the buffer can be copied to a readback buffer
@@ -26,8 +26,7 @@ export function destroyBuffers(...buffers) {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer/unmap GPUBuffer.unmap()}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits GPUSupportedLimits} (`maxStorageBufferBindingSize`)
  */
-export function uploadBuffer(data, label = "blas-input", readback = false) {
-  const device = getDevice();
+export function uploadBuffer(device, data, label = "blas-input", readback = false) {
 
   // User-facing boundary: give a clear error instead of a cryptic GPUValidationError.
   const maxSize = device.limits.maxStorageBufferBindingSize;
@@ -60,6 +59,7 @@ export function uploadBuffer(data, label = "blas-input", readback = false) {
 /**
  * Creates an uninitialised GPU storage buffer. Used for intermediate buffers
  * that are written by a shader before being read.
+ * @param {GPUDevice} device
  * @param {number} size - byte size
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
  * @param {number} [extraUsage=0] - additional `GPUBufferUsage` flags OR'd in alongside `STORAGE`
@@ -67,8 +67,7 @@ export function uploadBuffer(data, label = "blas-input", readback = false) {
  * @returns {GPUBuffer}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer GPUDevice.createBuffer()}
  */
-export function createStorageBuffer(size, label = "blas-storage", extraUsage = 0) {
-  const device = getDevice();
+export function createStorageBuffer(device, size, label = "blas-storage", extraUsage = 0) {
   return device.createBuffer({
     label,
     size,
@@ -79,13 +78,13 @@ export function createStorageBuffer(size, label = "blas-storage", extraUsage = 0
 /**
  * Creates a GPU storage buffer with `COPY_SRC` so its contents can be
  * copied to a CPU-readable readback buffer after the shader runs.
+ * @param {GPUDevice} device
  * @param {number} size - byte size
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
  * @returns {GPUBuffer}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer GPUDevice.createBuffer()}
  */
-export function createResultBuffer(size, label = "blas-result") {
-  const device = getDevice();
+export function createResultBuffer(device, size, label = "blas-result") {
   return device.createBuffer({
     label,
     size,
@@ -97,13 +96,13 @@ export function createResultBuffer(size, label = "blas-result") {
  * Appends a `copyBufferToBuffer` command to `commandEncoder` that copies
  * `sourceBuffer` into a new `MAP_READ` buffer. Returns that readback buffer;
  * call `readBuffer.mapAsync(GPUMapMode.READ)` after submitting the encoder.
+ * @param {GPUDevice} device
  * @param {GPUCommandEncoder} commandEncoder
  * @param {GPUBuffer} sourceBuffer
  * @returns {GPUBuffer}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUCommandEncoder/copyBufferToBuffer GPUCommandEncoder.copyBufferToBuffer()}
  */
-export function stageReadback(commandEncoder, sourceBuffer) {
-  const device = getDevice();
+export function stageReadback(device, commandEncoder, sourceBuffer) {
 
   // COPY_DST: receives the copyBufferToBuffer transfer; MAP_READ: lets the CPU map and read it back.
   const readBuffer = device.createBuffer({
@@ -155,13 +154,13 @@ function vec4FallbackBuffer(device) {
  * @param {GPUBuffer|{buffer: GPUBuffer, offset?: number, size?: number}} entry - whole buffer or sub-range, matching what the scalar slot binds
  * @returns {{buffer: GPUBuffer, offset: number, size: number}}
  */
-export function vec4ViewBinding(entry) {
+export function vec4ViewBinding(device, entry) {
   const buffer = entry instanceof GPUBuffer ? entry : entry.buffer;
   const offset = entry instanceof GPUBuffer ? 0 : (entry.offset ?? 0);
   const avail = (entry instanceof GPUBuffer ? entry.size : (entry.size ?? buffer.size - offset));
   const size = Math.floor(avail / VEC4_ELEM_BYTES) * VEC4_ELEM_BYTES;
   if (size < VEC4_ELEM_BYTES) {
-    return { buffer: vec4FallbackBuffer(getDevice()), offset: 0, size: VEC4_ELEM_BYTES };
+    return { buffer: vec4FallbackBuffer(device), offset: 0, size: VEC4_ELEM_BYTES };
   }
   return { buffer, offset, size };
 }
@@ -198,13 +197,13 @@ export function vec4Usable(entry, stride, outerCount, innerCount) {
  * Packs an array of typed scalar values into a uniform buffer aligned to 16 bytes.
  * Each entry specifies the value and its WGSL type (`"f32"`, `"u32"`, or `"i32"`).
  * The order of entries must match the field order in the shader's `Params` struct.
+ * @param {GPUDevice} device
  * @param {{ value: number, type: "f32"|"u32"|"i32" }[]} params
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
  * @returns {GPUBuffer}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUQueue/writeBuffer GPUQueue.writeBuffer()}
  */
-export function createParamsBuffer(params, label = "blas-params") {
-  const device = getDevice();
+export function createParamsBuffer(device, params, label = "blas-params") {
 
   const rawSize = params.length * 4;
   const size = Math.ceil(rawSize / 16) * 16;

@@ -13,6 +13,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
 import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 
 // ssyrk: C := uplo(alpha*op(A)*op(A)^T + beta*C). No dedicated shader —
@@ -25,6 +26,7 @@ export async function ssyrk(
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "ssyrk", { A, C });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (trans !== "no-transpose" && trans !== "transpose")
@@ -105,14 +107,14 @@ export async function ssyrk(
 
   const pipeline = await getPipeline(device, useLargeTile ? "sgemmtr_large" : "sgemmtr_small");
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "ssyrk-A", false);
-  const CBuffer = CIsGpu ? C._buf : uploadBuffer(C, "ssyrk-C", true);
+  const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssyrk-A", false);
+  const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "ssyrk-C", true);
   // B := A, but as a genuinely separate buffer — re-uploaded for Float32Array,
   // GPU-copied (see below) for GpuMatrix, since the caller owns ABuffer.
   const BBuffer = AIsGpu
-    ? createStorageBuffer(ABuffer.size, "ssyrk-B", GPUBufferUsage.COPY_DST)
-    : uploadBuffer(A, "ssyrk-B", false);
-  const paramsBuffer = createParamsBuffer(
+    ? createStorageBuffer(device, ABuffer.size, "ssyrk-B", GPUBufferUsage.COPY_DST)
+    : uploadBuffer(device, A, "ssyrk-B", false);
+  const paramsBuffer = createParamsBuffer(device,
     [
       { value: n,   type: "u32" }, // gemmtr's m
       { value: n,   type: "u32" }, // gemmtr's n
@@ -130,7 +132,7 @@ export async function ssyrk(
   );
 
   try {
-    const bindGroup = createBindGroup(pipeline.getBindGroupLayout(0), [
+    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
       BBuffer,
       CBuffer,
@@ -139,22 +141,22 @@ export async function ssyrk(
 
     const wgCount = useLargeTile
       ? {
-        x: requireWorkgroupCount(largeWgX, "ssyrk", "x"),
-        y: requireWorkgroupCount(largeWgY, "ssyrk", "y"),
+        x: requireWorkgroupCount(device, largeWgX, "ssyrk", "x"),
+        y: requireWorkgroupCount(device, largeWgY, "ssyrk", "y"),
       }
       : {
-        x: requireWorkgroupCount(Math.ceil(n / BN_SMALL), "ssyrk", "x"),
-        y: requireWorkgroupCount(Math.ceil(n / BM_SMALL), "ssyrk", "y"),
+        x: requireWorkgroupCount(device, Math.ceil(n / BN_SMALL), "ssyrk", "x"),
+        y: requireWorkgroupCount(device, Math.ceil(n / BM_SMALL), "ssyrk", "y"),
       };
     // Manual encoder (not runComputePass) so the A->B duplicate copy lands
     // on the same command encoder, strictly before the compute pass reads B.
-    const { commandEncoder, querySet, passDescriptor } = beginTimedEncoder();
+    const { commandEncoder, querySet, passDescriptor } = beginTimedEncoder(device);
     if (AIsGpu) commandEncoder.copyBufferToBuffer(ABuffer, 0, BBuffer, 0, ABuffer.size);
     encodePass(commandEncoder, pipeline, bindGroup, wgCount, passDescriptor);
-    const ts = resolveTimestamp(commandEncoder, querySet);
-    const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
+    const ts = resolveTimestamp(device, commandEncoder, querySet);
+    const readBuffer = CIsGpu ? null : stageReadback(device, commandEncoder, CBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 

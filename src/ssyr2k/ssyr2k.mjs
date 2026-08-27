@@ -12,6 +12,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
 import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import { requireSameDevice } from "../util/device.mjs";
 
 
 // ssyr2k: C := uplo(alpha*op(A)*op(B)^T + alpha*op(B)*op(A)^T + beta*C). No
@@ -25,6 +26,7 @@ export async function ssyr2k(
 
   if (!(device instanceof GPUDevice))
     throw new Error("device must be a GPUDevice.");
+  requireSameDevice(device, "ssyr2k", { A, B, C });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (trans !== "no-transpose" && trans !== "transpose")
@@ -130,24 +132,24 @@ export async function ssyr2k(
   const pipeline = await getPipeline(device, useLargeTile ? "sgemmtr_large" : "sgemmtr_small");
   const wgCount = useLargeTile
     ? {
-      x: requireWorkgroupCount(largeWgX, "ssyr2k", "x"),
-      y: requireWorkgroupCount(largeWgY, "ssyr2k", "y"),
+      x: requireWorkgroupCount(device, largeWgX, "ssyr2k", "x"),
+      y: requireWorkgroupCount(device, largeWgY, "ssyr2k", "y"),
     }
     : {
-      x: requireWorkgroupCount(Math.ceil(n / BN_SMALL), "ssyr2k", "x"),
-      y: requireWorkgroupCount(Math.ceil(n / BM_SMALL), "ssyr2k", "y"),
+      x: requireWorkgroupCount(device, Math.ceil(n / BN_SMALL), "ssyr2k", "x"),
+      y: requireWorkgroupCount(device, Math.ceil(n / BM_SMALL), "ssyr2k", "y"),
     };
 
-  const ABuffer = AIsGpu ? A._buf : uploadBuffer(A, "ssyr2k-A", false);
-  const BBuffer = BIsGpu ? B._buf : uploadBuffer(B, "ssyr2k-B", false);
-  const CBuffer = CIsGpu ? C._buf : uploadBuffer(C, "ssyr2k-C", true);
+  const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssyr2k-A", false);
+  const BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "ssyr2k-B", false);
+  const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "ssyr2k-C", true);
   let paramsBuffer1 = null, paramsBuffer2 = null;
 
   try {
     const pass1 = passShape(effTransA, ABuffer, lda, effTransB, BBuffer, ldb);
     const pass2 = passShape(effTransB, BBuffer, ldb, effTransA, ABuffer, lda);
 
-    const makeParams = (p, betaVal) => createParamsBuffer(
+    const makeParams = (p, betaVal) => createParamsBuffer(device,
       [
         { value: n,   type: "u32" },
         { value: n,   type: "u32" },
@@ -166,19 +168,19 @@ export async function ssyr2k(
     paramsBuffer1 = makeParams(pass1, beta);
     paramsBuffer2 = makeParams(pass2, 1.0);
 
-    const bindGroup1 = createBindGroup(pipeline.getBindGroupLayout(0), [pass1.X, pass1.Y, CBuffer, paramsBuffer1]);
-    const bindGroup2 = createBindGroup(pipeline.getBindGroupLayout(0), [pass2.X, pass2.Y, CBuffer, paramsBuffer2]);
+    const bindGroup1 = createBindGroup(device, pipeline.getBindGroupLayout(0), [pass1.X, pass1.Y, CBuffer, paramsBuffer1]);
+    const bindGroup2 = createBindGroup(device, pipeline.getBindGroupLayout(0), [pass2.X, pass2.Y, CBuffer, paramsBuffer2]);
 
-    const { commandEncoder, querySet } = beginTimedEncoder();
+    const { commandEncoder, querySet } = beginTimedEncoder(device);
     const desc1 = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
     const desc2 = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
     encodePass(commandEncoder, pipeline, bindGroup1, wgCount, desc1);
     encodePass(commandEncoder, pipeline, bindGroup2, wgCount, desc2);
 
-    const ts = resolveTimestamp(commandEncoder, querySet);
-    const readBuffer = CIsGpu ? null : stageReadback(commandEncoder, CBuffer);
+    const ts = resolveTimestamp(device, commandEncoder, querySet);
+    const readBuffer = CIsGpu ? null : stageReadback(device, commandEncoder, CBuffer);
 
-    submit(commandEncoder);
+    submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 
