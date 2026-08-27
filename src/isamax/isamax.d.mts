@@ -5,6 +5,14 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * $$\text{index} = \arg\max_{i} |x_i|$$
  * Ties are broken in favour of the lower index, matching CBLAS behaviour.
  *
+ * **NaN handling.** The search compares with `>`, which is false for NaN, so
+ * NaN elements are skipped rather than selected: a vector of all NaN returns
+ * `0`. This matches CBLAS except when `x[0]` itself is NaN — CBLAS seeds its
+ * running maximum from `x[0]`, and since no comparison against NaN succeeds it
+ * returns `0` however large the later elements are, whereas this returns the
+ * index of the largest non-NaN element. `+-Infinity` compares normally and is
+ * selected as the maximum.
+ *
  * {@includeCode ../../examples/isamax/isamax.js}
  *
  * **Browser (standalone HTML):**
@@ -29,6 +37,14 @@ export declare function isamax(
  * Returns the 0-based index of the element with the largest absolute value:
  * $$\text{index} = \arg\max_{i} |x_i|$$
  * Ties are broken in favour of the lower index, matching CBLAS behaviour.
+ *
+ * **NaN handling.** The search compares with `>`, which is false for NaN, so
+ * NaN elements are skipped rather than selected: a vector of all NaN returns
+ * `0`. This matches CBLAS except when `x[0]` itself is NaN — CBLAS seeds its
+ * running maximum from `x[0]`, and since no comparison against NaN succeeds it
+ * returns `0` however large the later elements are, whereas this returns the
+ * index of the largest non-NaN element. `+-Infinity` compares normally and is
+ * selected as the maximum.
  *
  * {@includeCode ../../examples/isamax/gpu.isamax.js}
  *
