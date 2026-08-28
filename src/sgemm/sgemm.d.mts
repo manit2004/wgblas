@@ -1,7 +1,7 @@
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the matrix-matrix operation C = alpha * op(A) * op(B) + beta * C
+ * Performs the matrix-matrix operation $$C \leftarrow \alpha \mathrm{op}(A) \mathrm{op}(B) + \beta C$$
  *
  * - `transA/transB='no-transpose'`: op(A) = A (m×k), op(B) = B (k×n)
  * - `transA/transB='transpose'`:    op(A) = A^T,     op(B) = B^T
@@ -57,7 +57,7 @@ export declare function sgemm(
 ): Promise<{ C: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the matrix-matrix operation C = alpha * op(A) * op(B) + beta * C
+ * Performs the matrix-matrix operation $$C \leftarrow \alpha \mathrm{op}(A) \mathrm{op}(B) + \beta C$$
  *
  * A, B, and C are all kept GPU-resident. Each matrix's own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate

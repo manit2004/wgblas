@@ -1,38 +1,32 @@
 import { init, cleanup } from "wgblas";
 import { strsm } from "wgblas/strsm";
 import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array, randomTriangularFloat32Array } from "wgblas/random";
-
-function toMatrix(A, rows, cols, lda = cols) {
-  const out = [];
-  for (let r = 0; r < rows; r++)
-    out.push(Array.from(A.subarray(r * lda, r * lda + cols), (v) => +v.toFixed(4)));
-  return out;
-}
 
 const device = await init();
 
-const m = 4, n = 3;
-const A = randomTriangularFloat32Array(m, m, "lower", -1, 1);
-const B = randomFloat32Array(m * n, -10, 10);
+// Solves A*X = B in place on the GPU. Passing B = A recovers the identity,
+// undoing what the strmm example does.
+const n = 3;
+const A = new Float32Array([2, 0, 0,
+                            3, 4, 0,
+                            5, 6, 8]);
 
-const AGpu = GpuMatrix.from(A, m, m, m, "row-major");
-const BGpu = GpuMatrix.from(B, m, n, n, "row-major");
+const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
+const BGpu = GpuMatrix.from(A.slice(), n, n, n, "row-major");
 
-console.log("A (only lower triangle is meaningful):");
-console.table(toMatrix(A, m, m, m));
-console.log("B (before, = A*X):");
-console.table(toMatrix(B, m, n, n));
+console.log("A (lower triangular) = B =");
+console.table([A.slice(0, 3),
+               A.slice(3, 6),
+               A.slice(6, 9)]);
 
-// B stays on the GPU, overwritten in place with the solution.
-await strsm(device, "left", "lower", "no-transpose", "non-unit", m, n, 1.0, AGpu, AGpu.lda, BGpu, BGpu.lda); // solves A*X = B
+await strsm(device, "left", "lower", "no-transpose", "non-unit", n, n, 1, AGpu, AGpu.lda, BGpu, BGpu.lda);
 
-// single readback
 const result = await BGpu.read();
-console.log("X (after, solves A*X = B):");
-console.table(toMatrix(result, m, n, n));
+console.log("X solving A*X = B, i.e. the identity =");
+console.table([result.slice(0, 3),
+               result.slice(3, 6),
+               result.slice(6, 9)]);
 
 AGpu.destroy();
 BGpu.destroy();
-
 if (typeof process !== "undefined") cleanup();

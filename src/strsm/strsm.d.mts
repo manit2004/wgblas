@@ -2,8 +2,9 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
  * Solves the triangular matrix equation
- * op(A) * X = alpha * B (`side='left'`) or
- * X * op(A) = alpha * B (`side='right'`), overwriting `B` with the
+ * $$\mathrm{op}(A) X = \alpha B \quad (\texttt{side='left'})$$
+ * $$X \mathrm{op}(A) = \alpha B \quad (\texttt{side='right'})$$
+ * overwriting `B` with the
  * solution `X` — `A` is triangular, only its `uplo` triangle stored; `B` is
  * a general m×n matrix.
  *
@@ -57,8 +58,9 @@ export declare function strsm(
 
 /**
  * Solves the triangular matrix equation
- * op(A) * X = alpha * B (`side='left'`) or
- * X * op(A) = alpha * B (`side='right'`), overwriting `B` in place with `X`.
+ * $$\mathrm{op}(A) X = \alpha B \quad (\texttt{side='left'})$$
+ * $$X \mathrm{op}(A) = \alpha B \quad (\texttt{side='right'})$$
+ * overwriting `B` in place with `X`.
  *
  * A and B are both kept GPU-resident. Each matrix's own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate

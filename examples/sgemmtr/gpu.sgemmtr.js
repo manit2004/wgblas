@@ -1,39 +1,34 @@
 import { init, cleanup } from "wgblas";
 import { sgemmtr } from "wgblas/sgemmtr";
 import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
-
-function toMatrix(A, rows, cols, lda = cols) {
-  const out = [];
-  for (let r = 0; r < rows; r++)
-    out.push(Array.from(A.subarray(r * lda, r * lda + cols), (v) => +v.toFixed(4)));
-  return out;
-}
 
 const device = await init();
 
-const n = 4;
-const A = randomFloat32Array(n * n, -10, 10);
-const B = randomFloat32Array(n * n, -10, 10);
-const C = new Float32Array(n * n);
+// A all ones times the identity is all ones, so the masking is obvious:
+// only the upper triangle of C is written.
+const n = 3;
+const A = new Float32Array([1, 1, 1,
+                            1, 1, 1,
+                            1, 1, 1]);
+const B = new Float32Array([1, 0, 0,
+                            0, 1, 0,
+                            0, 0, 1]);
 
 const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
 const BGpu = GpuMatrix.from(B, n, n, n, "row-major");
-const CGpu = GpuMatrix.from(C, n, n, n, "row-major");
+const CGpu = GpuMatrix.from(new Float32Array(n * n), n, n, n, "row-major");
 
-console.log("A:", A);
-console.log("B:", B);
+console.log("A = all ones, B = identity, so A*B is all ones");
 
-// C stays on the GPU between steps; only its lower triangle is ever written.
-await sgemmtr(device, "lower", "no-transpose", "no-transpose", n, n, n, 1.0, AGpu, AGpu.lda, BGpu, BGpu.lda, 0.0, CGpu, CGpu.lda); // C (lower) = A*B
+await sgemmtr(device, "upper", "no-transpose", "no-transpose", n, n, n, 1, AGpu, AGpu.lda, BGpu, BGpu.lda, 0, CGpu, CGpu.lda);
 
-// single readback
 const result = await CGpu.read();
-console.log("C (lower triangle = A*B, upper triangle untouched zeros):");
-console.table(toMatrix(result, n, n, n));
+console.log("C = upper(A*B) =");
+console.table([result.slice(0, 3),
+               result.slice(3, 6),
+               result.slice(6, 9)]);   // [[1,1,1],[0,1,1],[0,0,1]]
 
 AGpu.destroy();
 BGpu.destroy();
 CGpu.destroy();
-
 if (typeof process !== "undefined") cleanup();

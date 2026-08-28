@@ -2,8 +2,9 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
  * Performs the triangular matrix-matrix operation
- * B := alpha * op(A) * B (`side='left'`) or
- * B := alpha * B * op(A) (`side='right'`) — `A` is triangular, only its
+ * $$B \leftarrow \alpha \mathrm{op}(A) B \quad (\texttt{side='left'})$$
+ * $$B \leftarrow \alpha B \mathrm{op}(A) \quad (\texttt{side='right'})$$
+ * `A` is triangular, only its
  * `uplo` triangle stored; `B` is a general m×n matrix, overwritten in place.
  *
  * - `side='left'`:  `A` is m×m — `A` premultiplies `B`
@@ -58,8 +59,8 @@ export declare function strmm(
 
 /**
  * Performs the triangular matrix-matrix operation
- * B := alpha * op(A) * B (`side='left'`) or
- * B := alpha * B * op(A) (`side='right'`)
+ * $$B \leftarrow \alpha \mathrm{op}(A) B \quad (\texttt{side='left'})$$
+ * $$B \leftarrow \alpha B \mathrm{op}(A) \quad (\texttt{side='right'})$$
  *
  * A and B are both kept GPU-resident; B is mutated in place. Each matrix's
  * own `layout` (set at `GpuMatrix.from` time) determines the operation —
