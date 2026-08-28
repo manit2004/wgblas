@@ -2,7 +2,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the symmetric matrix-vector operation y = alpha * A * x + beta * y
+ * Performs the symmetric matrix-vector operation $$y \leftarrow \alpha A x + \beta y$$
  *
  * A is an n×n symmetric matrix stored in row-major order. Only the triangle
  * specified by `uplo` is referenced; the other triangle is inferred by symmetry.
@@ -45,7 +45,7 @@ export declare function ssymv(
 ): Promise<{ y: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the symmetric matrix-vector operation y = alpha * A * x + beta * y
+ * Performs the symmetric matrix-vector operation $$y \leftarrow \alpha A x + \beta y$$
  *
  * x and y are kept resident on the GPU. A must be a GpuMatrix; its own
  * `layout` (set at `GpuMatrix.from` time) determines the operation — there is

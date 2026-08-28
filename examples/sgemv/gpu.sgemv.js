@@ -2,32 +2,33 @@ import { init, cleanup } from "wgblas";
 import { sgemv } from "wgblas/sgemv";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 4;
-const A = randomFloat32Array(n * n, -10, 10);
-const x = randomFloat32Array(n, -10, 10);
-const y = randomFloat32Array(n, -10, 10);
+// A diagonal A makes the chained result easy to check by eye.
+const n = 3;
+const A = new Float32Array([1, 0, 0,
+                            0, 2, 0,
+                            0, 0, 3]);
+const x = new Float32Array([1, 1, 1]);
 
 const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
 const xGpu = GpuVector.from(x);
-const yGpu = GpuVector.from(y);
+const yGpu = GpuVector.from(new Float32Array(n));
 
-console.log("A:", A);
-console.log("x:", x);
+console.log("A = diag(1, 2, 3) =");
+console.table([A.slice(0, 3),
+               A.slice(3, 6)]);
+console.log("x =", x);
 
-// results stay on the GPU between steps
-await sgemv(device, "no-transpose", n, n, 1.0, AGpu, AGpu.lda, xGpu, 1, 0.0, yGpu, 1); // y  = A*x
-await sgemv(device, "no-transpose", n, n, 1.0, AGpu, AGpu.lda, yGpu, 1, 0.0, xGpu, 1); // x  = A*y = A²*x
+// Results stay on the GPU between the two calls — no readback in between.
+await sgemv(device, "no-transpose", n, n, 1, AGpu, AGpu.lda, xGpu, 1, 0, yGpu, 1); // y = A*x
+await sgemv(device, "no-transpose", n, n, 1, AGpu, AGpu.lda, yGpu, 1, 0, xGpu, 1); // x = A*y
 
-// single readback
-const result = await xGpu.read();
-console.log("A²x:", result);
+// Single readback at the end.
+console.log("A*A*x =", await xGpu.read());   // [1*1, 2*2, 3*3] = [1, 4, 9]
 
 AGpu.destroy();
 xGpu.destroy();
 yGpu.destroy();
-
 if (typeof process !== "undefined") cleanup();

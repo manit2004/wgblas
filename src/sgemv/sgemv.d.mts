@@ -2,7 +2,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the matrix-vector operation y = alpha * op(A) * x + beta * y
+ * Performs the matrix-vector operation $$y \leftarrow \alpha \mathrm{op}(A) x + \beta y$$
  *
  * - `trans='no-transpose'`: op(A) = A,   x is length n, y is length m
  * - `trans='transpose'`:    op(A) = A^T, x is length m, y is length n
@@ -51,7 +51,7 @@ export declare function sgemv(
 ): Promise<{ y: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the matrix-vector operation y = alpha * op(A) * x + beta * y
+ * Performs the matrix-vector operation $$y \leftarrow \alpha \mathrm{op}(A) x + \beta y$$
  *
  * x and y are kept resident on the GPU. A must be a GpuMatrix; its own
  * `layout` (set at `GpuMatrix.from` time) determines the operation — there is
