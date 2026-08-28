@@ -1,27 +1,20 @@
 import { init, cleanup } from "wgblas";
 import { ssyr } from "wgblas/ssyr";
-import { randomFloat32Array } from "wgblas/random";
-
-// Reshapes a flat row-major array into rows for console.table's 2D grid view.
-function toMatrix(A, rows, cols, lda = cols) {
-  const out = [];
-  for (let r = 0; r < rows; r++)
-    out.push(Array.from(A.subarray(r * lda, r * lda + cols), (v) => +v.toFixed(4)));
-  return out;
-}
 
 const device = await init();
 
-// 4×4 symmetric rank-1 update, lower triangle stored; lda = n
-const n = 4, lda = n;
-const alpha = 1.0;
-const x = randomFloat32Array(n, -10, 10);
-const A = randomFloat32Array(n * lda, -10, 10); // only lower triangle is read/updated
+// Symmetric rank-1 update A = alpha*x*x^T + A. Only the upper triangle is
+// written, so entry (i,j) for j >= i is x[i]*x[j] and the rest stays zero.
+const n = 3, lda = n;
+const x = new Float32Array([1, 2, 3]);
+const A = new Float32Array(n * lda);   // all zeros
 
-console.log("x:", x);
-console.log("A (lower triangle, before):");
-console.table(toMatrix(A, n, n, lda));
-const { A: result } = await ssyr(device, "lower", n, alpha, x, 1, A, lda, "row-major");
-console.log("A (lower triangle, after):");
-console.table(toMatrix(result, n, n, lda));
+console.log("x =", x);
+
+const { A: result } = await ssyr(device, "upper", n, 1, x, 1, A, lda);
+console.log("A = x*x^T (upper triangle) =");
+console.table([result.slice(0, 3),
+               result.slice(3, 6),
+               result.slice(6, 9)]);   // [[1,2,3],[0,4,6],[0,0,9]]
+
 if (typeof process !== "undefined") cleanup();

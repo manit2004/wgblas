@@ -1,18 +1,21 @@
 import { init, cleanup } from "wgblas";
 import { sgemv } from "wgblas/sgemv";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-// 4×4 row-major matrix A, vector x of length 4, output y of length 4
-const m = 4, n = 4, lda = n;
-const alpha = 1.0, beta = 0.0;
-const A = randomFloat32Array(m * lda, -10, 10);
-const x = randomFloat32Array(n, -10, 10);
-const y = randomFloat32Array(m, -10, 10);
+// y = alpha*A*x + beta*y, with A a 2x3 row-major matrix.
+const m = 2, n = 3, lda = n;
+const A = new Float32Array([1, 2, 3,
+                            4, 5, 6]);
+const x = new Float32Array([1, 1, 1]);
+const y = new Float32Array([0, 0]);
 
-console.log("A:", A);
-console.log("x:", x);
-const { y: result } = await sgemv(device, "no-transpose", m, n, alpha, A, lda, x, 1, beta, y, 1, "row-major");
-console.log("y:", result);
+console.log("A =");
+console.table([A.slice(0, 3),
+               A.slice(3, 6)]);
+console.log("x =", x);
+
+const { y: result } = await sgemv(device, "no-transpose", m, n, 1, A, lda, x, 1, 0, y, 1);
+console.log("y = A*x =", result);   // row sums: [1+2+3, 4+5+6] = [6, 15]
+
 if (typeof process !== "undefined") cleanup();

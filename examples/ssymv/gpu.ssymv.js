@@ -2,32 +2,31 @@ import { init, cleanup } from "wgblas";
 import { ssymv } from "wgblas/ssymv";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 4;
-const A = randomFloat32Array(n * n, -10, 10); // lower triangle is the stored triangle
-const x = randomFloat32Array(n, -10, 10);
-const y = randomFloat32Array(n, -10, 10);
+// Only the upper triangle is read; the zeros below stand for the mirrored 1s.
+const n = 3;
+const A = new Float32Array([2, 1, 0,
+                            0, 2, 1,
+                            0, 0, 2]);
+const x = new Float32Array([1, 1, 1]);
 
 const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
 const xGpu = GpuVector.from(x);
-const yGpu = GpuVector.from(y);
+const yGpu = GpuVector.from(new Float32Array(n));
 
-console.log("A (lower triangle):", A);
-console.log("x:", x);
+console.log("A (upper triangle stored) =");
+console.table([A.slice(0, 3),
+               A.slice(3, 6),
+               A.slice(6, 9)]);
+console.log("x =", x);
 
-// results stay on the GPU between steps
-await ssymv(device, "lower", n, 1.0, AGpu, AGpu.lda, xGpu, 1, 0.0, yGpu, 1); // y  = A*x
-await ssymv(device, "lower", n, 1.0, AGpu, AGpu.lda, yGpu, 1, 0.0, xGpu, 1); // x  = A*y = A²*x
-
-// single readback
-const result = await xGpu.read();
-console.log("A²x:", result);
+await ssymv(device, "upper", n, 1, AGpu, AGpu.lda, xGpu, 1, 0, yGpu, 1);
+// Implied full matrix [[2,1,0],[1,2,1],[0,1,2]] -> row sums
+console.log("y = A*x =", await yGpu.read());   // [3, 4, 3]
 
 AGpu.destroy();
 xGpu.destroy();
 yGpu.destroy();
-
 if (typeof process !== "undefined") cleanup();

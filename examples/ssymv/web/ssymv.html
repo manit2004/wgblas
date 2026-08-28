@@ -8,23 +8,29 @@
   <body>
     <pre id="out">Running…</pre>
     <script>
-      const { init, ssymv, randomFloat32Array, cleanup } = window.wgblas;
+      const { init, ssymv, cleanup } = window.wgblas;
 
       (async () => {
         const device = await init();
 
-        const n = 4, lda = n;
-        const alpha = 1.0, beta = 0.0;
-        const A = randomFloat32Array(n * lda, -10, 10); // only lower triangle is read
-        const x = randomFloat32Array(n, -10, 10);
-        const y = randomFloat32Array(n, -10, 10);
+        // Only the upper triangle is read; the zeros below stand for the mirrored 1s.
+        const n = 3, lda = n;
+        const A = new Float32Array([2, 1, 0,
+                                    0, 2, 1,
+                                    0, 0, 2]);
+        const x = new Float32Array([1, 1, 1]);
+        const y = new Float32Array([0, 0, 0]);
 
-        const { y: result } = await ssymv(device, "lower", n, alpha, A, lda, x, 1, beta, y, 1, "row-major");
+        const { y: result } = await ssymv(device, "upper", n, 1, A, lda, x, 1, 0, y, 1);
 
-        document.getElementById("out").textContent =
-          "A (lower triangle): " + Array.from(A).map(v => v.toFixed(4)).join(", ") +
-          "\nx: " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
-          "\ny: " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+        document.getElementById("out").textContent = [
+          "A (upper triangle stored) =",
+          "  [" + [...A.subarray(0, 3)].join(", ") + "]",
+          "  [" + [...A.subarray(3, 6)].join(", ") + "]",
+          "  [" + [...A.subarray(6, 9)].join(", ") + "]",
+          "x = [" + [...x].join(", ") + "]",
+          "y = A*x = [" + [...result].join(", ") + "]   // implied A = [[2,1,0],[1,2,1],[0,1,2]]",
+        ].join("\n");
 
         cleanup();
       })();

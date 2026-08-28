@@ -2,7 +2,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the triangular matrix-vector operation y = op(A) * x
+ * Performs the triangular matrix-vector operation $$y \leftarrow \mathrm{op}(A) x$$
  *
  * A is an n×n triangular matrix stored in row-major order. Only the triangle
  * specified by `uplo` is referenced; the other triangle is not accessed.
@@ -45,7 +45,7 @@ export declare function strmv(
 ): Promise<{ y: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the triangular matrix-vector operation y = op(A) * x
+ * Performs the triangular matrix-vector operation $$y \leftarrow \mathrm{op}(A) x$$
  *
  * x and y are kept resident on the GPU. A must be a GpuMatrix; its own
  * `layout` (set at `GpuMatrix.from` time) determines the operation — there is

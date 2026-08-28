@@ -2,8 +2,9 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Solves the triangular system op(A) * x = b for x, in place (x holds b on
- * input, the solution on output).
+ * Solves the triangular system for $x$, in place — x holds b on input, the
+ * solution on output:
+ * $$\mathrm{op}(A) x = b$$
  *
  * A is an n×n triangular matrix stored in row-major order. Only the triangle
  * specified by `uplo` is referenced; the other triangle is not accessed.
@@ -42,7 +43,8 @@ export declare function strsv(
 ): Promise<{ x: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Solves the triangular system op(A) * x = b for x, in place.
+ * Solves the triangular system for $x$, in place:
+ * $$\mathrm{op}(A) x = b$$
  *
  * x is kept resident on the GPU (mutated in place). A must be a GpuMatrix;
  * its own `layout` (set at `GpuMatrix.from` time) determines the operation —

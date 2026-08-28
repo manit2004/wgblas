@@ -2,7 +2,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the symmetric rank-1 update A = alpha * x * x^T + A
+ * Performs the symmetric rank-1 update $$A \leftarrow \alpha x x^{T} + A$$
  *
  * A is an n×n symmetric matrix stored in row-major order, updated in place.
  * Only the triangle specified by `uplo` is referenced and updated; the other
@@ -40,7 +40,7 @@ export declare function ssyr(
 ): Promise<{ A: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the symmetric rank-1 update A = alpha * x * x^T + A
+ * Performs the symmetric rank-1 update $$A \leftarrow \alpha x x^{T} + A$$
  *
  * x and A are both kept resident on the GPU. `A`'s own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate

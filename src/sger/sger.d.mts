@@ -2,7 +2,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the rank-1 update A = alpha * x * y^T + A
+ * Performs the rank-1 update $$A \leftarrow \alpha x y^{T} + A$$
  *
  * A is an m×n matrix stored in row-major order, updated in place. `lda` is
  * the leading dimension (number of floats between the start of consecutive
@@ -43,7 +43,7 @@ export declare function sger(
 ): Promise<{ A: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the rank-1 update A = alpha * x * y^T + A
+ * Performs the rank-1 update $$A \leftarrow \alpha x y^{T} + A$$
  *
  * x, y, and A are all kept resident on the GPU. `A`'s own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate
