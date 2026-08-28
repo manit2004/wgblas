@@ -2,7 +2,8 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
  * Performs the symmetric rank-2k update
- * C := uplo(alpha * op(A) * op(B)^T + alpha * op(B) * op(A)^T + beta * C) —
+ * $$C \leftarrow \mathrm{uplo}(\alpha \mathrm{op}(A) \mathrm{op}(B)^{T} + \alpha \mathrm{op}(B) \mathrm{op}(A)^{T} + \beta C)$$
+ *
  * only the triangle of C named by `uplo` is read or written (`'lower'`:
  * `col <= row`, `'upper'`: `col >= row`). C is always n×n.
  *
@@ -57,7 +58,7 @@ export declare function ssyr2k(
 
 /**
  * Performs the symmetric rank-2k update
- * C := uplo(alpha * op(A) * op(B)^T + alpha * op(B) * op(A)^T + beta * C)
+ * $$C \leftarrow \mathrm{uplo}(\alpha \mathrm{op}(A) \mathrm{op}(B)^{T} + \alpha \mathrm{op}(B) \mathrm{op}(A)^{T} + \beta C)$$
  *
  * A, B, and C are all kept GPU-resident. Each matrix's own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate

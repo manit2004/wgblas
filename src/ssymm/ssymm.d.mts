@@ -2,8 +2,9 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
  * Performs the symmetric matrix-matrix operation
- * C := alpha * A * B + beta * C (`side='left'`) or
- * C := alpha * B * A + beta * C (`side='right'`) — `A` is symmetric, only
+ * $$C \leftarrow \alpha A B + \beta C \quad (\texttt{side='left'})$$
+ * $$C \leftarrow \alpha B A + \beta C \quad (\texttt{side='right'})$$
+ * `A` is symmetric, only
  * its `uplo` triangle stored; `B` and `C` are general m×n matrices.
  *
  * - `side='left'`:  `A` is m×m — `A` premultiplies `B`
@@ -59,8 +60,8 @@ export declare function ssymm(
 
 /**
  * Performs the symmetric matrix-matrix operation
- * C := alpha * A * B + beta * C (`side='left'`) or
- * C := alpha * B * A + beta * C (`side='right'`)
+ * $$C \leftarrow \alpha A B + \beta C \quad (\texttt{side='left'})$$
+ * $$C \leftarrow \alpha B A + \beta C \quad (\texttt{side='right'})$$
  *
  * A, B, and C are all kept GPU-resident. Each matrix's own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate

@@ -1,7 +1,8 @@
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the matrix-matrix operation C := uplo(alpha * op(A) * op(B) + beta * C) —
+ * Performs the matrix-matrix operation $$C \leftarrow \mathrm{uplo}(\alpha \mathrm{op}(A) \mathrm{op}(B) + \beta C)$$
+ *
  * `sgemm`'s operation, but only the triangle of C named by `uplo` is read or
  * written (`'lower'`: `col <= row`, `'upper'`: `col >= row`; C need not be
  * square — the test applies over the full m×n grid).
@@ -57,7 +58,7 @@ export declare function sgemmtr(
 ): Promise<{ C: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the matrix-matrix operation C := uplo(alpha * op(A) * op(B) + beta * C)
+ * Performs the matrix-matrix operation $$C \leftarrow \mathrm{uplo}(\alpha \mathrm{op}(A) \mathrm{op}(B) + \beta C)$$
  *
  * A, B, and C are all kept GPU-resident. Each matrix's own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate

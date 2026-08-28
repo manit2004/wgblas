@@ -1,32 +1,33 @@
 import { init, cleanup } from "wgblas";
 import { sgemm } from "wgblas/sgemm";
 import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-const n = 4;
-const A = randomFloat32Array(n * n, -10, 10);
-const B = randomFloat32Array(n * n, -10, 10);
-const C = new Float32Array(n * n);
+// C = A*B with A 2x3 and B 3x2, so C is 2x2.
+const m = 2, n = 2, k = 3;
+const A = new Float32Array([1, 2, 3,
+                            4, 5, 6]);
+const B = new Float32Array([1, 0,
+                            0, 1,
+                            1, 1]);
 
-const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
-const BGpu = GpuMatrix.from(B, n, n, n, "row-major");
-const CGpu = GpuMatrix.from(C, n, n, n, "row-major");
+const AGpu = GpuMatrix.from(A, m, k, k, "row-major");
+const BGpu = GpuMatrix.from(B, k, n, n, "row-major");
+const CGpu = GpuMatrix.from(new Float32Array(m * n), m, n, n, "row-major");
 
-console.log("A:", A);
-console.log("B:", B);
+console.log("A =");
+console.table([A.slice(0, 3),
+               A.slice(3, 6)]);
 
-// results stay on the GPU between steps
-await sgemm(device, "no-transpose", "no-transpose", n, n, n, 1.0, AGpu, AGpu.lda, BGpu, BGpu.lda, 0.0, CGpu, CGpu.lda); // C  = A*B
-await sgemm(device, "no-transpose", "no-transpose", n, n, n, 1.0, AGpu, AGpu.lda, CGpu, CGpu.lda, 0.0, BGpu, BGpu.lda); // B  = A*C = A²*B
+await sgemm(device, "no-transpose", "no-transpose", m, n, k, 1, AGpu, AGpu.lda, BGpu, BGpu.lda, 0, CGpu, CGpu.lda);
 
-// single readback
-const result = await BGpu.read();
-console.log("A²B:", result);
+const result = await CGpu.read();
+console.log("C = A*B =");
+console.table([result.slice(0, 2),
+               result.slice(2, 4)]);   // [[4,5],[10,11]]
 
 AGpu.destroy();
 BGpu.destroy();
 CGpu.destroy();
-
 if (typeof process !== "undefined") cleanup();

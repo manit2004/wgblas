@@ -1,20 +1,29 @@
 import { init, cleanup } from "wgblas";
 import { sgemm } from "wgblas/sgemm";
-import { randomFloat32Array } from "wgblas/random";
 
 const device = await init();
 
-// 4×4 row-major matrices: A (m×k), B (k×n), C (m×n)
-const m = 4, n = 4, k = 4;
-const lda = k, ldb = n, ldc = n;
-const alpha = 1.0, beta = 0.0;
-const A = randomFloat32Array(m * lda, -10, 10);
-const B = randomFloat32Array(k * ldb, -10, 10);
-const C = randomFloat32Array(m * ldc, -10, 10);
+// C = alpha*A*B + beta*C, with A 2x3 and B 3x2, so C is 2x2.
+const m = 2, n = 2, k = 3;
+const A = new Float32Array([1, 2, 3,
+                            4, 5, 6]);
+const B = new Float32Array([1, 0,
+                            0, 1,
+                            1, 1]);
+const C = new Float32Array(m * n);
 
-console.log("A:", A);
-console.log("B:", B);
-console.log("C (input):", C);
-const { C: result } = await sgemm(device, "no-transpose", "no-transpose", m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, "row-major");
-console.log("C (result):", result);
+console.log("A =");
+console.table([A.slice(0, 3),
+               A.slice(3, 6)]);
+console.log("B =");
+console.table([B.slice(0, 2),
+               B.slice(2, 4),
+               B.slice(4, 6)]);
+
+const { C: result } = await sgemm(device, "no-transpose", "no-transpose", m, n, k, 1, A, 3, B, 2, 0, C, 2);
+console.log("C = A*B =");
+console.table([result.slice(0, 2),
+               result.slice(2, 4)]);
+// B's columns pick out [a0+a2, a1+a2]: [[1+3, 2+3], [4+6, 5+6]] = [[4,5],[10,11]]
+
 if (typeof process !== "undefined") cleanup();

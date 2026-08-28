@@ -1,7 +1,8 @@
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
- * Performs the symmetric rank-k update C := uplo(alpha * op(A) * op(A)^T + beta * C) —
+ * Performs the symmetric rank-k update $$C \leftarrow \mathrm{uplo}(\alpha \mathrm{op}(A) \mathrm{op}(A)^{T} + \beta C)$$
+ *
  * only the triangle of C named by `uplo` is read or written (`'lower'`: `col <= row`,
  * `'upper'`: `col >= row`). C is always n×n.
  *
@@ -51,7 +52,7 @@ export declare function ssyrk(
 ): Promise<{ C: Float32Array; gpuTimeMs?: number }>;
 
 /**
- * Performs the symmetric rank-k update C := uplo(alpha * op(A) * op(A)^T + beta * C)
+ * Performs the symmetric rank-k update $$C \leftarrow \mathrm{uplo}(\alpha \mathrm{op}(A) \mathrm{op}(A)^{T} + \beta C)$$
  *
  * A and C are both kept GPU-resident. Each matrix's own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate

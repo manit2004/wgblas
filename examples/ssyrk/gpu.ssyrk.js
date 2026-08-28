@@ -1,35 +1,32 @@
 import { init, cleanup } from "wgblas";
 import { ssyrk } from "wgblas/ssyrk";
 import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
-
-function toMatrix(A, rows, cols, lda = cols) {
-  const out = [];
-  for (let r = 0; r < rows; r++)
-    out.push(Array.from(A.subarray(r * lda, r * lda + cols), (v) => +v.toFixed(4)));
-  return out;
-}
 
 const device = await init();
 
-const n = 4;
-const A = randomFloat32Array(n * n, -10, 10);
-const C = new Float32Array(n * n);
+// Entry (i,j) of C is the dot product of rows i and j of A; only the upper
+// triangle is written.
+const n = 3, k = 2;
+const A = new Float32Array([1, 0,
+                            0, 1,
+                            1, 1]);
 
-const AGpu = GpuMatrix.from(A, n, n, n, "row-major");
-const CGpu = GpuMatrix.from(C, n, n, n, "row-major");
+const AGpu = GpuMatrix.from(A, n, k, k, "row-major");
+const CGpu = GpuMatrix.from(new Float32Array(n * n), n, n, n, "row-major");
 
-console.log("A:", A);
+console.log("A =");
+console.table([A.slice(0, 2),
+               A.slice(2, 4),
+               A.slice(4, 6)]);
 
-// C stays on the GPU; only its lower triangle is ever written.
-await ssyrk(device, "lower", "no-transpose", n, n, 1.0, AGpu, AGpu.lda, 0.0, CGpu, CGpu.lda); // C (lower) = A*A^T
+await ssyrk(device, "upper", "no-transpose", n, k, 1, AGpu, AGpu.lda, 0, CGpu, CGpu.lda);
 
-// single readback
 const result = await CGpu.read();
-console.log("C (lower triangle = A*A^T, upper triangle untouched zeros):");
-console.table(toMatrix(result, n, n, n));
+console.log("C = upper(A*A^T) =");
+console.table([result.slice(0, 3),
+               result.slice(3, 6),
+               result.slice(6, 9)]);   // [[1,0,1],[0,1,1],[0,0,2]]
 
 AGpu.destroy();
 CGpu.destroy();
-
 if (typeof process !== "undefined") cleanup();

@@ -1,29 +1,26 @@
 import { init, cleanup } from "wgblas";
 import { ssyrk } from "wgblas/ssyrk";
-import { randomFloat32Array } from "wgblas/random";
-
-// Reshapes a flat row-major array into rows for console.table's 2D grid view.
-function toMatrix(A, rows, cols, lda = cols) {
-  const out = [];
-  for (let r = 0; r < rows; r++)
-    out.push(Array.from(A.subarray(r * lda, r * lda + cols), (v) => +v.toFixed(4)));
-  return out;
-}
 
 const device = await init();
 
-// C := alpha*A*A^T + beta*C — A is 4×4, C is 4×4. Only C's lower triangle
-// is touched (uplo='lower'); the upper triangle stays exactly as passed in.
-const n = 4, k = 4;
-const lda = k, ldc = n;
-const alpha = 1.0, beta = 0.0;
-const A = randomFloat32Array(n * lda, -10, 10);
-const C = randomFloat32Array(n * ldc, -10, 10);
+// C = uplo(alpha*A*A^T + beta*C). Entry (i,j) is the dot product of rows i
+// and j of A, and only the upper triangle is written.
+const n = 3, k = 2;
+const A = new Float32Array([1, 0,
+                            0, 1,
+                            1, 1]);
+const C = new Float32Array(n * n);
 
-console.log("A:", A);
-console.log("C (before, upper triangle preserved):");
-console.table(toMatrix(C, n, n, ldc));
-const { C: result } = await ssyrk(device, "lower", "no-transpose", n, k, alpha, A, lda, beta, C, ldc, "row-major");
-console.log("C (after, only lower triangle updated):");
-console.table(toMatrix(result, n, n, ldc));
+console.log("A =");
+console.table([A.slice(0, 2),
+               A.slice(2, 4),
+               A.slice(4, 6)]);
+
+const { C: result } = await ssyrk(device, "upper", "no-transpose", n, k, 1, A, k, 0, C, n);
+console.log("C = upper(A*A^T) =");
+console.table([result.slice(0, 3),
+               result.slice(3, 6),
+               result.slice(6, 9)]);
+// row dot products: [[1·1, 1·0, 1·1], [-, 1·1, 1·1], [-, -, 2]] = [[1,0,1],[0,1,1],[0,0,2]]
+
 if (typeof process !== "undefined") cleanup();

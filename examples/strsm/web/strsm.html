@@ -8,23 +8,33 @@
   <body>
     <pre id="out">Running…</pre>
     <script>
-      const { init, strsm, randomFloat32Array, randomTriangularFloat32Array, cleanup } = window.wgblas;
+      const { init, strsm, cleanup } = window.wgblas;
 
       (async () => {
         const device = await init();
 
-        const m = 4, n = 3;
-        const lda = m, ldb = n;
-        const alpha = 1.0;
-        const A = randomTriangularFloat32Array(m, lda, "lower", -1, 1);
-        const B = randomFloat32Array(m * ldb, -10, 10);
+        // Solves A*X = B, overwriting B. Passing B = A recovers the identity,
+        // undoing what the strmm example does.
+        const n = 3, lda = n;
+        const A = new Float32Array([2, 0, 0,
+                                    3, 4, 0,
+                                    5, 6, 8]);
+        const B = new Float32Array([2, 0, 0,
+                                    3, 4, 0,
+                                    5, 6, 8]);
 
-        const { B: X } = await strsm(device, "left", "lower", "no-transpose", "non-unit", m, n, alpha, A, lda, B, ldb, "row-major");
+        const { B: result } = await strsm(device, "left", "lower", "no-transpose", "non-unit", n, n, 1, A, lda, B, lda);
 
-        document.getElementById("out").textContent =
-          "A: " + Array.from(A).map(v => v.toFixed(4)).join(", ") +
-          "\nB (before): " + Array.from(B).map(v => v.toFixed(4)).join(", ") +
-          "\nX (after, solves A*X = B): " + Array.from(X).map(v => v.toFixed(4)).join(", ");
+        document.getElementById("out").textContent = [
+          "A (lower triangular) = B =",
+          "  [" + A.slice(0, 3).join(", ") + "]",
+          "  [" + A.slice(3, 6).join(", ") + "]",
+          "  [" + A.slice(6, 9).join(", ") + "]",
+          "X solving A*X = B, i.e. the identity =",
+          "  [" + result.slice(0, 3).join(", ") + "]",
+          "  [" + result.slice(3, 6).join(", ") + "]",
+          "  [" + result.slice(6, 9).join(", ") + "]",
+        ].join("\n");
 
         cleanup();
       })();
