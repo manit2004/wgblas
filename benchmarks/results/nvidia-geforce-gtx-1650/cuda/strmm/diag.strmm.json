@@ -1,0 +1,14 @@
+[
+  { "diag": "non-unit", "n": 64, "compute_ms": 0.0230, "compute_GBs": 11.3936 },
+  { "diag": "non-unit", "n": 128, "compute_ms": 0.0306, "compute_GBs": 68.4449 },
+  { "diag": "non-unit", "n": 256, "compute_ms": 0.0430, "compute_GBs": 390.5311 },
+  { "diag": "non-unit", "n": 512, "compute_ms": 0.1371, "compute_GBs": 978.9483 },
+  { "diag": "non-unit", "n": 1024, "compute_ms": 0.7909, "compute_GBs": 1357.5995 },
+  { "diag": "non-unit", "n": 2048, "compute_ms": 5.7686, "compute_GBs": 1489.0785 },
+  { "diag": "unit", "n": 64, "compute_ms": 0.0256, "compute_GBs": 10.2400 },
+  { "diag": "unit", "n": 128, "compute_ms": 0.0333, "compute_GBs": 62.9246 },
+  { "diag": "unit", "n": 256, "compute_ms": 0.0469, "compute_GBs": 357.7537 },
+  { "diag": "unit", "n": 512, "compute_ms": 0.1448, "compute_GBs": 926.9179 },
+  { "diag": "unit", "n": 1024, "compute_ms": 0.7908, "compute_GBs": 1357.8193 },
+  { "diag": "unit", "n": 2048, "compute_ms": 5.7671, "compute_GBs": 1489.4794 }
+]

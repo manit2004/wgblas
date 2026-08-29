@@ -1,0 +1,14 @@
+[
+  { "uplo": "lower", "n": 64, "compute_ms": 0.0102, "compute_GBs": 25.6000 },
+  { "uplo": "lower", "n": 128, "compute_ms": 0.0167, "compute_GBs": 125.7889 },
+  { "uplo": "lower", "n": 256, "compute_ms": 0.0249, "compute_GBs": 673.4592 },
+  { "uplo": "lower", "n": 512, "compute_ms": 0.0820, "compute_GBs": 1637.7603 },
+  { "uplo": "lower", "n": 1024, "compute_ms": 0.4584, "compute_GBs": 2342.1235 },
+  { "uplo": "lower", "n": 2048, "compute_ms": 3.2803, "compute_GBs": 2618.6399 },
+  { "uplo": "upper", "n": 64, "compute_ms": 0.0123, "compute_GBs": 21.3333 },
+  { "uplo": "upper", "n": 128, "compute_ms": 0.0171, "compute_GBs": 122.8416 },
+  { "uplo": "upper", "n": 256, "compute_ms": 0.0283, "compute_GBs": 592.0813 },
+  { "uplo": "upper", "n": 512, "compute_ms": 0.0881, "compute_GBs": 1524.0930 },
+  { "uplo": "upper", "n": 1024, "compute_ms": 0.4647, "compute_GBs": 2310.5134 },
+  { "uplo": "upper", "n": 2048, "compute_ms": 3.2695, "compute_GBs": 2627.3154 }
+]

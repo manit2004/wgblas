@@ -507,6 +507,12 @@ SCALAR_SWEEPS = {
         "because those are the values a shader *could* special-case if it ever "
         "grew a branch — and `strsm` is the routine where one does."
     )),
+    "beta": ("beta", "beta", (
+        "`beta` scales the existing `y`/`C` before accumulation. Reference BLAS "
+        "is permitted to skip reading that operand entirely when `beta` is 0, "
+        "so unlike `alpha` this sweep has a mechanism to be non-flat — a step "
+        "at 0 means the shortcut is taken, and its size is what it saves."
+    )),
     "cosine": ("c", "c", (
         "The cosine half of the plane rotation, swept with `s` held fixed so "
         "the two halves are attributed separately. `srot`'s kernel computes "
@@ -524,6 +530,63 @@ SCALAR_SWEEPS = {
 }
 
 
+# --- flag sweeps (diag, layout) -----------------------------------------------
+#
+# Same shape as SCALAR_SWEEPS but string-keyed. uplo and trans predate this and
+# keep their own section builders; these are the flags added later, and any
+# further one is a table entry rather than another builder.
+#
+# `layout` is wgblas-only by construction: cuBLAS is column-major and has no
+# layout argument, so there is never a CUDA companion file to compare against.
+
+FLAG_SWEEPS = {
+    "diag": ("diag", "diag", (
+        "A unit diagonal lets the kernel skip the diagonal load — and for the "
+        "triangular solve, the reciprocal as well — so any difference here is "
+        "exactly that skipped work."
+    )),
+    "side": ("side", "side", (
+        "Whether `A` pre- or post-multiplies `B`. The two settings traverse the "
+        "same data in different orders, so this is a scheduling and coalescing "
+        "question rather than an arithmetic one — both do identical flops."
+    )),
+    "transA": ("transA", "transA", (
+        "`op(A)` decides whether the kernel walks `A` along rows or columns, "
+        "which changes how its tile loads coalesce. Swept on its own here; "
+        "`sgemm`'s combined transA x transB grid lives in its trans sweep."
+    )),
+    "transB": ("transB", "transB", (
+        "`op(B)` — the counterpart to the transA sweep, on the operand streamed "
+        "along the kernel's inner loop, where a stride change has the most room "
+        "to matter."
+    )),
+    "layout": ("layout", "layout", (
+        "Column-major swaps the effective `m`/`n` and flips the transpose flag "
+        "internally, changing which axis is contiguous and therefore how the "
+        "matrix reads coalesce. wgblas-only: cuBLAS is column-major and has no "
+        "layout argument, so there is no reference curve to compare against."
+    )),
+}
+
+
+# --- pad sweeps keyed generically (ldc) ---------------------------------------
+#
+# lda and ldb predate this and keep their own builders, whose intro text is
+# routine-specific because each routine's lda-sensitivity mechanism differs.
+# ldc arrived later and needs no such per-routine story — it is the output
+# matrix everywhere it appears — so it goes through one table-driven builder,
+# as any further leading dimension would.
+
+PAD_SWEEPS = {
+    "ldc": ("pad", "ldc", (
+        "Padding on the output matrix. `C` is written rather than streamed, so "
+        "this measures write coalescing rather than read bandwidth — the row "
+        "byte-stride is `ldc*4`, and a pad that moves it off the 128-byte "
+        "boundary is what would show up here."
+    )),
+}
+
+
 def fetch_scalar(gpu, backend, routine, prefix, local_only=False):
     """<prefix>.<routine> companion file for a scalar sweep, or None."""
     return fetch_json(gpu, backend, f"{routine}/{prefix}.{routine}", local_only)
@@ -533,6 +596,89 @@ def scalar_script_path(routine, backend, prefix):
     """Repo-relative path to a routine's scalar-sweep benchmark script."""
     ext = "js" if backend == "wgblas" else "c"
     return f"benchmarks/{routine}/{backend}/{prefix}.{routine}.{ext}"
+
+
+def make_pad_section(wrows, crows_all, routine, gpu, display, gh, prefix):
+    """One table + chart per pad value, for a table-driven leading-dimension
+    sweep (currently ldc). Same shape as make_flag_section, but the key is
+    numeric so the groups sort ascending rather than alphabetically."""
+    key, label, blurb = PAD_SWEEPS[prefix]
+    groups = group_by_pad(wrows)
+    cuda_groups = group_by_pad(crows_all) if crows_all else {}
+
+    parts = [f"## {label} sweep\n", blurb + "\n"]
+    for pad, rows in groups.items():
+        crows = cuda_groups.get(pad, [])
+        parts.append(f"<details>\n<summary>{display} — {label} = n + {pad}</summary>\n")
+        parts.append(
+            make_comparison_table(rows, crows, routine) if crows
+            else make_wgblas_only_table(rows, routine)
+        )
+        parts.append("")
+        chart = make_svg_chart(rows, crows, routine, gpu, config=f"{prefix}pad{pad}")
+        if chart:
+            parts.append(chart)
+        parts.append("")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [{prefix}.{routine}.js]({gh}/{scalar_script_path(routine, 'wgblas', prefix)}) "
+        f"— WebGPU {label}-sweep benchmark script"
+    )
+    if crows_all:
+        parts.append(
+            f"- [{prefix}.{routine}.c]({gh}/{scalar_script_path(routine, 'cuda', prefix)}) "
+            f"— CUDA / cuBLAS {label}-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
+def group_by_flag(rows, key):
+    """Groups flag-sweep rows by `key`, each group sorted by n ascending.
+    Ordered alphabetically, which puts "lower" before "upper" and
+    "non-unit" before "unit" — baseline first in both cases."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r[key], []).append(r)
+    for g in groups.values():
+        g.sort(key=lambda r: r["n"])
+    return dict(sorted(groups.items()))
+
+
+def make_flag_section(wrows, crows_all, routine, gpu, display, gh, prefix):
+    """One table + chart per value of a string-valued flag."""
+    key, label, blurb = FLAG_SWEEPS[prefix]
+    groups = group_by_flag(wrows, key)
+    cuda_groups = group_by_flag(crows_all, key) if crows_all else {}
+
+    parts = [f"## {label} sweep\n", blurb + "\n"]
+    for value, rows in groups.items():
+        crows = cuda_groups.get(value, [])
+        parts.append(f"<details>\n<summary>{display} — {label} = {value}</summary>\n")
+        parts.append(
+            make_comparison_table(rows, crows, routine) if crows
+            else make_wgblas_only_table(rows, routine)
+        )
+        parts.append("")
+        chart = make_svg_chart(rows, crows, routine, gpu,
+                               config=f"{prefix}{str(value).replace('-', '')}")
+        if chart:
+            parts.append(chart)
+        parts.append("")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [{prefix}.{routine}.js]({gh}/{scalar_script_path(routine, 'wgblas', prefix)}) "
+        f"— WebGPU {label}-sweep benchmark script"
+    )
+    if crows_all:
+        parts.append(
+            f"- [{prefix}.{routine}.c]({gh}/{scalar_script_path(routine, 'cuda', prefix)}) "
+            f"— CUDA / cuBLAS {label}-sweep reference script"
+        )
+    return "\n".join(parts)
 
 
 def group_by_scalar(rows, key):
@@ -1260,6 +1406,28 @@ def main():
                 crows = (fetch_scalar(gpu, "cuda", routine, prefix, local_only=args.local)
                          if has_cuda else None)
                 body += "\n\n" + make_scalar_section(
+                    wrows, crows, routine, gpu, display, gh, prefix
+                )
+
+            # Flag sweeps added after uplo/trans: diag, and layout (wgblas-only).
+            for prefix in FLAG_SWEEPS:
+                wrows = fetch_scalar(gpu, "wgblas", routine, prefix, local_only=args.local)
+                if not wrows:
+                    continue
+                crows = (fetch_scalar(gpu, "cuda", routine, prefix, local_only=args.local)
+                         if has_cuda else None)
+                body += "\n\n" + make_flag_section(
+                    wrows, crows, routine, gpu, display, gh, prefix
+                )
+
+            # Leading-dimension sweeps added after lda/ldb: currently just ldc.
+            for prefix in PAD_SWEEPS:
+                wrows = fetch_scalar(gpu, "wgblas", routine, prefix, local_only=args.local)
+                if not wrows:
+                    continue
+                crows = (fetch_scalar(gpu, "cuda", routine, prefix, local_only=args.local)
+                         if has_cuda else None)
+                body += "\n\n" + make_pad_section(
                     wrows, crows, routine, gpu, display, gh, prefix
                 )
 

@@ -5,12 +5,12 @@
  *
  * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
  * |---|-----------|-------------|-----------|-------------|------------|
- * | 32 | 0.0107 | 1.5375 | 0.0087 | 1.8789 | 81.8% |
- * | 64 | 0.0147 | 4.4716 | 0.0099 | 6.6386 | 67.4% |
- * | 128 | 0.0246 | 10.6667 | 0.0142 | 18.4090 | 57.9% |
- * | 256 | 0.0900 | 11.6467 | 0.0441 | 23.7621 | 49.0% |
- * | 512 | 0.2191 | 19.1402 | 0.1994 | 21.0338 | 91.0% |
- * | 1024 | 1.4541 | 11.5380 | 0.9948 | 16.8646 | 68.4% |
+ * | 32 | 0.0123 | 1.3333 | 0.0087 | 1.8789 | 71.0% |
+ * | 64 | 0.0165 | 3.9806 | 0.0099 | 6.6386 | 60.0% |
+ * | 128 | 0.0304 | 8.6368 | 0.0142 | 18.4090 | 46.9% |
+ * | 256 | 0.1083 | 9.6804 | 0.0441 | 23.7621 | 40.7% |
+ * | 512 | 0.4526 | 9.2670 | 0.1994 | 21.0338 | 44.1% |
+ * | 1024 | 3.2092 | 5.2278 | 0.9948 | 16.8646 | 31.0% |
  *
  * > Efficiency = wgblas GB/s ÷ cuBLAS GB/s × 100. 100% means parity with cuBLAS; values above 100% mean wgblas achieved greater throughput.
  *
@@ -348,6 +348,240 @@
  *
  * - [ldb.sgemm.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/wgblas/ldb.sgemm.js) — WebGPU ldb-sweep benchmark script
  * - [ldb.sgemm.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/cuda/ldb.sgemm.c) — CUDA / cuBLAS ldb-sweep reference script
+ *
+ * ## beta sweep
+ *
+ * `beta` scales the existing `y`/`C` before accumulation. Reference BLAS is permitted to skip reading that operand entirely when `beta` is 0, so unlike `alpha` this sweep has a mechanism to be non-flat — a step at 0 means the shortcut is taken, and its size is what it saves.
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — beta = -3.75</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0124 | 5.2716 | 0.0089 | 7.3274 | 71.9% |
+ * | 128 | 0.0194 | 13.4848 | 0.0120 | 21.8453 | 61.7% |
+ * | 256 | 0.0705 | 14.8776 | 0.0430 | 24.3991 | 61.0% |
+ * | 512 | 0.1725 | 24.3109 | 0.1679 | 24.9851 | 97.3% |
+ * | 1024 | 1.1489 | 14.6025 | 0.7947 | 21.1113 | 69.2% |
+ * | 2048 | 9.4864 | 7.0743 | 6.6468 | 10.0964 | 70.1% |
+ *
+ * ![sgemm-betaneg3p75 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-betaneg3p75.svg)
+ *
+ * ![sgemm-betaneg3p75 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-betaneg3p75.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — beta = 0</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0151 | 4.3528 | 0.0081 | 8.1109 | 53.7% |
+ * | 128 | 0.0246 | 10.6736 | 0.0106 | 24.8242 | 43.0% |
+ * | 256 | 0.0900 | 11.6571 | 0.0351 | 29.8569 | 39.0% |
+ * | 512 | 0.2191 | 19.1402 | 0.1550 | 27.0642 | 70.7% |
+ * | 1024 | 1.4542 | 11.5371 | 0.7798 | 21.5141 | 53.6% |
+ * | 2048 | 9.4904 | 7.0712 | 6.6350 | 10.1143 | 69.9% |
+ *
+ * ![sgemm-beta0 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-beta0.svg)
+ *
+ * ![sgemm-beta0 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-beta0.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — beta = 1</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0125 | 5.2245 | 0.0094 | 6.9898 | 74.7% |
+ * | 128 | 0.0192 | 13.6420 | 0.0119 | 21.9625 | 62.1% |
+ * | 256 | 0.0708 | 14.8171 | 0.0429 | 24.4355 | 60.6% |
+ * | 512 | 0.1720 | 24.3810 | 0.1721 | 24.3719 | 100.0% |
+ * | 1024 | 1.1489 | 14.6025 | 0.7845 | 21.3864 | 68.3% |
+ * | 2048 | 9.4871 | 7.0737 | 6.6505 | 10.0907 | 70.1% |
+ *
+ * ![sgemm-beta1 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-beta1.svg)
+ *
+ * ![sgemm-beta1 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-beta1.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — beta = 2.5</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0125 | 5.2245 | 0.0089 | 7.3274 | 71.3% |
+ * | 128 | 0.0196 | 13.4075 | 0.0120 | 21.7872 | 61.5% |
+ * | 256 | 0.0712 | 14.7305 | 0.0430 | 24.4082 | 60.4% |
+ * | 512 | 0.1722 | 24.3538 | 0.1679 | 24.9804 | 97.5% |
+ * | 1024 | 1.1489 | 14.6025 | 0.7936 | 21.1402 | 69.1% |
+ * | 2048 | 9.4924 | 7.0698 | 6.6477 | 10.0951 | 70.0% |
+ *
+ * ![sgemm-beta2p5 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-beta2p5.svg)
+ *
+ * ![sgemm-beta2p5 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-beta2p5.svg)
+ *
+ * </details>
+ *
+ * **See also:**
+ *
+ * - [beta.sgemm.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/wgblas/beta.sgemm.js) — WebGPU beta-sweep benchmark script
+ * - [beta.sgemm.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/cuda/beta.sgemm.c) — CUDA / cuBLAS beta-sweep reference script
+ *
+ * ## ldc sweep
+ *
+ * Padding on the output matrix. `C` is written rather than streamed, so this measures write coalescing rather than read bandwidth — the row byte-stride is `ldc*4`, and a pad that moves it off the 128-byte boundary is what would show up here.
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 0</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0148 | 4.4281 | 0.0104 | 6.2726 | 70.6% |
+ * | 128 | 0.0245 | 10.6875 | 0.0133 | 19.6687 | 54.3% |
+ * | 256 | 0.0894 | 11.7259 | 0.0433 | 24.1920 | 48.5% |
+ * | 512 | 0.2191 | 19.1402 | 0.1966 | 21.3333 | 89.7% |
+ * | 1024 | 1.4380 | 11.6674 | 0.9854 | 17.0259 | 68.5% |
+ * | 2048 | 9.4847 | 7.0755 | 6.6386 | 10.1089 | 70.0% |
+ *
+ * ![sgemm-ldcpad0 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad0.svg)
+ *
+ * ![sgemm-ldcpad0 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad0.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 1</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0124 | 5.2784 | 0.0088 | 7.4745 | 70.6% |
+ * | 128 | 0.0197 | 13.2771 | 0.0119 | 21.9919 | 60.4% |
+ * | 256 | 0.0712 | 14.7338 | 0.0400 | 26.2354 | 56.2% |
+ * | 512 | 0.1757 | 23.8660 | 0.1675 | 25.0400 | 95.3% |
+ * | 1024 | 1.1525 | 14.5571 | 0.7837 | 21.4087 | 68.0% |
+ * | 2048 | 9.4958 | 7.0672 | 6.6376 | 10.1104 | 69.9% |
+ *
+ * ![sgemm-ldcpad1 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad1.svg)
+ *
+ * ![sgemm-ldcpad1 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad1.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 8</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0123 | 5.3333 | 0.0096 | 6.8040 | 78.4% |
+ * | 128 | 0.0193 | 13.6080 | 0.0120 | 21.7583 | 62.5% |
+ * | 256 | 0.0709 | 14.7903 | 0.0389 | 26.9252 | 54.9% |
+ * | 512 | 0.1742 | 24.0742 | 0.1652 | 25.3843 | 94.8% |
+ * | 1024 | 1.1491 | 14.6009 | 0.7864 | 21.3355 | 68.4% |
+ * | 2048 | 9.5027 | 7.0621 | 6.6406 | 10.1059 | 69.9% |
+ *
+ * ![sgemm-ldcpad8 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad8.svg)
+ *
+ * ![sgemm-ldcpad8 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad8.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 16</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0124 | 5.2920 | 0.0091 | 7.2240 | 73.3% |
+ * | 128 | 0.0197 | 13.2879 | 0.0120 | 21.8453 | 60.8% |
+ * | 256 | 0.0701 | 14.9660 | 0.0401 | 26.1204 | 57.3% |
+ * | 512 | 0.1745 | 24.0301 | 0.1672 | 25.0807 | 95.8% |
+ * | 1024 | 1.1510 | 14.5765 | 0.7940 | 21.1287 | 69.0% |
+ * | 2048 | 9.4859 | 7.0746 | 6.6353 | 10.1139 | 69.9% |
+ *
+ * ![sgemm-ldcpad16 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad16.svg)
+ *
+ * ![sgemm-ldcpad16 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad16.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 32</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0123 | 5.3333 | 0.0090 | 7.2753 | 73.3% |
+ * | 128 | 0.0195 | 13.4295 | 0.0119 | 22.0809 | 60.8% |
+ * | 256 | 0.0706 | 14.8608 | 0.0398 | 26.3514 | 56.4% |
+ * | 512 | 0.1729 | 24.2524 | 0.1744 | 24.0433 | 100.9% |
+ * | 1024 | 1.1501 | 14.5877 | 0.7852 | 21.3681 | 68.3% |
+ * | 2048 | 9.4886 | 7.0726 | 6.6356 | 10.1135 | 69.9% |
+ *
+ * ![sgemm-ldcpad32 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad32.svg)
+ *
+ * ![sgemm-ldcpad32 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad32.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 48</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0123 | 5.3333 | 0.0093 | 7.0499 | 75.7% |
+ * | 128 | 0.0196 | 13.3966 | 0.0118 | 22.2609 | 60.2% |
+ * | 256 | 0.0706 | 14.8608 | 0.0399 | 26.2775 | 56.6% |
+ * | 512 | 0.1749 | 23.9839 | 0.1731 | 24.2300 | 99.0% |
+ * | 1024 | 1.1510 | 14.5759 | 0.7851 | 21.3699 | 68.2% |
+ * | 2048 | 9.4925 | 7.0697 | 6.6336 | 10.1165 | 69.9% |
+ *
+ * ![sgemm-ldcpad48 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad48.svg)
+ *
+ * ![sgemm-ldcpad48 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad48.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 64</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0120 | 5.4686 | 0.0091 | 7.1986 | 76.0% |
+ * | 128 | 0.0188 | 13.9557 | 0.0117 | 22.3520 | 62.4% |
+ * | 256 | 0.0701 | 14.9626 | 0.0398 | 26.3408 | 56.8% |
+ * | 512 | 0.1721 | 24.3742 | 0.1685 | 24.8879 | 97.9% |
+ * | 1024 | 1.1580 | 14.4881 | 0.7865 | 21.3316 | 67.9% |
+ * | 2048 | 9.5745 | 7.0091 | 6.6352 | 10.1141 | 69.3% |
+ *
+ * ![sgemm-ldcpad64 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad64.svg)
+ *
+ * ![sgemm-ldcpad64 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad64.svg)
+ *
+ * </details>
+ *
+ * <details>
+ * <summary>Nvidia Geforce Gtx 1650 — ldc = n + 128</summary>
+ *
+ * | n | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |
+ * |---|-----------|-------------|-----------|-------------|------------|
+ * | 64 | 0.0123 | 5.3333 | 0.0089 | 7.3537 | 72.5% |
+ * | 128 | 0.0198 | 13.2236 | 0.0119 | 22.0809 | 59.9% |
+ * | 256 | 0.0705 | 14.8709 | 0.0398 | 26.3620 | 56.4% |
+ * | 512 | 0.1734 | 24.1920 | 0.1680 | 24.9613 | 96.9% |
+ * | 1024 | 1.1491 | 14.6001 | 0.7826 | 21.4371 | 68.1% |
+ * | 2048 | 9.5673 | 7.0144 | 6.6373 | 10.1108 | 69.4% |
+ *
+ * ![sgemm-ldcpad128 GB/s chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/gbps-ldcpad128.svg)
+ *
+ * ![sgemm-ldcpad128 ms chart](../../../assets/benchmarks/nvidia-geforce-gtx-1650/sgemm/ms-ldcpad128.svg)
+ *
+ * </details>
+ *
+ * **See also:**
+ *
+ * - [ldc.sgemm.js](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/wgblas/ldc.sgemm.js) — WebGPU ldc-sweep benchmark script
+ * - [ldc.sgemm.c](https://github.com/manit2004/wgblas/blob/main/benchmarks/sgemm/cuda/ldc.sgemm.c) — CUDA / cuBLAS ldc-sweep reference script
  *
  * @module benchmarks/nvidia-geforce-gtx-1650/sgemm
  */

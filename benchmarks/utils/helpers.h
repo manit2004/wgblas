@@ -337,7 +337,7 @@ static void save_results_trans(const char *gpu_model, const char *folder, const 
  */
 static void save_results_flag(const char *gpu_model, const char *folder, const char *file_name,
                               const char *key_name, const char **values, int *sizes,
-                              float *med_times, float *gbs_vals, int n) {
+                              float *med_times, float *gbs_vals, float *gflops_vals, int n) {
     char *gpu_dir, *base_dir, *out_dir, *file_path;
     asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
     asprintf(&base_dir,  "%s/cuda", gpu_dir);
@@ -350,8 +350,9 @@ static void save_results_flag(const char *gpu_model, const char *folder, const c
     FILE *fp = fopen(file_path, "w");
     fprintf(fp, "[\n");
     for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"%s\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            key_name, values[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
+        fprintf(fp, "  { \"%s\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, ", key_name, values[i], sizes[i], med_times[i]);
+        if (gflops_vals) fprintf(fp, "\"compute_GFLOPs\": %.4f, ", gflops_vals[i]);
+        fprintf(fp, "\"compute_GBs\": %.4f }%s\n", gbs_vals[i], i < n - 1 ? "," : "");
     }
     fprintf(fp, "]\n");
     fclose(fp);
@@ -369,7 +370,7 @@ static void save_results_flag(const char *gpu_model, const char *folder, const c
  */
 static void save_results_scalar(const char *gpu_model, const char *folder, const char *file_name,
                                 const char *key_name, float *values, int *sizes,
-                                float *med_times, float *gbs_vals, int n) {
+                                float *med_times, float *gbs_vals, float *gflops_vals, int n) {
     char *gpu_dir, *base_dir, *out_dir, *file_path;
     asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
     asprintf(&base_dir,  "%s/cuda", gpu_dir);
@@ -382,8 +383,9 @@ static void save_results_scalar(const char *gpu_model, const char *folder, const
     FILE *fp = fopen(file_path, "w");
     fprintf(fp, "[\n");
     for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"%s\": %g, \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            key_name, values[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
+        fprintf(fp, "  { \"%s\": %g, \"n\": %d, \"compute_ms\": %.4f, ", key_name, values[i], sizes[i], med_times[i]);
+        if (gflops_vals) fprintf(fp, "\"compute_GFLOPs\": %.4f, ", gflops_vals[i]);
+        fprintf(fp, "\"compute_GBs\": %.4f }%s\n", gbs_vals[i], i < n - 1 ? "," : "");
     }
     fprintf(fp, "]\n");
     fclose(fp);
@@ -391,6 +393,35 @@ static void save_results_scalar(const char *gpu_model, const char *folder, const
     free(base_dir);
     free(out_dir);
     free(file_path);
+}
+
+/**
+ * Pad-keyed saver carrying both metrics — the Level 3 counterpart to
+ * `save_results_pad`, which writes `compute_GBs` only. Pass NULL for
+ * `gflops_vals` to omit that field.
+ */
+static void save_results_pad_ex(const char *gpu_model, const char *folder, const char *file_name,
+                                int *pads, int *sizes, float *med_times, float *gbs_vals,
+                                float *gflops_vals, int n) {
+    char *gpu_dir, *base_dir, *out_dir, *file_path;
+    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
+    asprintf(&base_dir,  "%s/cuda", gpu_dir);
+    asprintf(&out_dir,   "%s/%s", base_dir, folder);
+    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
+    mkdir("benchmarks/results", 0755);
+    mkdir(gpu_dir, 0755);
+    mkdir(base_dir, 0755);
+    mkdir(out_dir, 0755);
+    FILE *fp = fopen(file_path, "w");
+    fprintf(fp, "[\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "  { \"pad\": %d, \"n\": %d, \"compute_ms\": %.4f, ", pads[i], sizes[i], med_times[i]);
+        if (gflops_vals) fprintf(fp, "\"compute_GFLOPs\": %.4f, ", gflops_vals[i]);
+        fprintf(fp, "\"compute_GBs\": %.4f }%s\n", gbs_vals[i], i < n - 1 ? "," : "");
+    }
+    fprintf(fp, "]\n");
+    fclose(fp);
+    free(gpu_dir); free(base_dir); free(out_dir); free(file_path);
 }
 
 static float median(float *arr, int n) {

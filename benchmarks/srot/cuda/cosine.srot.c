@@ -98,7 +98,7 @@ int main(void) {
     cublasDestroy(handle);
 
     save_results_scalar(gpu_model, "srot", "cosine.srot", "c",
-                        rec_key, rec_n, med_times, gbs_vals, ri);
+                        rec_key, rec_n, med_times, gbs_vals, NULL, ri);
 
     free(rec_key);
     free(rec_n);
