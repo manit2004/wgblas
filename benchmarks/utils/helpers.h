@@ -424,6 +424,32 @@ static void save_results_pad_ex(const char *gpu_model, const char *folder, const
     free(gpu_dir); free(base_dir); free(out_dir); free(file_path);
 }
 
+/**
+ * Bytes of host RAM currently available, from /proc/meminfo's MemAvailable.
+ *
+ * The device-memory guards in these benchmarks check `cudaMemGetInfo` only,
+ * which is not the binding constraint for the f64 routines: dasum and idamax
+ * stage a float array *and* a double array on the host before uploading, so
+ * they need roughly 1.5x the device figure in RAM. On a machine with a large
+ * GPU and a busy host that passes the device check and then gets OOM-killed
+ * mid-run, which looks like a hang rather than a skip.
+ *
+ * Returns 0 if MemAvailable cannot be read, which callers treat as "unknown,
+ * do not block" so this can never wrongly skip a config it cannot measure.
+ */
+static size_t host_bytes_available(void) {
+    FILE *fp = fopen("/proc/meminfo", "r");
+    if (!fp) return 0;
+    char key[64];
+    unsigned long kb;
+    size_t avail = 0;
+    while (fscanf(fp, "%63s %lu kB\n", key, &kb) == 2) {
+        if (strcmp(key, "MemAvailable:") == 0) { avail = (size_t)kb * 1024; break; }
+    }
+    fclose(fp);
+    return avail;
+}
+
 static float median(float *arr, int n) {
     float *tmp = malloc(n * sizeof(float));
     memcpy(tmp, arr, n * sizeof(float));

@@ -42,6 +42,17 @@ int main(void) {
             size_t free_mem, total_mem;
             CUDA_CHECK(cudaMemGetInfo(&free_mem, &total_mem));
             size_t bytes_needed = ((size_t)n * lda + (size_t)n * ldb) * sizeof(float);
+            // Host RAM, not device memory, is the tighter limit here: this configuration
+            // stages 2 buffer(s) of comparable size in RAM before uploading. Passing the
+            // device check and then being OOM-killed mid-run looks like a hang rather
+            // than a skip, so check both.
+            size_t host_needed = bytes_needed * 2;
+            size_t host_avail = host_bytes_available();
+            if (host_avail && host_needed > host_avail * 8 / 10) {
+                printf("  (skipped n=%d: needs %.1f GB host RAM, %.1f GB available)\n",
+                       n, host_needed / 1e9, host_avail / 1e9);
+                continue;
+            }
             if (bytes_needed > free_mem * 9 / 10) {
                 printf("  (skipped n=%d: matrices would exceed available device memory)\n", n);
                 continue;
