@@ -1,7 +1,7 @@
 // stride sweep — strsv.c pins stride to its baseline.
 //
-// Non-unit stride breaks coalescing on the vector operands. {4, 32, 256} are the same
-// representative points the Level 1 stride sweeps use; stride=1 is the baseline file.
+// Non-unit stride breaks coalescing on the vector operands. Strides are the same set
+// the Level 1 sweeps use (see stride.sscal.c). stride=1 is the baseline file.
 
 #include <stdio.h>
 #include "../../utils/helpers.h"
@@ -18,7 +18,9 @@ int main(void) {
 
     int sizes[] = { 32, 64, 128, 256, 512, 1024, 1280, 2048, 4096 };
     int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
-    int strides[] = { 4, 32, 256 };
+    // Three magnitudes, each paired with an odd neighbour: the gap inside a pair is
+    // misalignment alone (~0% at 4, ~9% by 32). 255 not 257, to fit where 256 fits.
+    int strides[] = { 4, 5, 32, 33, 255, 256 };
     int num_stride = (int)(sizeof(strides) / sizeof(strides[0]));
 
     int num_recs = num_sizes * num_stride;

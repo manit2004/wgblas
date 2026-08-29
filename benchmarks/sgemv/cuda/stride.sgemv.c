@@ -1,11 +1,10 @@
-// Stride sweep — sgemv.c is entirely incx=incy=1 (coalesced, best case).
-// Real BLAS usage hits non-unit stride whenever x/y are rows/columns of a
-// larger matrix, so this characterizes that cost separately, at the same
-// square shapes sgemv.c uses. trans stays CUBLAS_OP_N and lda stays tight —
-// trans is covered by trans.sgemv.c.
+// Stride sweep — sgemv.c is entirely incx=incy=1 (coalesced, best case). Real BLAS
+// usage hits non-unit stride whenever x/y are rows/columns of a larger matrix, so this
+// characterizes that cost separately, at the same square shapes sgemv.c uses. trans
+// stays CUBLAS_OP_N and lda stays tight — trans is covered by trans.sgemv.c.
 //
-// {4, 32, 256} are the same representative strides used across the Level 1
-// sweeps — stride=1 itself is covered by sgemv.c, not repeated here.
+// Strides are the same set the Level 1 sweeps use (see stride.sscal.c). stride=1
+// itself is covered by sgemv.c, not repeated here.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +22,9 @@ int main(void) {
 
     int sizes[] = { 32, 64, 128, 256, 512, 1024, 1280, 2048, 4096 };
     int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
-    int strides[] = { 4, 32, 256 };
+    // Three magnitudes, each paired with an odd neighbour: the gap inside a pair is
+    // misalignment alone (~0% at 4, ~9% by 32). 255 not 257, to fit where 256 fits.
+    int strides[] = { 4, 5, 32, 33, 255, 256 };
     int num_strides = (int)(sizeof(strides) / sizeof(strides[0]));
 
     int num_recs = num_sizes * num_strides;

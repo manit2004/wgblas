@@ -1,5 +1,5 @@
 {
-  "$comment": "all: every unique parameter name across routine_params.json. excluded: not real sweep candidates (data = the arrays themselves; size = already the primary sweep axis in every benchmark). sweepCandidates: the remaining 16, grouped by role -- OFAT screen targets for \"does this secretly affect speed at fixed size\". priority: expected effect size, from reading every .wgsl shader this session (high = changes the whole memory access pattern; medium = padding/coalescing on one buffer; low = one branch or a single value never special-cased by any shader).",
+  "$comment": "all: every unique parameter name across routine_params.json. excluded: not real sweep candidates (data = the arrays themselves; size = already the primary sweep axis in every benchmark). sweepCandidates: the remaining 16, grouped by role -- OFAT screen targets for \"does this secretly affect speed at fixed size\". priority: expected effect size, from reading every .wgsl shader this session (high = changes the whole memory access pattern; medium = padding/coalescing on one buffer; low = one branch or a single value never special-cased by any shader). Each sweepCandidate carries the `baseline` it is pinned to while another parameter is swept (one-factor-at-a-time), the `levels` its own sweep walks, and why those levels. Values are read from benchmarks/<routine>/, not aspirational.",
   "all": [
     "A",
     "B",
@@ -43,31 +43,178 @@
     ]
   },
   "sweepCandidates": {
-    "increment": [
-      "incx",
-      "incy"
-    ],
-    "leading-dimension": [
-      "lda",
-      "ldb",
-      "ldc"
-    ],
-    "flag": [
-      "diag",
-      "side",
-      "trans",
-      "transA",
-      "transB",
-      "uplo"
-    ],
-    "layout": [
-      "layout"
-    ],
-    "scalar": [
-      "alpha",
-      "beta",
-      "c",
-      "s"
-    ]
+    "increment": {
+      "incx": {
+        "baseline": 1,
+        "levels": [
+          4,
+          32,
+          256
+        ],
+        "note": "Baseline 1 is already measured by the main benchmark, so the sweep skips it; the three levels are one point per coalescing regime."
+      },
+      "incy": {
+        "baseline": 1,
+        "levels": [
+          4,
+          32,
+          256
+        ],
+        "note": "Swept together with incx in the same stride.<routine> file."
+      }
+    },
+    "leading-dimension": {
+      "lda": {
+        "baseline": 0,
+        "levels": [
+          0,
+          1,
+          8,
+          16,
+          32,
+          48,
+          64,
+          128
+        ],
+        "unit": "offset from tight lda",
+        "note": "Row byte-stride is ld*4: 0/32/64/128 stay on the 128-byte boundary, 1/8/16/48 break it."
+      },
+      "ldb": {
+        "baseline": 0,
+        "levels": [
+          0,
+          1,
+          8,
+          16,
+          32,
+          48,
+          64,
+          128
+        ],
+        "unit": "offset from tight ldb",
+        "note": "As lda. sgemm's ldb sweep is a combined transB x pad grid, not a plain one."
+      },
+      "ldc": {
+        "baseline": 0,
+        "levels": [
+          0,
+          1,
+          8,
+          16,
+          32,
+          48,
+          64,
+          128
+        ],
+        "unit": "offset from tight ldc",
+        "note": "As lda, on the output matrix \u2014 write coalescing rather than read bandwidth."
+      }
+    },
+    "flag": {
+      "diag": {
+        "baseline": "non-unit",
+        "levels": [
+          "non-unit",
+          "unit"
+        ],
+        "note": "unit skips the diagonal load, and the reciprocal in a solve."
+      },
+      "side": {
+        "baseline": "left",
+        "levels": [
+          "left",
+          "right"
+        ],
+        "note": "Same flops, different traversal order."
+      },
+      "trans": {
+        "baseline": "no-transpose",
+        "levels": [
+          "no-transpose",
+          "transpose"
+        ],
+        "note": "Routines with a single matrix operand (ssyrk, ssyr2k, strmv, strsv)."
+      },
+      "transA": {
+        "baseline": "no-transpose",
+        "levels": [
+          "no-transpose",
+          "transpose"
+        ],
+        "note": "Level 3 routines with two matrix operands."
+      },
+      "transB": {
+        "baseline": "no-transpose",
+        "levels": [
+          "no-transpose",
+          "transpose"
+        ],
+        "note": "Streamed along the inner loop, so the likelier of the two to matter."
+      },
+      "uplo": {
+        "baseline": "lower",
+        "levels": [
+          "lower",
+          "upper"
+        ],
+        "note": "Decides whether the heavy rows dispatch first or last; ~1.7-1.8x on ssyr/ssyr2."
+      }
+    },
+    "layout": {
+      "layout": {
+        "baseline": "row-major",
+        "levels": [
+          "row-major",
+          "column-major"
+        ],
+        "note": "wgblas-only \u2014 cuBLAS is column-major and has no layout argument."
+      }
+    },
+    "scalar": {
+      "alpha": {
+        "baseline": 1.0,
+        "levels": [
+          0,
+          1,
+          2.5,
+          -3.75,
+          1e-38
+        ],
+        "baselineNote": "2.0 in the Level 1 benchmarks (sscal, saxpy); 1.0 elsewhere",
+        "note": "Levels target branches a kernel could have, not a range. Inert unless the shader branches on it; strsm does."
+      },
+      "beta": {
+        "baseline": 0.0,
+        "levels": [
+          0,
+          1,
+          2.5,
+          -3.75
+        ],
+        "note": "beta = 0 permits skipping the read of C/y, so unlike alpha this can be non-flat."
+      },
+      "c": {
+        "baseline": 0.70710678,
+        "levels": [
+          0,
+          0.5,
+          0.70710678,
+          1,
+          -0.75
+        ],
+        "note": "Cosine half of srot's rotation, swept with s pinned."
+      },
+      "s": {
+        "baseline": 0.70710678,
+        "levels": [
+          0,
+          0.5,
+          0.70710678,
+          1,
+          -0.75
+        ],
+        "note": "Sine half of srot's rotation, swept with c pinned."
+      }
+    }
   }
 }

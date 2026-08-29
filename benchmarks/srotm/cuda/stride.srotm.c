@@ -4,9 +4,12 @@
 // cost separately rather than folding it into the main sweep and
 // multiplying its already-large runtime by every stride value.
 //
-// {4, 32, 256} are one representative point from each distinct regime of
-// the coalescing-breakdown curve (steep 1/stride falloff, transition,
-// plateau) — stride=1 itself is covered by srotm.c, not repeated here.
+// 4/32/256 are one representative point from each distinct regime of the
+// coalescing-breakdown curve (steep 1/stride falloff, transition, plateau);
+// 5/33/255 pair each of those with an odd neighbour, isolating the cost of
+// misalignment from the cost of stride magnitude.
+//
+// stride=1 itself is covered by srotm.c, not repeated here.
 
 #include <stdio.h>
 #include "../../utils/helpers.h"
@@ -23,7 +26,9 @@ int main(void) {
 
     int bench_ns[] = { 32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216 };
     int num_ns = (int)(sizeof(bench_ns) / sizeof(bench_ns[0]));
-    int strides[] = { 4, 32, 256 };
+    // Three magnitudes, each paired with an odd neighbour: the gap inside a pair is
+    // misalignment alone (~0% at 4, ~9% by 32). 255 not 257, to fit where 256 fits.
+    int strides[] = { 4, 5, 32, 33, 255, 256 };
     int num_strides = (int)(sizeof(strides) / sizeof(strides[0]));
 
     int rec_strides[num_ns * num_strides];

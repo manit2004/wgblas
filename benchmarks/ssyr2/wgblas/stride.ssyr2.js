@@ -1,8 +1,8 @@
 // stride sweep — ssyr2.js pins stride to its baseline.
 //
 // Non-unit stride breaks coalescing on the vector operands. Real BLAS hits it whenever
-// x/y are rows or columns of a larger matrix. {4, 32, 256} are the representative points
-// used across the Level 1 sweeps; stride=1 is the baseline file, not repeated here.
+// x/y are rows or columns of a larger matrix. Strides are the same set the Level 1
+// sweeps use (see stride.sscal.js). stride=1 is the baseline file, not repeated here.
 
 import { init, cleanup } from "wgblas";
 import { ssyr2 } from "wgblas/ssyr2";
@@ -20,7 +20,9 @@ import {
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
 const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
-const STRIDES = [4, 32, 256];
+// Three magnitudes, each paired with an odd neighbour: the gap inside a pair is
+// misalignment alone (~0% at 4, ~9% by 32). 255 not 257, to fit where 256 fits.
+const STRIDES = [4, 5, 32, 33, 255, 256];
 
 const COLS = ["stride", "n", "compute_ms", "compute_GBs"];
 
