@@ -1,0 +1,73 @@
+{
+  "$comment": "all: every unique parameter name across routine_params.json. excluded: not real sweep candidates (data = the arrays themselves; size = already the primary sweep axis in every benchmark). sweepCandidates: the remaining 16, grouped by role -- OFAT screen targets for \"does this secretly affect speed at fixed size\". priority: expected effect size, from reading every .wgsl shader this session (high = changes the whole memory access pattern; medium = padding/coalescing on one buffer; low = one branch or a single value never special-cased by any shader).",
+  "all": [
+    "A",
+    "B",
+    "C",
+    "alpha",
+    "beta",
+    "c",
+    "diag",
+    "incx",
+    "incy",
+    "k",
+    "layout",
+    "lda",
+    "ldb",
+    "ldc",
+    "m",
+    "n",
+    "param",
+    "s",
+    "side",
+    "trans",
+    "transA",
+    "transB",
+    "uplo",
+    "x",
+    "y"
+  ],
+  "excluded": {
+    "data": [
+      "A",
+      "B",
+      "C",
+      "param",
+      "x",
+      "y"
+    ],
+    "size": [
+      "k",
+      "m",
+      "n"
+    ]
+  },
+  "sweepCandidates": {
+    "increment": [
+      "incx",
+      "incy"
+    ],
+    "leading-dimension": [
+      "lda",
+      "ldb",
+      "ldc"
+    ],
+    "flag": [
+      "diag",
+      "side",
+      "trans",
+      "transA",
+      "transB",
+      "uplo"
+    ],
+    "layout": [
+      "layout"
+    ],
+    "scalar": [
+      "alpha",
+      "beta",
+      "c",
+      "s"
+    ]
+  }
+}

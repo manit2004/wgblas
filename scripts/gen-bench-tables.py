@@ -488,6 +488,101 @@ def write_svg(gpu_slug, routine, metric, config, svg_text):
     return f"{SVG_LINK_PREFIX}/{gpu_slug}/{routine}/{fname}"
 
 
+# --- scalar sweeps (alpha, cosine, sine) --------------------------------------
+#
+# These three share a shape the earlier sweeps do not: one scalar key, no
+# grouping dimension beyond it, and — unlike stride/trans/uplo/lda — an expected
+# result of "no effect". sscal/saxpy/srot's shaders contain no branch at all, so
+# no value of alpha/c/s can select a different path; the sweeps exist to hold
+# that to measurement rather than to reading. One builder covers all three
+# rather than three near-identical ones, keyed by the record field each uses.
+
+SCALAR_SWEEPS = {
+    # prefix -> (record key, human label, prose for the section intro)
+    "alpha": ("alpha", "alpha", (
+        "`alpha` is a plain multiplier here: the kernel applies it "
+        "unconditionally, with no branch for any particular value. A flat "
+        "sweep is therefore the expected result and is recorded as a measured "
+        "null. Levels include `0`, `1` and a denormal-producing `1e-38` "
+        "because those are the values a shader *could* special-case if it ever "
+        "grew a branch — and `strsm` is the routine where one does."
+    )),
+    "cosine": ("c", "c", (
+        "The cosine half of the plane rotation, swept with `s` held fixed so "
+        "the two halves are attributed separately. `srot`'s kernel computes "
+        "both outputs unconditionally, so a flat sweep is expected; a step at "
+        "`c = 0` or `c = 1` would mean an identity case is being "
+        "short-circuited, which BLAS does not promise."
+    )),
+    "sine": ("s", "s", (
+        "The sine half of the plane rotation, swept with `c` held fixed — the "
+        "counterpart to the cosine sweep. `s = 0` makes the rotation an "
+        "identity in exact arithmetic but is still fully computed and written, "
+        "so a step there would indicate a short-circuit rather than a property "
+        "of the maths."
+    )),
+}
+
+
+def fetch_scalar(gpu, backend, routine, prefix, local_only=False):
+    """<prefix>.<routine> companion file for a scalar sweep, or None."""
+    return fetch_json(gpu, backend, f"{routine}/{prefix}.{routine}", local_only)
+
+
+def scalar_script_path(routine, backend, prefix):
+    """Repo-relative path to a routine's scalar-sweep benchmark script."""
+    ext = "js" if backend == "wgblas" else "c"
+    return f"benchmarks/{routine}/{backend}/{prefix}.{routine}.{ext}"
+
+
+def group_by_scalar(rows, key):
+    """Groups scalar-sweep rows by `key`, each group sorted by n ascending.
+    Ordered by the scalar's numeric value so the tables read low to high."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r[key], []).append(r)
+    for g in groups.values():
+        g.sort(key=lambda r: r["n"])
+    return dict(sorted(groups.items(), key=lambda kv: float(kv[0])))
+
+
+def make_scalar_section(wrows, crows_all, routine, gpu, display, gh, prefix):
+    """One table + chart per value of a scalar parameter."""
+    key, label, blurb = SCALAR_SWEEPS[prefix]
+    groups = group_by_scalar(wrows, key)
+    cuda_groups = group_by_scalar(crows_all, key) if crows_all else {}
+
+    parts = [f"## {label} sweep\n", blurb + "\n"]
+    for value, rows in groups.items():
+        crows = cuda_groups.get(value, [])
+        parts.append(f"<details>\n<summary>{display} — {label} = {value}</summary>\n")
+        parts.append(
+            make_comparison_table(rows, crows, routine) if crows
+            else make_wgblas_only_table(rows, routine)
+        )
+        parts.append("")
+        # Value goes in the chart config so each one gets its own file rather
+        # than the last group overwriting the rest.
+        chart = make_svg_chart(rows, crows, routine, gpu,
+                               config=f"{prefix}{str(value).replace('.', 'p').replace('-', 'neg')}")
+        if chart:
+            parts.append(chart)
+        parts.append("")
+        parts.append("</details>\n")
+
+    parts.append("**See also:**\n")
+    parts.append(
+        f"- [{prefix}.{routine}.js]({gh}/{scalar_script_path(routine, 'wgblas', prefix)}) "
+        f"— WebGPU {label}-sweep benchmark script"
+    )
+    if crows_all:
+        parts.append(
+            f"- [{prefix}.{routine}.c]({gh}/{scalar_script_path(routine, 'cuda', prefix)}) "
+            f"— CUDA / cuBLAS {label}-sweep reference script"
+        )
+    return "\n".join(parts)
+
+
 def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug, config="default"):
     """Writes two chart SVGs (GB/s then ms) to
     assets/benchmarks/<gpu>/<routine>/ and returns markdown linking both,
@@ -1154,6 +1249,18 @@ def main():
             if wgblas_ldb:
                 body += "\n\n" + make_ldb_section(
                     wgblas_ldb, cuda_ldb, routine, gpu, display, gh
+                )
+
+            # Scalar sweeps are optional per routine: alpha exists for sscal
+            # and saxpy, cosine/sine only for srot.
+            for prefix in SCALAR_SWEEPS:
+                wrows = fetch_scalar(gpu, "wgblas", routine, prefix, local_only=args.local)
+                if not wrows:
+                    continue
+                crows = (fetch_scalar(gpu, "cuda", routine, prefix, local_only=args.local)
+                         if has_cuda else None)
+                body += "\n\n" + make_scalar_section(
+                    wrows, crows, routine, gpu, display, gh, prefix
                 )
 
             out_file = out_gpu_dir / f"{routine}.mjs"

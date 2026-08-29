@@ -1,53 +1,37 @@
 .PHONY: bench cuda
 
 NVCC ?= $(shell command -v nvcc 2>/dev/null || echo /usr/local/cuda/bin/nvcc)
+
+# Every wgblas benchmark, every routine.
 bench:
 	@for f in benchmarks/*/wgblas/*.js; do node $$f $(ARGS); done
 
-bench-stride-%:
-	node benchmarks/$*/wgblas/stride.$*.js $(ARGS)
-
-bench-trans-%:
-	node benchmarks/$*/wgblas/trans.$*.js $(ARGS)
-
-bench-lda-%:
-	node benchmarks/$*/wgblas/lda.$*.js $(ARGS)
-
-bench-uplo-%:
-	node benchmarks/$*/wgblas/uplo.$*.js $(ARGS)
-
-bench-ldb-%:
-	node benchmarks/$*/wgblas/ldb.$*.js $(ARGS)
-
+# One routine, every benchmark it has. The set is whatever is on disk, so a new
+# sweep file needs no target of its own.
 bench-%:
-	node benchmarks/$*/wgblas/$*.js $(ARGS)
+	@dir=benchmarks/$*/wgblas; \
+	if [ ! -d "$$dir" ]; then echo "no such routine: $* (expected $$dir)" >&2; exit 1; fi; \
+	files=$$(ls $$dir/*.js 2>/dev/null); \
+	if [ -z "$$files" ]; then echo "no benchmarks in $$dir" >&2; exit 1; fi; \
+	for f in $$files; do \
+		echo; echo "=== $$f ==="; \
+		node $$f $(ARGS) || exit $$?; \
+	done
 
+# Every CUDA reference benchmark, every routine.
 cuda:
 	@for d in benchmarks/*/cuda; do \
 		$(MAKE) -C $$d clean && $(MAKE) -C $$d CC=$(NVCC) && \
 		for f in $$d/*.c; do b=$$(basename $$f .c); ./$$d/bin/$$b; done; \
 	done
 
+# One routine's CUDA reference benchmarks — the counterpart to bench-%.
 cuda-%:
-	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/$*
-	./benchmarks/$*/cuda/bin/$*
-
-cuda-stride-%:
-	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/stride.$*
-	./benchmarks/$*/cuda/bin/stride.$*
-
-cuda-trans-%:
-	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/trans.$*
-	./benchmarks/$*/cuda/bin/trans.$*
-
-cuda-lda-%:
-	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/lda.$*
-	./benchmarks/$*/cuda/bin/lda.$*
-
-cuda-uplo-%:
-	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/uplo.$*
-	./benchmarks/$*/cuda/bin/uplo.$*
-
-cuda-ldb-%:
-	$(MAKE) -C benchmarks/$*/cuda CC=$(NVCC) bin/ldb.$*
-	./benchmarks/$*/cuda/bin/ldb.$*
+	@d=benchmarks/$*/cuda; \
+	if [ ! -d "$$d" ]; then echo "no CUDA benchmarks for routine: $*" >&2; exit 1; fi; \
+	$(MAKE) -C $$d clean && $(MAKE) -C $$d CC=$(NVCC) || exit $$?; \
+	for f in $$d/*.c; do \
+		b=$$(basename $$f .c); \
+		echo; echo "=== $$f ==="; \
+		./$$d/bin/$$b || exit $$?; \
+	done
