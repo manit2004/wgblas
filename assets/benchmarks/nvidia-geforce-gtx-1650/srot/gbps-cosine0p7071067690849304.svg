@@ -18,9 +18,9 @@
 <text class="at" x="283.4" y="236" text-anchor="middle">65K</text>
 <text class="at" x="433.7" y="236" text-anchor="middle">1.0M</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
-<polyline class="ln1" points="58.0,217.3 283.4,92.0 433.7,55.7 584.0,49.4"/>
+<polyline class="ln1" points="58.0,217.3 283.4,91.7 433.7,55.6 584.0,49.9"/>
 <circle class="mk1" cx="58.0" cy="217.3" r="4"/>
-<circle class="mk1" cx="283.4" cy="92.0" r="4"/>
-<circle class="mk1" cx="433.7" cy="55.7" r="4"/>
-<circle class="mk1" cx="584.0" cy="49.4" r="4"/>
+<circle class="mk1" cx="283.4" cy="91.7" r="4"/>
+<circle class="mk1" cx="433.7" cy="55.6" r="4"/>
+<circle class="mk1" cx="584.0" cy="49.9" r="4"/>
 </svg>

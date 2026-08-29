@@ -18,9 +18,20 @@
 <text class="at" x="283.4" y="236" text-anchor="middle">65K</text>
 <text class="at" x="433.7" y="236" text-anchor="middle">1.0M</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">17M</text>
-<polyline class="ln1" points="58.0,217.3 283.4,92.0 433.7,55.7 584.0,49.4"/>
+<polyline class="ln1" points="58.0,217.3 283.4,91.7 433.7,55.4 584.0,50.0"/>
+<polyline class="ln2" points="58.0,214.5 283.4,82.9 433.7,54.8 584.0,50.4"/>
 <circle class="mk1" cx="58.0" cy="217.3" r="4"/>
-<circle class="mk1" cx="283.4" cy="92.0" r="4"/>
-<circle class="mk1" cx="433.7" cy="55.7" r="4"/>
-<circle class="mk1" cx="584.0" cy="49.4" r="4"/>
+<circle class="mk1" cx="283.4" cy="91.7" r="4"/>
+<circle class="mk1" cx="433.7" cy="55.4" r="4"/>
+<circle class="mk1" cx="584.0" cy="50.0" r="4"/>
+<circle class="mk2" cx="58.0" cy="214.5" r="4"/>
+<circle class="mk2" cx="283.4" cy="82.9" r="4"/>
+<circle class="mk2" cx="433.7" cy="54.8" r="4"/>
+<circle class="mk2" cx="584.0" cy="50.4" r="4"/>
+<line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
+<circle class="mk1" cx="66" cy="252" r="4"/>
+<text class="lt" x="80" y="256">wgblas</text>
+<line class="ln2" x1="132" y1="252" x2="148" y2="252"/>
+<circle class="mk2" cx="140" cy="252" r="4"/>
+<text class="lt" x="154" y="256">cuBLAS</text>
 </svg>

@@ -44,8 +44,19 @@ SVG_LINK_PREFIX = "../../../assets/benchmarks"
 X_KEY_OVERRIDES = {"strsm": "order"}
 
 
-def x_key(routine):
-    return X_KEY_OVERRIDES.get(routine, "n")
+def x_key(routine, rows=None):
+    """Row key to plot on the x-axis.
+
+    strsm's main benchmark names its size axis `order` rather than `n`, hence
+    the override. Its *sweep* companions are square and use `n` like everything
+    else, so the override is only applied when the rows actually carry that key
+    — otherwise a sweep on an overridden routine dies with a KeyError on a
+    column it never had.
+    """
+    k = X_KEY_OVERRIDES.get(routine, "n")
+    if rows and k not in rows[0]:
+        return "n"
+    return k
 
 
 def discover_routines():
@@ -578,6 +589,12 @@ FLAG_SWEEPS = {
 # as any further leading dimension would.
 
 PAD_SWEEPS = {
+    "ldb": ("pad", "ldb", (
+        "Padding on `B`, the operand the gemm kernels stream along their inner "
+        "loop, so its stride is the one with most room to matter. Only for "
+        "routines whose ldb sweep is a plain {pad, n} one — `sgemm`'s is a "
+        "combined transB x pad grid and has its own section."
+    )),
     "ldc": ("pad", "ldc", (
         "Padding on the output matrix. `C` is written rather than streamed, so "
         "this measures write coalescing rather than read bandwidth — the row "
@@ -740,7 +757,7 @@ def make_svg_chart(wgblas_rows, cuda_rows, routine, gpu_slug, config="default"):
     """
     slug = gpu_slug.replace("-", "_")
     chart_id = f"{routine}-{config}"
-    xk = x_key(routine)
+    xk = x_key(routine, wgblas_rows)
 
     # Filter rows that have valid values for both metrics so both charts share
     # the same x-axis points
@@ -803,7 +820,7 @@ def fmt_pct(v):
 
 
 def make_comparison_table(wgblas_rows, cuda_rows, routine=None):
-    xk = x_key(routine)
+    xk = x_key(routine, wgblas_rows)
     cuda_by_x = {r[xk]: r for r in cuda_rows if xk in r}
     lines = [
         f"| {xk} | wgblas ms | wgblas GB/s | cuBLAS ms | cuBLAS GB/s | efficiency |",
@@ -832,7 +849,7 @@ def make_comparison_table(wgblas_rows, cuda_rows, routine=None):
 
 
 def make_wgblas_only_table(wgblas_rows, routine=None):
-    xk = x_key(routine)
+    xk = x_key(routine, wgblas_rows)
     lines = [
         f"| {xk} | compute ms | GB/s |",
         "|---|------------|------|",
@@ -1392,10 +1409,20 @@ def main():
                         wgblas_lda, cuda_lda, routine, gpu, display, gh
                     )
 
+            # sgemm's ldb sweep is a combined transB x pad grid (records carry a
+            # "transB" key); every other routine's is a plain {pad, n} one —
+            # dispatch to the matching builder, mirroring how lda works above.
+            rendered_pads = set()
             if wgblas_ldb:
-                body += "\n\n" + make_ldb_section(
-                    wgblas_ldb, cuda_ldb, routine, gpu, display, gh
-                )
+                if "transB" in wgblas_ldb[0]:
+                    body += "\n\n" + make_ldb_section(
+                        wgblas_ldb, cuda_ldb, routine, gpu, display, gh
+                    )
+                else:
+                    body += "\n\n" + make_pad_section(
+                        wgblas_ldb, cuda_ldb, routine, gpu, display, gh, "ldb"
+                    )
+                rendered_pads.add("ldb")
 
             # Scalar sweeps are optional per routine: alpha exists for sscal
             # and saxpy, cosine/sine only for srot.
@@ -1420,8 +1447,11 @@ def main():
                     wrows, crows, routine, gpu, display, gh, prefix
                 )
 
-            # Leading-dimension sweeps added after lda/ldb: currently just ldc.
+            # Table-driven leading-dimension sweeps. ldb is skipped when the
+            # block above already rendered it.
             for prefix in PAD_SWEEPS:
+                if prefix in rendered_pads:
+                    continue
                 wrows = fetch_scalar(gpu, "wgblas", routine, prefix, local_only=args.local)
                 if not wrows:
                     continue
