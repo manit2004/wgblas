@@ -2,26 +2,26 @@
   {
     "alpha": 0,
     "n": 1024,
-    "compute_ms": 0.006976,
-    "compute_GBs": 1.7614678899082568
+    "compute_ms": 0.007296,
+    "compute_GBs": 1.6842105263157894
   },
   {
     "alpha": 0,
     "n": 65536,
-    "compute_ms": 0.010128,
-    "compute_GBs": 77.64928909952606
+    "compute_ms": 0.01024,
+    "compute_GBs": 76.8
   },
   {
     "alpha": 0,
     "n": 1048576,
-    "compute_ms": 0.077984,
-    "compute_GBs": 161.35248256052523
+    "compute_ms": 0.077872,
+    "compute_GBs": 161.5845490034929
   },
   {
     "alpha": 0,
     "n": 16777216,
-    "compute_ms": 1.155072,
-    "compute_GBs": 174.29787234042553
+    "compute_ms": 1.157136,
+    "compute_GBs": 173.98697473762806
   },
   {
     "alpha": 1,
@@ -44,14 +44,14 @@
   {
     "alpha": 1,
     "n": 16777216,
-    "compute_ms": 1.158928,
-    "compute_GBs": 173.7179462399735
+    "compute_ms": 1.1606079999999999,
+    "compute_GBs": 173.46648653119746
   },
   {
     "alpha": 2.5,
     "n": 1024,
-    "compute_ms": 0.006144,
-    "compute_GBs": 2
+    "compute_ms": 0.006048,
+    "compute_GBs": 2.0317460317460316
   },
   {
     "alpha": 2.5,
@@ -68,20 +68,20 @@
   {
     "alpha": 2.5,
     "n": 16777216,
-    "compute_ms": 1.159072,
-    "compute_GBs": 173.6963639877419
+    "compute_ms": 1.161152,
+    "compute_GBs": 173.38521743923278
   },
   {
     "alpha": -3.75,
     "n": 1024,
-    "compute_ms": 0.006112,
-    "compute_GBs": 2.0104712041884816
+    "compute_ms": 0.005967999999999999,
+    "compute_GBs": 2.058981233243968
   },
   {
     "alpha": -3.75,
     "n": 65536,
-    "compute_ms": 0.008192,
-    "compute_GBs": 96.00000000000001
+    "compute_ms": 0.008128,
+    "compute_GBs": 96.75590551181104
   },
   {
     "alpha": -3.75,
@@ -92,14 +92,14 @@
   {
     "alpha": -3.75,
     "n": 16777216,
-    "compute_ms": 1.159168,
-    "compute_GBs": 173.68197879858658
+    "compute_ms": 1.161216,
+    "compute_GBs": 173.37566137566137
   },
   {
     "alpha": 1e-38,
     "n": 1024,
-    "compute_ms": 0.006112,
-    "compute_GBs": 2.0104712041884816
+    "compute_ms": 0.005936,
+    "compute_GBs": 2.0700808625336924
   },
   {
     "alpha": 1e-38,
@@ -116,7 +116,7 @@
   {
     "alpha": 1e-38,
     "n": 16777216,
-    "compute_ms": 1.159168,
-    "compute_GBs": 173.68197879858658
+    "compute_ms": 1.160928,
+    "compute_GBs": 173.41867195898456
   }
 ]

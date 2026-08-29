@@ -8,20 +8,20 @@
   {
     "beta": 0,
     "n": 64,
-    "compute_ms": 0.008384,
-    "compute_GBs": 2.0152671755725184
+    "compute_ms": 0.008288,
+    "compute_GBs": 2.038610038610038
   },
   {
     "beta": 0,
     "n": 128,
-    "compute_ms": 0.009136,
-    "compute_GBs": 7.285464098073555
+    "compute_ms": 0.00896,
+    "compute_GBs": 7.42857142857143
   },
   {
     "beta": 0,
     "n": 256,
-    "compute_ms": 0.011344,
-    "compute_GBs": 23.289139633286318
+    "compute_ms": 0.011439999999999999,
+    "compute_GBs": 23.093706293706298
   },
   {
     "beta": 0,
@@ -32,26 +32,26 @@
   {
     "beta": 0,
     "n": 1024,
-    "compute_ms": 0.036096,
-    "compute_GBs": 116.42553191489361
+    "compute_ms": 0.036016,
+    "compute_GBs": 116.68414038205242
   },
   {
     "beta": 0,
     "n": 1280,
-    "compute_ms": 0.049152,
-    "compute_GBs": 133.54166666666666
+    "compute_ms": 0.04912,
+    "compute_GBs": 133.628664495114
   },
   {
     "beta": 0,
     "n": 2048,
-    "compute_ms": 0.104352,
-    "compute_GBs": 160.93222937749155
+    "compute_ms": 0.103216,
+    "compute_GBs": 162.70345682839869
   },
   {
     "beta": 0,
     "n": 4096,
-    "compute_ms": 0.374784,
-    "compute_GBs": 179.14754098360658
+    "compute_ms": 0.374208,
+    "compute_GBs": 179.4232939969215
   },
   {
     "beta": 1,
@@ -68,14 +68,14 @@
   {
     "beta": 1,
     "n": 128,
-    "compute_ms": 0.008896000000000001,
-    "compute_GBs": 7.482014388489207
+    "compute_ms": 0.00904,
+    "compute_GBs": 7.3628318584070795
   },
   {
     "beta": 1,
     "n": 256,
-    "compute_ms": 0.011088,
-    "compute_GBs": 23.826839826839826
+    "compute_ms": 0.01152,
+    "compute_GBs": 22.93333333333333
   },
   {
     "beta": 1,
@@ -86,26 +86,26 @@
   {
     "beta": 1,
     "n": 1024,
-    "compute_ms": 0.035968,
-    "compute_GBs": 116.83985765124555
+    "compute_ms": 0.036112000000000005,
+    "compute_GBs": 116.37394771821
   },
   {
     "beta": 1,
     "n": 1280,
-    "compute_ms": 0.049152,
-    "compute_GBs": 133.54166666666666
+    "compute_ms": 0.049072000000000005,
+    "compute_GBs": 133.759373981089
   },
   {
     "beta": 1,
     "n": 2048,
-    "compute_ms": 0.104112,
-    "compute_GBs": 161.30321192561857
+    "compute_ms": 0.103344,
+    "compute_GBs": 162.5019352840997
   },
   {
     "beta": 1,
     "n": 4096,
-    "compute_ms": 0.37472,
-    "compute_GBs": 179.17813834329635
+    "compute_ms": 0.374096,
+    "compute_GBs": 179.47701124844963
   },
   {
     "beta": 2.5,
@@ -122,14 +122,14 @@
   {
     "beta": 2.5,
     "n": 128,
-    "compute_ms": 0.008864,
-    "compute_GBs": 7.509025270758123
+    "compute_ms": 0.008944,
+    "compute_GBs": 7.441860465116278
   },
   {
     "beta": 2.5,
     "n": 256,
-    "compute_ms": 0.011296,
-    "compute_GBs": 23.388101983002834
+    "compute_ms": 0.0112,
+    "compute_GBs": 23.58857142857143
   },
   {
     "beta": 2.5,
@@ -146,20 +146,20 @@
   {
     "beta": 2.5,
     "n": 1280,
-    "compute_ms": 0.049152,
-    "compute_GBs": 133.54166666666666
+    "compute_ms": 0.048976,
+    "compute_GBs": 134.02156158118262
   },
   {
     "beta": 2.5,
     "n": 2048,
-    "compute_ms": 0.10439999999999999,
-    "compute_GBs": 160.8582375478927
+    "compute_ms": 0.103568,
+    "compute_GBs": 162.15047118801175
   },
   {
     "beta": 2.5,
     "n": 4096,
-    "compute_ms": 0.374784,
-    "compute_GBs": 179.14754098360658
+    "compute_ms": 0.374352,
+    "compute_GBs": 179.35427618925505
   },
   {
     "beta": -3.75,
@@ -170,20 +170,20 @@
   {
     "beta": -3.75,
     "n": 64,
-    "compute_ms": 0.008288,
-    "compute_GBs": 2.038610038610038
+    "compute_ms": 0.008272,
+    "compute_GBs": 2.0425531914893615
   },
   {
     "beta": -3.75,
     "n": 128,
-    "compute_ms": 0.008912,
-    "compute_GBs": 7.4685816876122075
+    "compute_ms": 0.008928,
+    "compute_GBs": 7.455197132616488
   },
   {
     "beta": -3.75,
     "n": 256,
-    "compute_ms": 0.011392,
-    "compute_GBs": 23.19101123595506
+    "compute_ms": 0.011424,
+    "compute_GBs": 23.12605042016807
   },
   {
     "beta": -3.75,
@@ -200,19 +200,19 @@
   {
     "beta": -3.75,
     "n": 1280,
-    "compute_ms": 0.049152,
-    "compute_GBs": 133.54166666666666
+    "compute_ms": 0.049007999999999996,
+    "compute_GBs": 133.93405158341497
   },
   {
     "beta": -3.75,
     "n": 2048,
-    "compute_ms": 0.103984,
-    "compute_GBs": 161.50176950300045
+    "compute_ms": 0.102864,
+    "compute_GBs": 163.26022709597137
   },
   {
     "beta": -3.75,
     "n": 4096,
-    "compute_ms": 0.412528,
-    "compute_GBs": 162.7565450102781
+    "compute_ms": 0.374096,
+    "compute_GBs": 179.47701124844963
   }
 ]
