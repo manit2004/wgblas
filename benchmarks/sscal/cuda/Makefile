@@ -1,10 +1,13 @@
 CC = nvcc
 BIN = bin
 
-all: $(BIN)/sscal $(BIN)/stride.sscal
+all: $(BIN)/alpha.sscal $(BIN)/sscal $(BIN)/stride.sscal
 
 $(BIN):
 	mkdir -p $(BIN)
+
+$(BIN)/alpha.sscal: alpha.sscal.c ../../utils/helpers.h | $(BIN)
+	$(CC) alpha.sscal.c -o $(BIN)/alpha.sscal -lcublas
 
 $(BIN)/sscal: sscal.c ../../utils/helpers.h | $(BIN)
 	$(CC) sscal.c -o $(BIN)/sscal -lcublas

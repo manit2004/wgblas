@@ -1,0 +1,110 @@
+[
+  {
+    "uplo": "lower",
+    "n": 32,
+    "compute_ms": 0.006848,
+    "compute_GBs": 0.34579439252336447
+  },
+  {
+    "uplo": "lower",
+    "n": 64,
+    "compute_ms": 0.006752,
+    "compute_GBs": 1.3080568720379147
+  },
+  {
+    "uplo": "lower",
+    "n": 128,
+    "compute_ms": 0.007024000000000001,
+    "compute_GBs": 4.847380410022779
+  },
+  {
+    "uplo": "lower",
+    "n": 256,
+    "compute_ms": 0.008608,
+    "compute_GBs": 15.524163568773236
+  },
+  {
+    "uplo": "lower",
+    "n": 512,
+    "compute_ms": 0.011616,
+    "compute_GBs": 45.57575757575757
+  },
+  {
+    "uplo": "lower",
+    "n": 1024,
+    "compute_ms": 0.028672,
+    "compute_GBs": 73.5
+  },
+  {
+    "uplo": "lower",
+    "n": 1280,
+    "compute_ms": 0.03912,
+    "compute_GBs": 84.08997955010224
+  },
+  {
+    "uplo": "lower",
+    "n": 2048,
+    "compute_ms": 0.08192,
+    "compute_GBs": 102.65
+  },
+  {
+    "uplo": "lower",
+    "n": 4096,
+    "compute_ms": 0.27696,
+    "compute_GBs": 121.30051993067593
+  },
+  {
+    "uplo": "upper",
+    "n": 32,
+    "compute_ms": 0.006895999999999999,
+    "compute_GBs": 0.34338747099767986
+  },
+  {
+    "uplo": "upper",
+    "n": 64,
+    "compute_ms": 0.006944,
+    "compute_GBs": 1.271889400921659
+  },
+  {
+    "uplo": "upper",
+    "n": 128,
+    "compute_ms": 0.007264,
+    "compute_GBs": 4.687224669603525
+  },
+  {
+    "uplo": "upper",
+    "n": 256,
+    "compute_ms": 0.008976,
+    "compute_GBs": 14.88770053475936
+  },
+  {
+    "uplo": "upper",
+    "n": 512,
+    "compute_ms": 0.012288,
+    "compute_GBs": 43.083333333333336
+  },
+  {
+    "uplo": "upper",
+    "n": 1024,
+    "compute_ms": 0.03024,
+    "compute_GBs": 69.6888888888889
+  },
+  {
+    "uplo": "upper",
+    "n": 1280,
+    "compute_ms": 0.042864,
+    "compute_GBs": 76.74505412467339
+  },
+  {
+    "uplo": "upper",
+    "n": 2048,
+    "compute_ms": 0.084192,
+    "compute_GBs": 99.87989357658685
+  },
+  {
+    "uplo": "upper",
+    "n": 4096,
+    "compute_ms": 0.325584,
+    "compute_GBs": 103.18502137697186
+  }
+]

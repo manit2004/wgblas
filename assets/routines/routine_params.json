@@ -1,0 +1,354 @@
+{
+  "$comment": "Routine -> real parameters (from src/<routine>/<routine>.mjs; device omitted). `role`: size, scalar (alpha/beta/c/s), increment (incx/incy), leading-dimension (lda/ldb/ldc), flag (trans/uplo/diag/side), layout, data. `random` excluded -- not a leveled BLAS routine.",
+  "sscal": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" }
+    ]
+  },
+  "sswap": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" }
+    ]
+  },
+  "saxpy": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" }
+    ]
+  },
+  "scopy": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" }
+    ]
+  },
+  "sdot": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" }
+    ]
+  },
+  "sasum": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" }
+    ]
+  },
+  "dasum": {
+    "level": 1,
+    "note": "f64 (double-double) counterpart of sasum -- same parameter shape",
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" }
+    ]
+  },
+  "snrm2": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" }
+    ]
+  },
+  "isamax": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" }
+    ]
+  },
+  "idamax": {
+    "level": 1,
+    "note": "f64 (double-double) counterpart of isamax -- same parameter shape",
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" }
+    ]
+  },
+  "srot": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" },
+      { "name": "c", "role": "scalar", "description": "rotation cosine" },
+      { "name": "s", "role": "scalar", "description": "rotation sine" }
+    ]
+  },
+  "srotm": {
+    "level": 1,
+    "parameters": [
+      { "name": "n", "role": "size" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" },
+      { "name": "param", "role": "data", "description": "5-element modified-Givens descriptor [flag, h11, h21, h12, h22]" }
+    ]
+  },
+  "sgemv": {
+    "level": 2,
+    "parameters": [
+      { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "m", "role": "size" },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "beta", "role": "scalar" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "ssymv": {
+    "level": 2,
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "beta", "role": "scalar" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "strmv": {
+    "level": 2,
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "diag", "role": "flag", "values": ["non-unit", "unit"] },
+      { "name": "n", "role": "size" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "strsv": {
+    "level": 2,
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "diag", "role": "flag", "values": ["non-unit", "unit"] },
+      { "name": "n", "role": "size" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "x", "role": "data", "description": "in-place: input RHS, output solution" },
+      { "name": "incx", "role": "increment" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "sger": {
+    "level": 2,
+    "parameters": [
+      { "name": "m", "role": "size" },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" },
+      { "name": "A", "role": "data", "description": "in-place: rank-1 update accumulates into A" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "ssyr": {
+    "level": 2,
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "A", "role": "data", "description": "in-place: symmetric rank-1 update accumulates into A" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "ssyr2": {
+    "level": 2,
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "x", "role": "data" },
+      { "name": "incx", "role": "increment" },
+      { "name": "y", "role": "data" },
+      { "name": "incy", "role": "increment" },
+      { "name": "A", "role": "data", "description": "in-place: symmetric rank-2 update accumulates into A" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "sgemm": {
+    "level": 3,
+    "note": "internally dispatches sgemm_small or sgemm_large depending on a tile-size threshold -- worth a dense sweep right around that crossover",
+    "parameters": [
+      { "name": "transA", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "transB", "role": "flag", "values": ["no-transpose", "transpose"], "description": "dominates transA's effect on this codebase's kernels (+22-57% at n=1024) -- see sgemm.mjs benchmark notes" },
+      { "name": "m", "role": "size" },
+      { "name": "n", "role": "size" },
+      { "name": "k", "role": "size", "description": "drives inner reduction/tile-iteration count, distinct role from m/n -- currently only swept as m=n=k" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension", "description": "scoped and found to be a non-effect -- see sgemm.mjs benchmark notes" },
+      { "name": "B", "role": "data" },
+      { "name": "ldb", "role": "leading-dimension", "description": "matters only when transB = transpose -- see sgemm.mjs benchmark notes" },
+      { "name": "beta", "role": "scalar" },
+      { "name": "C", "role": "data" },
+      { "name": "ldc", "role": "leading-dimension", "description": "scoped and found to be a non-effect -- see sgemm.mjs benchmark notes" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "sgemmtr": {
+    "level": 3,
+    "note": "no dedicated shader of its own -- rides on sgemmtr_small/sgemmtr_large, same tile-threshold crossover as sgemm",
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "transA", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "transB", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "m", "role": "size" },
+      { "name": "n", "role": "size" },
+      { "name": "k", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "B", "role": "data" },
+      { "name": "ldb", "role": "leading-dimension" },
+      { "name": "beta", "role": "scalar" },
+      { "name": "C", "role": "data" },
+      { "name": "ldc", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "ssyrk": {
+    "level": 3,
+    "note": "no shader of its own -- rides on sgemmtr_small/sgemmtr_large",
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "n", "role": "size" },
+      { "name": "k", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "beta", "role": "scalar" },
+      { "name": "C", "role": "data" },
+      { "name": "ldc", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "ssyr2k": {
+    "level": 3,
+    "note": "no shader of its own -- rides on sgemmtr_small/sgemmtr_large",
+    "parameters": [
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "n", "role": "size" },
+      { "name": "k", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "B", "role": "data" },
+      { "name": "ldb", "role": "leading-dimension" },
+      { "name": "beta", "role": "scalar" },
+      { "name": "C", "role": "data" },
+      { "name": "ldc", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "ssymm": {
+    "level": 3,
+    "parameters": [
+      { "name": "side", "role": "flag", "values": ["left", "right"] },
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "m", "role": "size" },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "B", "role": "data" },
+      { "name": "ldb", "role": "leading-dimension" },
+      { "name": "beta", "role": "scalar" },
+      { "name": "C", "role": "data" },
+      { "name": "ldc", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "strmm": {
+    "level": 3,
+    "parameters": [
+      { "name": "side", "role": "flag", "values": ["left", "right"] },
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "transA", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "diag", "role": "flag", "values": ["non-unit", "unit"] },
+      { "name": "m", "role": "size" },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "B", "role": "data", "description": "in-place: B := alpha * op(A) * B (or B * op(A) if side=right)" },
+      { "name": "ldb", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  },
+  "strsm": {
+    "level": 3,
+    "note": "dispatch-count-dominated (sequential block dependency), not compute-bound like sgemm -- uses its own iteration counts in benchmarks, not Level 3's default",
+    "parameters": [
+      { "name": "side", "role": "flag", "values": ["left", "right"] },
+      { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
+      { "name": "transA", "role": "flag", "values": ["no-transpose", "transpose"] },
+      { "name": "diag", "role": "flag", "values": ["non-unit", "unit"] },
+      { "name": "m", "role": "size" },
+      { "name": "n", "role": "size" },
+      { "name": "alpha", "role": "scalar" },
+      { "name": "A", "role": "data" },
+      { "name": "lda", "role": "leading-dimension" },
+      { "name": "B", "role": "data", "description": "in-place: input RHS, output solution" },
+      { "name": "ldb", "role": "leading-dimension" },
+      { "name": "layout", "role": "layout", "values": ["row-major", "col-major"], "default": "row-major" }
+    ]
+  }
+}

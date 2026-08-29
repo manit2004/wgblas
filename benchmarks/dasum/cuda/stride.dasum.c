@@ -48,6 +48,15 @@ int main(void) {
             size_t free_mem, total_mem;
             CUDA_CHECK(cudaMemGetInfo(&free_mem, &total_mem));
             size_t bytes_needed = 1ull * (size_t)n * (size_t)stride * sizeof(double);
+            // These stage a float array and a double array on the host before
+            // uploading, so host RAM — not device memory — is the tighter limit.
+            size_t host_needed = bytes_needed + bytes_needed / 2; // f64 buffer + f32 source
+            size_t host_avail = host_bytes_available();
+            if (host_avail && host_needed > host_avail * 8 / 10) {
+                printf("  (skipped: would need %.1f GB host RAM, %.1f GB available)\n",
+                       host_needed / 1e9, host_avail / 1e9);
+                continue;
+            }
             if (bytes_needed > free_mem * 9 / 10) { // leave 10% headroom
                 printf("  (skipped stride=%d, n=%d: buffers would exceed available device memory)\n", stride, n);
                 continue;

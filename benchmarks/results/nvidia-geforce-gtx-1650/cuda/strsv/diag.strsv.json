@@ -1,0 +1,20 @@
+[
+  { "diag": "non-unit", "n": 32, "compute_ms": 0.0086, "compute_GBs": 0.2756 },
+  { "diag": "non-unit", "n": 64, "compute_ms": 0.0107, "compute_GBs": 0.8239 },
+  { "diag": "non-unit", "n": 128, "compute_ms": 0.0142, "compute_GBs": 2.3991 },
+  { "diag": "non-unit", "n": 256, "compute_ms": 0.0209, "compute_GBs": 6.3804 },
+  { "diag": "non-unit", "n": 512, "compute_ms": 0.0353, "compute_GBs": 15.0127 },
+  { "diag": "non-unit", "n": 1024, "compute_ms": 0.0829, "compute_GBs": 25.4074 },
+  { "diag": "non-unit", "n": 1280, "compute_ms": 0.1044, "compute_GBs": 31.4951 },
+  { "diag": "non-unit", "n": 2048, "compute_ms": 0.1699, "compute_GBs": 49.4885 },
+  { "diag": "non-unit", "n": 4096, "compute_ms": 0.3763, "compute_GBs": 89.2887 },
+  { "diag": "unit", "n": 32, "compute_ms": 0.0076, "compute_GBs": 0.3103 },
+  { "diag": "unit", "n": 64, "compute_ms": 0.0086, "compute_GBs": 1.0299 },
+  { "diag": "unit", "n": 128, "compute_ms": 0.0122, "compute_GBs": 2.7890 },
+  { "diag": "unit", "n": 256, "compute_ms": 0.0187, "compute_GBs": 7.1385 },
+  { "diag": "unit", "n": 512, "compute_ms": 0.0322, "compute_GBs": 16.4617 },
+  { "diag": "unit", "n": 1024, "compute_ms": 0.0735, "compute_GBs": 28.6829 },
+  { "diag": "unit", "n": 1280, "compute_ms": 0.0942, "compute_GBs": 34.9244 },
+  { "diag": "unit", "n": 2048, "compute_ms": 0.1499, "compute_GBs": 56.1085 },
+  { "diag": "unit", "n": 4096, "compute_ms": 0.3850, "compute_GBs": 87.2553 }
+]
