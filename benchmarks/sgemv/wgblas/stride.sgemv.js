@@ -1,12 +1,11 @@
-// Stride sweep — sgemv.js is entirely incx=incy=1 (coalesced, best case).
-// Real BLAS usage hits non-unit stride whenever x/y are rows/columns of a
-// larger matrix, so this characterizes that cost separately, at the same
-// square shapes sgemv.js uses. trans stays "no-transpose" and lda stays
-// tight — trans is covered by trans.sgemv.js, and lda padding was checked
-// there too and found to have no measurable effect.
+// Stride sweep — sgemv.js is entirely incx=incy=1 (coalesced, best case). Real BLAS
+// usage hits non-unit stride whenever x/y are rows/columns of a larger matrix, so this
+// characterizes that cost separately, at the same square shapes sgemv.js uses. trans
+// stays "no-transpose" and lda stays tight — trans is covered by trans.sgemv.js, and
+// lda padding was checked there too and found to have no measurable effect.
 //
-// {4, 32, 256} are the same representative strides used across the Level 1
-// sweeps — stride=1 itself is covered by sgemv.js, not repeated here.
+// Strides are the same set the Level 1 sweeps use (see stride.sscal.js). stride=1
+// itself is covered by sgemv.js, not repeated here.
 
 import { init, cleanup } from "wgblas";
 import { sgemv } from "wgblas/sgemv";
@@ -25,7 +24,9 @@ import {
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
 const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
-const STRIDES = [4, 32, 256];
+// Three magnitudes, each paired with an odd neighbour: the gap inside a pair is
+// misalignment alone (~0% at 4, ~9% by 32). 255 not 257, to fit where 256 fits.
+const STRIDES = [4, 5, 32, 33, 255, 256];
 
 const COLS = ["stride", "m", "n", "compute_ms", "compute_GBs"];
 

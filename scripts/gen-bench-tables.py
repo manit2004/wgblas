@@ -1251,6 +1251,77 @@ def gpu_display_name(folder):
     return folder.replace("-", " ").title()
 
 
+def make_roofline_section(gpu, display, local_only=False):
+    """Builds the per-GPU roofline block for that GPU's index page: the chart,
+    then every routine roofline.json carries, in one table.
+
+    Written by scripts/roofline.py, which is a separate pass — a GPU that has
+    not had it run (or has no verified hardware roof, so roofline.py skips it)
+    simply gets no section here rather than a broken one."""
+    data = fetch_json(gpu, "wgblas", "roofline/roofline", local_only)
+    if not data or not data.get("routines"):
+        return ""
+
+    pf, pb = data["peak_GFLOPs"], data["peak_GBs"]
+    ridge = data["ridge_FLOP_per_byte"]
+    svg = f"{SVG_LINK_PREFIX}/{gpu}/roofline/roofline.svg"
+
+    out = [
+        "## Roofline",
+        "",
+        f"Every routine placed at its arithmetic intensity (FLOPs per byte of "
+        f"compulsory traffic) against what it achieved, under two ceilings: a "
+        f"sloped memory roof of **{pb:,.1f} GB/s** and a flat compute roof of "
+        f"**{pf:,.0f} GFLOP/s** ({data['roof_source']}).",
+        "",
+        f"They meet at the **ridge point, {ridge:.2f} FLOP/byte**. A routine to "
+        f"the left of it cannot be compute-bound at any size — no kernel tuning "
+        f"beats the bandwidth line there, so the only lever is bandwidth "
+        f"efficiency. Level 1 and Level 2 are left of the ridge by construction; "
+        f"Level 3 is the only level with enough data reuse to cross it.",
+        "",
+        f"![Roofline for {display}]({svg})",
+        "",
+        "> The axes span four decades each to fit Level 1 and Level 3 on one "
+        "plot, which leaves the memory-bound routines close together. The chart "
+        "zooms: **ctrl/⌘ + scroll** or the **+ / −** buttons, drag to pan, "
+        "double-click to zoom in or reset.",
+        "",
+        # No "roof GFLOP/s" column: it is min(peak, intensity x peak_bw), both
+        # of which are stated in the prose above, and "% of roof" is the
+        # actionable form. Nine columns overflowed the content width on
+        # narrower viewports, and TypeDoc does not wrap tables in a
+        # horizontally scrollable container.
+        "| routine | level | size | intensity | GFLOP/s | GB/s | % of roof | bound |",
+        "|---------|-------|------|-----------|---------|------|-----------|-------|",
+    ]
+    derived = False
+    for r in data["routines"]:
+        star = "" if r["flops_measured"] else " \\*"
+        derived = derived or not r["flops_measured"]
+        out.append(
+            f"| {r['routine']}{star} | {r['level']} | {r['size']:,} | "
+            f"{r['arithmetic_intensity']:.3f} | {r['compute_GFLOPs']:.1f} | "
+            f"{r['compute_GBs']:.1f} | {r['pct_of_roof']:.0f}% | {r['bound']} |"
+        )
+    out.append("")
+    out.append(
+        "> Each row is that routine's largest configuration in its main benchmark, "
+        "where a kernel is closest to its asymptotic behaviour. Intensity is "
+        "FLOPs over *compulsory* traffic, so it assumes perfect caching: exact "
+        "for the streaming Level 1 and 2 kernels, an upper bound for tiled "
+        "Level 3 ones, whose real DRAM traffic is higher."
+    )
+    if derived:
+        out.append(">")
+        out.append(
+            "> \\* FLOP count supplied by `scripts/roofline.py` — these benchmarks "
+            "record bytes only, so the standard BLAS count is used."
+        )
+    out.append("")
+    return "\n".join(out)
+
+
 def write_mjs(out_file, module_name, description, body):
     """Write a TypeDoc .mjs module: description first, @module last."""
     jsdoc_lines = ["/**", f" * {description}"]
@@ -1307,12 +1378,18 @@ def main():
         # always (re)write the GPU index if any routines are being generated
         if to_generate:
             index_file = out_gpu_dir / "index.mjs"
+            body = (
+                f"Run `make bench` to generate wgblas results"
+                + (", or `make cuda` for cuBLAS results." if has_cuda else ".")
+            )
+            roofline = make_roofline_section(gpu, display, local_only=args.local)
+            if roofline:
+                body += "\n\n" + roofline
             write_mjs(
                 index_file,
                 f"benchmarks/{gpu}",
                 f"Benchmark results for all routines on {display}.",
-                f"Run `make bench` to generate wgblas results"
-                + (", or `make cuda` for cuBLAS results." if has_cuda else "."),
+                body,
             )
             print(f"  wrote {index_file.relative_to(ROOT)}")
         else:

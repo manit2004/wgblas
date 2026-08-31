@@ -318,3 +318,183 @@
   setTimeout(init, 600);
   setTimeout(init, 1200);
 })();
+
+// ---------------------------------------------------------------------------
+// Zoomable charts
+//
+// Zoom resizes the <img> rather than transforming it. CSS `transform: scale()`
+// magnifies the bitmap the SVG was rasterised into, so the chart pixelates;
+// changing the element's layout size re-renders the vectors instead. It also
+// needs no fetch, which inlining the SVG would — and that fails on file://.
+//
+// Plain wheel is deliberately not captured: hijacking page scroll over an
+// image is hostile on a long docs page. Zoom is ctrl/⌘+wheel, plus buttons.
+(function () {
+  "use strict";
+
+  // Past ~10x the rasters cost real memory, and the charts read well before it.
+  var MAX_SCALE = 10;
+
+  function addZoom(img) {
+    if (img.dataset.zoomAdded) return;
+    // TypeDoc copies every generated chart into docs/media/.
+    var src = img.getAttribute("src") || "";
+    if (!/\/media\/[^/]+\.svg$/.test(src)) return;
+    img.dataset.zoomAdded = "1";
+
+    var box = document.createElement("div");
+    box.setAttribute("style",
+      "position:relative;overflow:hidden;border-radius:4px;" +
+      "border:1px solid var(--color-accent);touch-action:pan-y;");
+    img.parentNode.insertBefore(box, img);
+    box.appendChild(img);
+
+    var scale = 1, tx = 0, ty = 0;
+    // Frame size, captured on first zoom — never at load, where the box has no
+    // layout yet and measures zero.
+    var fw = 0, fh = 0;
+
+    // Unzoomed: normal flow, so the frame takes its height from the image and
+    // there is nothing to measure.
+    function flow() {
+      box.style.height = "";
+      img.setAttribute("style",
+        "display:block;width:100%;height:auto;user-select:none;");
+    }
+
+    // Zoomed: out of flow so it can overflow the frame and be panned.
+    // max-width:none is load-bearing — the theme's img{max-width:100%} would
+    // clamp the width while the height grew, distorting rather than magnifying.
+    function lift() {
+      fw = box.clientWidth;
+      fh = img.clientHeight;
+      if (!fw || !fh) return false;
+      box.style.height = fh + "px";
+      img.setAttribute("style",
+        "position:absolute;left:0;top:0;display:block;" +
+        "max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;");
+      return true;
+    }
+
+    function apply() {
+      if (scale <= 1) {
+        scale = 1; tx = 0; ty = 0;
+        flow();
+      } else {
+        var w = fw * scale, h = fh * scale;
+        // Clamped so panning never exposes blank space inside the frame.
+        tx = Math.min(0, Math.max(tx, fw - w));
+        ty = Math.min(0, Math.max(ty, fh - h));
+        img.style.width = w + "px";
+        img.style.height = h + "px";
+        img.style.left = tx + "px";
+        img.style.top = ty + "px";
+      }
+      box.style.cursor = scale > 1 ? "grab" : "default";
+      reset.style.display = scale > 1 ? "" : "none";
+    }
+
+    // Zoom about a point, so whatever is under the cursor stays under it.
+    function zoomAt(px, py, factor) {
+      var next = Math.min(MAX_SCALE, Math.max(1, scale * factor));
+      if (next === scale) return;
+      if (scale === 1 && !lift()) return; // not laid out yet
+      tx = px - (px - tx) * (next / scale);
+      ty = py - (py - ty) * (next / scale);
+      scale = next;
+      apply();
+    }
+
+    function button(label, aria, fn) {
+      var b = document.createElement("button");
+      b.textContent = label;
+      b.type = "button";
+      b.setAttribute("aria-label", aria);
+      b.setAttribute("style",
+        "padding:1px 7px;background:var(--color-background-secondary);" +
+        "color:var(--color-text);border:1px solid var(--color-accent);" +
+        "border-radius:3px;font-size:13px;line-height:1.6;cursor:pointer;");
+      b.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        fn();
+      });
+      return b;
+    }
+
+    var bar = document.createElement("div");
+    bar.setAttribute("style",
+      "position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:1;");
+    // The bar is inside the frame, so without this a press would also start a
+    // pan and two quick "+" taps would fire the double-click zoom.
+    ["pointerdown", "dblclick", "wheel"].forEach(function (evt) {
+      bar.addEventListener(evt, function (e) { e.stopPropagation(); });
+    });
+
+    var reset = button("Reset", "Reset zoom", function () { scale = 1; apply(); });
+    reset.style.display = "none";
+    bar.appendChild(button("−", "Zoom out", function () {
+      zoomAt(box.clientWidth / 2, box.clientHeight / 2, 1 / 1.4);
+    }));
+    bar.appendChild(button("+", "Zoom in", function () {
+      zoomAt(box.clientWidth / 2, box.clientHeight / 2, 1.4);
+    }));
+    bar.appendChild(reset);
+    box.appendChild(bar);
+
+    box.addEventListener("wheel", function (e) {
+      if (!e.ctrlKey && !e.metaKey) return; // let the page scroll normally
+      e.preventDefault();
+      var r = box.getBoundingClientRect();
+      zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15);
+    }, { passive: false });
+
+    box.addEventListener("dblclick", function (e) {
+      e.preventDefault();
+      var r = box.getBoundingClientRect();
+      if (scale > 1) { scale = 1; apply(); }
+      else zoomAt(e.clientX - r.left, e.clientY - r.top, 3);
+    });
+
+    var drag = false, lastX = 0, lastY = 0;
+    box.addEventListener("pointerdown", function (e) {
+      if (scale <= 1 || e.button !== 0) return;
+      drag = true; lastX = e.clientX; lastY = e.clientY;
+      box.setPointerCapture(e.pointerId);
+      box.style.cursor = "grabbing";
+      e.preventDefault();
+    });
+    box.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      tx += e.clientX - lastX; ty += e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      apply();
+    });
+    ["pointerup", "pointercancel"].forEach(function (evt) {
+      box.addEventListener(evt, function (e) {
+        if (!drag) return;
+        drag = false;
+        box.releasePointerCapture(e.pointerId);
+        box.style.cursor = "grab";
+      });
+    });
+
+    // A resized column invalidates fw/fh; drop to flow and re-measure on the
+    // next zoom.
+    window.addEventListener("resize", function () {
+      if (scale === 1) return;
+      scale = 1;
+      apply();
+    });
+
+    flow();
+  }
+
+  function initZoom() {
+    document.querySelectorAll("img").forEach(addZoom);
+  }
+
+  initZoom();
+  setTimeout(initZoom, 600);
+  setTimeout(initZoom, 1200);
+})();
