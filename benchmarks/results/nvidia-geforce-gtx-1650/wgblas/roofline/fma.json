@@ -1,0 +1,9 @@
+[
+  {
+    "threads": 262144,
+    "iters": 4096,
+    "chains": 8,
+    "compute_ms": 5.449856,
+    "compute_GFLOPs": 3152.3528665711538
+  }
+]

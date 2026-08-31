@@ -1,0 +1,32 @@
+[
+  {
+    "pattern": "copy",
+    "bytes": 2684354560,
+    "compute_ms": 154.8288,
+    "compute_GBs": 17.33756613756614
+  },
+  {
+    "pattern": "scale",
+    "bytes": 2684354560,
+    "compute_ms": 153.092096,
+    "compute_GBs": 17.534246575342465
+  },
+  {
+    "pattern": "read",
+    "bytes": 1342177280,
+    "compute_ms": 65.765376,
+    "compute_GBs": 20.40857000498256
+  },
+  {
+    "pattern": "scale_f32",
+    "bytes": 2684313600,
+    "compute_ms": 151.519232,
+    "compute_GBs": 17.715992647058826
+  },
+  {
+    "pattern": "read_f32",
+    "bytes": 1342156800,
+    "compute_ms": 64.651264,
+    "compute_GBs": 20.759946781550937
+  }
+]

@@ -16,6 +16,293 @@
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><p>Benchmark results for all routines on Nvidia Geforce Gtx 1650.</p>
 <p>Run <code>make bench</code> to generate wgblas results, or <code>make cuda</code> for cuBLAS results.</p>
+<h2 id="roofline" class="tsd-anchor-link">Roofline<a href="#roofline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Every routine placed at its arithmetic intensity (FLOPs per byte of compulsory traffic) against what it achieved, under two ceilings: a sloped memory roof of <strong>187.2 GB/s</strong> and a flat compute roof of <strong>3,152 GFLOP/s</strong> (measured (fma.js + bandwidth.js)).</p>
+<p>They meet at the <strong>ridge point, 16.84 FLOP/byte</strong>. A routine to the left of it cannot be compute-bound at any size — no kernel tuning beats the bandwidth line there, so the only lever is bandwidth efficiency. Level 1 and Level 2 are left of the ridge by construction; Level 3 is the only level with enough data reuse to cross it.</p>
+<p><img src="../media/roofline-1.svg" alt="Roofline for Nvidia Geforce Gtx 1650"></p>
+<blockquote>
+<p>The axes span four decades each to fit Level 1 and Level 3 on one plot, which leaves the memory-bound routines close together. The chart zooms: <strong>ctrl/⌘ + scroll</strong> or the <strong>+ / −</strong> buttons, drag to pan, double-click to zoom in or reset.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>routine</th>
+<th>level</th>
+<th>size</th>
+<th>intensity</th>
+<th>GFLOP/s</th>
+<th>GB/s</th>
+<th>% of roof</th>
+<th>bound</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dasum *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.125</td>
+<td>21.2</td>
+<td>169.7</td>
+<td>91%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>idamax *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.000</td>
+<td>0.0</td>
+<td>174.5</td>
+<td>93%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>isamax *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.000</td>
+<td>0.0</td>
+<td>163.0</td>
+<td>87%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>sasum *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.250</td>
+<td>41.1</td>
+<td>164.4</td>
+<td>88%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>saxpy *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.167</td>
+<td>28.9</td>
+<td>173.7</td>
+<td>93%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>scopy *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.000</td>
+<td>0.0</td>
+<td>159.1</td>
+<td>85%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>sdot *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.250</td>
+<td>44.6</td>
+<td>178.6</td>
+<td>95%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>snrm2 *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.500</td>
+<td>35.8</td>
+<td>71.7</td>
+<td>38%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>srot *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.375</td>
+<td>63.8</td>
+<td>170.2</td>
+<td>91%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>srotm *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.375</td>
+<td>64.3</td>
+<td>171.6</td>
+<td>92%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>sscal *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.125</td>
+<td>20.7</td>
+<td>165.3</td>
+<td>88%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>sswap *</td>
+<td>1</td>
+<td>16,777,216</td>
+<td>0.000</td>
+<td>0.0</td>
+<td>171.8</td>
+<td>92%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>sgemv *</td>
+<td>2</td>
+<td>4,096</td>
+<td>0.500</td>
+<td>71.3</td>
+<td>142.7</td>
+<td>76%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>sger *</td>
+<td>2</td>
+<td>4,096</td>
+<td>0.250</td>
+<td>39.6</td>
+<td>158.4</td>
+<td>85%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>ssymv *</td>
+<td>2</td>
+<td>4,096</td>
+<td>0.998</td>
+<td>29.3</td>
+<td>29.4</td>
+<td>16%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>ssyr *</td>
+<td>2</td>
+<td>4,096</td>
+<td>0.250</td>
+<td>20.3</td>
+<td>81.2</td>
+<td>43%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>ssyr2 *</td>
+<td>2</td>
+<td>4,096</td>
+<td>0.500</td>
+<td>40.1</td>
+<td>80.3</td>
+<td>43%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>strmv *</td>
+<td>2</td>
+<td>4,096</td>
+<td>0.499</td>
+<td>11.3</td>
+<td>22.5</td>
+<td>12%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>strsv *</td>
+<td>2</td>
+<td>4,096</td>
+<td>0.499</td>
+<td>5.0</td>
+<td>10.0</td>
+<td>5%</td>
+<td>memory</td>
+</tr>
+<tr>
+<td>sgemm</td>
+<td>3</td>
+<td>1,024</td>
+<td>128.125</td>
+<td>1898.0</td>
+<td>14.8</td>
+<td>60%</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>sgemmtr</td>
+<td>3</td>
+<td>1,024</td>
+<td>170.750</td>
+<td>1317.5</td>
+<td>7.7</td>
+<td>42%</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>ssymm</td>
+<td>3</td>
+<td>1,024</td>
+<td>85.417</td>
+<td>838.7</td>
+<td>9.8</td>
+<td>27%</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>ssyr2k</td>
+<td>3</td>
+<td>1,024</td>
+<td>341.417</td>
+<td>1228.7</td>
+<td>3.6</td>
+<td>39%</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>ssyrk</td>
+<td>3</td>
+<td>1,024</td>
+<td>256.125</td>
+<td>1229.8</td>
+<td>4.8</td>
+<td>39%</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>strmm</td>
+<td>3</td>
+<td>1,024</td>
+<td>64.031</td>
+<td>836.8</td>
+<td>13.1</td>
+<td>27%</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>strsm *</td>
+<td>3</td>
+<td>4,096</td>
+<td>30.111</td>
+<td>165.0</td>
+<td>5.5</td>
+<td>5%</td>
+<td>compute</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Each row is that routine's largest configuration in its main benchmark, where a kernel is closest to its asymptotic behaviour. Intensity is FLOPs over <em>compulsory</em> traffic, so it assumes perfect caching: exact for the streaming Level 1 and 2 kernels, an upper bound for tiled Level 3 ones, whose real DRAM traffic is higher.</p>
+<p>* FLOP count supplied by <code>scripts/roofline.py</code> — these benchmarks record bytes only, so the standard BLAS count is used.</p>
+</blockquote>
 </div></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
@@ -28,7 +315,10 @@
 <li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
 <li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
 <li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
-<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#roofline"><span>Roofline</span></a></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

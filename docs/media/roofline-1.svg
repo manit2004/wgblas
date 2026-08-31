@@ -1,0 +1,77 @@
+<svg id="roofline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="720" height="420" role="img" aria-label="Roofline for nvidia-geforce-gtx-1650: achieved GFLOP/s against arithmetic intensity, under a 187 GB/s memory roof and a 3152 GFLOP/s compute roof meeting at 16.8 FLOP per byte">
+<style>#roofline .bg{fill:#fcfcfb}#roofline .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#roofline .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#roofline .at{fill:#898781;font:11px/1 system-ui,sans-serif}#roofline .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#roofline .dl{fill:#52514e;font:10px/1 system-ui,sans-serif}#roofline .roof{stroke:#52514e;stroke-width:2;fill:none;stroke-linejoin:round}#roofline .ridge{stroke:#898781;stroke-width:1;stroke-dasharray:4 3;fill:none}#roofline .s1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#roofline .s2{fill:#eb6834;stroke:#fcfcfb;stroke-width:2}#roofline .s3{fill:#1baf7a;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#roofline .bg{fill:#1a1a19}#roofline .gr{stroke:#2c2c2a}#roofline .ax{stroke:#383835}#roofline .lt,#roofline .dl{fill:#c3c2b7}#roofline .roof{stroke:#c3c2b7}#roofline .s1{fill:#3987e5;stroke:#1a1a19}#roofline .s2{fill:#d95926;stroke:#1a1a19}#roofline .s3{fill:#199e70;stroke:#1a1a19}}:root[data-theme=dark] #roofline .bg{fill:#1a1a19}:root[data-theme=dark] #roofline .gr{stroke:#2c2c2a}:root[data-theme=dark] #roofline .ax{stroke:#383835}:root[data-theme=dark] #roofline .lt,:root[data-theme=dark] #roofline .dl{fill:#c3c2b7}:root[data-theme=dark] #roofline .roof{stroke:#c3c2b7}:root[data-theme=dark] #roofline .s1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #roofline .s2{fill:#d95926;stroke:#1a1a19}:root[data-theme=dark] #roofline .s3{fill:#199e70;stroke:#1a1a19}</style>
+<rect class="bg" width="720" height="420"/>
+<line class="gr" x1="62" y1="368.0" x2="608" y2="368.0"/>
+<text class="at" x="56" y="372.0" text-anchor="end">1</text>
+<line class="gr" x1="62" y1="282.5" x2="608" y2="282.5"/>
+<text class="at" x="56" y="286.5" text-anchor="end">10</text>
+<line class="gr" x1="62" y1="197.0" x2="608" y2="197.0"/>
+<text class="at" x="56" y="201.0" text-anchor="end">100</text>
+<line class="gr" x1="62" y1="111.5" x2="608" y2="111.5"/>
+<text class="at" x="56" y="115.5" text-anchor="end">1,000</text>
+<line class="gr" x1="62" y1="26.0" x2="608" y2="26.0"/>
+<text class="at" x="56" y="30.0" text-anchor="end">10,000</text>
+<line class="gr" x1="62.0" y1="26" x2="62.0" y2="368"/>
+<text class="at" x="62.0" y="384" text-anchor="middle">0.1</text>
+<line class="gr" x1="198.5" y1="26" x2="198.5" y2="368"/>
+<text class="at" x="198.5" y="384" text-anchor="middle">1</text>
+<line class="gr" x1="335.0" y1="26" x2="335.0" y2="368"/>
+<text class="at" x="335.0" y="384" text-anchor="middle">10</text>
+<line class="gr" x1="471.5" y1="26" x2="471.5" y2="368"/>
+<text class="at" x="471.5" y="384" text-anchor="middle">100</text>
+<line class="gr" x1="608.0" y1="26" x2="608.0" y2="368"/>
+<text class="at" x="608.0" y="384" text-anchor="middle">1,000</text>
+<line class="ax" x1="62" y1="26" x2="62" y2="368"/>
+<line class="ax" x1="62" y1="368" x2="608" y2="368"/>
+<polyline class="roof" points="62.0,259.2 66.5,256.4 71.1,253.5 75.6,250.7 80.2,247.8 84.8,245.0 89.3,242.1 93.9,239.3 98.4,236.4 103.0,233.6 107.5,230.7 112.1,227.9 116.6,225.0 121.2,222.2 125.7,219.3 130.2,216.5 134.8,213.6 139.3,210.8 143.9,207.9 148.4,205.1 153.0,202.2 157.6,199.4 162.1,196.5 166.7,193.7 171.2,190.8 175.8,188.0 180.3,185.1 184.9,182.3 189.4,179.4 193.9,176.6 198.5,173.7 203.1,170.9 207.6,168.0 212.2,165.2 216.7,162.3 221.2,159.5 225.8,156.6 230.3,153.8 234.9,150.9 239.5,148.1 244.0,145.2 248.6,142.4 253.1,139.5 257.6,136.7 262.2,133.8 266.8,131.0 271.3,128.1 275.9,125.3 280.4,122.4 284.9,119.6 289.5,116.7 294.0,113.9 298.6,111.0 303.1,108.2 307.7,105.3 312.2,102.5 316.8,99.6 321.3,96.8 325.9,93.9 330.4,91.1 335.0,88.2 339.6,85.4 344.1,82.5 348.7,79.7 353.2,76.8 357.8,74.0 362.3,71.1 366.9,68.9 371.4,68.9 375.9,68.9 380.5,68.9 385.1,68.9 389.6,68.9 394.1,68.9 398.7,68.9 403.2,68.9 407.8,68.9 412.4,68.9 416.9,68.9 421.4,68.9 426.0,68.9 430.6,68.9 435.1,68.9 439.6,68.9 444.2,68.9 448.8,68.9 453.3,68.9 457.8,68.9 462.4,68.9 466.9,68.9 471.5,68.9 476.1,68.9 480.6,68.9 485.2,68.9 489.7,68.9 494.2,68.9 498.8,68.9 503.4,68.9 507.9,68.9 512.5,68.9 517.0,68.9 521.5,68.9 526.1,68.9 530.6,68.9 535.2,68.9 539.8,68.9 544.3,68.9 548.9,68.9 553.4,68.9 558.0,68.9 562.5,68.9 567.0,68.9 571.6,68.9 576.1,68.9 580.7,68.9 585.2,68.9 589.8,68.9 594.4,68.9 598.9,68.9 603.5,68.9 608.0,68.9"/>
+<line class="ridge" x1="365.9" y1="26" x2="365.9" y2="368"/>
+<text class="dl" x="369.9" y="36">ridge 16.8</text>
+<circle class="s1" cx="75.2" cy="254.6" r="5"/>
+<circle class="s1" cx="116.3" cy="230.0" r="5"/>
+<circle class="s1" cx="92.3" cy="243.0" r="5"/>
+<circle class="s1" cx="116.3" cy="226.9" r="5"/>
+<circle class="s3" cx="486.2" cy="87.7" r="5"/>
+<circle class="s3" cx="503.2" cy="101.3" r="5"/>
+<circle class="s2" cx="157.4" cy="209.6" r="5"/>
+<circle class="s2" cx="116.3" cy="231.4" r="5"/>
+<circle class="s1" cx="157.4" cy="235.1" r="5"/>
+<circle class="s1" cx="140.4" cy="213.7" r="5"/>
+<circle class="s1" cx="140.4" cy="213.4" r="5"/>
+<circle class="s1" cx="75.2" cy="255.6" r="5"/>
+<circle class="s3" cx="462.2" cy="118.0" r="5"/>
+<circle class="s2" cx="198.4" cy="242.6" r="5"/>
+<circle class="s2" cx="116.3" cy="256.2" r="5"/>
+<circle class="s2" cx="157.4" cy="230.9" r="5"/>
+<circle class="s3" cx="544.3" cy="103.9" r="5"/>
+<circle class="s3" cx="527.3" cy="103.8" r="5"/>
+<circle class="s3" cx="445.1" cy="118.1" r="5"/>
+<circle class="s2" cx="157.3" cy="278.1" r="5"/>
+<circle class="s3" cx="400.3" cy="178.4" r="5"/>
+<circle class="s2" cx="157.3" cy="308.3" r="5"/>
+<text class="dl" x="552.3" y="107.9" text-anchor="start">ssyr2k</text>
+<text class="dl" x="535.3" y="95.8" text-anchor="start">ssyrk</text>
+<text class="dl" x="495.2" y="105.3" text-anchor="end">sgemmtr</text>
+<text class="dl" x="494.2" y="91.7" text-anchor="start">sgemm</text>
+<text class="dl" x="470.2" y="122.0" text-anchor="start">ssymm</text>
+<text class="dl" x="453.1" y="133.1" text-anchor="start">strmm</text>
+<text class="dl" x="408.3" y="182.4" text-anchor="start">strsm</text>
+<text class="dl" x="206.4" y="246.6" text-anchor="start">ssymv</text>
+<text class="dl" x="165.4" y="225.0" text-anchor="start">snrm2 · ssyr2</text>
+<text class="dl" x="165.4" y="213.6" text-anchor="start">sgemv</text>
+<text class="dl" x="165.3" y="282.1" text-anchor="start">strmv</text>
+<text class="dl" x="165.3" y="312.3" text-anchor="start">strsv</text>
+<text class="dl" x="132.4" y="217.5" text-anchor="end">srot · srotm</text>
+<text class="dl" x="124.3" y="260.2" text-anchor="start">ssyr</text>
+<text class="dl" x="100.3" y="247.0" text-anchor="start">saxpy</text>
+<text class="lt" x="335.0" y="398" text-anchor="middle">arithmetic intensity (FLOP/byte)</text>
+<text class="lt" x="14" y="197.0" text-anchor="middle" transform="rotate(-90 14 197.0)">achieved GFLOP/s</text>
+<circle class="s1" cx="627" cy="34" r="5"/>
+<text class="lt" x="638" y="38">Level 1</text>
+<circle class="s2" cx="627" cy="52" r="5"/>
+<text class="lt" x="638" y="56">Level 2</text>
+<circle class="s3" cx="627" cy="70" r="5"/>
+<text class="lt" x="638" y="74">Level 3</text>
+<text class="dl" x="622" y="98">roof</text>
+<text class="dl" x="622" y="112">187 GB/s</text>
+<text class="dl" x="622" y="126">3,152 GF/s</text>
+</svg>
