@@ -13,6 +13,7 @@ export { scopy } from "./src/scopy/scopy.mjs";
 export { sdot } from "./src/sdot/sdot.mjs";
 export { sasum } from "./src/sasum/sasum.mjs";
 export { dasum } from "./src/dasum/dasum.mjs";
+export { ddot } from "./src/ddot/ddot.mjs";
 export { snrm2 } from "./src/snrm2/snrm2.mjs";
 export { isamax } from "./src/isamax/isamax.mjs";
 export { idamax } from "./src/idamax/idamax.mjs";

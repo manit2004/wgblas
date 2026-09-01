@@ -51,6 +51,10 @@
       "import": "./src/dasum/dasum.mjs",
       "types": "./src/dasum/dasum.d.mts"
     },
+    "./ddot": {
+      "import": "./src/ddot/ddot.mjs",
+      "types": "./src/ddot/ddot.d.mts"
+    },
     "./snrm2": {
       "import": "./src/snrm2/snrm2.mjs",
       "types": "./src/snrm2/snrm2.d.mts"
