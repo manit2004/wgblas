@@ -17,8 +17,8 @@
 <div class="tsd-comment tsd-typography"><p>Benchmark results for all routines on Intel R Iris R Xe Graphics Tgl Gt2.</p>
 <p>Run <code>make bench</code> to generate wgblas results.</p>
 <h2 id="roofline" class="tsd-anchor-link">Roofline<a href="#roofline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>Every routine placed at its arithmetic intensity (FLOPs per byte of compulsory traffic) against what it achieved, under two ceilings: a sloped memory roof of <strong>19.4 GB/s</strong> and a flat compute roof of <strong>1,120 GFLOP/s</strong> (measured (fma.js + bandwidth.js)).</p>
-<p>They meet at the <strong>ridge point, 57.76 FLOP/byte</strong>. A routine to the left of it cannot be compute-bound at any size — no kernel tuning beats the bandwidth line there, so the only lever is bandwidth efficiency. Level 1 and Level 2 are left of the ridge by construction; Level 3 is the only level with enough data reuse to cross it.</p>
+<p>Every routine placed at its arithmetic intensity (FLOPs per byte of compulsory traffic) against what it achieved, under two ceilings: a sloped memory roof of <strong>20.8 GB/s</strong> and a flat compute roof of <strong>1,147 GFLOP/s</strong> (measured (fma.js + bandwidth.js)).</p>
+<p>They meet at the <strong>ridge point, 55.26 FLOP/byte</strong>. A routine to the left of it cannot be compute-bound at any size — no kernel tuning beats the bandwidth line there, so the only lever is bandwidth efficiency. Level 1 and Level 2 are left of the ridge by construction; Level 3 is the only level with enough data reuse to cross it.</p>
 <p><img src="../media/roofline.svg" alt="Roofline for Intel R Iris R Xe Graphics Tgl Gt2"></p>
 <blockquote>
 <p>The axes span four decades each to fit Level 1 and Level 3 on one plot, which leaves the memory-bound routines close together. The chart zooms: <strong>ctrl/⌘ + scroll</strong> or the <strong>+ / −</strong> buttons, drag to pan, double-click to zoom in or reset.</p>
@@ -42,9 +42,9 @@
 <td>1</td>
 <td>16,777,216</td>
 <td>0.125</td>
-<td>1.6</td>
-<td>12.4</td>
-<td>64%</td>
+<td>1.7</td>
+<td>13.5</td>
+<td>65%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -53,8 +53,8 @@
 <td>16,777,216</td>
 <td>0.000</td>
 <td>0.0</td>
-<td>8.6</td>
-<td>44%</td>
+<td>10.0</td>
+<td>48%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -63,8 +63,8 @@
 <td>16,777,216</td>
 <td>0.000</td>
 <td>0.0</td>
-<td>15.8</td>
-<td>81%</td>
+<td>10.9</td>
+<td>52%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -72,9 +72,9 @@
 <td>1</td>
 <td>16,777,216</td>
 <td>0.250</td>
-<td>4.3</td>
-<td>17.1</td>
-<td>88%</td>
+<td>2.8</td>
+<td>11.1</td>
+<td>54%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -83,8 +83,8 @@
 <td>16,777,216</td>
 <td>0.167</td>
 <td>3.2</td>
-<td>19.3</td>
-<td>100%</td>
+<td>19.4</td>
+<td>94%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -93,8 +93,8 @@
 <td>16,777,216</td>
 <td>0.000</td>
 <td>0.0</td>
-<td>19.0</td>
-<td>98%</td>
+<td>19.5</td>
+<td>94%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -102,9 +102,9 @@
 <td>1</td>
 <td>16,777,216</td>
 <td>0.250</td>
-<td>2.9</td>
-<td>11.7</td>
-<td>60%</td>
+<td>2.7</td>
+<td>10.7</td>
+<td>51%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -114,7 +114,7 @@
 <td>0.500</td>
 <td>8.7</td>
 <td>17.4</td>
-<td>89%</td>
+<td>84%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -124,7 +124,7 @@
 <td>0.375</td>
 <td>6.9</td>
 <td>18.3</td>
-<td>94%</td>
+<td>88%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -134,7 +134,7 @@
 <td>0.375</td>
 <td>6.8</td>
 <td>18.2</td>
-<td>94%</td>
+<td>88%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -144,7 +144,7 @@
 <td>0.125</td>
 <td>2.4</td>
 <td>19.1</td>
-<td>99%</td>
+<td>92%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -154,7 +154,7 @@
 <td>0.000</td>
 <td>0.0</td>
 <td>18.4</td>
-<td>95%</td>
+<td>88%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -164,7 +164,7 @@
 <td>0.500</td>
 <td>6.0</td>
 <td>12.1</td>
-<td>62%</td>
+<td>58%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -174,7 +174,7 @@
 <td>0.250</td>
 <td>3.4</td>
 <td>13.5</td>
-<td>69%</td>
+<td>65%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -184,7 +184,7 @@
 <td>0.998</td>
 <td>5.8</td>
 <td>5.8</td>
-<td>30%</td>
+<td>28%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -194,7 +194,7 @@
 <td>0.250</td>
 <td>3.7</td>
 <td>14.6</td>
-<td>75%</td>
+<td>70%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -204,7 +204,7 @@
 <td>0.500</td>
 <td>7.5</td>
 <td>15.1</td>
-<td>78%</td>
+<td>73%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -214,7 +214,7 @@
 <td>0.499</td>
 <td>5.2</td>
 <td>10.5</td>
-<td>54%</td>
+<td>50%</td>
 <td>memory</td>
 </tr>
 <tr>
@@ -224,7 +224,7 @@
 <td>0.499</td>
 <td>0.3</td>
 <td>0.5</td>
-<td>3%</td>
+<td>2%</td>
 <td>memory</td>
 </tr>
 <tr>
