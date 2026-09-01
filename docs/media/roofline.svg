@@ -1,4 +1,4 @@
-<svg id="roofline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="720" height="420" role="img" aria-label="Roofline for intel-r-iris-r-xe-graphics-tgl-gt2: achieved GFLOP/s against arithmetic intensity, under a 19 GB/s memory roof and a 1120 GFLOP/s compute roof meeting at 57.8 FLOP per byte">
+<svg id="roofline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="720" height="420" role="img" aria-label="Roofline for intel-r-iris-r-xe-graphics-tgl-gt2: achieved GFLOP/s against arithmetic intensity, under a 21 GB/s memory roof and a 1147 GFLOP/s compute roof meeting at 55.3 FLOP per byte">
 <style>#roofline .bg{fill:#fcfcfb}#roofline .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#roofline .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#roofline .at{fill:#898781;font:11px/1 system-ui,sans-serif}#roofline .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#roofline .dl{fill:#52514e;font:10px/1 system-ui,sans-serif}#roofline .roof{stroke:#52514e;stroke-width:2;fill:none;stroke-linejoin:round}#roofline .ridge{stroke:#898781;stroke-width:1;stroke-dasharray:4 3;fill:none}#roofline .s1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#roofline .s2{fill:#eb6834;stroke:#fcfcfb;stroke-width:2}#roofline .s3{fill:#1baf7a;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#roofline .bg{fill:#1a1a19}#roofline .gr{stroke:#2c2c2a}#roofline .ax{stroke:#383835}#roofline .lt,#roofline .dl{fill:#c3c2b7}#roofline .roof{stroke:#c3c2b7}#roofline .s1{fill:#3987e5;stroke:#1a1a19}#roofline .s2{fill:#d95926;stroke:#1a1a19}#roofline .s3{fill:#199e70;stroke:#1a1a19}}:root[data-theme=dark] #roofline .bg{fill:#1a1a19}:root[data-theme=dark] #roofline .gr{stroke:#2c2c2a}:root[data-theme=dark] #roofline .ax{stroke:#383835}:root[data-theme=dark] #roofline .lt,:root[data-theme=dark] #roofline .dl{fill:#c3c2b7}:root[data-theme=dark] #roofline .roof{stroke:#c3c2b7}:root[data-theme=dark] #roofline .s1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #roofline .s2{fill:#d95926;stroke:#1a1a19}:root[data-theme=dark] #roofline .s3{fill:#199e70;stroke:#1a1a19}</style>
 <rect class="bg" width="720" height="420"/>
 <line class="gr" x1="62" y1="368.0" x2="608" y2="368.0"/>
@@ -25,13 +25,13 @@
 <text class="at" x="608.0" y="384" text-anchor="middle">1,000</text>
 <line class="ax" x1="62" y1="26" x2="62" y2="368"/>
 <line class="ax" x1="62" y1="368" x2="608" y2="368"/>
-<polyline class="roof" points="62.0,279.9 66.5,277.6 71.1,275.4 75.6,273.1 80.2,270.8 84.8,268.5 89.3,266.2 93.9,264.0 98.4,261.7 103.0,259.4 107.5,257.1 112.1,254.8 116.6,252.6 121.2,250.3 125.7,248.0 130.2,245.7 134.8,243.4 139.3,241.2 143.9,238.9 148.4,236.6 153.0,234.3 157.6,232.0 162.1,229.8 166.7,227.5 171.2,225.2 175.8,222.9 180.3,220.6 184.9,218.4 189.4,216.1 193.9,213.8 198.5,211.5 203.1,209.2 207.6,207.0 212.2,204.7 216.7,202.4 221.2,200.1 225.8,197.8 230.3,195.6 234.9,193.3 239.5,191.0 244.0,188.7 248.6,186.4 253.1,184.2 257.6,181.9 262.2,179.6 266.8,177.3 271.3,175.0 275.9,172.8 280.4,170.5 284.9,168.2 289.5,165.9 294.0,163.6 298.6,161.4 303.1,159.1 307.7,156.8 312.2,154.5 316.8,152.2 321.3,150.0 325.9,147.7 330.4,145.4 335.0,143.1 339.6,140.8 344.1,138.6 348.7,136.3 353.2,134.0 357.8,131.7 362.3,129.4 366.9,127.2 371.4,124.9 375.9,122.6 380.5,120.3 385.1,118.0 389.6,115.8 394.1,113.5 398.7,111.2 403.2,108.9 407.8,106.6 412.4,104.4 416.9,102.1 421.4,99.8 426.0,97.5 430.6,95.2 435.1,93.0 439.6,91.0 444.2,91.0 448.8,91.0 453.3,91.0 457.8,91.0 462.4,91.0 466.9,91.0 471.5,91.0 476.1,91.0 480.6,91.0 485.2,91.0 489.7,91.0 494.2,91.0 498.8,91.0 503.4,91.0 507.9,91.0 512.5,91.0 517.0,91.0 521.5,91.0 526.1,91.0 530.6,91.0 535.2,91.0 539.8,91.0 544.3,91.0 548.9,91.0 553.4,91.0 558.0,91.0 562.5,91.0 567.0,91.0 571.6,91.0 576.1,91.0 580.7,91.0 585.2,91.0 589.8,91.0 594.4,91.0 598.9,91.0 603.5,91.0 608.0,91.0"/>
-<line class="ridge" x1="439.0" y1="26" x2="439.0" y2="368"/>
-<text class="dl" x="443.0" y="36">ridge 57.8</text>
-<circle class="s1" cx="75.2" cy="286.5" r="5"/>
-<circle class="s1" cx="116.3" cy="256.5" r="5"/>
-<circle class="s1" cx="92.3" cy="264.9" r="5"/>
-<circle class="s1" cx="116.3" cy="267.7" r="5"/>
+<polyline class="roof" points="62.0,277.9 66.5,275.6 71.1,273.3 75.6,271.1 80.2,268.8 84.8,266.5 89.3,264.2 93.9,261.9 98.4,259.7 103.0,257.4 107.5,255.1 112.1,252.8 116.6,250.5 121.2,248.3 125.7,246.0 130.2,243.7 134.8,241.4 139.3,239.1 143.9,236.9 148.4,234.6 153.0,232.3 157.6,230.0 162.1,227.7 166.7,225.5 171.2,223.2 175.8,220.9 180.3,218.6 184.9,216.3 189.4,214.1 193.9,211.8 198.5,209.5 203.1,207.2 207.6,204.9 212.2,202.7 216.7,200.4 221.2,198.1 225.8,195.8 230.3,193.5 234.9,191.3 239.5,189.0 244.0,186.7 248.6,184.4 253.1,182.1 257.6,179.9 262.2,177.6 266.8,175.3 271.3,173.0 275.9,170.7 280.4,168.5 284.9,166.2 289.5,163.9 294.0,161.6 298.6,159.3 303.1,157.1 307.7,154.8 312.2,152.5 316.8,150.2 321.3,147.9 325.9,145.7 330.4,143.4 335.0,141.1 339.6,138.8 344.1,136.5 348.7,134.3 353.2,132.0 357.8,129.7 362.3,127.4 366.9,125.1 371.4,122.9 375.9,120.6 380.5,118.3 385.1,116.0 389.6,113.7 394.1,111.5 398.7,109.2 403.2,106.9 407.8,104.6 412.4,102.3 416.9,100.1 421.4,97.8 426.0,95.5 430.6,93.2 435.1,90.9 439.6,90.3 444.2,90.3 448.8,90.3 453.3,90.3 457.8,90.3 462.4,90.3 466.9,90.3 471.5,90.3 476.1,90.3 480.6,90.3 485.2,90.3 489.7,90.3 494.2,90.3 498.8,90.3 503.4,90.3 507.9,90.3 512.5,90.3 517.0,90.3 521.5,90.3 526.1,90.3 530.6,90.3 535.2,90.3 539.8,90.3 544.3,90.3 548.9,90.3 553.4,90.3 558.0,90.3 562.5,90.3 567.0,90.3 571.6,90.3 576.1,90.3 580.7,90.3 585.2,90.3 589.8,90.3 594.4,90.3 598.9,90.3 603.5,90.3 608.0,90.3"/>
+<line class="ridge" x1="436.3" y1="26" x2="436.3" y2="368"/>
+<text class="dl" x="440.3" y="36">ridge 55.3</text>
+<circle class="s1" cx="75.2" cy="284.1" r="5"/>
+<circle class="s1" cx="116.3" cy="269.2" r="5"/>
+<circle class="s1" cx="92.3" cy="264.7" r="5"/>
+<circle class="s1" cx="116.3" cy="270.5" r="5"/>
 <circle class="s3" cx="503.2" cy="227.0" r="5"/>
 <circle class="s2" cx="157.4" cy="246.3" r="5"/>
 <circle class="s2" cx="116.3" cy="263.5" r="5"/>
@@ -53,10 +53,9 @@
 <text class="dl" x="165.4" y="234.9" text-anchor="start">sgemv · snrm2 · ssyr2 · strmv</text>
 <text class="dl" x="165.3" y="344.0" text-anchor="start">strsv</text>
 <text class="dl" x="132.4" y="246.5" text-anchor="end">srot · srotm</text>
-<text class="dl" x="124.3" y="266.2" text-anchor="start">sasum · sdot · sger · ssyr</text>
-<text class="dl" x="100.3" y="290.9" text-anchor="start">saxpy</text>
-<text class="dl" x="67.2" y="277.7" text-anchor="end">sscal</text>
-<text class="dl" x="67.2" y="290.5" text-anchor="end">dasum</text>
+<text class="dl" x="124.3" y="270.1" text-anchor="start">sasum · sdot · sger · ssyr</text>
+<text class="dl" x="100.3" y="290.7" text-anchor="start">saxpy</text>
+<text class="dl" x="83.2" y="304.9" text-anchor="start">dasum · sscal</text>
 <text class="lt" x="335.0" y="398" text-anchor="middle">arithmetic intensity (FLOP/byte)</text>
 <text class="lt" x="14" y="197.0" text-anchor="middle" transform="rotate(-90 14 197.0)">achieved GFLOP/s</text>
 <circle class="s1" cx="627" cy="34" r="5"/>
@@ -66,6 +65,6 @@
 <circle class="s3" cx="627" cy="70" r="5"/>
 <text class="lt" x="638" y="74">Level 3</text>
 <text class="dl" x="622" y="98">roof</text>
-<text class="dl" x="622" y="112">19 GB/s</text>
-<text class="dl" x="622" y="126">1,120 GF/s</text>
+<text class="dl" x="622" y="112">21 GB/s</text>
+<text class="dl" x="622" y="126">1,147 GF/s</text>
 </svg>

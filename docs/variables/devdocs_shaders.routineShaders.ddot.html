@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>strsv | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css"/><script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script><script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script><script>
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>ddot | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css"/><script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script><script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script><script>
 					window.__typeDocPluginKatexOptions={"delimiters":[{"left":"$$","right":"$$","display":true},{"left":"$","right":"$","display":false}]};
 					window.addEventListener('load', () => window.renderMathInElement(document.body, window.__typeDocPluginKatexOptions));
 				</script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
@@ -13,20 +13,24 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="../modules/devdocs_shaders.html">devdocs/shaders</a></li>
 <li><a href="../modules/devdocs_shaders.routineShaders.html">routineShaders</a></li>
-<li><a href="" aria-current="page">strsv</a></li></ul>
-<h1>Variable strsv</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-variable">strsv</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">strsv_apply_inverse</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">strsv_invert_block</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">strsv_update</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span> <span class="tsd-signature-symbol">}</span></div>
+<li><a href="" aria-current="page">ddot</a></li></ul>
+<h1>Variable ddot</h1></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">ddot</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">ddot</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">&quot;f64/dekker&quot;</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">&quot;f64/utils/add&quot;</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">&quot;f64/utils/multiply&quot;</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">&quot;reduction/sumF64&quot;</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
 <div class="tsd-type-declaration">
 <h4>Type Declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
-<h5 id="strsv_apply_inverse"><span class="tsd-kind-property">strsv_apply_inverse</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li>
+<h5 id="ddot"><span class="tsd-kind-property">ddot</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li>
 <li class="tsd-parameter">
-<h5 id="strsv_invert_block"><span class="tsd-kind-property">strsv_invert_block</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li>
+<h5 id="f64dekker"><span class="tsd-kind-property">f64/dekker</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li>
 <li class="tsd-parameter">
-<h5 id="strsv_update"><span class="tsd-kind-property">strsv_update</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li></ul></div><aside class="tsd-sources">
+<h5 id="f64utilsadd"><span class="tsd-kind-property">f64/utils/add</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li>
+<li class="tsd-parameter">
+<h5 id="f64utilsmultiply"><span class="tsd-kind-property">f64/utils/multiply</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li>
+<li class="tsd-parameter">
+<h5 id="reductionsumf64"><span class="tsd-kind-property">reduction/sumF64</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bfd4b82bbd77028a7fd7b136b547569e546b3c5a/src/shaders/index.mjs#L137">src/shaders/index.mjs:137</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bfd4b82bbd77028a7fd7b136b547569e546b3c5a/src/shaders/index.mjs#L97">src/shaders/index.mjs:97</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
