@@ -15,7 +15,11 @@ const SPLIT_CONST: f32 = 4097.0;
 
 fn bitSplit(a: f32) -> DD {
   let bits = bitcast<u32>(a);
-  let hiBits = bits & 0xFFFFF800u; // keep sign+exponent+top 12 mantissa bits
+  // Top 11 mantissa bits, so hi carries 12 significant bits with the implicit
+  // leading 1 — the halves are multiplied pairwise and f32 holds 24, so a
+  // wider split rounds those products and the "exact" error term goes wrong.
+  // Matches SPLIT_CONST = 2^12+1 used by the Veltkamp path below.
+  let hiBits = bits & 0xFFFFF000u;
   let hi = bitcast<f32>(hiBits);
   let lo = fsub(a, hi); // exact by Sterbenz's lemma (hi, a share an exponent, are close)
   return DD(hi, lo);

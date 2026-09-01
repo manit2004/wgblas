@@ -14,6 +14,7 @@ import stdlibScopy from "@stdlib/blas-base-scopy";
 import stdlibSdot from "@stdlib/blas-base-sdot";
 import stdlibSasum from "@stdlib/blas-base-sasum";
 import stdlibDasum from "@stdlib/blas-base-dasum";
+import stdlibDdot from "@stdlib/blas-base-ddot";
 import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
 import stdlibIsamax from "@stdlib/blas-base-isamax";
 import stdlibIdamax from "@stdlib/blas-base-idamax";
@@ -175,6 +176,7 @@ export const saxpyReference = makeYReference(stdlibSaxpy, (a) => [a.alpha]);
 export const scopyReference = makeYReference(stdlibScopy);
 
 export const sdotReference = makeDotReference(stdlibSdot);
+export const ddotReference = makeDotReference(stdlibDdot);
 export const sasumReference = makeReducerReference(stdlibSasum);
 export const dasumReference = makeReducerReference(stdlibDasum);
 export const snrm2Reference = makeReducerReference(stdlibSnrm2);
