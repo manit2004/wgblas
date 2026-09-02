@@ -1,0 +1,14 @@
+[
+  { "n": 32, "compute_ms": 0.0182, "compute_GBs": 0.0281 },
+  { "n": 64, "compute_ms": 0.0181, "compute_GBs": 0.0564 },
+  { "n": 128, "compute_ms": 0.0182, "compute_GBs": 0.1127 },
+  { "n": 512, "compute_ms": 0.0179, "compute_GBs": 0.4580 },
+  { "n": 1024, "compute_ms": 0.0181, "compute_GBs": 0.9062 },
+  { "n": 4096, "compute_ms": 0.0181, "compute_GBs": 3.6120 },
+  { "n": 16384, "compute_ms": 0.0181, "compute_GBs": 14.4991 },
+  { "n": 65536, "compute_ms": 0.0183, "compute_GBs": 57.3870 },
+  { "n": 262144, "compute_ms": 0.0432, "compute_GBs": 97.0904 },
+  { "n": 1048576, "compute_ms": 0.1113, "compute_GBs": 150.7441 },
+  { "n": 4194304, "compute_ms": 0.3792, "compute_GBs": 176.9524 },
+  { "n": 16777216, "compute_ms": 1.4542, "compute_GBs": 184.5881 }
+]

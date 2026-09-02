@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ddot — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, ddot, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 5;
+        // 1e-9 is far below what f32 can hold beside a value of 10 — single
+        // precision drops it and returns 10. ddot keeps it.
+        const x = new Float64Array([1, 1e-9, 2, 3, 4]);
+        const y = new Float64Array([1, 1, 1, 1, 1]);
+
+        const { dot } = await ddot(device, n, x, 1, y, 1);
+
+        document.getElementById("out").textContent =
+          "x:   " + Array.from(x).join(", ") +
+          "\ny:   " + Array.from(y).join(", ") +
+          "\ndot: " + dot;
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

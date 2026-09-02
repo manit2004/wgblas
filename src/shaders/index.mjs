@@ -90,6 +90,18 @@ routineShaders.dasum = {
   "reduction/sumF64": sumF64,
 };
 
+import ddMulUtil from "./f64/utils/multiply.wgsl";
+import ddot from "./ddot.wgsl";
+// multiply.wgsl needs dekker's DD struct and add.wgsl's fsub/negf and
+// fastTwoSumProtected, so those two precede it here.
+routineShaders.ddot = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  ddot,
+  "reduction/sumF64": sumF64,
+};
+
 import ddGreater from "./f64/utils/greater.wgsl";
 import ddEqual from "./f64/utils/equal.wgsl";
 import idamax from "./idamax.wgsl";

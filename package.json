@@ -51,6 +51,10 @@
       "import": "./src/dasum/dasum.mjs",
       "types": "./src/dasum/dasum.d.mts"
     },
+    "./ddot": {
+      "import": "./src/ddot/ddot.mjs",
+      "types": "./src/ddot/ddot.d.mts"
+    },
     "./snrm2": {
       "import": "./src/snrm2/snrm2.mjs",
       "types": "./src/snrm2/snrm2.d.mts"
@@ -180,6 +184,7 @@
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@stdlib/blas-base-dasum": "^0.4.1",
+    "@stdlib/blas-base-ddot": "^0.4.1",
     "@stdlib/blas-base-idamax": "^0.1.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
     "@stdlib/blas-base-sasum": "^0.3.1",
