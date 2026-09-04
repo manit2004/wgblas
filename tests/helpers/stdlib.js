@@ -358,6 +358,11 @@ function solveTriangular(denseA, aOrder, B, ldb, layout, m, n, side, alpha, opIs
 // strsm: solves op(A)*X=alpha*B (side='left') or X*op(A)=alpha*B
 // (side='right') for X, overwriting B. A triangular.
 export const strsmReference = (a) => {
+  // BLAS: alpha=0 means A is not referenced and B need not be set before
+  // entry — the result is a literal zero. solveTriangular's own `alpha *
+  // B[...]` term would otherwise leak NaN/Inf from a poisoned B (0*Inf=NaN),
+  // unlike real BLAS/netlib's unconditional B(I,J)=ZERO.
+  if (a.alpha === 0) return { B: new Float32Array(a.B.length) };
   const layout = a.layout ?? "row-major";
   const aOrder = a.side === "left" ? a.m : a.n;
   const denseA = denseTriangular(a.A, a.lda, aOrder, a.uplo, a.transA, a.diag, layout);
