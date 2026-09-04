@@ -89,7 +89,7 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (xIsGpu && yIsGpu) {
+    if (xIsGpu) { // xIsGpu === yIsGpu, enforced above
       if (gpuTimeMs !== undefined) return { gpuTimeMs };
       return {};
     }

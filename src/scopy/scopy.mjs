@@ -81,7 +81,7 @@ export async function scopy(device, n, x, incx, y, incy) {
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (yIsGpu && xIsGpu) {
+    if (yIsGpu) { // xIsGpu === yIsGpu, enforced above
       if (gpuTimeMs !== undefined) return { gpuTimeMs };
       return {};
     }
