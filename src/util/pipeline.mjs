@@ -23,7 +23,14 @@ export async function getPipeline(device, shaderName, entryPoint = "main") {
   const names = Array.isArray(shaderName) ? shaderName : [shaderName];
   const key = `${names.join("+")}::${entryPoint}`;
   if (!byName.has(key)) {
-    byName.set(key, await loadShader(device, names, entryPoint));
+    // Cache the in-flight promise (not its resolved value) so a concurrent
+    // call awaits the same compile instead of starting a duplicate one;
+    // drop the entry on failure so a later call can retry.
+    const pending = loadShader(device, names, entryPoint).catch((err) => {
+      byName.delete(key);
+      throw err;
+    });
+    byName.set(key, pending);
   }
   return byName.get(key);
 }
