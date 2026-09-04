@@ -52,6 +52,8 @@ export async function ssyrk(
   if (CIsGpu && !AIsGpu)
     throw new Error("A must be a GpuMatrix when C is a GpuMatrix.");
   if (n < 0 || k < 0) throw new Error("n and k must be non-negative.");
+  if (lda <= 0 || ldc <= 0)
+    throw new Error("lda and ldc must be positive.");
   if (n === 0) return CIsGpu ? {} : { C };
 
   // GpuMatrix's own .layout wins over the shared `layout` argument.
