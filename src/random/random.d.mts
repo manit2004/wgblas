@@ -61,13 +61,16 @@ export declare function randomFloat64Array(
 ): Float64Array;
 
 /**
- * Returns a Float32Array of n*lda elements, row-major with leading dimension
- * `lda`, representing an actual lower- or upper-triangular matrix for a
- * triangular routine (`strmv`/`strsv`) example: entries in the `uplo`
- * triangle are uniform in `[low, high)`, the n diagonal entries
- * (`A[i*lda+i]`) are uniform in `[diagLow, diagHigh)` — kept well away from 0
- * so a triangular solve doesn't divide by a near-zero pivot — and every entry
- * in the other triangle is 0.
+ * Returns a Float32Array of n*lda elements, with leading dimension `lda`
+ * under the given `layout`, representing an actual lower- or
+ * upper-triangular matrix for a triangular routine (`strmv`/`strsv`)
+ * example: entries in the `uplo` triangle are uniform in `[low, high)`, the
+ * n diagonal entries are uniform in `[diagLow, diagHigh)` — kept well away
+ * from 0 so a triangular solve doesn't divide by a near-zero pivot — and
+ * every entry in the other triangle is 0. `uplo` always describes the
+ * logical triangle, regardless of storage order: only the flat index each
+ * (row, col) maps to changes between layouts (`A[row*lda+col]` for
+ * row-major, `A[col*lda+row]` for column-major).
  *
  * @param n - matrix order (rows/cols read by the triangular routine)
  * @param lda - leading dimension; throws if `lda < n`
@@ -76,6 +79,7 @@ export declare function randomFloat64Array(
  * @param high - upper bound for off-diagonal entries (default: 1)
  * @param diagLow - lower bound for diagonal entries (default: 5)
  * @param diagHigh - upper bound for diagonal entries (default: 15)
+ * @param layout - `'row-major'` or `'column-major'` storage order (default: `'row-major'`)
  *
  * @example
  * ```js
@@ -83,6 +87,15 @@ export declare function randomFloat64Array(
  *
  * const n = 4, lda = n;
  * const A = randomTriangularFloat32Array(n, lda, "lower");
+ * console.log(A);
+ * ```
+ *
+ * @example Column-major storage
+ * ```js
+ * import { randomTriangularFloat32Array } from "wgblas";
+ *
+ * const n = 4, lda = n;
+ * const A = randomTriangularFloat32Array(n, lda, "lower", -1, 1, 5, 15, "column-major");
  * console.log(A);
  * ```
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L13">Source code: random.mjs (L13)</a>
@@ -96,4 +109,5 @@ export declare function randomTriangularFloat32Array(
   high?: number,
   diagLow?: number,
   diagHigh?: number,
+  layout?: 'row-major' | 'column-major',
 ): Float32Array;

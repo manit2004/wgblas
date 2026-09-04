@@ -135,8 +135,10 @@ export async function strsm(
     AinvBuffer = createStorageBuffer(device, numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4, "strsm-Ainv");
 
     // Pre-scale B by alpha once (reuses sscal, so no per-block alpha handling).
+    // Skipped for alpha=0 — sscal computes 0*B[i], which leaks NaN/Inf from a
+    // poisoned B; see the literal zero-write dispatched below instead.
     let preScaleBindGroup = null;
-    if (alpha !== 1.0) {
+    if (alpha !== 1.0 && alpha !== 0) {
       const scaleParams = params(
         [
           { value: bScaleLen, type: "u32" },
@@ -170,9 +172,41 @@ export async function strsm(
     const { commandEncoder, querySet } = beginTimedEncoder(device);
 
     if (alpha === 0) {
-      // BLAS: alpha=0 means A is not referenced — skip straight to B:=0.
+      // BLAS: alpha=0 means B must become a literal zero, not 0*B (leaks
+      // NaN/Inf via sscal). Reuse sgemm with k=0 (X/Y never read, so
+      // AinvBuffer is a safe dummy for both) and beta=0.
+      const zeroLargeWgX = Math.ceil(bInner / BN_LARGE);
+      const zeroLargeWgY = Math.ceil(bOuter / BM_LARGE);
+      const zeroUseLarge = zeroLargeWgX * zeroLargeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
+      const zeroPipeline = await getPipeline(device, zeroUseLarge ? "sgemm_large" : "sgemm_small");
+      const zeroParams = params(
+        [
+          { value: bOuter, type: "u32" },
+          { value: bInner, type: "u32" },
+          { value: 0, type: "u32" }, // k forced to 0 — X/Y never read
+          { value: 0.0, type: "f32" }, // alpha
+          { value: 0.0, type: "f32" }, // beta
+          { value: 1, type: "u32" }, // ldX (dummy, unread)
+          { value: 1, type: "u32" }, // ldY (dummy, unread)
+          { value: ldb, type: "u32" }, // ldc — B's own real stride
+          { value: 0, type: "u32" }, // transX (dummy)
+          { value: 0, type: "u32" }, // transY (dummy)
+        ],
+        "strsm-zero-params",
+      );
+      const zeroBindGroup = createBindGroup(device, zeroPipeline.getBindGroupLayout(0), [
+        AinvBuffer,
+        vec4ViewBinding(device, AinvBuffer),
+        AinvBuffer,
+        vec4ViewBinding(device, AinvBuffer),
+        BBuffer,
+        zeroParams,
+      ]);
+      const zeroWgCount = zeroUseLarge
+        ? { x: requireWorkgroupCount(device, zeroLargeWgX, "strsm", "x"), y: requireWorkgroupCount(device, zeroLargeWgY, "strsm", "y") }
+        : { x: requireWorkgroupCount(device, Math.ceil(bInner / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(device, Math.ceil(bOuter / BM_SMALL), "strsm", "y") };
       const zeroDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(device, bScaleLen), zeroDesc);
+      encodePass(commandEncoder, zeroPipeline, zeroBindGroup, zeroWgCount, zeroDesc);
     } else {
       if (preScaleBindGroup) {
         encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(device, bScaleLen));

@@ -83,7 +83,7 @@ export async function sswap(device, n, x, incx, y, incy) {
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (xIsGpu && yIsGpu) {
+    if (xIsGpu) { // xIsGpu === yIsGpu, enforced above (x.constructor !== y.constructor throws)
       if (gpuTimeMs !== undefined) return { gpuTimeMs };
       return {};
     }

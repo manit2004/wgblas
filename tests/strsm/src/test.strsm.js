@@ -98,6 +98,20 @@ test("strsm edge cases", async (t) => {
   }
 });
 
+// NaN/Inf element-level semantics — expected value hardcoded (not
+// stdlibReference-computed) since JSON can't hold Infinity/NaN literals.
+// BLAS: alpha=0 means A is not referenced and B need not be set before
+// entry — the result must be a literal zero, not alpha*B (0*Infinity would
+// leak into B otherwise). See strsm.mjs's literal zero-write dispatch.
+test("strsm NaN/Inf semantics", async (t) => {
+  await t.test("alpha=0 — poisoned B becomes a literal zero", async () => {
+    const A = new Float32Array([1, 0, 1, 1]); // finite, valid lower-triangular
+    const B = new Float32Array([Infinity, NaN, 3, 4]);
+    const got = await strsm(device, "left", "lower", "no-transpose", "non-unit", 2, 2, 0, A, 2, B, 2);
+    assert.deepEqual(got.B, new Float32Array([0, 0, 0, 0]));
+  });
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("strsm edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

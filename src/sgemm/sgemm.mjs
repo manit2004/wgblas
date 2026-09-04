@@ -61,6 +61,8 @@ export async function sgemm(
   if (CIsGpu && (!AIsGpu || !BIsGpu))
     throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
   if (m < 0 || n < 0 || k < 0) throw new Error("m, n, and k must be non-negative.");
+  if (lda <= 0 || ldb <= 0 || ldc <= 0)
+    throw new Error("lda, ldb, and ldc must be positive.");
   if (m === 0 || n === 0) return CIsGpu ? {} : { C };
 
   // GpuMatrix's own .layout wins over the shared `layout` argument.

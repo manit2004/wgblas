@@ -1,12 +1,15 @@
 export { init, cleanup, gpuName } from "./src/init.mjs";
 export { GpuVector } from "./src/classes/GpuVector.mjs";
 export { GpuMatrix } from "./src/classes/GpuMatrix.mjs";
+export { Complex32, Complex32Array } from "./src/classes/Complex32.mjs";
+export { Complex64, Complex64Array } from "./src/classes/Complex64.mjs";
 export {
   randomFloat32Array,
   randomFloat64Array,
   randomTriangularFloat32Array,
 } from "./src/random/random.mjs";
 export { sscal } from "./src/sscal/sscal.mjs";
+export { cscal } from "./src/cscal/cscal.mjs";
 export { sswap } from "./src/sswap/sswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";

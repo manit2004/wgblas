@@ -23,7 +23,14 @@ export async function getPipeline(device, shaderName, entryPoint = "main") {
   const names = Array.isArray(shaderName) ? shaderName : [shaderName];
   const key = `${names.join("+")}::${entryPoint}`;
   if (!byName.has(key)) {
-    byName.set(key, await loadShader(device, names, entryPoint));
+    // Cache the in-flight promise (not its resolved value) so a concurrent
+    // call awaits the same compile instead of starting a duplicate one;
+    // drop the entry on failure so a later call can retry.
+    const pending = loadShader(device, names, entryPoint).catch((err) => {
+      byName.delete(key);
+      throw err;
+    });
+    byName.set(key, pending);
   }
   return byName.get(key);
 }
@@ -66,8 +73,24 @@ async function loadCode(shaderName) {
  */
 export async function loadShader(device, shaderNames, entryPoint = "main") {
   const label = shaderNames.join("+");
-  const code = (await Promise.all(shaderNames.map(loadCode))).join("\n");
+  const codes = await Promise.all(shaderNames.map(loadCode));
 
+  // Per-file line ranges within the concatenated module, so a compile error
+  // reports as "<file>.wgsl:<local line>" instead of a whole-module line
+  // number — confusing for multi-file pipelines like dasum's.
+  let offset = 0;
+  const ranges = codes.map((c, i) => {
+    const lineCount = c.split("\n").length;
+    const range = { name: shaderNames[i], startLine: offset + 1, endLine: offset + lineCount };
+    offset += lineCount;
+    return range;
+  });
+  const locate = (lineNum) => {
+    const range = lineNum && ranges.find((r) => lineNum >= r.startLine && lineNum <= r.endLine);
+    return range ? `${range.name}.wgsl:${lineNum - range.startLine + 1}` : `line ${lineNum}`;
+  };
+
+  const code = codes.join("\n");
   const shaderModule = device.createShaderModule({ label, code });
 
   const info = await shaderModule.getCompilationInfo();
@@ -75,7 +98,7 @@ export async function loadShader(device, shaderNames, entryPoint = "main") {
   const errors = info.messages.filter((m) => m.type === "error");
   if (errors.length > 0) {
     throw new Error(
-      `Shader "${label}" compilation failed:\n${errors.map((m) => `  line ${m.lineNum}: ${m.message}`).join("\n")}`,
+      `Shader "${label}" compilation failed:\n${errors.map((m) => `  ${locate(m.lineNum)}: ${m.message}`).join("\n")}`,
     );
   }
 

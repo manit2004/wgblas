@@ -1,9 +1,6 @@
 /** @module devdocs/utility-functions/compute */
 import { beginTimestamp, resolveTimestamp } from "./benchmark.mjs";
 
-// Anchors the pass encoder to its command encoder to prevent premature GC.
-const _passEncoders = new WeakMap();
-
 /**
  * Finalises `commandEncoder` into a command buffer and submits it to the GPU queue.
  * @param {GPUCommandEncoder} commandEncoder
@@ -54,8 +51,6 @@ export function encodePass(commandEncoder, pipeline, bindGroup, workgroups, pass
   }
 
   passEncoder.end();
-
-  _passEncoders.set(commandEncoder, passEncoder);
 }
 
 /**

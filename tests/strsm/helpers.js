@@ -43,7 +43,11 @@ export function backwardResidualFactor(gpu, ref, a) {
         dotBound += Math.abs(aVal) * Math.abs(xVal);
       }
 
-      const err = Math.abs(acc - alpha * matElem(Borig, ldb, layout, i, j));
+      // BLAS: alpha=0 means B is not referenced — the RHS term is a literal
+      // zero, not alpha*Borig[i,j] (which would produce NaN from a poisoned
+      // Borig via 0*Infinity, same convention as strsm.mjs's own alpha=0 fix).
+      const rhs = alpha === 0 ? 0 : alpha * matElem(Borig, ldb, layout, i, j);
+      const err = Math.abs(acc - rhs);
       const bound = eps * (aOrder + 1) * dotBound;
       if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
       else maxFactor = Math.max(maxFactor, err / bound);

@@ -57,6 +57,8 @@ export async function ssyr2k(
   if (CIsGpu && (!AIsGpu || !BIsGpu))
     throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
   if (n < 0 || k < 0) throw new Error("n and k must be non-negative.");
+  if (lda <= 0 || ldb <= 0 || ldc <= 0)
+    throw new Error("lda, ldb, and ldc must be positive.");
   if (n === 0) return CIsGpu ? {} : { C };
 
   const effLayoutA = AIsGpu ? A.layout : layout;
