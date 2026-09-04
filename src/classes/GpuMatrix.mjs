@@ -2,15 +2,19 @@ import { getDevice } from "../init.mjs";
 import { uploadBuffer, stageReadback } from "../util/buffer.mjs";
 import { extractResult } from "../util/result.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { interleaveComplex32, splitComplex64, mergeComplex64 } from "../util/complex.mjs";
+import { Complex32Array } from "./Complex32.mjs";
+import { Complex64Array } from "./Complex64.mjs";
 
 export class GpuMatrix {
-  constructor(buffer, rows, cols, lda, loBuffer = null, layout = "row-major", device = null) {
+  constructor(buffer, rows, cols, lda, loBuffer = null, layout = "row-major", device = null, dtype = Float32Array) {
     this._buf = buffer;
     this._loBuf = loBuffer; // Non-null only for Float64Array-backed matrices
     this.rows = rows;
     this.cols = cols;
     this.lda  = lda;
     this.layout = layout;
+    this.dtype = dtype; // disambiguates Complex32Array from Float32Array — both have _loBuf === null
     // See GpuVector: a GPUBuffer is bound to one device for life.
     this.device = device ?? getDevice();
   }
@@ -34,8 +38,13 @@ export class GpuMatrix {
     const isRowMajor = layout === "row-major";
     if (lda === undefined) lda = isRowMajor ? cols : rows;
 
-    if (!(data instanceof Float32Array) && !(data instanceof Float64Array))
-      throw new Error("GpuMatrix.from expects a Float32Array or Float64Array.");
+    if (
+      !(data instanceof Float32Array) &&
+      !(data instanceof Float64Array) &&
+      !(data instanceof Complex32Array) &&
+      !(data instanceof Complex64Array)
+    )
+      throw new Error("GpuMatrix.from expects a Float32Array, Float64Array, Complex32Array, or Complex64Array.");
     if (!Number.isInteger(rows) || rows <= 0)
       throw new Error("rows must be a positive integer.");
     if (!Number.isInteger(cols) || cols <= 0)
@@ -57,7 +66,19 @@ export class GpuMatrix {
       const { hi, lo } = splitDoubleDouble(data.subarray(0, n));
       const hiBuf = uploadBuffer(device, hi, "gpu-matrix-f64-hi", true);
       const loBuf = uploadBuffer(device, lo, "gpu-matrix-f64-lo", true);
-      return new GpuMatrix(hiBuf, rows, cols, lda, loBuf, layout, device);
+      return new GpuMatrix(hiBuf, rows, cols, lda, loBuf, layout, device, Float64Array);
+    }
+
+    if (data instanceof Complex32Array) {
+      const buf = uploadBuffer(device, interleaveComplex32(data, outerCount * lda), "gpu-matrix-complex32", true);
+      return new GpuMatrix(buf, rows, cols, lda, null, layout, device, Complex32Array);
+    }
+
+    if (data instanceof Complex64Array) {
+      const { hi, lo } = splitComplex64(data, outerCount * lda);
+      const hiBuf = uploadBuffer(device, hi, "gpu-matrix-complex64-hi", true);
+      const loBuf = uploadBuffer(device, lo, "gpu-matrix-complex64-lo", true);
+      return new GpuMatrix(hiBuf, rows, cols, lda, loBuf, layout, device, Complex64Array);
     }
 
     const buf = uploadBuffer(device, data.subarray(0, outerCount * lda), "gpu-matrix", true);
@@ -74,6 +95,16 @@ export class GpuMatrix {
     const outerCount = isRowMajor ? this.rows : this.cols;
     const innerLen   = isRowMajor ? this.cols : this.rows;
 
+    if (this.dtype === Complex32Array) {
+      const raw = new Complex32Array(await extractResult(rb, Float32Array));
+      if (this.lda === innerLen) return raw;
+      const out = new Complex32Array(outerCount * innerLen);
+      for (let r = 0; r < outerCount; r++)
+        for (let c = 0; c < innerLen; c++)
+          out[r * innerLen + c] = raw[r * this.lda + c];
+      return out;
+    }
+
     if (this._loBuf) {
       const encLo = device.createCommandEncoder();
       const rbLo = stageReadback(device, encLo, this._loBuf);
@@ -83,6 +114,17 @@ export class GpuMatrix {
         extractResult(rb, Float32Array),
         extractResult(rbLo, Float32Array),
       ]);
+
+      if (this.dtype === Complex64Array) {
+        const raw = mergeComplex64(hi, lo);
+        if (this.lda === innerLen) return raw;
+        const out = new Complex64Array(outerCount * innerLen);
+        for (let r = 0; r < outerCount; r++)
+          for (let c = 0; c < innerLen; c++)
+            out[r * innerLen + c] = raw[r * this.lda + c];
+        return out;
+      }
+
       const raw = mergeDoubleDouble(hi, lo);
       if (this.lda === innerLen) return raw;
       const out = new Float64Array(outerCount * innerLen);

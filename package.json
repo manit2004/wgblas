@@ -19,6 +19,14 @@
       "import": "./src/classes/GpuMatrix.mjs",
       "types": "./src/classes/GpuMatrix.d.mts"
     },
+    "./classes/Complex32": {
+      "import": "./src/classes/Complex32.mjs",
+      "types": "./src/classes/Complex32.d.mts"
+    },
+    "./classes/Complex64": {
+      "import": "./src/classes/Complex64.mjs",
+      "types": "./src/classes/Complex64.d.mts"
+    },
     "./random": {
       "import": "./src/random/random.mjs",
       "types": "./src/random/random.d.mts"
@@ -26,6 +34,10 @@
     "./sscal": {
       "import": "./src/sscal/sscal.mjs",
       "types": "./src/sscal/sscal.d.mts"
+    },
+    "./cscal": {
+      "import": "./src/cscal/cscal.mjs",
+      "types": "./src/cscal/cscal.d.mts"
     },
     "./sswap": {
       "import": "./src/sswap/sswap.mjs",

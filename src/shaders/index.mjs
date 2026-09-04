@@ -53,6 +53,9 @@ export const routineShaders = {};
 import sscal from "./sscal.wgsl";
 routineShaders.sscal = { sscal };
 
+import cscal from "./cscal.wgsl";
+routineShaders.cscal = { cscal };
+
 import sswap from "./sswap.wgsl";
 routineShaders.sswap = { sswap };
 
