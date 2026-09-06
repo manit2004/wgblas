@@ -1,0 +1,22 @@
+{
+  "_note": "alpha as a Complex32 scalar (re/im) — the complex analogue of alpha.json, for routines like cscal. Loaded explicitly by name as 'alphaComplex' (not via the '64'-suffix derive mechanism — this is a hand-written sibling, not derived from the real-valued spec).",
+  "type": "complex32",
+  "baseline": { "re": 2.0, "im": 3.0 },
+  "range": { "min": -10.0, "max": 10.0 },
+  "invalid": [
+    { "special": "number",    "error": "alpha must be a Complex32", "label": "plain number" },
+    { "special": "object",    "error": "alpha must be a Complex32", "label": "plain object {}" },
+    { "special": "array",     "error": "alpha must be a Complex32", "label": "plain Array []" },
+    { "special": "null",      "error": "alpha must be a Complex32", "label": "null" },
+    { "special": "undefined", "error": "alpha must be a Complex32", "label": "undefined" },
+    { "scenario": "nanRe",    "error": "alpha must not be NaN",     "label": "re component is NaN" },
+    { "scenario": "nanIm",    "error": "alpha must not be NaN",     "label": "im component is NaN" },
+    { "scenario": "infRe",    "error": "alpha must be finite",      "label": "re component is Infinity" },
+    { "scenario": "infIm",    "error": "alpha must be finite",      "label": "im component is Infinity" }
+  ],
+  "edge": [
+    { "value": { "re": 0, "im": 0 }, "label": "alpha=0+0i zeros the contribution" },
+    { "value": { "re": 1, "im": 0 }, "label": "alpha=1+0i identity" },
+    { "value": { "re": 0, "im": 1 }, "label": "alpha=i — pure rotation" }
+  ]
+}

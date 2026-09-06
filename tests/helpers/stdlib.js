@@ -28,6 +28,11 @@ import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
 import stdlibSsyr2 from "@stdlib/blas-base-ssyr2";
 import stdlibSgemm from "@stdlib/blas-base-sgemm";
+import stdlibCscal from "@stdlib/blas-base-cscal";
+import StdlibComplex64 from "@stdlib/complex-float32-ctor"; // stdlib names a single-precision complex scalar "Complex64" (32+32 bits total) — same precision as this repo's Complex32, just named by total width instead of per-component width
+import StdlibComplex64Array from "@stdlib/array-complex64"; // ditto, for the array
+import { interleaveComplex32 } from "../../src/util/complex.mjs";
+import { Complex32, Complex32Array } from "../../src/classes/Complex32.mjs";
 
 // (n, x, incx) -> scalar, x untouched.
 function makeReducerReference(stdlibFn) {
@@ -62,12 +67,15 @@ function makeYReference(stdlibFn, prefix = () => []) {
 }
 
 // (n, ...prefix, x, incx) mutates only x in place — no y at all.
-// `prefix(a)` supplies any leading args (e.g. alpha) before x.
-function makeXReference(stdlibFn, prefix = () => []) {
+// `prefix(a)` supplies any leading args (e.g. alpha) before x. `toX`/`fromX`
+// convert x into/out of whatever type stdlibFn actually expects — default is
+// a defensive `.slice()` and identity, but cscal overrides both to bridge
+// Complex32Array <-> stdlib's own interleaved Complex64Array.
+function makeXReference(stdlibFn, prefix = () => [], toX = (x) => x.slice(), fromX = (x) => x) {
   return (a) => {
-    const x = a.x.slice();
+    const x = toX(a.x);
     stdlibFn(a.n, ...prefix(a), x, a.incx);
-    return { x };
+    return { x: fromX(x) };
   };
 }
 
@@ -167,6 +175,23 @@ function makeMatMatTriangularReference(matMatFn) {
 }
 
 export const sscalReference = makeXReference(stdlibSscal, (a) => [a.alpha]);
+
+// cscal: x := alpha * x, complex. toX interleaves the same way GpuVector
+// upload does, so stdlib sees byte-identical data to the GPU path; fromX
+// unwraps stdlib's own Complex64 elements back into this repo's Complex32.
+export const cscalReference = makeXReference(
+  stdlibCscal,
+  (a) => [new StdlibComplex64(a.alpha.re, a.alpha.im)],
+  (x) => new StdlibComplex64Array(interleaveComplex32(x)),
+  (x) => {
+    const out = new Complex32Array(x.length);
+    for (let i = 0; i < x.length; i++) {
+      const z = x.get(i);
+      out[i] = new Complex32(z.re, z.im);
+    }
+    return out;
+  },
+);
 
 export const sswapReference = makeXYReference(stdlibSswap);
 export const srotReference = makeXYReference(stdlibSrot, (a) => [a.c, a.s]);

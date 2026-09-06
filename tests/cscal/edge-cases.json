@@ -1,0 +1,9 @@
+[
+  { "label": "alpha=0 — all elements zeroed", "n": 3, "alpha": { "re": 0, "im": 0 }, "x": [1, 2, 3, 4, 5, 6], "incx": 1 },
+  { "label": "alpha=1 (real) — x unchanged", "n": 3, "alpha": { "re": 1, "im": 0 }, "x": [1, 2, 3, 4, 5, 6], "incx": 1 },
+  { "label": "alpha=-1 (real) — sign flip on every element", "n": 3, "alpha": { "re": -1, "im": 0 }, "x": [1, -2, 3, 4, -5, 6], "incx": 1 },
+  { "label": "alpha=i — 90 degree rotation", "n": 2, "alpha": { "re": 0, "im": 1 }, "x": [1, 0, 0, 1], "incx": 1 },
+  { "label": "all zeros scaled by anything -> all zeros", "n": 2, "alpha": { "re": 5, "im": -2 }, "x": [0, 0, 0, 0], "incx": 1 },
+  { "label": "incx=2 — gap elements untouched", "n": 2, "alpha": { "re": 2, "im": 0 }, "x": [1, 1, 99, 99, 2, 2, 99, 99], "incx": 2 },
+  { "label": "n=1 — single element", "n": 1, "alpha": { "re": 3, "im": -1 }, "x": [5, 2], "incx": 1 }
+]
