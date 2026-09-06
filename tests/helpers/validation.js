@@ -43,6 +43,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import assert from "node:assert/strict";
+import { Complex32, Complex32Array } from "../../src/classes/Complex32.mjs";
 
 const PARAMS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -229,6 +230,12 @@ function resolveNdArray(scenario, dependsOn, baselines, oversize = false, type =
     minLen = ndArrayLen(dependsOn, baselines);
   }
 
+  if (type === "complex32array") {
+    if (scenario === "minimal")  return new Complex32Array(minLen).fill(new Complex32(1, 1));
+    if (scenario === "tooShort") return new Complex32Array(Math.max(0, minLen - 1)).fill(new Complex32(1, 1));
+    throw new Error(`Unknown array scenario: "${scenario}"`);
+  }
+
   const Ctor = typedArrayCtor(type);
   if (scenario === "minimal")  return new Ctor(minLen).fill(1);
   if (scenario === "tooShort") return new Ctor(Math.max(0, minLen - 1)).fill(1);
@@ -253,6 +260,22 @@ export function resolveParam(scenario) {
 }
 
 /**
+ * Builds a Complex32 with one bad component, for a `type: "complex32"` spec's
+ * `scenario`-based invalid entries — a plain literal `value`/`special` can
+ * only substitute the whole param (testing "not a Complex32 at all"), not a
+ * single component of an otherwise-valid instance.
+ * @param scenario one of `"nanRe"`, `"nanIm"`, `"infRe"`, `"infIm"`
+ * @internal
+ */
+function resolveComplex32Scenario(scenario) {
+  if (scenario === "nanRe") return new Complex32(NaN, 0);
+  if (scenario === "nanIm") return new Complex32(0, NaN);
+  if (scenario === "infRe") return new Complex32(Infinity, 0);
+  if (scenario === "infIm") return new Complex32(0, Infinity);
+  throw new Error(`Unknown complex32 scenario: "${scenario}"`);
+}
+
+/**
  * Resolves a single JSON spec entry to a concrete JS value.
  * Dispatches on `entry.value` (literal), `entry.special` (named non-serialisable),
  * or `entry.scenario` (named construction rule for arrays and `param`).
@@ -272,9 +295,14 @@ export function resolveParam(scenario) {
 export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
   if ("scenario" in entry) {
     if (paramName === "param") return resolveParam(entry.scenario);
+    if (type === "complex32") return resolveComplex32Scenario(entry.scenario);
     return resolveNdArray(entry.scenario, dependsOn, baselines, false, type);
   }
   if ("value" in entry) {
+    if (type === "complex32" && entry.value && typeof entry.value === "object" && !Array.isArray(entry.value))
+      return new Complex32(entry.value.re, entry.value.im);
+    if (type === "complex32array" && Array.isArray(entry.value))
+      return new Complex32Array(entry.value);
     if (Array.isArray(entry.value) && (type === "float32array" || type === "float64array"))
       return new (typedArrayCtor(type))(entry.value);
     return entry.value;
@@ -287,7 +315,7 @@ export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
   throw new Error(`Cannot resolve entry: ${JSON.stringify(entry)}`);
 }
 
-const ARRAY_TYPES = new Set(["float32array", "float64array"]);
+const ARRAY_TYPES = new Set(["float32array", "float64array", "complex32array"]);
 
 /**
  * Builds baseline typed arrays for all `float32array`/`float64array` specs that
@@ -348,7 +376,11 @@ export async function runValidation(t, specs, call, runtimeBaselines = {}) {
   const baselines = {};
   for (const [name, spec] of Object.entries(specs)) {
     if ("baseline" in spec) {
-      if (Array.isArray(spec.baseline)) {
+      if (spec.type === "complex32array" && Array.isArray(spec.baseline)) {
+        baselines[name] = new Complex32Array(spec.baseline);
+      } else if (spec.type === "complex32" && spec.baseline && typeof spec.baseline === "object") {
+        baselines[name] = new Complex32(spec.baseline.re, spec.baseline.im);
+      } else if (Array.isArray(spec.baseline)) {
         baselines[name] = new (typedArrayCtor(spec.type))(spec.baseline);
       } else {
         baselines[name] = spec.baseline;

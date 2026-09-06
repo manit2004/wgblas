@@ -39,6 +39,7 @@
 import fc from "fast-check";
 import { ulpDiff, maxUlp } from "./ulp.js";
 import { ndArrayLen, matrixShape } from "./validation.js";
+import { Complex32, Complex32Array } from "../../src/classes/Complex32.mjs";
 
 export { ulpDiff, maxUlp };
 
@@ -107,6 +108,9 @@ function paramArb(spec) {
   if (spec.type === "integer") return fc.integer(spec.range);
   if (spec.type === "float")   return floatArb(spec.range.min, spec.range.max);
   if (spec.type === "string")  return fc.constantFrom(...spec.values);
+  if (spec.type === "complex32")
+    return fc.tuple(floatArb(spec.range.min, spec.range.max), floatArb(spec.range.min, spec.range.max))
+      .map(([re, im]) => new Complex32(re, im));
   return null;
 }
 
@@ -122,6 +126,12 @@ function paramArb(spec) {
  */
 export function ndArrayArb(spec, len) {
   const { elementMin: min, elementMax: max } = spec.range;
+  if (spec.type === "complex32array") {
+    // len counts complex elements — Complex32Array's flat-numbers overload
+    // wants 2*len interleaved [re, im, ...] values.
+    return fc.array(floatArb(min, max), { minLength: len * 2, maxLength: len * 2 })
+      .map((a) => new Complex32Array(a));
+  }
   const isF64 = spec.type === "float64array";
   const arb = isF64 ? float64Arb(min, max) : floatArb(min, max);
   const Ctor = isF64 ? Float64Array : Float32Array;
@@ -180,7 +190,7 @@ export function buildArb(specs, extras = {}) {
   // Every ld* field an array spec actually depends on — sizing formula lives
   // in matrixShape, keyed off that array's own dependsOn (e.g. A~lda,
   // B~ldb, C~ldc for sgemm; just A~lda for any L2 routine).
-  const arraySpecs = Object.values(specs).filter((s) => s.type === "float32array" || s.type === "float64array");
+  const arraySpecs = Object.values(specs).filter((s) => s.type === "float32array" || s.type === "float64array" || s.type === "complex32array");
   const ldFields = [...new Set(arraySpecs.map((s) => s.dependsOn?.find((d) => d.startsWith("ld"))).filter(Boolean))];
 
   // Generate all scalar params; skip ld* fields here — they're chained below.
@@ -207,7 +217,7 @@ export function buildArb(specs, extras = {}) {
   return dimsArb.chain((dims) => {
     const fields = Object.fromEntries(Object.keys(dims).map((k) => [k, fc.constant(dims[k])]));
     for (const [name, spec] of Object.entries(specs)) {
-      if (spec.type !== "float32array" && spec.type !== "float64array") continue;
+      if (spec.type !== "float32array" && spec.type !== "float64array" && spec.type !== "complex32array") continue;
       const arrArb = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
       fields[name] = spec.triangular
         ? triangularDiagonalArb(

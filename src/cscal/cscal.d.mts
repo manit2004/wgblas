@@ -4,6 +4,11 @@ import { Complex32, Complex32Array } from "../classes/Complex32.mjs";
 /**
  * Scales a complex vector by a complex constant: $$x \leftarrow \alpha x$$
  *
+ * {@includeCode ../../examples/cscal/cscal.js}
+ *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/cscal/web/cscal.html}
+ *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements to scale (must be a positive integer)
  * @param alpha - complex scalar multiplier
@@ -22,6 +27,8 @@ export declare function cscal(
 
 /**
  * Scales a complex vector by a complex constant: $$x \leftarrow \alpha x$$
+ *
+ * {@includeCode ../../examples/cscal/gpu.cscal.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements to scale (must be a positive integer)
