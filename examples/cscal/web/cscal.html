@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>cscal — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, cscal, cleanup, Complex32, Complex32Array } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 3;
+        const alpha = new Complex32(2, 3); // 2 + 3i
+        const x = new Complex32Array([1, 1, 0, 2, 2, -1]); // 1+1i, 0+2i, 2-1i
+
+        const fmt = (arr) => arr.map((z) => `${z.re}+${z.im}i`).join(", ");
+        console.log("before:", fmt(x));
+        const { x: result } = await cscal(device, n, alpha, x, 1);
+        console.log("after: ", fmt(result));
+
+        document.getElementById("out").textContent =
+          "before: " + fmt(x) +
+          "\nafter:  " + fmt(result);
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>
