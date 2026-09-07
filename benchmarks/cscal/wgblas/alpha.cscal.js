@@ -45,7 +45,13 @@ const records = [];
 
 printHeader(COLS);
 
-const fmt = (z) => `${z.re}${z.im < 0 ? "" : "+"}${z.im}i`;
+// %g-style 6-sig-fig formatting, matching alpha.cscal.c's own "%g%+gi" label
+// exactly — plain toString() on a Math.fround'd value (see Complex32) prints
+// the full double expansion (e.g. "9.999999350456404e-39" for 1e-38), which
+// wouldn't match the CUDA side's "1e-38" and would leave that group's
+// cuBLAS series unpaired in the generated doc tables.
+const g = (v) => Number(v.toPrecision(6)).toString();
+const fmt = (z) => `${g(z.re)}${z.im < 0 ? "" : "+"}${g(z.im)}i`;
 
 for (const alpha of ALPHAS) {
   for (const n of SIZES) {

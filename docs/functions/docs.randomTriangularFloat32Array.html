@@ -17,15 +17,18 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="randomtriangularfloat32array"><span class="tsd-kind-call-signature">randomTriangularFloat32Array</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">n</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">lda</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">uplo</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">&quot;lower&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;upper&quot;</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">low</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">high</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">diagLow</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">diagHigh</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Float32Array</span><a href="#randomtriangularfloat32array" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="randomtriangularfloat32array"><span class="tsd-kind-call-signature">randomTriangularFloat32Array</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">n</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">lda</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">uplo</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">&quot;lower&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;upper&quot;</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">low</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">high</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">diagLow</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">diagHigh</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">layout</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">&quot;column-major&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;row-major&quot;</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Float32Array</span><a href="#randomtriangularfloat32array" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Returns a Float32Array of n*lda elements, row-major with leading dimension
-<code>lda</code>, representing an actual lower- or upper-triangular matrix for a
-triangular routine (<code>strmv</code>/<code>strsv</code>) example: entries in the <code>uplo</code>
-triangle are uniform in <code>[low, high)</code>, the n diagonal entries
-(<code>A[i*lda+i]</code>) are uniform in <code>[diagLow, diagHigh)</code> — kept well away from 0
-so a triangular solve doesn't divide by a near-zero pivot — and every entry
-in the other triangle is 0.</p>
+<div class="tsd-comment tsd-typography"><p>Returns a Float32Array of n*lda elements, with leading dimension <code>lda</code>
+under the given <code>layout</code>, representing an actual lower- or
+upper-triangular matrix for a triangular routine (<code>strmv</code>/<code>strsv</code>)
+example: entries in the <code>uplo</code> triangle are uniform in <code>[low, high)</code>, the
+n diagonal entries are uniform in <code>[diagLow, diagHigh)</code> — kept well away
+from 0 so a triangular solve doesn't divide by a near-zero pivot — and
+every entry in the other triangle is 0. <code>uplo</code> always describes the
+logical triangle, regardless of storage order: only the flat index each
+(row, col) maps to changes between layouts (<code>A[row*lda+col]</code> for
+row-major, <code>A[col*lda+row]</code> for column-major).</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -50,6 +53,9 @@ in the other triangle is 0.</p>
 </div></li>
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">diagHigh</span>: <span class="tsd-signature-type">number</span></span>
 <div class="tsd-comment tsd-typography"><p>upper bound for diagonal entries (default: 15)</p>
+</div></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">layout</span>: <span class="tsd-signature-type">&quot;column-major&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;row-major&quot;</span></span>
+<div class="tsd-comment tsd-typography"><p><code>'row-major'</code> or <code>'column-major'</code> storage order (default: <code>'row-major'</code>)</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Float32Array</span></h4>
 <div class="tsd-comment tsd-typography">
@@ -58,11 +64,16 @@ in the other triangle is 0.</p>
 </code><button type="button">Copy</button></pre>
 
 </div>
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-column-major-storage">Example: Column-major storage<a href="#example-column-major-storage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">randomTriangularFloat32Array</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;wgblas&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">n</span><span class="hl-1"> = </span><span class="hl-7">4</span><span class="hl-1">, </span><span class="hl-6">lda</span><span class="hl-1"> = </span><span class="hl-4">n</span><span class="hl-1">;</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">A</span><span class="hl-1"> = </span><span class="hl-0">randomTriangularFloat32Array</span><span class="hl-1">(</span><span class="hl-4">n</span><span class="hl-1">, </span><span class="hl-4">lda</span><span class="hl-1">, </span><span class="hl-2">&quot;lower&quot;</span><span class="hl-1">, -</span><span class="hl-7">1</span><span class="hl-1">, </span><span class="hl-7">1</span><span class="hl-1">, </span><span class="hl-7">5</span><span class="hl-1">, </span><span class="hl-7">15</span><span class="hl-1">, </span><span class="hl-2">&quot;column-major&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">A</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+</div>
 <div class="tsd-tag-see">
 <h4 class="tsd-anchor-link" id="see">See<a href="#see" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L13">Source code: random.mjs (L13)</a></p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/a054c647aeda851e5f565e54855087c4b3a952ed/src/random/random.d.mts#L91">src/random/random.d.mts:91</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/6597bb83e5633f7678aeac6ba2533177e0a4b71b/src/random/random.d.mts#L104">src/random/random.d.mts:104</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
