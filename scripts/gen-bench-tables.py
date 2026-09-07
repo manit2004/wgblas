@@ -700,13 +700,19 @@ def make_flag_section(wrows, crows_all, routine, gpu, display, gh, prefix):
 
 def group_by_scalar(rows, key):
     """Groups scalar-sweep rows by `key`, each group sorted by n ascending.
-    Ordered by the scalar's numeric value so the tables read low to high."""
+    Ordered by the scalar's numeric value so the tables read low to high —
+    except a complex-valued sweep (e.g. cscal's alpha, labeled "re+imi"),
+    which has no single natural numeric ordering, so those fall back to
+    insertion order (the order the benchmark itself swept them in)."""
     groups = {}
     for r in rows:
         groups.setdefault(r[key], []).append(r)
     for g in groups.values():
         g.sort(key=lambda r: r["n"])
-    return dict(sorted(groups.items(), key=lambda kv: float(kv[0])))
+    try:
+        return dict(sorted(groups.items(), key=lambda kv: float(kv[0])))
+    except ValueError:
+        return groups
 
 
 def make_scalar_section(wrows, crows_all, routine, gpu, display, gh, prefix):
@@ -726,8 +732,13 @@ def make_scalar_section(wrows, crows_all, routine, gpu, display, gh, prefix):
         parts.append("")
         # Value goes in the chart config so each one gets its own file rather
         # than the last group overwriting the rest.
-        chart = make_svg_chart(rows, crows, routine, gpu,
-                               config=f"{prefix}{str(value).replace('.', 'p').replace('-', 'neg')}")
+        # This id is embedded both as the SVG's `id` attribute and inside CSS
+        # selectors in its own <style> block, so every character in it must
+        # be CSS-identifier-safe — "+" (e.g. cscal's "0+0i" labels) is not:
+        # an unescaped "+" breaks the selector, so none of the style rules
+        # match and the chart renders with no visible strokes at all.
+        safe_value = str(value).replace(".", "p").replace("-", "neg").replace("+", "plus")
+        chart = make_svg_chart(rows, crows, routine, gpu, config=f"{prefix}{safe_value}")
         if chart:
             parts.append(chart)
         parts.append("")
