@@ -39,6 +39,10 @@
       "import": "./src/cscal/cscal.mjs",
       "types": "./src/cscal/cscal.d.mts"
     },
+    "./dscal": {
+      "import": "./src/dscal/dscal.mjs",
+      "types": "./src/dscal/dscal.d.mts"
+    },
     "./sswap": {
       "import": "./src/sswap/sswap.mjs",
       "types": "./src/sswap/sswap.d.mts"
@@ -199,6 +203,7 @@
     "@stdlib/blas-base-cscal": "^0.1.1",
     "@stdlib/blas-base-dasum": "^0.4.1",
     "@stdlib/blas-base-ddot": "^0.4.1",
+    "@stdlib/blas-base-dscal": "^0.4.1",
     "@stdlib/blas-base-idamax": "^0.1.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
     "@stdlib/blas-base-sasum": "^0.3.1",

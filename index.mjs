@@ -10,6 +10,7 @@ export {
 } from "./src/random/random.mjs";
 export { sscal } from "./src/sscal/sscal.mjs";
 export { cscal } from "./src/cscal/cscal.mjs";
+export { dscal } from "./src/dscal/dscal.mjs";
 export { sswap } from "./src/sswap/sswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";

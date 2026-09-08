@@ -99,6 +99,7 @@ export function float64Arb(min, max) {
 export function scalarArb(spec) {
   const { min, max } = spec.range;
   if (spec.type === "integer") return fc.integer({ min, max });
+  if (spec.type === "float64") return float64Arb(min, max);
   return floatArb(min, max);
 }
 
@@ -107,6 +108,10 @@ export function scalarArb(spec) {
 function paramArb(spec) {
   if (spec.type === "integer") return fc.integer(spec.range);
   if (spec.type === "float")   return floatArb(spec.range.min, spec.range.max);
+  // "float64" (e.g. alpha64, derived from alpha.json — see derive64 in
+  // validation.js): a genuine wide double, not floatArb's f32-exact values,
+  // so its double-double split gets a nonzero lo component in fixtures.
+  if (spec.type === "float64") return float64Arb(spec.range.min, spec.range.max);
   if (spec.type === "string")  return fc.constantFrom(...spec.values);
   if (spec.type === "complex32")
     return fc.tuple(floatArb(spec.range.min, spec.range.max), floatArb(spec.range.min, spec.range.max))

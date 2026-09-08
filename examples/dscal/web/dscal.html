@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dscal — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dscal, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 5;
+        const alpha = 3;
+        const x = new Float64Array([1, 2, 3, 4, 5]);
+
+        console.log("before:", x);
+        const { x: result } = await dscal(device, n, alpha, x, 1);
+        console.log("after: ", result);
+
+        document.getElementById("out").textContent =
+          "before: " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
+          "\nafter:  " + Array.from(result).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

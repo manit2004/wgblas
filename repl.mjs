@@ -3,7 +3,7 @@ import {
   init, cleanup,
   GpuVector, GpuMatrix,
   Complex32, Complex32Array, Complex64, Complex64Array,
-  sscal, cscal, sswap, saxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
+  sscal, cscal, dscal, sswap, saxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
 } from "wgblas";
 
 const device = await init();
@@ -15,7 +15,7 @@ Object.assign(r.context, {
   GpuVector, GpuMatrix,
   Complex32, Complex32Array, Complex64, Complex64Array,
   Float32Array, Float64Array,
-  sscal, cscal, sswap, saxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
+  sscal, cscal, dscal, sswap, saxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
 });
 
 r.defineCommand("help", {
@@ -25,6 +25,7 @@ r.defineCommand("help", {
     console.log(`
   sscal (device, n, alpha, x, incx)
   cscal (device, n, alpha, x, incx)                        (alpha: Complex32, x: Complex32Array or GpuVector)
+  dscal (device, n, alpha, x, incx)                        (x: Float64Array or GpuVector)
   sswap (device, n, x, incx, y, incy)
   saxpy (device, n, alpha, x, incx, y, incy)
   scopy (device, n, x, incx, y, incy)

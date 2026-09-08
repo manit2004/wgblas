@@ -105,6 +105,14 @@ routineShaders.ddot = {
   "reduction/sumF64": sumF64,
 };
 
+import dscal from "./dscal.wgsl"; // f64 sibling of sscal — no reduction shader needed, unlike dasum/ddot
+routineShaders.dscal = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  dscal,
+};
+
 import ddGreater from "./f64/utils/greater.wgsl";
 import ddEqual from "./f64/utils/equal.wgsl";
 import idamax from "./idamax.wgsl";

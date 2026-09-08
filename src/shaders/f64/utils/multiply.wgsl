@@ -67,19 +67,24 @@ fn twoProdFma(a: f32, b: f32) -> DD {
 
 // DD × DD product (Dekker/Bailey): twoProdBit(a.hi, b.hi) already captures
 // the dominant term to full DD precision, and the cross terms are below the
-// ~48-bit floor anyway, so folding them in with plain f32 loses nothing —
-// only the final renormalization needs barrier protection. Split into
-// ddMulRaw (unprotected) and ddMulProtected (renormalizes via
-// fastTwoSumProtected) so callers with several products can batch them
-// through one shared barrier. ddMulRaw's result isn't a valid DD pair on
-// its own — it must be renormalized before use.
-fn ddMulRaw(a: DD, b: DD) -> DD {
+// ~48-bit floor anyway, so folding them in with plain f32 loses nothing.
+//
+// Another real compiler bug, distinct from add.wgsl's twoSum one — confirmed
+// on Intel Mesa ANV: when p.lo feeds straight into `crossAndLo` unobserved,
+// the compiler folds it away entirely. Materializing p.lo itself through
+// workgroup memory + workgroupBarrier() (like twoSumProtected does for its
+// sum) is what fixes it, so ddMulRaw now takes threadSlot and always pays
+// that barrier — no longer a plain unprotected batchable helper.
+fn ddMulRaw(a: DD, b: DD, threadSlot: u32) -> DD {
   let p = twoProdBit(a.hi, b.hi);
-  let crossAndLo = p.lo + (a.hi * b.lo + a.lo * b.hi);
+  dekkerScratch[threadSlot] = p.lo;
+  workgroupBarrier();
+  let pLo = dekkerScratch[threadSlot];
+  let crossAndLo = pLo + (a.hi * b.lo + a.lo * b.hi);
   return DD(p.hi, crossAndLo);
 }
 
 fn ddMulProtected(a: DD, b: DD, threadSlot: u32) -> DD {
-  let raw = ddMulRaw(a, b);
+  let raw = ddMulRaw(a, b, threadSlot);
   return fastTwoSumProtected(raw.hi, raw.lo, threadSlot);
 }
