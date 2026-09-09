@@ -28,6 +28,8 @@ import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
 import stdlibSsyr2 from "@stdlib/blas-base-ssyr2";
 import stdlibSgemm from "@stdlib/blas-base-sgemm";
+import stdlibDscal from "@stdlib/blas-base-dscal";
+import stdlibDaxpy from "@stdlib/blas-base-daxpy";
 import stdlibCscal from "@stdlib/blas-base-cscal";
 import StdlibComplex64 from "@stdlib/complex-float32-ctor"; // stdlib names a single-precision complex scalar "Complex64" (32+32 bits total) — same precision as this repo's Complex32, just named by total width instead of per-component width
 import StdlibComplex64Array from "@stdlib/array-complex64"; // ditto, for the array
@@ -176,6 +178,10 @@ function makeMatMatTriangularReference(matMatFn) {
 
 export const sscalReference = makeXReference(stdlibSscal, (a) => [a.alpha]);
 
+// dscal: same shape as sscal, just a Float64Array x — toX/fromX stay at
+// their defaults (a plain .slice()), no adapter needed.
+export const dscalReference = makeXReference(stdlibDscal, (a) => [a.alpha]);
+
 // cscal: x := alpha * x, complex. toX interleaves the same way GpuVector
 // upload does, so stdlib sees byte-identical data to the GPU path; fromX
 // unwraps stdlib's own Complex64 elements back into this repo's Complex32.
@@ -198,6 +204,8 @@ export const srotReference = makeXYReference(stdlibSrot, (a) => [a.c, a.s]);
 export const srotmReference = makeXYReference(stdlibSrotm, (a) => [a.param]);
 
 export const saxpyReference = makeYReference(stdlibSaxpy, (a) => [a.alpha]);
+// daxpy: same shape as saxpy, just Float64Array x/y — no adapter needed.
+export const daxpyReference = makeYReference(stdlibDaxpy, (a) => [a.alpha]);
 export const scopyReference = makeYReference(stdlibScopy);
 
 export const sdotReference = makeDotReference(stdlibSdot);

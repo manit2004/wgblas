@@ -66,18 +66,23 @@ export function loadParam(name) {
 }
 
 /**
- * Derives a Float64Array param spec from its Float32Array base (e.g. `"x"` →
- * `"x64"`), for routines that emulate f64 on the GPU (e.g. dasum). Only
- * `type` and the `"FloatNNArray"` substring in each `invalid.error` message
- * actually differ between the two — everything else (dependsOn, range,
- * scenarios) is identical, so this rewrites just those rather than
- * maintaining a whole second spec file per array param.
+ * Derives a Float64Array (or, for a scalar base, a plain float64) param spec
+ * from its f32 base (e.g. `"x"` → `"x64"`, `"alpha"` → `"alpha64"`), for
+ * routines that emulate f64 on the GPU (e.g. dasum, dscal). Only `type` and
+ * the `"FloatNNArray"` substring in each `invalid.error` message actually
+ * differ between the two — everything else (dependsOn, range, scenarios) is
+ * identical, so this rewrites just those rather than maintaining a whole
+ * second spec file per param. A scalar's own generated values additionally
+ * need `float64Arb` instead of `floatArb` (see `paramArb`/`scalarArb` in
+ * fixtures.js) — `floatArb` only ever produces already-f32-exact numbers, so
+ * a scalar reusing the plain "float" spec would always double-double-split
+ * to a zero `lo` component, leaving that half of the emulation untested.
  * @internal
  */
 function derive64(base) {
   return {
     ...base,
-    type: "float64array",
+    type: base.type === "float" ? "float64" : "float64array",
     invalid: base.invalid?.map((entry) => ({
       ...entry,
       error: typeof entry.error === "string"
