@@ -10,11 +10,27 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup, gpuName } from "wgblas";
+import { getDevice, getAdapter } from "../../../src/init.mjs";
 import { getPowerPreference } from "../../helpers/device.js";
 
 const powerPreference = getPowerPreference();
 
 after(() => cleanup());
+
+// Must run before any init() call in this file/process — getDevice/getAdapter
+// only throw while `_primary` is still null, i.e. before the first init().
+test("getDevice() and getAdapter() throw before any init() call", () => {
+  assert.throws(
+    () => getDevice(),
+    /call init\(\) first/,
+    "getDevice should refuse to answer with no device initialized",
+  );
+  assert.throws(
+    () => getAdapter(),
+    /call init\(\) first/,
+    "getAdapter should refuse to answer with no device initialized",
+  );
+});
 
 test("repeat init() with identical options returns the same device", async () => {
   const first = await init({ powerPreference });
@@ -115,4 +131,32 @@ test("cleanup(device) is idempotent and ignores unknown devices", async () => {
   assert.doesNotThrow(() => cleanup(device));
   assert.doesNotThrow(() => cleanup({ label: "never-from-init" }));
   cleanup();
+});
+
+test("dumpShaders can only be set by the process's first init() call", async () => {
+  // dumpShaders is a toggle on the shared WebGPU instance, fixed once by
+  // whichever init() call creates it first — not per-device like
+  // powerPreference/benchmark. By this point in the suite, some earlier
+  // init() has already created the instance with dumpShaders: false, so a
+  // later call on a genuinely new (powerPreference, benchmark) key that asks
+  // for dumpShaders: true must warn and be ignored, not silently succeed.
+  const otherPref =
+    powerPreference === "low-power" ? "high-performance" : "low-power";
+
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args.join(" "));
+  let device;
+  try {
+    device = await init({ powerPreference: otherPref, dumpShaders: true });
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.ok(device, "expected init() to still succeed");
+  assert.ok(
+    warnings.some((w) => w.includes("dumpShaders")),
+    `expected a dumpShaders warning, got: ${JSON.stringify(warnings)}`,
+  );
+  cleanup(device);
 });

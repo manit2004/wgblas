@@ -9,6 +9,11 @@ import { backwardResidualFactor } from "../helpers.js";
 import { strsmReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 import edgeCasesColumnMajor from "../edge-cases-column-major.json" with { type: "json" };
+import { BLOCK_SIZE } from "../../../src/util/constants.mjs";
+import {
+  randomFloat32Array,
+  randomTriangularFloat32Array,
+} from "../../../src/random/random.mjs";
 
 const NUM_RUNS = 100;
 // Higher than strsv's THRESHOLD=3 — strsm's explicit block inverse adds a
@@ -221,6 +226,63 @@ test("strsm edge cases (column-major)", async (t) => {
       );
       const expected = stdlibReference(a);
       const factor = backwardResidualFactor(got, expected, a);
+      assert.ok(
+        factor <= THRESHOLD,
+        `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+      );
+    });
+  }
+});
+
+// The property fixtures above cap m/n at 20 (see fixtureSpecs) to keep them
+// fast, so strsm's per-block loop (BLOCK_SIZE=64) never runs more than one
+// block anywhere else in this suite — the "trailing update" step (gather A's
+// off-diagonal block, subtract its contribution from the remaining B) only
+// exists for a second-or-later block. aOrder=BLOCK_SIZE+6 forces exactly two
+// blocks; the three (side, uplo) combinations below cover both loop
+// directions (`forward` true and false) and both block-transfer orientations
+// (side='left' gathers rows, side='right' gathers columns).
+test("strsm exercises more than one block (aOrder > BLOCK_SIZE)", async (t) => {
+  const aOrder = BLOCK_SIZE + 6;
+  const otherLen = 5;
+  for (const [side, uplo] of [
+    ["left", "lower"],
+    ["left", "upper"],
+    ["right", "lower"],
+  ]) {
+    await t.test(`side='${side}', uplo='${uplo}'`, async () => {
+      const m = side === "left" ? aOrder : otherLen;
+      const n = side === "left" ? otherLen : aOrder;
+      const A = randomTriangularFloat32Array(aOrder, aOrder, uplo, -0.5, 0.5);
+      const B = randomFloat32Array(m * n, -1, 1);
+      const a = {
+        side,
+        uplo,
+        transA: "no-transpose",
+        diag: "non-unit",
+        m,
+        n,
+        alpha: 1,
+        A,
+        lda: aOrder,
+        B,
+        ldb: n,
+      };
+      const got = await strsm(
+        device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+      );
+      const factor = backwardResidualFactor(got, null, a);
       assert.ok(
         factor <= THRESHOLD,
         `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
