@@ -28,7 +28,8 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
     throw new Error("n, incx, and incy must be integers.");
   if (typeof c !== "number") throw new Error("c must be a number.");
   if (typeof s !== "number") throw new Error("s must be a number.");
-  if (Number.isNaN(c) || Number.isNaN(s)) throw new Error("c and s must not be NaN.");
+  if (Number.isNaN(c) || Number.isNaN(s))
+    throw new Error("c and s must not be NaN.");
   if (!Number.isFinite(c)) throw new Error("c must be finite.");
   if (!Number.isFinite(s)) throw new Error("s must be finite.");
   if (incx <= 0 || incy <= 0)
@@ -62,7 +63,8 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "srot-x", true);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "srot-y", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: c, type: "f32" },
@@ -78,7 +80,8 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
       yBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(device,
+    const { commandEncoder, ts } = runComputePass(
+      device,
       pipeline,
       bindGroup,
       calcWorkgroups(device, n),
@@ -89,7 +92,8 @@ export async function srot(device, n, x, incx, y, incy, c, s) {
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (xIsGpu) { // xIsGpu === yIsGpu, enforced above
+    if (xIsGpu) {
+      // xIsGpu === yIsGpu, enforced above
       if (gpuTimeMs !== undefined) return { gpuTimeMs };
       return {};
     }

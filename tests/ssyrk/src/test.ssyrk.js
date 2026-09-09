@@ -26,29 +26,46 @@ const aSpec = loadParam("A");
 const ldSpec = loadParam("ld");
 const validationSpecs = {
   device: loadParam("device"),
-  uplo:   loadParam("uplo"),
-  trans:  loadParam("trans"),
+  uplo: loadParam("uplo"),
+  trans: loadParam("trans"),
   layout: loadParam("layout"),
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "must be non-negative", label: "negative" },
+    ],
   },
-  k:      loadParam("k"),
-  alpha:  loadParam("alpha"),
-  beta:   loadParam("beta"),
-  A:      { ...aSpec, ...aSpec["level-3"], dependsOn: ["n", "k", "lda", "trans"] },
-  lda:    ldSpec,
-  C:      { ...loadParam("C"), dependsOn: ["n", "ldc"] },
-  ldc:    ldSpec,
+  k: loadParam("k"),
+  alpha: loadParam("alpha"),
+  beta: loadParam("beta"),
+  A: { ...aSpec, ...aSpec["level-3"], dependsOn: ["n", "k", "lda", "trans"] },
+  lda: ldSpec,
+  C: { ...loadParam("C"), dependsOn: ["n", "ldc"] },
+  ldc: ldSpec,
 };
 
 test("ssyrk validation", async (t) => {
   await runValidation(
     t,
     validationSpecs,
-    (a) => ssyrk(a.device, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.beta, a.C, a.ldc, a.layout),
+    (a) =>
+      ssyrk(
+        a.device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     { device },
   );
 });
@@ -69,7 +86,21 @@ test("ssyrk fixtures", async (t) => {
     NUM_RUNS,
     THRESHOLD,
     fixtureSpecs,
-    async (dev, a) => ssyrk(dev, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.beta, a.C, a.ldc, a.layout),
+    async (dev, a) =>
+      ssyrk(
+        dev,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     stdlibReference,
     forwardFactor,
   );
@@ -81,13 +112,30 @@ test("ssyrk edge cases", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        uplo: tc.uplo, trans: tc.trans,
-        n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
+        uplo: tc.uplo,
+        trans: tc.trans,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await ssyrk(device, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.beta, a.C, a.ldc);
+      const got = await ssyrk(
+        device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });
@@ -100,13 +148,31 @@ test("ssyrk edge cases (column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        uplo: tc.uplo, trans: tc.trans,
-        n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
+        uplo: tc.uplo,
+        trans: tc.trans,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await ssyrk(device, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.beta, a.C, a.ldc, a.layout);
+      const got = await ssyrk(
+        device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });

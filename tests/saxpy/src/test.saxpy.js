@@ -24,16 +24,18 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  incy:   loadParam("incy"),
-  alpha:  loadParam("alpha"),
-  x:      loadParam("x"),
-  y:      loadParam("y"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  incy: loadParam("incy"),
+  alpha: loadParam("alpha"),
+  x: loadParam("x"),
+  y: loadParam("y"),
 };
 
 test("saxpy validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => saxpy(a.device, a.n, a.alpha, a.x, a.incx, a.y, a.incy),
     { device },
   );
@@ -41,15 +43,15 @@ test("saxpy validation", async (t) => {
 
 test("saxpy fixtures", async (t) => {
   await runFixtures(
-    t,                 // node:test context
-    "saxpy",           // routine name — used in the diagnostic label
-    device,            // WebGPU device instance
-    NUM_RUNS,          // 100 random inputs
-    1,                 // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
-    validationSpecs,   // param specs used to generate random inputs
-    async (dev, a) => saxpy(dev, a.n, a.alpha, a.x, a.incx, a.y, a.incy),  // GPU call
-    stdlibReference,   // CPU reference
-    forwardFactor,     // |err| / (eps * |bound|) — see helpers.js
+    t, // node:test context
+    "saxpy", // routine name — used in the diagnostic label
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    1, // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
+    validationSpecs, // param specs used to generate random inputs
+    async (dev, a) => saxpy(dev, a.n, a.alpha, a.x, a.incx, a.y, a.incy), // GPU call
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (eps * |bound|) — see helpers.js
   );
 });
 
@@ -59,21 +61,21 @@ test("saxpy edge cases", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        alpha: c.alpha,            // scale factor applied to x
-        x: new Float32Array(c.x),  // input vector
-        incx: c.incx,              // stride through x
-        y: new Float32Array(c.y),  // input/output vector — accumulates alpha*x
-        incy: c.incy,              // stride through y
+        n: c.n, // vector length
+        alpha: c.alpha, // scale factor applied to x
+        x: new Float32Array(c.x), // input vector
+        incx: c.incx, // stride through x
+        y: new Float32Array(c.y), // input/output vector — accumulates alpha*x
+        incy: c.incy, // stride through y
       };
       const got = await saxpy(
-        device,   // GPU device
-        a.n,      // vector length
-        a.alpha,  // scale factor applied to x
-        a.x,      // input vector
-        a.incx,   // stride through x
-        a.y,      // input/output vector — accumulates alpha*x
-        a.incy,   // stride through y
+        device, // GPU device
+        a.n, // vector length
+        a.alpha, // scale factor applied to x
+        a.x, // input vector
+        a.incx, // stride through x
+        a.y, // input/output vector — accumulates alpha*x
+        a.incy, // stride through y
       );
       const expected = stdlibReference(a);
       assert.deepEqual(got.y, expected.y);

@@ -36,7 +36,13 @@ for (const size of SIZES) {
 
   const xGpu = GpuVector.from(randomFloat32Array(m));
   const yGpu = GpuVector.from(randomFloat32Array(n));
-  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * n), m, n), m, n, lda, "column-major");
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(m * n), m, n),
+    m,
+    n,
+    lda,
+    "column-major",
+  );
 
   // warm up — lda tight; see lda.sger.js for the real lda-alignment effect
   // found there. sger has no uplo (general dense rank-1 update).
@@ -47,7 +53,16 @@ for (const size of SIZES) {
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await sger(
-      device, m, n, alpha, xGpu, 1, yGpu, 1, AGpu, lda,
+      device,
+      m,
+      n,
+      alpha,
+      xGpu,
+      1,
+      yGpu,
+      1,
+      AGpu,
+      lda,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }

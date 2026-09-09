@@ -43,21 +43,60 @@ for (const diag of DIAGS) {
     const lda = n;
     const ldb = n;
 
-    if (Math.max(n * lda * 4, n * ldb * 4) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped diag=${diag}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(n * lda * 4, n * ldb * 4) >
+      device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped diag=${diag}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
-    const BGpu = GpuMatrix.from(randomFloat32Array(n * ldb), n, n, ldb, "row-major");
+    const BGpu = GpuMatrix.from(
+      randomFloat32Array(n * ldb),
+      n,
+      n,
+      ldb,
+      "row-major",
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await strmm(device, "left", "lower", "no-transpose", diag, n, n, 1.0, AGpu, lda, BGpu, ldb, "row-major");
+      await strmm(
+        device,
+        "left",
+        "lower",
+        "no-transpose",
+        diag,
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await strmm(device, "left", "lower", "no-transpose", diag, n, n, 1.0, AGpu, lda, BGpu, ldb, "row-major");
+      const { gpuTimeMs } = await strmm(
+        device,
+        "left",
+        "lower",
+        "no-transpose",
+        diag,
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -72,10 +111,19 @@ for (const diag of DIAGS) {
     const bytes = (3 * n * n + 5 * n * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [diag, n, med, gflops, gbs]);
-    records.push({ diag, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+    records.push({
+      diag,
+      n,
+      compute_ms: med,
+      compute_GFLOPs: gflops,
+      compute_GBs: gbs,
+    });
   }
 }
 
-saveResults("strmm", gpuModel, records, { folder: "strmm", fileName: "diag.strmm" });
+saveResults("strmm", gpuModel, records, {
+  folder: "strmm",
+  fileName: "diag.strmm",
+});
 
 cleanup();

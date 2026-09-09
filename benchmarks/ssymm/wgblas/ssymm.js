@@ -31,24 +31,71 @@ const records = [];
 printHeader(COLS);
 
 for (const size of SIZES) {
-  const m = size, n = size; // square: aOrder (side='left') = m = n
+  const m = size,
+    n = size; // square: aOrder (side='left') = m = n
   // column-major: lda/ldb/ldc >= rows, matching cuBLAS's native layout
-  const lda = m, ldb = m, ldc = m;
+  const lda = m,
+    ldb = m,
+    ldc = m;
   const alpha = 1.0;
   const beta = 0.0;
 
-  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * lda), m, m), m, m, lda, "column-major");
-  const BGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * n), m, n), m, n, ldb, "column-major");
-  const CGpu = GpuMatrix.from(new Float32Array(m * n), m, n, ldc, "column-major");
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(m * lda), m, m),
+    m,
+    m,
+    lda,
+    "column-major",
+  );
+  const BGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(m * n), m, n),
+    m,
+    n,
+    ldb,
+    "column-major",
+  );
+  const CGpu = GpuMatrix.from(
+    new Float32Array(m * n),
+    m,
+    n,
+    ldc,
+    "column-major",
+  );
 
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await ssymm(device, "left", "lower", m, n, alpha, AGpu, lda, BGpu, ldb, beta, CGpu, ldc);
+    await ssymm(
+      device,
+      "left",
+      "lower",
+      m,
+      n,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
+      beta,
+      CGpu,
+      ldc,
+    );
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await ssymm(
-      device, "left", "lower", m, n, alpha, AGpu, lda, BGpu, ldb, beta, CGpu, ldc,
+      device,
+      "left",
+      "lower",
+      m,
+      n,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
+      beta,
+      CGpu,
+      ldc,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
@@ -69,7 +116,13 @@ for (const size of SIZES) {
   const gflops = flops / 1e9 / (med / 1e3);
   const gbs = bytes / 1e9 / (med / 1e3);
   printRow(COLS, [m, n, med, gflops, gbs]);
-  records.push({ m, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+  records.push({
+    m,
+    n,
+    compute_ms: med,
+    compute_GFLOPs: gflops,
+    compute_GBs: gbs,
+  });
 }
 
 saveResults("ssymm", gpuModel, records, { folder: "ssymm" });

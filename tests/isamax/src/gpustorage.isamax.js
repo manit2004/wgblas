@@ -25,9 +25,9 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  x:      loadParam("x"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  x: loadParam("x"),
 };
 
 async function callGpuResident(dev, a) {
@@ -38,14 +38,14 @@ async function callGpuResident(dev, a) {
 
 test("isamax fixtures (GPU-resident)", async (t) => {
   await runFixtures(
-    t,                       // node:test context
+    t, // node:test context
     "isamax (GPU-resident)", // routine name — used in the diagnostic label
-    device,                  // WebGPU device instance
-    NUM_RUNS,                // 100 random inputs
-    0,                       // threshold 0 — index must match exactly.
-    validationSpecs,         // param specs used to generate random inputs
-    callGpuResident,         // GPU call — wraps x into a GpuVector
-    stdlibReference,         // CPU reference
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    0, // threshold 0 — index must match exactly.
+    validationSpecs, // param specs used to generate random inputs
+    callGpuResident, // GPU call — wraps x into a GpuVector
+    stdlibReference, // CPU reference
     (gpu, ref) => (gpu.index === ref ? 0 : 1), // 0 if correct, 1 if wrong
   );
 });
@@ -54,9 +54,9 @@ test("isamax edge cases (GPU-resident)", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        x: new Float32Array(c.x),  // input vector
-        incx: c.incx,              // stride through x
+        n: c.n, // vector length
+        x: new Float32Array(c.x), // input vector
+        incx: c.incx, // stride through x
       };
       const { index: got } = await callGpuResident(device, a);
       const expected = stdlibReference(a);

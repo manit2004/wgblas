@@ -39,7 +39,18 @@ function createSharedParamsBuffer(device, data, label) {
   return buffer;
 }
 
-export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layout = "row-major") {
+export async function strsv(
+  device,
+  uplo,
+  trans,
+  diag,
+  n,
+  A,
+  lda,
+  x,
+  incx,
+  layout = "row-major",
+) {
   const xIsGpu = x instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
   const isUnit = diag === "unit";
@@ -77,9 +88,7 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
   if (n === 0) return xIsGpu ? {} : { x };
 
   if (!AIsGpu && A.length < (n - 1) * lda + n)
-    throw new Error(
-      "A does not have enough elements for the given n and lda.",
-    );
+    throw new Error("A does not have enough elements for the given n and lda.");
   if (x.length < (n - 1) * incx + 1)
     throw new Error(
       "x does not have enough elements for the given n and incx.",
@@ -89,7 +98,9 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
   const effLayout = AIsGpu ? A.layout : layout;
   const isColMajor = effLayout === "column-major";
   const isLower = isColMajor ? uplo === "upper" : uplo === "lower";
-  const isNoTrans = isColMajor ? trans === "transpose" : trans === "no-transpose";
+  const isNoTrans = isColMajor
+    ? trans === "transpose"
+    : trans === "no-transpose";
 
   const invertPipeline = await getPipeline(device, "strsv_invert_block");
   const applyPipeline = await getPipeline(device, "strsv_apply_inverse");
@@ -117,7 +128,8 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strsv-x", true);
     // One BLOCK_SIZE x BLOCK_SIZE dense region per block (row-major), even
     // though only a triangular half is ever nonzero — see strsv_invert_block.wgsl.
-    AinvBuffer = createStorageBuffer(device,
+    AinvBuffer = createStorageBuffer(
+      device,
       numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4,
       "strsv-Ainv",
     );
@@ -130,35 +142,60 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
       return [incx, blockIndex, blockStart, blockEnd];
     });
-    applyParamsBuffer = createSharedParamsBuffer(device, applyData, "strsv-apply-params");
+    applyParamsBuffer = createSharedParamsBuffer(
+      device,
+      applyData,
+      "strsv-apply-params",
+    );
 
     const updateData = packBlockParams(numBlocks, stride, (blockIndex) => {
       const blockStart = blockIndex * BLOCK_SIZE;
       const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
-      return [n, incx, lda, isNoTrans ? 0 : 1, isLower ? 0 : 1, blockStart, blockEnd];
+      return [
+        n,
+        incx,
+        lda,
+        isNoTrans ? 0 : 1,
+        isLower ? 0 : 1,
+        blockStart,
+        blockEnd,
+      ];
     });
-    updateParamsBuffer = createSharedParamsBuffer(device, updateData, "strsv-update-params");
+    updateParamsBuffer = createSharedParamsBuffer(
+      device,
+      updateData,
+      "strsv-update-params",
+    );
 
     const { commandEncoder, querySet } = beginTimedEncoder(device);
 
     // Pre-pass: every block's inverse, fully parallel, one dispatch.
-    invertParams = createParamsBuffer(device,
+    invertParams = createParamsBuffer(
+      device,
       [
-        { value: n,                 type: "u32" },
-        { value: lda,               type: "u32" },
+        { value: n, type: "u32" },
+        { value: lda, type: "u32" },
         { value: isNoTrans ? 0 : 1, type: "u32" },
-        { value: isLower ? 0 : 1,   type: "u32" },
-        { value: isUnit ? 1 : 0,    type: "u32" },
+        { value: isLower ? 0 : 1, type: "u32" },
+        { value: isUnit ? 1 : 0, type: "u32" },
       ],
       "strsv-invert-params",
     );
-    const invertBindGroup = createBindGroup(device, invertPipeline.getBindGroupLayout(0), [
-      ABuffer, AinvBuffer, invertParams,
-    ]);
+    const invertBindGroup = createBindGroup(
+      device,
+      invertPipeline.getBindGroupLayout(0),
+      [ABuffer, AinvBuffer, invertParams],
+    );
     const invertDesc = querySet
       ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } }
       : undefined;
-    encodePass(commandEncoder, invertPipeline, invertBindGroup, { x: BLOCK_SIZE, y: numBlocks }, invertDesc);
+    encodePass(
+      commandEncoder,
+      invertPipeline,
+      invertBindGroup,
+      { x: BLOCK_SIZE, y: numBlocks },
+      invertDesc,
+    );
 
     for (let bi = 0; bi < blockStarts.length; bi++) {
       const blockStart = blockStarts[bi];
@@ -167,28 +204,43 @@ export async function strsv(device, uplo, trans, diag, n, A, lda, x, incx, layou
       const isLastPass = bi === blockStarts.length - 1;
       const paramsOffset = blockIndex * stride;
 
-      const applyBindGroup = createBindGroup(device, applyPipeline.getBindGroupLayout(0), [
-        AinvBuffer, xBuffer, { buffer: applyParamsBuffer, offset: paramsOffset, size: 16 },
-      ]);
+      const applyBindGroup = createBindGroup(
+        device,
+        applyPipeline.getBindGroupLayout(0),
+        [
+          AinvBuffer,
+          xBuffer,
+          { buffer: applyParamsBuffer, offset: paramsOffset, size: 16 },
+        ],
+      );
 
-      const applyDesc = isLastPass && querySet
-        ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } }
-        : undefined;
+      const applyDesc =
+        isLastPass && querySet
+          ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } }
+          : undefined;
       encodePass(commandEncoder, applyPipeline, applyBindGroup, 1, applyDesc);
 
       const remaining = forward ? n - blockEnd : blockStart;
       if (remaining === 0) continue;
 
-      const updateBindGroup = createBindGroup(device, updatePipeline.getBindGroupLayout(0), [
-        ABuffer, xBuffer, { buffer: updateParamsBuffer, offset: paramsOffset, size: 32 },
-      ]);
+      const updateBindGroup = createBindGroup(
+        device,
+        updatePipeline.getBindGroupLayout(0),
+        [
+          ABuffer,
+          xBuffer,
+          { buffer: updateParamsBuffer, offset: paramsOffset, size: 32 },
+        ],
+      );
 
       const wgCount = Math.min(remaining, maxWg);
       encodePass(commandEncoder, updatePipeline, updateBindGroup, wgCount);
     }
 
     const ts = resolveTimestamp(device, commandEncoder, querySet);
-    const readBuffer = xIsGpu ? null : stageReadback(device, commandEncoder, xBuffer);
+    const readBuffer = xIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, xBuffer);
 
     submit(device, commandEncoder);
 

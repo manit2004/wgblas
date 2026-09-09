@@ -8,7 +8,11 @@ import { getPowerPreference } from "../../helpers/device.js";
 import { sgemm } from "wgblas/sgemm";
 import { loadParam } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
-import { padMatrix, unpadMatrix, withGpuResources } from "../../helpers/gpustorage.js";
+import {
+  padMatrix,
+  unpadMatrix,
+  withGpuResources,
+} from "../../helpers/gpustorage.js";
 import { forwardFactor } from "../helpers.js";
 import { sgemmReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
@@ -32,17 +36,17 @@ const validationSpecs = {
   transA: loadParam("trans"),
   transB: loadParam("trans"),
   layout: loadParam("layout"),
-  m:      { ...loadParam("m"), baseline: 2 },
-  n:      { ...nSpec, baseline: 2, edge: nSpec.edge.filter((e) => e.value !== -1) },
-  k:      loadParam("k"),
-  alpha:  loadParam("alpha"),
-  beta:   loadParam("beta"),
-  A:      { ...aSpec, ...aSpec["level-3"] },
-  lda:    ldSpec,
-  B:      loadParam("B"),
-  ldb:    ldSpec,
-  C:      loadParam("C"),
-  ldc:    ldSpec,
+  m: { ...loadParam("m"), baseline: 2 },
+  n: { ...nSpec, baseline: 2, edge: nSpec.edge.filter((e) => e.value !== -1) },
+  k: loadParam("k"),
+  alpha: loadParam("alpha"),
+  beta: loadParam("beta"),
+  A: { ...aSpec, ...aSpec["level-3"] },
+  lda: ldSpec,
+  B: loadParam("B"),
+  ldb: ldSpec,
+  C: loadParam("C"),
+  ldc: ldSpec,
 };
 
 // Cap m/n/k — validationSpecs' full range is too slow for property tests.
@@ -71,12 +75,45 @@ async function callGpuResident(dev, a) {
 
   return withGpuResources(
     {
-      A: GpuMatrix.from(padMatrix(a.A, aOuterCount, a.lda), aRows, aCols, a.lda, layout),
-      B: GpuMatrix.from(padMatrix(a.B, bOuterCount, a.ldb), bRows, bCols, a.ldb, layout),
-      C: GpuMatrix.from(padMatrix(a.C, cOuterCount, a.ldc), a.m, a.n, a.ldc, layout),
+      A: GpuMatrix.from(
+        padMatrix(a.A, aOuterCount, a.lda),
+        aRows,
+        aCols,
+        a.lda,
+        layout,
+      ),
+      B: GpuMatrix.from(
+        padMatrix(a.B, bOuterCount, a.ldb),
+        bRows,
+        bCols,
+        a.ldb,
+        layout,
+      ),
+      C: GpuMatrix.from(
+        padMatrix(a.C, cOuterCount, a.ldc),
+        a.m,
+        a.n,
+        a.ldc,
+        layout,
+      ),
     },
     async ({ A, B, C }) => {
-      await sgemm(dev, a.transA, a.transB, a.m, a.n, a.k, a.alpha, A, a.lda, B, a.ldb, a.beta, C, a.ldc);
+      await sgemm(
+        dev,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        A,
+        a.lda,
+        B,
+        a.ldb,
+        a.beta,
+        C,
+        a.ldc,
+      );
       const dense = await C.read();
       return { C: unpadMatrix(dense, a.C, a.m, a.n, a.ldc, layout) };
     },
@@ -101,12 +138,19 @@ test("sgemm edge cases (GPU-resident)", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        transA: tc.transA, transB: tc.transB,
-        m: tc.m, n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        transA: tc.transA,
+        transB: tc.transB,
+        m: tc.m,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
@@ -120,12 +164,19 @@ test("sgemm edge cases (GPU-resident, column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        transA: tc.transA, transB: tc.transB,
-        m: tc.m, n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        transA: tc.transA,
+        transB: tc.transB,
+        m: tc.m,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);

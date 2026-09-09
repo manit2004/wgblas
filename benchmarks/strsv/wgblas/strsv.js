@@ -2,7 +2,10 @@ import { init, cleanup } from "wgblas";
 import { strsv } from "wgblas/strsv";
 import { GpuVector } from "wgblas/classes/GpuVector";
 import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array, randomTriangularFloat32Array } from "wgblas/random";
+import {
+  randomFloat32Array,
+  randomTriangularFloat32Array,
+} from "wgblas/random";
 import {
   median,
   printHeader,
@@ -54,7 +57,11 @@ for (const size of SIZES) {
   // row-major then transposed to genuine column-major storage of the same
   // logical (still well-conditioned, still lower-triangular) matrix.
   const AGpu = GpuMatrix.from(
-    toColumnMajor(randomTriangularFloat32Array(n, lda, "lower"), n, n), n, n, lda, "column-major",
+    toColumnMajor(randomTriangularFloat32Array(n, lda, "lower"), n, n),
+    n,
+    n,
+    lda,
+    "column-major",
   );
   const b = randomFloat32Array(n);
 
@@ -71,14 +78,32 @@ for (const size of SIZES) {
   // warm up
   for (let i = 0; i < WARMUP_ITERS; i++) {
     resetX();
-    await strsv(device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1);
+    await strsv(
+      device,
+      "lower",
+      "no-transpose",
+      "non-unit",
+      n,
+      AGpu,
+      lda,
+      xGpu,
+      1,
+    );
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     resetX();
     const { gpuTimeMs } = await strsv(
-      device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1,
+      device,
+      "lower",
+      "no-transpose",
+      "non-unit",
+      n,
+      AGpu,
+      lda,
+      xGpu,
+      1,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
@@ -92,10 +117,16 @@ for (const size of SIZES) {
   const numBlocks = Math.ceil(n / BLOCK_SIZE);
   const msPerBlock = med / numBlocks;
   // lower triangle A read + x read + x write (in place)
-  const bytes = (n * (n + 1) / 2 + n + n) * 4;
+  const bytes = ((n * (n + 1)) / 2 + n + n) * 4;
   const gbs = bytes / 1e9 / (med / 1e3);
   printRow(COLS, [n, numBlocks, med, msPerBlock, gbs]);
-  records.push({ n, numBlocks, compute_ms: med, ms_per_block: msPerBlock, compute_GBs: gbs });
+  records.push({
+    n,
+    numBlocks,
+    compute_ms: med,
+    ms_per_block: msPerBlock,
+    compute_GBs: gbs,
+  });
 }
 
 saveResults("strsv", gpuModel, records, { folder: "strsv" });

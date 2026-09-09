@@ -145,7 +145,10 @@ const workgroups = vec4Count / WORKGROUP_SIZE;
 function build(code, buffers) {
   const pipeline = device.createComputePipeline({
     layout: "auto",
-    compute: { module: device.createShaderModule({ code }), entryPoint: "main" },
+    compute: {
+      module: device.createShaderModule({ code }),
+      entryPoint: "main",
+    },
   });
   return {
     pipeline,
@@ -182,10 +185,10 @@ printHeader(COLS);
 const records = [];
 for (const [pattern, code, perElem, buffers] of [
   // pattern, shader, bytes moved per element, buffers to bind
-  ["copy", COPY_WGSL, 32, [src, dst]],  // read + write, two buffers
-  ["scale", SCALE_WGSL, 32, [dst]],     // read + write, one buffer, in place
-  ["read", READ_WGSL, 16, [src, dst]],  // read only
-  ["scale_f32", SCALE_F32_WGSL, 8, [dst]],    // scalar, read + write, in place
+  ["copy", COPY_WGSL, 32, [src, dst]], // read + write, two buffers
+  ["scale", SCALE_WGSL, 32, [dst]], // read + write, one buffer, in place
+  ["read", READ_WGSL, 16, [src, dst]], // read only
+  ["scale_f32", SCALE_F32_WGSL, 8, [dst]], // scalar, read + write, in place
   ["read_f32", READ_F32_WGSL, 4, [src, dst]], // scalar, read only
 ]) {
   const scalar = pattern.endsWith("_f32");

@@ -15,7 +15,6 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { WGS } from "../util/constants.mjs";
 import { requireSameDevice } from "../util/device.mjs";
 
-
 export async function sasum(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
@@ -46,7 +45,8 @@ export async function sasum(device, n, x, incx) {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sasum-x", false);
     partialsBuffer = createStorageBuffer(device, 2 * WGS * 4, "sasum-partials"); // 2*WGS partial sums of f32
     resultBuffer = createResultBuffer(device, 4, "sasum-result"); // final f32 scalar
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -59,7 +59,8 @@ export async function sasum(device, n, x, incx) {
       partialsBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(device,
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+      device,
       pipelineMain,
       bgMain,
       2 * WGS,
@@ -67,11 +68,13 @@ export async function sasum(device, n, x, incx) {
 
     submit(device, enc1);
 
-    const bgReduce = createBindGroup(device, pipelineReduce.getBindGroupLayout(0), [
-      partialsBuffer,
-      resultBuffer,
-    ]);
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(device,
+    const bgReduce = createBindGroup(
+      device,
+      pipelineReduce.getBindGroupLayout(0),
+      [partialsBuffer, resultBuffer],
+    );
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+      device,
       pipelineReduce,
       bgReduce,
       1,

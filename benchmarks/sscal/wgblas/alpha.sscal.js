@@ -65,6 +65,9 @@ for (const alpha of ALPHAS) {
   }
 }
 
-saveResults("sscal", gpuModel, records, { folder: "sscal", fileName: "alpha.sscal" });
+saveResults("sscal", gpuModel, records, {
+  folder: "sscal",
+  fileName: "alpha.sscal",
+});
 
 cleanup();

@@ -61,6 +61,9 @@ for (const alpha of ALPHAS) {
   }
 }
 
-saveResults("daxpy", gpuModel, records, { folder: "daxpy", fileName: "alpha.daxpy" });
+saveResults("daxpy", gpuModel, records, {
+  folder: "daxpy",
+  fileName: "alpha.daxpy",
+});
 
 cleanup();

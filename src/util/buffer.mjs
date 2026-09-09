@@ -29,7 +29,7 @@ function requireStorageSize(device, byteSize, label) {
   if (byteSize > maxSize) {
     throw new Error(
       `Buffer "${label}" needs ${byteSize} bytes, exceeding this device's ` +
-      `maxStorageBufferBindingSize (${maxSize} bytes). The operands are too large for this device.`,
+        `maxStorageBufferBindingSize (${maxSize} bytes). The operands are too large for this device.`,
     );
   }
 }
@@ -51,7 +51,12 @@ function requireStorageSize(device, byteSize, label) {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer/unmap GPUBuffer.unmap()}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits GPUSupportedLimits} (`maxStorageBufferBindingSize`)
  */
-export function uploadBuffer(device, data, label = "blas-input", readback = false) {
+export function uploadBuffer(
+  device,
+  data,
+  label = "blas-input",
+  readback = false,
+) {
   const byteSize = data.byteLength;
   requireStorageSize(device, byteSize, label);
 
@@ -86,7 +91,12 @@ export function uploadBuffer(device, data, label = "blas-input", readback = fals
  * @throws {Error} if `size` exceeds the device's `maxStorageBufferBindingSize`
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer GPUDevice.createBuffer()}
  */
-export function createStorageBuffer(device, size, label = "blas-storage", extraUsage = 0) {
+export function createStorageBuffer(
+  device,
+  size,
+  label = "blas-storage",
+  extraUsage = 0,
+) {
   requireStorageSize(device, size, label);
   return device.createBuffer({
     label,
@@ -125,7 +135,6 @@ export function createResultBuffer(device, size, label = "blas-result") {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUCommandEncoder/copyBufferToBuffer GPUCommandEncoder.copyBufferToBuffer()}
  */
 export function stageReadback(device, commandEncoder, sourceBuffer) {
-
   // COPY_DST: receives the copyBufferToBuffer transfer; MAP_READ: lets the CPU map and read it back.
   const readBuffer = device.createBuffer({
     label: "blas-readback",
@@ -134,9 +143,11 @@ export function stageReadback(device, commandEncoder, sourceBuffer) {
   });
 
   commandEncoder.copyBufferToBuffer(
-    sourceBuffer, 0,              // src, srcOffset
-    readBuffer,   0,              // dst, dstOffset
-    sourceBuffer.size,            // full copy, no partial reads
+    sourceBuffer,
+    0, // src, srcOffset
+    readBuffer,
+    0, // dst, dstOffset
+    sourceBuffer.size, // full copy, no partial reads
   );
 
   return readBuffer;
@@ -179,10 +190,17 @@ function vec4FallbackBuffer(device) {
 export function vec4ViewBinding(device, entry) {
   const buffer = entry instanceof GPUBuffer ? entry : entry.buffer;
   const offset = entry instanceof GPUBuffer ? 0 : (entry.offset ?? 0);
-  const avail = (entry instanceof GPUBuffer ? entry.size : (entry.size ?? buffer.size - offset));
+  const avail =
+    entry instanceof GPUBuffer
+      ? entry.size
+      : (entry.size ?? buffer.size - offset);
   const size = Math.floor(avail / VEC4_ELEM_BYTES) * VEC4_ELEM_BYTES;
   if (size < VEC4_ELEM_BYTES) {
-    return { buffer: vec4FallbackBuffer(device), offset: 0, size: VEC4_ELEM_BYTES };
+    return {
+      buffer: vec4FallbackBuffer(device),
+      offset: 0,
+      size: VEC4_ELEM_BYTES,
+    };
   }
   return { buffer, offset, size };
 }
@@ -206,12 +224,16 @@ export function vec4Usable(entry, stride, outerCount, innerCount) {
   if (stride % 4 !== 0) return false;
   const buffer = entry instanceof GPUBuffer ? entry : entry.buffer;
   const offset = entry instanceof GPUBuffer ? 0 : (entry.offset ?? 0);
-  const avail = (entry instanceof GPUBuffer ? buffer.size : (entry.size ?? buffer.size - offset));
+  const avail =
+    entry instanceof GPUBuffer
+      ? buffer.size
+      : (entry.size ?? buffer.size - offset);
   const viewFloats = Math.floor(avail / VEC4_ELEM_BYTES) * 4;
   if (viewFloats <= 0) return false;
   // Highest flat index any masked-in component can touch; usable iff its
   // containing vec4 ends within the view.
-  const maxFlat = (Math.max(outerCount, 1) - 1) * stride + (Math.max(innerCount, 1) - 1);
+  const maxFlat =
+    (Math.max(outerCount, 1) - 1) * stride + (Math.max(innerCount, 1) - 1);
   return Math.floor(maxFlat / 4) * 4 + 4 <= viewFloats;
 }
 
@@ -226,7 +248,6 @@ export function vec4Usable(entry, stride, outerCount, innerCount) {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUQueue/writeBuffer GPUQueue.writeBuffer()}
  */
 export function createParamsBuffer(device, params, label = "blas-params") {
-
   const rawSize = params.length * 4;
   const size = Math.ceil(rawSize / 16) * 16;
 

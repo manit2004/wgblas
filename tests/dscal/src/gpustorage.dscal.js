@@ -31,13 +31,16 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  alpha:  loadParam("alpha64"),
-  x:      loadParam("x64"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  alpha: loadParam("alpha64"),
+  x: loadParam("x64"),
 };
 
-const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
+const fixtureSpecs = {
+  ...validationSpecs,
+  n: { ...validationSpecs.n, range: { min: 1, max: 50 } },
+};
 
 async function callGpuResident(dev, a) {
   return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {

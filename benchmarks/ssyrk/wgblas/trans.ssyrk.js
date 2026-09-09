@@ -41,7 +41,19 @@ for (const trans of TRANS) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssyrk(device, "lower", trans, n, k, 1.0, A, k, 0.0, C, n);
+      const { gpuTimeMs } = await ssyrk(
+        device,
+        "lower",
+        trans,
+        n,
+        k,
+        1.0,
+        A,
+        k,
+        0.0,
+        C,
+        n,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -57,6 +69,9 @@ for (const trans of TRANS) {
   }
 }
 
-saveResults("ssyrk", gpuModel, records, { folder: "ssyrk", fileName: "trans.ssyrk" });
+saveResults("ssyrk", gpuModel, records, {
+  folder: "ssyrk",
+  fileName: "trans.ssyrk",
+});
 
 cleanup();

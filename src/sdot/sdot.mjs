@@ -15,7 +15,6 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { WGS } from "../util/constants.mjs";
 import { requireSameDevice } from "../util/device.mjs";
 
-
 export async function sdot(device, n, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
@@ -64,7 +63,8 @@ export async function sdot(device, n, x, incx, y, incy) {
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sdot-y", false);
     partialsBuffer = createStorageBuffer(device, 2 * WGS * 4, "sdot-partials"); //to hold 2*WGS partial sums of f32
     resultBuffer = createResultBuffer(device, 4, "sdot-result"); //to hold the final float32 dot product
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -79,7 +79,8 @@ export async function sdot(device, n, x, incx, y, incy) {
       partialsBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(device,
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+      device,
       pipelineMain,
       bgMain,
       2 * WGS,
@@ -87,11 +88,13 @@ export async function sdot(device, n, x, incx, y, incy) {
 
     submit(device, enc1);
 
-    const bgReduce = createBindGroup(device, pipelineReduce.getBindGroupLayout(0), [
-      partialsBuffer,
-      resultBuffer,
-    ]);
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(device,
+    const bgReduce = createBindGroup(
+      device,
+      pipelineReduce.getBindGroupLayout(0),
+      [partialsBuffer, resultBuffer],
+    );
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+      device,
       pipelineReduce,
       bgReduce,
       1,

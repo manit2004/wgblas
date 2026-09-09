@@ -46,8 +46,12 @@ for (const pad of PADS) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped pad=${pad}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped pad=${pad}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -55,12 +59,34 @@ for (const pad of PADS) {
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await strsv(device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1, "row-major");
+      await strsv(
+        device,
+        "lower",
+        "no-transpose",
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await strsv(device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1, "row-major");
+      const { gpuTimeMs } = await strsv(
+        device,
+        "lower",
+        "no-transpose",
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -70,13 +96,16 @@ for (const pad of PADS) {
     if (times.length === 0) continue;
     const med = median(times);
     // stored triangle + x read/write — logical elements touched, same for every pad
-    const bytes = (n * (n + 1) / 2 + 2 * n) * 4;
+    const bytes = ((n * (n + 1)) / 2 + 2 * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [pad, n, med, gbs]);
     records.push({ pad, n, compute_ms: med, compute_GBs: gbs });
   }
 }
 
-saveResults("strsv", gpuModel, records, { folder: "strsv", fileName: "lda.strsv" });
+saveResults("strsv", gpuModel, records, {
+  folder: "strsv",
+  fileName: "lda.strsv",
+});
 
 cleanup();

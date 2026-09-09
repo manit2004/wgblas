@@ -48,38 +48,66 @@ test("honours the requested typed-array type, preserving raw bits", async () => 
   const bits = new Uint32Array([0x7fc00001, 0xdeadbeef, 0, 0xffffffff]);
   const out = await roundTrip(bits, Uint32Array);
   assert.ok(out instanceof Uint32Array, "expected a Uint32Array");
-  assert.deepEqual(Array.from(out), Array.from(bits), "bit patterns must survive unchanged");
+  assert.deepEqual(
+    Array.from(out),
+    Array.from(bits),
+    "bit patterns must survive unchanged",
+  );
 });
 
 test("the returned array survives the unmap", async () => {
   // If the .slice() were dropped, the view would be detached by unmap() and
   // reading it would give zeroes or throw.
   const out = await roundTrip(new Float32Array([7, 8, 9]));
-  assert.equal(out.buffer.byteLength, 12, "result should own its memory, not view mapped GPU memory");
-  assert.deepEqual(Array.from(out), [7, 8, 9], "values should still be readable after unmap");
+  assert.equal(
+    out.buffer.byteLength,
+    12,
+    "result should own its memory, not view mapped GPU memory",
+  );
+  assert.deepEqual(
+    Array.from(out),
+    [7, 8, 9],
+    "values should still be readable after unmap",
+  );
 });
 
 test("destroys the readback buffer on success", async () => {
-  const src = uploadBuffer(device, new Float32Array([1, 2]), "result-test-src", true);
+  const src = uploadBuffer(
+    device,
+    new Float32Array([1, 2]),
+    "result-test-src",
+    true,
+  );
   const enc = device.createCommandEncoder();
   const readBuffer = stageReadback(device, enc, src);
   device.queue.submit([enc.finish()]);
   await extractResult(readBuffer);
   // A destroyed buffer cannot be mapped again; if it were still alive this
   // would resolve instead of rejecting.
-  await assert.rejects(() => readBuffer.mapAsync(GPUMapMode.READ), "buffer should have been destroyed");
+  await assert.rejects(
+    () => readBuffer.mapAsync(GPUMapMode.READ),
+    "buffer should have been destroyed",
+  );
   src.destroy();
 });
 
 test("destroys the readback buffer even when mapping fails", async () => {
   // The finally is the point: a buffer that never maps must not leak.
-  const src = uploadBuffer(device, new Float32Array([1, 2]), "result-test-src", true);
+  const src = uploadBuffer(
+    device,
+    new Float32Array([1, 2]),
+    "result-test-src",
+    true,
+  );
   const enc = device.createCommandEncoder();
   const readBuffer = stageReadback(device, enc, src);
   device.queue.submit([enc.finish()]);
   readBuffer.destroy(); // force mapAsync to fail
 
-  await assert.rejects(() => extractResult(readBuffer), "expected the mapping failure to propagate");
+  await assert.rejects(
+    () => extractResult(readBuffer),
+    "expected the mapping failure to propagate",
+  );
   // Still destroyed, and destroying twice must not throw.
   assert.doesNotThrow(() => readBuffer.destroy());
   src.destroy();

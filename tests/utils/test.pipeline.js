@@ -10,12 +10,17 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { getPipeline, loadShader } from "../../src/util/pipeline.mjs";
-import { uploadBuffer, createParamsBuffer, destroyBuffers } from "../../src/util/buffer.mjs";
+import {
+  uploadBuffer,
+  createParamsBuffer,
+  destroyBuffers,
+} from "../../src/util/buffer.mjs";
 import { createBindGroup } from "../../src/util/bindgroup.mjs";
 import { getPowerPreference } from "../helpers/device.js";
 
 const primaryPref = getPowerPreference();
-const secondaryPref = primaryPref === "low-power" ? "high-performance" : "low-power";
+const secondaryPref =
+  primaryPref === "low-power" ? "high-performance" : "low-power";
 
 let device;
 let secondary = null;
@@ -25,7 +30,8 @@ before(async () => {
   device = await init({ powerPreference: primaryPref });
   try {
     const other = await init({ powerPreference: secondaryPref });
-    if (other === device) skipReason = "both preferences resolved to the same device";
+    if (other === device)
+      skipReason = "both preferences resolved to the same device";
     else secondary = other;
   } catch (err) {
     skipReason = err.message;
@@ -36,7 +42,10 @@ after(() => cleanup());
 test("compiles a shader into a compute pipeline", async () => {
   const pipeline = await getPipeline(device, "sscal");
   assert.ok(pipeline, "expected a pipeline");
-  assert.ok(pipeline.getBindGroupLayout(0), "pipeline should expose a derived bind group layout");
+  assert.ok(
+    pipeline.getBindGroupLayout(0),
+    "pipeline should expose a derived bind group layout",
+  );
 });
 
 test("the same shader on the same device is returned from cache", async () => {
@@ -48,7 +57,11 @@ test("the same shader on the same device is returned from cache", async () => {
 test("different shaders get different pipelines", async () => {
   const sscal = await getPipeline(device, "sscal");
   const saxpy = await getPipeline(device, "saxpy");
-  assert.notEqual(saxpy, sscal, "distinct shaders must not share a cache entry");
+  assert.notEqual(
+    saxpy,
+    sscal,
+    "distinct shaders must not share a cache entry",
+  );
 });
 
 test("concatenated shader lists are cached under their combined key", async () => {
@@ -60,7 +73,11 @@ test("concatenated shader lists are cached under their combined key", async () =
   assert.equal(again, combined, "the same list should hit the cache");
   // A different tail over the same deps is a different program.
   const other = await getPipeline(device, [...deps, "reduction/sumF64"]);
-  assert.notEqual(other, combined, "a list must be keyed by its whole contents");
+  assert.notEqual(
+    other,
+    combined,
+    "a list must be keyed by its whole contents",
+  );
 });
 
 test("the cache is keyed per device", async (t) => {
@@ -72,7 +89,11 @@ test("the cache is keyed per device", async (t) => {
   // handed back for `secondary`.
   const onPrimary = await getPipeline(device, "sscal");
   const onSecondary = await getPipeline(secondary, "sscal");
-  assert.notEqual(onSecondary, onPrimary, "each device needs its own compiled pipeline");
+  assert.notEqual(
+    onSecondary,
+    onPrimary,
+    "each device needs its own compiled pipeline",
+  );
   // ...and each device's entry stays stable.
   assert.equal(await getPipeline(device, "sscal"), onPrimary);
   assert.equal(await getPipeline(secondary, "sscal"), onSecondary);
@@ -92,15 +113,30 @@ test("loadShader compiles on the device it is given, not a cached one", async (t
   const pipeline = await loadShader(secondary, ["sscal"]);
   assert.ok(pipeline, "expected a pipeline from the secondary device");
 
-  const x = uploadBuffer(secondary, new Float32Array([1, 2, 3]), "pipe-x", true);
-  const params = createParamsBuffer(secondary, [
-    { value: 3, type: "u32" }, { value: 2, type: "f32" }, { value: 1, type: "u32" },
-  ], "pipe-params");
+  const x = uploadBuffer(
+    secondary,
+    new Float32Array([1, 2, 3]),
+    "pipe-x",
+    true,
+  );
+  const params = createParamsBuffer(
+    secondary,
+    [
+      { value: 3, type: "u32" },
+      { value: 2, type: "f32" },
+      { value: 1, type: "u32" },
+    ],
+    "pipe-params",
+  );
   try {
     secondary.pushErrorScope("validation");
     createBindGroup(secondary, pipeline.getBindGroupLayout(0), [x, params]);
     const err = await secondary.popErrorScope();
-    assert.equal(err, null, "the layout must belong to the device loadShader was given");
+    assert.equal(
+      err,
+      null,
+      "the layout must belong to the device loadShader was given",
+    );
   } finally {
     destroyBuffers(x, params);
   }

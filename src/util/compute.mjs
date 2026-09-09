@@ -37,7 +37,13 @@ export function beginTimedEncoder(device) {
  * @param {object} [passDescriptor] - passed to `beginComputePass`, e.g. for timestamp writes
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUCommandEncoder/beginComputePass GPUCommandEncoder.beginComputePass()}
  */
-export function encodePass(commandEncoder, pipeline, bindGroup, workgroups, passDescriptor) {
+export function encodePass(
+  commandEncoder,
+  pipeline,
+  bindGroup,
+  workgroups,
+  passDescriptor,
+) {
   const passEncoder = commandEncoder.beginComputePass(passDescriptor);
 
   passEncoder.setPipeline(pipeline);
@@ -47,7 +53,11 @@ export function encodePass(commandEncoder, pipeline, bindGroup, workgroups, pass
     passEncoder.dispatchWorkgroups(workgroups);
   } else {
     // `?? 1` is load-bearing — confirmed passing undefined (from an {x,y}-only caller) crashes the process, not just no-ops.
-    passEncoder.dispatchWorkgroups(workgroups.x, workgroups.y, workgroups.z ?? 1);
+    passEncoder.dispatchWorkgroups(
+      workgroups.x,
+      workgroups.y,
+      workgroups.z ?? 1,
+    );
   }
 
   passEncoder.end();
@@ -64,7 +74,8 @@ export function encodePass(commandEncoder, pipeline, bindGroup, workgroups, pass
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
  */
 export function runComputePass(device, pipeline, bindGroup, workgroups) {
-  const { commandEncoder, querySet, passDescriptor } = beginTimedEncoder(device);
+  const { commandEncoder, querySet, passDescriptor } =
+    beginTimedEncoder(device);
   encodePass(commandEncoder, pipeline, bindGroup, workgroups, passDescriptor);
 
   const ts = resolveTimestamp(device, commandEncoder, querySet);

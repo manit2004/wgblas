@@ -66,6 +66,9 @@ for (const alpha of ALPHAS) {
   }
 }
 
-saveResults("saxpy", gpuModel, records, { folder: "saxpy", fileName: "alpha.saxpy" });
+saveResults("saxpy", gpuModel, records, {
+  folder: "saxpy",
+  fileName: "alpha.saxpy",
+});
 
 cleanup();

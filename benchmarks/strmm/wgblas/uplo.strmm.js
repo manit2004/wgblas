@@ -43,21 +43,60 @@ for (const uplo of UPLOS) {
     const lda = n;
     const ldb = n;
 
-    if (Math.max(n * lda * 4, n * ldb * 4) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped uplo=${uplo}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(n * lda * 4, n * ldb * 4) >
+      device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped uplo=${uplo}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
-    const BGpu = GpuMatrix.from(randomFloat32Array(n * ldb), n, n, ldb, "row-major");
+    const BGpu = GpuMatrix.from(
+      randomFloat32Array(n * ldb),
+      n,
+      n,
+      ldb,
+      "row-major",
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await strmm(device, "left", uplo, "no-transpose", "non-unit", n, n, 1.0, AGpu, lda, BGpu, ldb, "row-major");
+      await strmm(
+        device,
+        "left",
+        uplo,
+        "no-transpose",
+        "non-unit",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await strmm(device, "left", uplo, "no-transpose", "non-unit", n, n, 1.0, AGpu, lda, BGpu, ldb, "row-major");
+      const { gpuTimeMs } = await strmm(
+        device,
+        "left",
+        uplo,
+        "no-transpose",
+        "non-unit",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -72,10 +111,19 @@ for (const uplo of UPLOS) {
     const bytes = (3 * n * n + 5 * n * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [uplo, n, med, gflops, gbs]);
-    records.push({ uplo, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+    records.push({
+      uplo,
+      n,
+      compute_ms: med,
+      compute_GFLOPs: gflops,
+      compute_GBs: gbs,
+    });
   }
 }
 
-saveResults("strmm", gpuModel, records, { folder: "strmm", fileName: "uplo.strmm" });
+saveResults("strmm", gpuModel, records, {
+  folder: "strmm",
+  fileName: "uplo.strmm",
+});
 
 cleanup();

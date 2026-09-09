@@ -2,12 +2,22 @@ import { getDevice } from "../init.mjs";
 import { uploadBuffer, stageReadback } from "../util/buffer.mjs";
 import { extractResult } from "../util/result.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
-import { interleaveComplex32, splitComplex64, mergeComplex64 } from "../util/complex.mjs";
+import {
+  interleaveComplex32,
+  splitComplex64,
+  mergeComplex64,
+} from "../util/complex.mjs";
 import { Complex32Array } from "./Complex32.mjs";
 import { Complex64Array } from "./Complex64.mjs";
 
 export class GpuVector {
-  constructor(buffer, length, dtype = Float32Array, loBuffer = null, device = null) {
+  constructor(
+    buffer,
+    length,
+    dtype = Float32Array,
+    loBuffer = null,
+    device = null,
+  ) {
     this._buf = buffer;
     this._loBuf = loBuffer; // Non-null only for Float64Array-backed vectors
     this.length = length;
@@ -40,7 +50,12 @@ export class GpuVector {
       return new GpuVector(hiBuf, data.length, Float64Array, loBuf, device);
     }
     if (data instanceof Complex32Array) {
-      const buf = uploadBuffer(device, interleaveComplex32(data), "gpu-vector-complex32", true);
+      const buf = uploadBuffer(
+        device,
+        interleaveComplex32(data),
+        "gpu-vector-complex32",
+        true,
+      );
       return new GpuVector(buf, data.length, Complex32Array, null, device);
     }
     if (data instanceof Complex64Array) {
@@ -50,7 +65,9 @@ export class GpuVector {
       return new GpuVector(hiBuf, data.length, Complex64Array, loBuf, device);
     }
     if (!(data instanceof Float32Array)) {
-      throw new Error("GpuVector.from expects a Float32Array, Float64Array, Complex32Array, or Complex64Array.");
+      throw new Error(
+        "GpuVector.from expects a Float32Array, Float64Array, Complex32Array, or Complex64Array.",
+      );
     }
     const buf = uploadBuffer(device, data, "gpu-vector", true);
     return new GpuVector(buf, data.length, data.constructor, null, device);

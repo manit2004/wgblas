@@ -11,7 +11,14 @@ export function randomFloat64Array(n, low = -1, high = 1) {
 }
 
 export function randomTriangularFloat32Array(
-  n, lda, uplo = "lower", low = -1, high = 1, diagLow = 5, diagHigh = 15, layout = "row-major",
+  n,
+  lda,
+  uplo = "lower",
+  low = -1,
+  high = 1,
+  diagLow = 5,
+  diagHigh = 15,
+  layout = "row-major",
 ) {
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");

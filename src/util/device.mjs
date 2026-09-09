@@ -22,12 +22,13 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  */
 export function requireSameDevice(device, routine, operands) {
   for (const [name, value] of Object.entries(operands)) {
-    if (!(value instanceof GpuVector) && !(value instanceof GpuMatrix)) continue;
+    if (!(value instanceof GpuVector) && !(value instanceof GpuMatrix))
+      continue;
     if (value.device !== device) {
       throw new Error(
         `${routine}: ${name} belongs to a different GPUDevice than the one passed in. ` +
-        "GPU buffers cannot be shared across devices — recreate the operand on this " +
-        "device, or call the routine with the device that owns it.",
+          "GPU buffers cannot be shared across devices — recreate the operand on this " +
+          "device, or call the routine with the device that owns it.",
       );
     }
   }

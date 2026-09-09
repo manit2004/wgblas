@@ -13,9 +13,10 @@ export function backwardResidualFactor(gpu, ref, a) {
   const isNoTrans = trans === "no-transpose";
   const isUnit = diag === "unit";
   // A[row,col] flat index — column-major storage swaps which dimension lda strides over.
-  const at = layout === "column-major"
-    ? (row, col) => A[col * lda + row]
-    : (row, col) => A[row * lda + col];
+  const at =
+    layout === "column-major"
+      ? (row, col) => A[col * lda + row]
+      : (row, col) => A[row * lda + col];
   const elem = (r, c) => (isUnit && r === c ? 1 : at(r, c));
 
   let maxFactor = 0;
@@ -40,8 +41,9 @@ export function backwardResidualFactor(gpu, ref, a) {
 
     const err = Math.abs(acc - b[i * incx]);
     const bound = eps * (n + 1) * dotBound;
-    if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
-    else maxFactor = Math.max(maxFactor, err / bound);
+    if (bound === 0) {
+      if (err !== 0) maxFactor = Infinity;
+    } else maxFactor = Math.max(maxFactor, err / bound);
   }
   return maxFactor;
 }

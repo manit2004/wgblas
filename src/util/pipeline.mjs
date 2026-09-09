@@ -46,7 +46,8 @@ async function loadCode(shaderName) {
   if (typeof process === "undefined" || !process.versions?.node) {
     const { shaderSources } = await import("../shaders/index.mjs");
     const src = shaderSources[shaderName];
-    if (!src) throw new Error(`Shader "${shaderName}" not found in browser bundle.`);
+    if (!src)
+      throw new Error(`Shader "${shaderName}" not found in browser bundle.`);
     return src;
   } else {
     const { readFileSync } = await import("fs");
@@ -81,13 +82,21 @@ export async function loadShader(device, shaderNames, entryPoint = "main") {
   let offset = 0;
   const ranges = codes.map((c, i) => {
     const lineCount = c.split("\n").length;
-    const range = { name: shaderNames[i], startLine: offset + 1, endLine: offset + lineCount };
+    const range = {
+      name: shaderNames[i],
+      startLine: offset + 1,
+      endLine: offset + lineCount,
+    };
     offset += lineCount;
     return range;
   });
   const locate = (lineNum) => {
-    const range = lineNum && ranges.find((r) => lineNum >= r.startLine && lineNum <= r.endLine);
-    return range ? `${range.name}.wgsl:${lineNum - range.startLine + 1}` : `line ${lineNum}`;
+    const range =
+      lineNum &&
+      ranges.find((r) => lineNum >= r.startLine && lineNum <= r.endLine);
+    return range
+      ? `${range.name}.wgsl:${lineNum - range.startLine + 1}`
+      : `line ${lineNum}`;
   };
 
   const code = codes.join("\n");
@@ -106,7 +115,10 @@ export async function loadShader(device, shaderNames, entryPoint = "main") {
   // this project's WebGPU backend is unstable (intermittent multi-minute hangs and wrong
   // results, confirmed by bisection) when entryPoint is set explicitly, even to the shader's
   // only/correct entry point. Auto-detecting the single entry point is the stable path.
-  const compute = entryPoint === "main" ? { module: shaderModule } : { module: shaderModule, entryPoint };
+  const compute =
+    entryPoint === "main"
+      ? { module: shaderModule }
+      : { module: shaderModule, entryPoint };
   const pipeline = device.createComputePipeline({
     label,
     layout: "auto",

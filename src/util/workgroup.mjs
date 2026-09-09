@@ -2,7 +2,10 @@
 // Fixed sizes match the shader declarations (WGS = 64 for 1D, 8×8 = 64 threads
 // for 2D) — see constants.mjs, which is where both values are defined and
 // where the WGSL cross-check hangs off.
-import { WGS as WORKGROUP_SIZE_1D, TILE_WG_2D as WORKGROUP_SIZE_2D } from "./constants.mjs";
+import {
+  WGS as WORKGROUP_SIZE_1D,
+  TILE_WG_2D as WORKGROUP_SIZE_2D,
+} from "./constants.mjs";
 
 /**
  * Calculates the number of workgroups to dispatch, clamped to the device's
@@ -53,8 +56,8 @@ export function requireWorkgroupCount(device, count, routine, dim = "x") {
   if (count > max)
     throw new Error(
       `${routine}: this problem needs ${count} workgroups in ${dim}, but the device allows ` +
-      `${max} (maxComputeWorkgroupsPerDimension). The operands are too large for this device — ` +
-      `split the operation into smaller blocks.`,
+        `${max} (maxComputeWorkgroupsPerDimension). The operands are too large for this device — ` +
+        `split the operation into smaller blocks.`,
     );
   return count;
 }
@@ -71,9 +74,23 @@ export function requireWorkgroupCount(device, count, routine, dim = "x") {
  */
 export function requireWorkgroups(device, routine, rows, cols) {
   if (cols === undefined)
-    return requireWorkgroupCount(device, Math.ceil(rows / WORKGROUP_SIZE_1D), routine);
+    return requireWorkgroupCount(
+      device,
+      Math.ceil(rows / WORKGROUP_SIZE_1D),
+      routine,
+    );
   return {
-    x: requireWorkgroupCount(device, Math.ceil(cols / WORKGROUP_SIZE_2D), routine, "x"),
-    y: requireWorkgroupCount(device, Math.ceil(rows / WORKGROUP_SIZE_2D), routine, "y"),
+    x: requireWorkgroupCount(
+      device,
+      Math.ceil(cols / WORKGROUP_SIZE_2D),
+      routine,
+      "x",
+    ),
+    y: requireWorkgroupCount(
+      device,
+      Math.ceil(rows / WORKGROUP_SIZE_2D),
+      routine,
+      "y",
+    ),
   };
 }

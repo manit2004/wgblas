@@ -62,6 +62,9 @@ for (const alpha of ALPHAS) {
   }
 }
 
-saveResults("dscal", gpuModel, records, { folder: "dscal", fileName: "alpha.dscal" });
+saveResults("dscal", gpuModel, records, {
+  folder: "dscal",
+  fileName: "alpha.dscal",
+});
 
 cleanup();

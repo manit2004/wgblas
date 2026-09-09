@@ -8,7 +8,11 @@ import { getPowerPreference } from "../../helpers/device.js";
 import { strsm } from "wgblas/strsm";
 import { loadParam } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
-import { padMatrix, unpadMatrix, withGpuResources } from "../../helpers/gpustorage.js";
+import {
+  padMatrix,
+  unpadMatrix,
+  withGpuResources,
+} from "../../helpers/gpustorage.js";
 import { backwardResidualFactor } from "../helpers.js";
 import { strsmReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
@@ -28,26 +32,34 @@ after(() => {
 
 const nSpec = loadParam("n");
 const validationSpecs = {
-  side:   loadParam("side"),
-  uplo:   loadParam("uplo"),
+  side: loadParam("side"),
+  uplo: loadParam("uplo"),
   transA: loadParam("trans"),
-  diag:   loadParam("diag"),
+  diag: loadParam("diag"),
   layout: loadParam("layout"),
-  m:      { ...loadParam("m"), baseline: 2 },
+  m: { ...loadParam("m"), baseline: 2 },
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "must be non-negative", label: "negative" },
+    ],
   },
   alpha: loadParam("alpha"),
   // Off-diagonal range tightened to [-0.5,0.5] — see test.strsm.js for why
   // (explicit block inversion, unlike strsv's direct substitution, can grow
   // combinatorially with entries near ±1 under diag='unit').
-  A:     { ...loadParam("A"), dependsOn: ["m", "n", "lda", "side"], triangular: true, range: { elementMin: -0.5, elementMax: 0.5 } },
-  lda:   loadParam("ld"),
-  B:     { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
-  ldb:   loadParam("ld"),
+  A: {
+    ...loadParam("A"),
+    dependsOn: ["m", "n", "lda", "side"],
+    triangular: true,
+    range: { elementMin: -0.5, elementMax: 0.5 },
+  },
+  lda: loadParam("ld"),
+  B: { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
+  ldb: loadParam("ld"),
 };
 
 // Cap m/n — validationSpecs' full range is too slow for property tests.
@@ -69,11 +81,36 @@ async function callGpuResident(dev, a) {
 
   return withGpuResources(
     {
-      A: GpuMatrix.from(padMatrix(a.A, aOuterCount, a.lda), aOrder, aOrder, a.lda, layout),
-      B: GpuMatrix.from(padMatrix(a.B, bOuterCount, a.ldb), a.m, a.n, a.ldb, layout),
+      A: GpuMatrix.from(
+        padMatrix(a.A, aOuterCount, a.lda),
+        aOrder,
+        aOrder,
+        a.lda,
+        layout,
+      ),
+      B: GpuMatrix.from(
+        padMatrix(a.B, bOuterCount, a.ldb),
+        a.m,
+        a.n,
+        a.ldb,
+        layout,
+      ),
     },
     async ({ A, B }) => {
-      await strsm(dev, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, A, a.lda, B, a.ldb);
+      await strsm(
+        dev,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        A,
+        a.lda,
+        B,
+        a.ldb,
+      );
       const dense = await B.read();
       return { B: unpadMatrix(dense, a.B, a.m, a.n, a.ldb, layout) };
     },
@@ -98,15 +135,25 @@ test("strsm edge cases (GPU-resident)", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        side: tc.side, uplo: tc.uplo, transA: tc.transA, diag: tc.diag,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        transA: tc.transA,
+        diag: tc.diag,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
       const factor = backwardResidualFactor(got, expected, a);
-      assert.ok(factor <= THRESHOLD, `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`);
+      assert.ok(
+        factor <= THRESHOLD,
+        `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+      );
     });
   }
 });
@@ -116,15 +163,25 @@ test("strsm edge cases (GPU-resident, column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        side: tc.side, uplo: tc.uplo, transA: tc.transA, diag: tc.diag,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        transA: tc.transA,
+        diag: tc.diag,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
       const factor = backwardResidualFactor(got, expected, a);
-      assert.ok(factor <= THRESHOLD, `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`);
+      assert.ok(
+        factor <= THRESHOLD,
+        `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+      );
     });
   }
 });

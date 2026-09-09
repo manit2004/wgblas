@@ -71,9 +71,11 @@ export function resolveTimestamp(device, commandEncoder, querySet) {
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
   });
   commandEncoder.copyBufferToBuffer(
-    resolveBuffer, 0,   // src, srcOffset
-    tsReadBuffer,  0,   // dst, dstOffset
-    16,                 // full 16 bytes (both timestamps)
+    resolveBuffer,
+    0, // src, srcOffset
+    tsReadBuffer,
+    0, // dst, dstOffset
+    16, // full 16 bytes (both timestamps)
   );
   // resolveBuffer is returned to prevent GC — the copy command is only encoded here, not yet executed.
   return { tsReadBuffer, resolveBuffer, querySet };

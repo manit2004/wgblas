@@ -29,29 +29,53 @@ const validationSpecs = {
   transA: loadParam("trans"),
   transB: loadParam("trans"),
   layout: loadParam("layout"),
-  m:      { ...loadParam("m"), baseline: 2 },
+  m: { ...loadParam("m"), baseline: 2 },
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "m, n, and k must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      {
+        value: -1,
+        error: "m, n, and k must be non-negative",
+        label: "negative",
+      },
+    ],
   },
-  k:      loadParam("k"),
-  alpha:  loadParam("alpha"),
-  beta:   loadParam("beta"),
-  A:      { ...aSpec, ...aSpec["level-3"] },
-  lda:    ldSpec,
-  B:      loadParam("B"),
-  ldb:    ldSpec,
-  C:      loadParam("C"),
-  ldc:    ldSpec,
+  k: loadParam("k"),
+  alpha: loadParam("alpha"),
+  beta: loadParam("beta"),
+  A: { ...aSpec, ...aSpec["level-3"] },
+  lda: ldSpec,
+  B: loadParam("B"),
+  ldb: ldSpec,
+  C: loadParam("C"),
+  ldc: ldSpec,
 };
 
 test("sgemm validation", async (t) => {
   await runValidation(
     t,
     validationSpecs,
-    (a) => sgemm(a.device, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout),
+    (a) =>
+      sgemm(
+        a.device,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     { device },
   );
 });
@@ -73,7 +97,24 @@ test("sgemm fixtures", async (t) => {
     NUM_RUNS,
     THRESHOLD,
     fixtureSpecs,
-    async (dev, a) => sgemm(dev, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout),
+    async (dev, a) =>
+      sgemm(
+        dev,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     stdlibReference,
     forwardFactor,
   );
@@ -85,14 +126,36 @@ test("sgemm edge cases", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        transA: tc.transA, transB: tc.transB,
-        m: tc.m, n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        transA: tc.transA,
+        transB: tc.transB,
+        m: tc.m,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await sgemm(device, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc);
+      const got = await sgemm(
+        device,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });
@@ -105,17 +168,39 @@ test("sgemm edge cases (column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        transA: tc.transA, transB: tc.transB,
-        m: tc.m, n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        transA: tc.transA,
+        transB: tc.transB,
+        m: tc.m,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await sgemm(device, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout);
+      const got = await sgemm(
+        device,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });
   }
 });
-

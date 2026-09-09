@@ -37,22 +37,79 @@ for (const pad of PADS) {
     const ldb = n + pad;
     const ldc = n;
 
-    if (Math.max(n * lda * 4, n * ldb * 4, n * ldc * 4) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped pad=${pad}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(n * lda * 4, n * ldb * 4, n * ldc * 4) >
+      device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped pad=${pad}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
-    const AGpu = GpuMatrix.from(randomFloat32Array(n * lda), n, n, lda, "row-major");
-    const BGpu = GpuMatrix.from(randomFloat32Array(n * ldb), n, n, ldb, "row-major");
-    const CGpu = GpuMatrix.from(new Float32Array(n * ldc), n, n, ldc, "row-major");
+    const AGpu = GpuMatrix.from(
+      randomFloat32Array(n * lda),
+      n,
+      n,
+      lda,
+      "row-major",
+    );
+    const BGpu = GpuMatrix.from(
+      randomFloat32Array(n * ldb),
+      n,
+      n,
+      ldb,
+      "row-major",
+    );
+    const CGpu = GpuMatrix.from(
+      new Float32Array(n * ldc),
+      n,
+      n,
+      ldc,
+      "row-major",
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await sgemmtr(device, "lower", "no-transpose", "no-transpose", n, n, n, 1.0, AGpu, lda, BGpu, ldb, 0.0, CGpu, ldc, "row-major");
+      await sgemmtr(
+        device,
+        "lower",
+        "no-transpose",
+        "no-transpose",
+        n,
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        0.0,
+        CGpu,
+        ldc,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await sgemmtr(device, "lower", "no-transpose", "no-transpose", n, n, n, 1.0, AGpu, lda, BGpu, ldb, 0.0, CGpu, ldc, "row-major");
+      const { gpuTimeMs } = await sgemmtr(
+        device,
+        "lower",
+        "no-transpose",
+        "no-transpose",
+        n,
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        0.0,
+        CGpu,
+        ldc,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -68,10 +125,19 @@ for (const pad of PADS) {
     const bytes = (n * n + n * n + 2 * n * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [pad, n, med, gflops, gbs]);
-    records.push({ pad, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+    records.push({
+      pad,
+      n,
+      compute_ms: med,
+      compute_GFLOPs: gflops,
+      compute_GBs: gbs,
+    });
   }
 }
 
-saveResults("sgemmtr", gpuModel, records, { folder: "sgemmtr", fileName: "ldb.sgemmtr" });
+saveResults("sgemmtr", gpuModel, records, {
+  folder: "sgemmtr",
+  fileName: "ldb.sgemmtr",
+});
 
 cleanup();

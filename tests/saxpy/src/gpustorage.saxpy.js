@@ -25,12 +25,12 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  incy:   loadParam("incy"),
-  alpha:  loadParam("alpha"),
-  x:      loadParam("x"),
-  y:      loadParam("y"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  incy: loadParam("incy"),
+  alpha: loadParam("alpha"),
+  x: loadParam("x"),
+  y: loadParam("y"),
 };
 
 async function callGpuResident(dev, a) {
@@ -45,15 +45,15 @@ async function callGpuResident(dev, a) {
 
 test("saxpy fixtures (GPU-resident)", async (t) => {
   await runFixtures(
-    t,                      // node:test context
+    t, // node:test context
     "saxpy (GPU-resident)", // routine name — used in the diagnostic label
-    device,                 // WebGPU device instance
-    NUM_RUNS,               // 100 random inputs
-    1,                      // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
-    validationSpecs,        // param specs used to generate random inputs
-    callGpuResident,        // GPU call — wraps x and y into GpuVectors
-    stdlibReference,        // CPU reference
-    forwardFactor,          // |err| / (eps * |bound|) — see helpers.js
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    1, // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
+    validationSpecs, // param specs used to generate random inputs
+    callGpuResident, // GPU call — wraps x and y into GpuVectors
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (eps * |bound|) — see helpers.js
   );
 });
 
@@ -61,12 +61,12 @@ test("saxpy edge cases (GPU-resident)", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        alpha: c.alpha,            // scale factor applied to x
-        x: new Float32Array(c.x),  // input vector
-        incx: c.incx,              // stride through x
-        y: new Float32Array(c.y),  // input/output vector — accumulates alpha*x
-        incy: c.incy,              // stride through y
+        n: c.n, // vector length
+        alpha: c.alpha, // scale factor applied to x
+        x: new Float32Array(c.x), // input vector
+        incx: c.incx, // stride through x
+        y: new Float32Array(c.y), // input/output vector — accumulates alpha*x
+        incy: c.incy, // stride through y
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);

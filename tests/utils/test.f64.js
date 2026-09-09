@@ -14,8 +14,16 @@ test("hi is the f32 rounding and lo is the residual it dropped", () => {
   const x = new Float64Array([Math.PI, Math.E, 1 / 3]);
   const { hi, lo } = splitDoubleDouble(x);
   for (let i = 0; i < x.length; i++) {
-    assert.equal(hi[i], Math.fround(x[i]), `hi[${i}] should be the f32 rounding`);
-    assert.equal(lo[i], Math.fround(x[i] - Math.fround(x[i])), `lo[${i}] should be the residual`);
+    assert.equal(
+      hi[i],
+      Math.fround(x[i]),
+      `hi[${i}] should be the f32 rounding`,
+    );
+    assert.equal(
+      lo[i],
+      Math.fround(x[i] - Math.fround(x[i])),
+      `lo[${i}] should be the residual`,
+    );
   }
 });
 
@@ -48,7 +56,11 @@ test("values exactly representable in f32 leave lo at zero", () => {
   const x = new Float64Array([0, 0.5, 2, -8, 1024]);
   const { hi, lo } = splitDoubleDouble(x);
   assert.deepEqual(Array.from(lo), [0, 0, 0, 0, 0], "no residual expected");
-  assert.deepEqual(Array.from(mergeDoubleDouble(hi, lo)), Array.from(x), "round trip must be exact");
+  assert.deepEqual(
+    Array.from(mergeDoubleDouble(hi, lo)),
+    Array.from(x),
+    "round trip must be exact",
+  );
 });
 
 test("split preserves length and array types", () => {
@@ -57,7 +69,10 @@ test("split preserves length and array types", () => {
   assert.ok(lo instanceof Float32Array, "lo should be a Float32Array");
   assert.equal(hi.length, 5);
   assert.equal(lo.length, 5);
-  assert.ok(mergeDoubleDouble(hi, lo) instanceof Float64Array, "merge should return a Float64Array");
+  assert.ok(
+    mergeDoubleDouble(hi, lo) instanceof Float64Array,
+    "merge should return a Float64Array",
+  );
 });
 
 test("empty input is handled", () => {
@@ -77,7 +92,14 @@ test("negatives and very small magnitudes survive the round trip", () => {
   const { hi, lo } = splitDoubleDouble(x);
   const merged = mergeDoubleDouble(hi, lo);
   for (let i = 0; i < x.length; i++) {
-    assert.equal(Math.sign(merged[i]), Math.sign(x[i]), `element ${i} should keep its sign`);
-    assert.ok(Math.abs(merged[i] - x[i]) / Math.abs(x[i]) < 2 ** -40, `element ${i} should stay accurate`);
+    assert.equal(
+      Math.sign(merged[i]),
+      Math.sign(x[i]),
+      `element ${i} should keep its sign`,
+    );
+    assert.ok(
+      Math.abs(merged[i] - x[i]) / Math.abs(x[i]) < 2 ** -40,
+      `element ${i} should stay accurate`,
+    );
   }
 });

@@ -13,7 +13,17 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireSameDevice } from "../util/device.mjs";
 
-export async function ssyr(device, uplo, n, alpha, x, incx, A, lda, layout = "row-major") {
+export async function ssyr(
+  device,
+  uplo,
+  n,
+  alpha,
+  x,
+  incx,
+  A,
+  lda,
+  layout = "row-major",
+) {
   const xIsGpu = x instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
 
@@ -26,8 +36,7 @@ export async function ssyr(device, uplo, n, alpha, x, incx, A, lda, layout = "ro
     throw new Error("layout must be 'row-major' or 'column-major'.");
   if (!Number.isInteger(n) || !Number.isInteger(incx) || !Number.isInteger(lda))
     throw new Error("n, incx, and lda must be integers.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
   if (incx <= 0) throw new Error("incx must be positive.");
@@ -52,11 +61,14 @@ export async function ssyr(device, uplo, n, alpha, x, incx, A, lda, layout = "ro
   if (!AIsGpu && A.length < (n - 1) * lda + n)
     throw new Error("A does not have enough elements for the given n and lda.");
   if (x.length < (n - 1) * incx + 1)
-    throw new Error("x does not have enough elements for the given n and incx.");
+    throw new Error(
+      "x does not have enough elements for the given n and incx.",
+    );
 
   // GpuMatrix's own layout wins over the argument; A is symmetric, so column-major A reinterpreted row-major just flips which triangle is stored — flip uplo to match.
   const effLayout = AIsGpu ? A.layout : layout;
-  const isLower = effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
+  const isLower =
+    effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
 
   const pipeline = await getPipeline(device, "ssyr");
 
@@ -67,12 +79,13 @@ export async function ssyr(device, uplo, n, alpha, x, incx, A, lda, layout = "ro
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "ssyr-x", false);
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssyr-A", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
-        { value: n,               type: "u32" },
-        { value: alpha,           type: "f32" },
-        { value: incx,            type: "u32" },
-        { value: lda,             type: "u32" },
+        { value: n, type: "u32" },
+        { value: alpha, type: "f32" },
+        { value: incx, type: "u32" },
+        { value: lda, type: "u32" },
         { value: isLower ? 0 : 1, type: "u32" },
       ],
       "ssyr-params",
@@ -87,8 +100,15 @@ export async function ssyr(device, uplo, n, alpha, x, incx, A, lda, layout = "ro
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when n > dispatch count.
     const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
-    const readBuffer = AIsGpu ? null : stageReadback(device, commandEncoder, ABuffer);
+    const { commandEncoder, ts } = runComputePass(
+      device,
+      pipeline,
+      bindGroup,
+      wgCount,
+    );
+    const readBuffer = AIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, ABuffer);
 
     submit(device, commandEncoder);
 

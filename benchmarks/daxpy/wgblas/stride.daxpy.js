@@ -43,7 +43,9 @@ for (const stride of STRIDES) {
     // 8 bytes per double-double-emulated element, not 4 — see daxpy.js.
     const bytesPerBuffer = n * stride * 8;
     if (bytesPerBuffer > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -56,7 +58,15 @@ for (const stride of STRIDES) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await daxpy(device, n, alpha, xGpu, stride, yGpu, stride);
+      const { gpuTimeMs } = await daxpy(
+        device,
+        n,
+        alpha,
+        xGpu,
+        stride,
+        yGpu,
+        stride,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -72,6 +82,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("daxpy", gpuModel, records, { folder: "daxpy", fileName: "stride.daxpy" });
+saveResults("daxpy", gpuModel, records, {
+  folder: "daxpy",
+  fileName: "stride.daxpy",
+});
 
 cleanup();

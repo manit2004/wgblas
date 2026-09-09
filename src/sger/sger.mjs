@@ -13,7 +13,19 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireSameDevice } from "../util/device.mjs";
 
-export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout = "row-major") {
+export async function sger(
+  device,
+  m,
+  n,
+  alpha,
+  x,
+  incx,
+  y,
+  incy,
+  A,
+  lda,
+  layout = "row-major",
+) {
   const AIsGpu = A instanceof GpuMatrix;
 
   if (!(device instanceof GPUDevice))
@@ -21,8 +33,7 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout
   requireSameDevice(device, "sger", { A, x, y });
   if (layout !== "row-major" && layout !== "column-major")
     throw new Error("layout must be 'row-major' or 'column-major'.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
   if (
@@ -79,9 +90,13 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout
       "A does not have enough elements for the given m, n, and lda.",
     );
   if (x.length < (m - 1) * incx + 1)
-    throw new Error("x does not have enough elements for the given m and incx.");
+    throw new Error(
+      "x does not have enough elements for the given m and incx.",
+    );
   if (y.length < (n - 1) * incy + 1)
-    throw new Error("y does not have enough elements for the given n and incy.");
+    throw new Error(
+      "y does not have enough elements for the given n and incy.",
+    );
 
   const pipeline = await getPipeline(device, "sger");
 
@@ -94,14 +109,15 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sger-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sger-y", false);
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sger-A", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
-        { value: m,     type: "u32" },
-        { value: n,     type: "u32" },
+        { value: m, type: "u32" },
+        { value: n, type: "u32" },
         { value: alpha, type: "f32" },
-        { value: incx,  type: "u32" },
-        { value: incy,  type: "u32" },
-        { value: lda,   type: "u32" },
+        { value: incx, type: "u32" },
+        { value: incy, type: "u32" },
+        { value: lda, type: "u32" },
       ],
       "sger-params",
     );
@@ -116,8 +132,15 @@ export async function sger(device, m, n, alpha, x, incx, y, incy, A, lda, layout
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when m > dispatch count.
     const wgCount = Math.min(m, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
-    const readBuffer = AIsGpu ? null : stageReadback(device, commandEncoder, ABuffer);
+    const { commandEncoder, ts } = runComputePass(
+      device,
+      pipeline,
+      bindGroup,
+      wgCount,
+    );
+    const readBuffer = AIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, ABuffer);
 
     submit(device, commandEncoder);
 

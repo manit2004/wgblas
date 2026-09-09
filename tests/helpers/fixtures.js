@@ -74,7 +74,9 @@ const isUsable = (v) => v === 0.0 || Math.abs(v) >= FLOAT_MIN_MAGNITUDE;
  * @public
  */
 export function floatArb(min, max) {
-  return fc.float({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
+  return fc
+    .float({ min, max, noNaN: true, noDefaultInfinity: true })
+    .filter(isUsable);
 }
 
 /**
@@ -87,7 +89,9 @@ export function floatArb(min, max) {
  * @public
  */
 export function float64Arb(min, max) {
-  return fc.double({ min, max, noNaN: true, noDefaultInfinity: true }).filter(isUsable);
+  return fc
+    .double({ min, max, noNaN: true, noDefaultInfinity: true })
+    .filter(isUsable);
 }
 
 /**
@@ -107,14 +111,19 @@ export function scalarArb(spec) {
 // Returns null for non-scalar types (float32array, device, etc.) so callers can skip them.
 function paramArb(spec) {
   if (spec.type === "integer") return fc.integer(spec.range);
-  if (spec.type === "float")   return floatArb(spec.range.min, spec.range.max);
+  if (spec.type === "float") return floatArb(spec.range.min, spec.range.max);
   // "float64" (e.g. alpha64, derived from alpha.json — see derive64 in
   // validation.js): a genuine wide double, not floatArb's f32-exact values,
   // so its double-double split gets a nonzero lo component in fixtures.
-  if (spec.type === "float64") return float64Arb(spec.range.min, spec.range.max);
-  if (spec.type === "string")  return fc.constantFrom(...spec.values);
+  if (spec.type === "float64")
+    return float64Arb(spec.range.min, spec.range.max);
+  if (spec.type === "string") return fc.constantFrom(...spec.values);
   if (spec.type === "complex32")
-    return fc.tuple(floatArb(spec.range.min, spec.range.max), floatArb(spec.range.min, spec.range.max))
+    return fc
+      .tuple(
+        floatArb(spec.range.min, spec.range.max),
+        floatArb(spec.range.min, spec.range.max),
+      )
       .map(([re, im]) => new Complex32(re, im));
   return null;
 }
@@ -134,13 +143,16 @@ export function ndArrayArb(spec, len) {
   if (spec.type === "complex32array") {
     // len counts complex elements — Complex32Array's flat-numbers overload
     // wants 2*len interleaved [re, im, ...] values.
-    return fc.array(floatArb(min, max), { minLength: len * 2, maxLength: len * 2 })
+    return fc
+      .array(floatArb(min, max), { minLength: len * 2, maxLength: len * 2 })
       .map((a) => new Complex32Array(a));
   }
   const isF64 = spec.type === "float64array";
   const arb = isF64 ? float64Arb(min, max) : floatArb(min, max);
   const Ctor = isF64 ? Float64Array : Float32Array;
-  return fc.array(arb, { minLength: len, maxLength: len }).map((a) => new Ctor(a));
+  return fc
+    .array(arb, { minLength: len, maxLength: len })
+    .map((a) => new Ctor(a));
 }
 
 /**
@@ -160,9 +172,21 @@ export function ndArrayArb(spec, len) {
  * @returns fast-check arbitrary producing the same-shaped array with its diagonal patched
  * @public
  */
-export function triangularDiagonalArb(arrArb, n, lda, diagLow = 5, diagHigh = 15) {
-  const magArb = fc.array(floatArb(diagLow, diagHigh), { minLength: n, maxLength: n });
-  const signArb = fc.array(fc.constantFrom(-1, 1), { minLength: n, maxLength: n });
+export function triangularDiagonalArb(
+  arrArb,
+  n,
+  lda,
+  diagLow = 5,
+  diagHigh = 15,
+) {
+  const magArb = fc.array(floatArb(diagLow, diagHigh), {
+    minLength: n,
+    maxLength: n,
+  });
+  const signArb = fc.array(fc.constantFrom(-1, 1), {
+    minLength: n,
+    maxLength: n,
+  });
   return fc.tuple(arrArb, magArb, signArb).map(([A, mags, signs]) => {
     const out = Float32Array.from(A);
     for (let i = 0; i < n; i++) out[i * lda + i] = signs[i] * mags[i];
@@ -195,14 +219,26 @@ export function buildArb(specs, extras = {}) {
   // Every ld* field an array spec actually depends on — sizing formula lives
   // in matrixShape, keyed off that array's own dependsOn (e.g. A~lda,
   // B~ldb, C~ldc for sgemm; just A~lda for any L2 routine).
-  const arraySpecs = Object.values(specs).filter((s) => s.type === "float32array" || s.type === "float64array" || s.type === "complex32array");
-  const ldFields = [...new Set(arraySpecs.map((s) => s.dependsOn?.find((d) => d.startsWith("ld"))).filter(Boolean))];
+  const arraySpecs = Object.values(specs).filter(
+    (s) =>
+      s.type === "float32array" ||
+      s.type === "float64array" ||
+      s.type === "complex32array",
+  );
+  const ldFields = [
+    ...new Set(
+      arraySpecs
+        .map((s) => s.dependsOn?.find((d) => d.startsWith("ld")))
+        .filter(Boolean),
+    ),
+  ];
 
   // Generate all scalar params; skip ld* fields here — they're chained below.
-  const scalarEntries = Object.entries(specs)
-    .filter(([k, s]) => paramArb(s) !== null && !ldFields.includes(k));
+  const scalarEntries = Object.entries(specs).filter(
+    ([k, s]) => paramArb(s) !== null && !ldFields.includes(k),
+  );
   const scalarRec = fc.record(
-    Object.fromEntries(scalarEntries.map(([k, s]) => [k, paramArb(s)]))
+    Object.fromEntries(scalarEntries.map(([k, s]) => [k, paramArb(s)])),
   );
 
   const dimsArb = ldFields.length
@@ -210,7 +246,9 @@ export function buildArb(specs, extras = {}) {
         const ldArbs = {};
         for (const ldKey of ldFields) {
           const pad = specs[ldKey].range.max - specs[ldKey].range.min;
-          const arraySpec = arraySpecs.find((sp) => sp.dependsOn?.includes(ldKey));
+          const arraySpec = arraySpecs.find((sp) =>
+            sp.dependsOn?.includes(ldKey),
+          );
           const floor = matrixShape(arraySpec.dependsOn, s).inner;
           ldArbs[ldKey] = fc.integer({ min: floor, max: floor + pad });
         }
@@ -220,9 +258,16 @@ export function buildArb(specs, extras = {}) {
 
   // Chain array generation — each array sized via ndArrayLen reading spec.dependsOn.
   return dimsArb.chain((dims) => {
-    const fields = Object.fromEntries(Object.keys(dims).map((k) => [k, fc.constant(dims[k])]));
+    const fields = Object.fromEntries(
+      Object.keys(dims).map((k) => [k, fc.constant(dims[k])]),
+    );
     for (const [name, spec] of Object.entries(specs)) {
-      if (spec.type !== "float32array" && spec.type !== "float64array" && spec.type !== "complex32array") continue;
+      if (
+        spec.type !== "float32array" &&
+        spec.type !== "float64array" &&
+        spec.type !== "complex32array"
+      )
+        continue;
       const arrArb = ndArrayArb(spec, ndArrayLen(spec.dependsOn, dims));
       fields[name] = spec.triangular
         ? triangularDiagonalArb(
@@ -266,16 +311,18 @@ export async function runFixtures(
   device,
   numRuns,
   threshold,
-  specsOrArb,   // either a specs object (L1: uses buildArb) or a pre-built fc arbitrary (L2)
+  specsOrArb, // either a specs object (L1: uses buildArb) or a pre-built fc arbitrary (L2)
   callGpu,
   callRef,
   errorMetric,
-  extras = {}
+  extras = {},
 ) {
   // fc arbitraries have both generate and filter; plain spec objects have neither.
-  const arb = typeof specsOrArb?.generate === "function" && typeof specsOrArb?.filter === "function"
-    ? specsOrArb
-    : buildArb(specsOrArb, extras);
+  const arb =
+    typeof specsOrArb?.generate === "function" &&
+    typeof specsOrArb?.filter === "function"
+      ? specsOrArb
+      : buildArb(specsOrArb, extras);
   let maxObserved = 0;
 
   await fc.assert(
@@ -286,10 +333,10 @@ export async function runFixtures(
       if (metric > maxObserved) maxObserved = metric;
       return metric <= threshold;
     }),
-    { numRuns, verbose: true }
+    { numRuns, verbose: true },
   );
 
   t.diagnostic(
-    `${routineName} max metric: ${maxObserved} / threshold ${threshold} (${numRuns} runs)`
+    `${routineName} max metric: ${maxObserved} / threshold ${threshold} (${numRuns} runs)`,
   );
 }

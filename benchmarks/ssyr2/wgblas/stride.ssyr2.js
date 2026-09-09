@@ -41,22 +41,56 @@ for (const stride of STRIDES) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * stride * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
     const xGpu = GpuVector.from(randomFloat32Array(n * stride));
     const yGpu = GpuVector.from(randomFloat32Array(n * stride));
-    const AGpu = GpuMatrix.from(randomFloat32Array(n * lda), n, n, lda, "row-major");
+    const AGpu = GpuMatrix.from(
+      randomFloat32Array(n * lda),
+      n,
+      n,
+      lda,
+      "row-major",
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await ssyr2(device, "lower", n, 1.0, xGpu, stride, yGpu, stride, AGpu, lda, "row-major");
+      await ssyr2(
+        device,
+        "lower",
+        n,
+        1.0,
+        xGpu,
+        stride,
+        yGpu,
+        stride,
+        AGpu,
+        lda,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssyr2(device, "lower", n, 1.0, xGpu, stride, yGpu, stride, AGpu, lda, "row-major");
+      const { gpuTimeMs } = await ssyr2(
+        device,
+        "lower",
+        n,
+        1.0,
+        xGpu,
+        stride,
+        yGpu,
+        stride,
+        AGpu,
+        lda,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -74,6 +108,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("ssyr2", gpuModel, records, { folder: "ssyr2", fileName: "stride.ssyr2" });
+saveResults("ssyr2", gpuModel, records, {
+  folder: "ssyr2",
+  fileName: "stride.ssyr2",
+});
 
 cleanup();

@@ -44,8 +44,13 @@ for (const layout of LAYOUTS) {
     const lda = n;
     const ldb = n;
 
-    if (Math.max(n * lda * 4, n * ldb * 4) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped layout=${layout}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(n * lda * 4, n * ldb * 4) >
+      device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped layout=${layout}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -53,12 +58,40 @@ for (const layout of LAYOUTS) {
     const BGpu = GpuMatrix.from(randomFloat32Array(n * ldb), n, n, ldb, layout);
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await strsm(device, "left", "lower", "no-transpose", "non-unit", n, n, 1.0, AGpu, lda, BGpu, ldb, layout);
+      await strsm(
+        device,
+        "left",
+        "lower",
+        "no-transpose",
+        "non-unit",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        layout,
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await strsm(device, "left", "lower", "no-transpose", "non-unit", n, n, 1.0, AGpu, lda, BGpu, ldb, layout);
+      const { gpuTimeMs } = await strsm(
+        device,
+        "left",
+        "lower",
+        "no-transpose",
+        "non-unit",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        layout,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -73,10 +106,19 @@ for (const layout of LAYOUTS) {
     const bytes = (3 * n * n + 5 * n * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [layout, n, med, gflops, gbs]);
-    records.push({ layout, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+    records.push({
+      layout,
+      n,
+      compute_ms: med,
+      compute_GFLOPs: gflops,
+      compute_GBs: gbs,
+    });
   }
 }
 
-saveResults("strsm", gpuModel, records, { folder: "strsm", fileName: "layout.strsm" });
+saveResults("strsm", gpuModel, records, {
+  folder: "strsm",
+  fileName: "layout.strsm",
+});
 
 cleanup();

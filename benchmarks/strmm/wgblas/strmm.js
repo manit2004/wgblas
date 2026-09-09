@@ -32,22 +32,60 @@ const records = [];
 printHeader(COLS);
 
 for (const size of SIZES) {
-  const m = size, n = size; // square: aOrder (side='left') = m = n
+  const m = size,
+    n = size; // square: aOrder (side='left') = m = n
   // column-major: lda/ldb >= rows, matching cuBLAS's native layout
-  const lda = m, ldb = m;
+  const lda = m,
+    ldb = m;
   const alpha = 1.0;
 
-  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * lda), m, m), m, m, lda, "column-major");
-  const BGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * n), m, n), m, n, ldb, "column-major");
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(m * lda), m, m),
+    m,
+    m,
+    lda,
+    "column-major",
+  );
+  const BGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(m * n), m, n),
+    m,
+    n,
+    ldb,
+    "column-major",
+  );
 
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await strmm(device, "left", "lower", "no-transpose", "non-unit", m, n, alpha, AGpu, lda, BGpu, ldb);
+    await strmm(
+      device,
+      "left",
+      "lower",
+      "no-transpose",
+      "non-unit",
+      m,
+      n,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
+    );
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await strmm(
-      device, "left", "lower", "no-transpose", "non-unit", m, n, alpha, AGpu, lda, BGpu, ldb,
+      device,
+      "left",
+      "lower",
+      "no-transpose",
+      "non-unit",
+      m,
+      n,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
@@ -69,7 +107,13 @@ for (const size of SIZES) {
   const gflops = flops / 1e9 / (med / 1e3);
   const gbs = bytes / 1e9 / (med / 1e3);
   printRow(COLS, [m, n, med, gflops, gbs]);
-  records.push({ m, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+  records.push({
+    m,
+    n,
+    compute_ms: med,
+    compute_GFLOPs: gflops,
+    compute_GBs: gbs,
+  });
 }
 
 saveResults("strmm", gpuModel, records, { folder: "strmm" });

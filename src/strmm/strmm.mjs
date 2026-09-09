@@ -13,17 +13,34 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
-import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import {
+  BM_SMALL,
+  BN_SMALL,
+  BM_LARGE,
+  BN_LARGE,
+  LARGE_TILE_WORKGROUP_THRESHOLD,
+} from "../util/constants.mjs";
 import { TILE_WG_2D } from "../util/constants.mjs";
 import { requireSameDevice } from "../util/device.mjs";
-
 
 // strmm: B := alpha*op(A)*B (side='left') or alpha*B*op(A) (side='right'), A
 // triangular. Triangularize then sgemm, one command encoder. B is both
 // input and output, so gemm writes to a fresh buffer (no aliasing race),
 // copied back into B (GpuMatrix) or read back directly (Float32Array).
 export async function strmm(
-  device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb, layout = "row-major",
+  device,
+  side,
+  uplo,
+  transA,
+  diag,
+  m,
+  n,
+  alpha,
+  A,
+  lda,
+  B,
+  ldb,
+  layout = "row-major",
 ) {
   const AIsGpu = A instanceof GpuMatrix;
   const BIsGpu = B instanceof GpuMatrix;
@@ -42,11 +59,15 @@ export async function strmm(
     throw new Error("diag must be 'unit' or 'non-unit'.");
   if (layout !== "row-major" && layout !== "column-major")
     throw new Error("layout must be 'row-major' or 'column-major'.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
-  if (!Number.isInteger(m) || !Number.isInteger(n) || !Number.isInteger(lda) || !Number.isInteger(ldb))
+  if (
+    !Number.isInteger(m) ||
+    !Number.isInteger(n) ||
+    !Number.isInteger(lda) ||
+    !Number.isInteger(ldb)
+  )
     throw new Error("m, n, lda, and ldb must be integers.");
   if (!AIsGpu && !(A instanceof Float32Array))
     throw new Error("A must be a Float32Array or GpuMatrix.");
@@ -62,37 +83,59 @@ export async function strmm(
 
   // A: triangular, order = m (side='left') or n (side='right').
   const aOrder = side === "left" ? m : n;
-  if (lda < aOrder) throw new Error("lda must be >= " + (side === "left" ? "m" : "n") + ".");
+  if (lda < aOrder)
+    throw new Error("lda must be >= " + (side === "left" ? "m" : "n") + ".");
   if (AIsGpu) {
-    if (lda !== A.lda) throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (A.rows < aOrder || A.cols < aOrder) throw new Error("A is too small for the given m/n and side.");
+    if (lda !== A.lda)
+      throw new Error("lda must match A.lda when A is a GpuMatrix.");
+    if (A.rows < aOrder || A.cols < aOrder)
+      throw new Error("A is too small for the given m/n and side.");
   } else if (A.length < (aOrder - 1) * lda + aOrder) {
-    throw new Error("A does not have enough elements for the given dimensions and lda.");
+    throw new Error(
+      "A does not have enough elements for the given dimensions and lda.",
+    );
   }
 
   // B: always m x n, overwritten in place with the same ldb.
   const bOuter = effLayoutB === "column-major" ? n : m;
   const bInner = effLayoutB === "column-major" ? m : n;
   if (ldb < bInner)
-    throw new Error(`ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`);
+    throw new Error(
+      `ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`,
+    );
   if (BIsGpu) {
-    if (ldb !== B.lda) throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-    if (B.rows < m || B.cols < n) throw new Error("B is too small for the given m and n.");
+    if (ldb !== B.lda)
+      throw new Error("ldb must match B.lda when B is a GpuMatrix.");
+    if (B.rows < m || B.cols < n)
+      throw new Error("B is too small for the given m and n.");
   } else if (B.length < (bOuter - 1) * ldb + bInner) {
-    throw new Error("B does not have enough elements for the given dimensions and ldb.");
+    throw new Error(
+      "B does not have enough elements for the given dimensions and ldb.",
+    );
   }
 
   // A isn't symmetric: column-major = genuine transpose, so flip transA;
   // transposing also swaps which triangle looks stored, so flip uplo too.
-  const uploEffA = effLayoutA === "column-major" ? (uplo === "lower" ? "upper" : "lower") : uplo;
-  const transEffA = effLayoutA === "column-major" ? (transA === "no-transpose" ? "transpose" : "no-transpose") : transA;
+  const uploEffA =
+    effLayoutA === "column-major"
+      ? uplo === "lower"
+        ? "upper"
+        : "lower"
+      : uplo;
+  const transEffA =
+    effLayoutA === "column-major"
+      ? transA === "no-transpose"
+        ? "transpose"
+        : "no-transpose"
+      : transA;
 
   const transB = effLayoutB === "column-major" ? "transpose" : "no-transpose";
   const transDense = "no-transpose"; // Adense already embodies op(A)
 
   // X*Y (X=Adense,Y=B for side='left', swapped for 'right'). Column-major
   // output: compute (B_out)^T instead — sgemm's own trick, same as ssymm's.
-  let mg = m, ng = n;
+  let mg = m,
+    ng = n;
   const kg = aOrder;
   let transX = side === "left" ? transDense : transB;
   let transY = side === "left" ? transB : transDense;
@@ -108,39 +151,63 @@ export async function strmm(
   const largeWgX = Math.ceil(ng / BN_LARGE);
   const largeWgY = Math.ceil(mg / BM_LARGE);
   const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
-  const gemmPipeline = await getPipeline(device, useLargeTile ? "sgemm_large" : "sgemm_small");
+  const gemmPipeline = await getPipeline(
+    device,
+    useLargeTile ? "sgemm_large" : "sgemm_small",
+  );
   const triPipeline = await getPipeline(device, "triangularize");
   const gemmWgCount = useLargeTile
     ? {
-      x: requireWorkgroupCount(device, largeWgX, "strmm", "x"),
-      y: requireWorkgroupCount(device, largeWgY, "strmm", "y"),
-    }
+        x: requireWorkgroupCount(device, largeWgX, "strmm", "x"),
+        y: requireWorkgroupCount(device, largeWgY, "strmm", "y"),
+      }
     : {
-      x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "strmm", "x"),
-      y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "strmm", "y"),
-    };
+        x: requireWorkgroupCount(
+          device,
+          Math.ceil(ng / BN_SMALL),
+          "strmm",
+          "x",
+        ),
+        y: requireWorkgroupCount(
+          device,
+          Math.ceil(mg / BM_SMALL),
+          "strmm",
+          "y",
+        ),
+      };
 
   // Null-init here and allocate inside the try below, so a throw partway
   // through the sequence still reaches finally with every handle visible
   // (strsv.mjs is the reference for this pattern).
-  let ABuffer = null, BBuffer = null;
-  let AdenseBuffer = null, outBuffer = null;
-  let triParams = null, gemmParams = null;
+  let ABuffer = null,
+    BBuffer = null;
+  let AdenseBuffer = null,
+    outBuffer = null;
+  let triParams = null,
+    gemmParams = null;
   let outBufferAdopted = false; // true once B._buf is repointed at outBuffer
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strmm-A", false);
     // readback=true (COPY_SRC): BBuffer is also the source that seeds outBuffer.
     BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "strmm-B", true);
-    AdenseBuffer = createStorageBuffer(device, aOrder * ldDense * 4, "strmm-Adense");
+    AdenseBuffer = createStorageBuffer(
+      device,
+      aOrder * ldDense * 4,
+      "strmm-Adense",
+    );
     // COPY_DST: seeded from B's own content before gemm runs, so stride-padding
     // gaps (never written by gemm's tight m x n loop) keep B's original bytes
     // instead of reading back as zero. COPY_SRC: read back / adopted by B after.
-    outBuffer = createStorageBuffer(device,
-      bOuter * ldb * 4, "strmm-out", GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+    outBuffer = createStorageBuffer(
+      device,
+      bOuter * ldb * 4,
+      "strmm-out",
+      GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
     );
 
-    triParams = createParamsBuffer(device,
+    triParams = createParamsBuffer(
+      device,
       [
         { value: aOrder, type: "u32" },
         { value: lda, type: "u32" },
@@ -151,7 +218,11 @@ export async function strmm(
       ],
       "strmm-tri-params",
     );
-    const triBindGroup = createBindGroup(device, triPipeline.getBindGroupLayout(0), [ABuffer, AdenseBuffer, triParams]);
+    const triBindGroup = createBindGroup(
+      device,
+      triPipeline.getBindGroupLayout(0),
+      [ABuffer, AdenseBuffer, triParams],
+    );
 
     // X/Y buffers and their own ld, matching swapXY above.
     const XBuffer = swapXY ? BBuffer : AdenseBuffer;
@@ -159,13 +230,14 @@ export async function strmm(
     const YBuffer = swapXY ? AdenseBuffer : BBuffer;
     const ldY = swapXY ? ldDense : ldb;
 
-    gemmParams = createParamsBuffer(device,
+    gemmParams = createParamsBuffer(
+      device,
       [
-        { value: mg,  type: "u32" },
-        { value: ng,  type: "u32" },
-        { value: kg,  type: "u32" },
+        { value: mg, type: "u32" },
+        { value: ng, type: "u32" },
+        { value: kg, type: "u32" },
         { value: alpha, type: "f32" },
-        { value: 0.0,   type: "f32" }, // beta — strmm has no C accumulation term
+        { value: 0.0, type: "f32" }, // beta — strmm has no C accumulation term
         { value: ldX, type: "u32" },
         { value: ldY, type: "u32" },
         { value: ldb, type: "u32" },
@@ -174,28 +246,56 @@ export async function strmm(
       ],
       "strmm-gemm-params",
     );
-    const gemmBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
-      XBuffer,
-      vec4ViewBinding(device, XBuffer),
-      YBuffer,
-      vec4ViewBinding(device, YBuffer),
-      outBuffer,
-      gemmParams,
-    ]);
+    const gemmBindGroup = createBindGroup(
+      device,
+      gemmPipeline.getBindGroupLayout(0),
+      [
+        XBuffer,
+        vec4ViewBinding(device, XBuffer),
+        YBuffer,
+        vec4ViewBinding(device, YBuffer),
+        outBuffer,
+        gemmParams,
+      ],
+    );
 
     const { commandEncoder, querySet } = beginTimedEncoder(device);
     // Seed outBuffer with B's own bytes first, so gemm's tight m x n write
     // leaves stride-padding gaps holding B's original content, not zero.
     // BBuffer may be larger than outBuffer (e.g. a validation-test baseline
     // over-provisioned for a bigger ldb it might later be substituted with).
-    commandEncoder.copyBufferToBuffer(BBuffer, 0, outBuffer, 0, Math.min(BBuffer.size, outBuffer.size));
-    const triDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
-    const gemmDesc = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-    encodePass(commandEncoder, triPipeline, triBindGroup, { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) }, triDesc);
-    encodePass(commandEncoder, gemmPipeline, gemmBindGroup, gemmWgCount, gemmDesc);
+    commandEncoder.copyBufferToBuffer(
+      BBuffer,
+      0,
+      outBuffer,
+      0,
+      Math.min(BBuffer.size, outBuffer.size),
+    );
+    const triDesc = querySet
+      ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } }
+      : undefined;
+    const gemmDesc = querySet
+      ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } }
+      : undefined;
+    encodePass(
+      commandEncoder,
+      triPipeline,
+      triBindGroup,
+      { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) },
+      triDesc,
+    );
+    encodePass(
+      commandEncoder,
+      gemmPipeline,
+      gemmBindGroup,
+      gemmWgCount,
+      gemmDesc,
+    );
 
     const ts = resolveTimestamp(device, commandEncoder, querySet);
-    const readBuffer = BIsGpu ? null : stageReadback(device, commandEncoder, outBuffer);
+    const readBuffer = BIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, outBuffer);
 
     submit(device, commandEncoder);
 

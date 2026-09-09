@@ -41,22 +41,58 @@ for (const stride of STRIDES) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * stride * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
     const xGpu = GpuVector.from(randomFloat32Array(n * stride));
     const yGpu = GpuVector.from(randomFloat32Array(n * stride));
-    const AGpu = GpuMatrix.from(randomFloat32Array(n * lda), n, n, lda, "row-major");
+    const AGpu = GpuMatrix.from(
+      randomFloat32Array(n * lda),
+      n,
+      n,
+      lda,
+      "row-major",
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await ssymv(device, "lower", n, 1.0, AGpu, lda, xGpu, stride, 0.0, yGpu, stride, "row-major");
+      await ssymv(
+        device,
+        "lower",
+        n,
+        1.0,
+        AGpu,
+        lda,
+        xGpu,
+        stride,
+        0.0,
+        yGpu,
+        stride,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssymv(device, "lower", n, 1.0, AGpu, lda, xGpu, stride, 0.0, yGpu, stride, "row-major");
+      const { gpuTimeMs } = await ssymv(
+        device,
+        "lower",
+        n,
+        1.0,
+        AGpu,
+        lda,
+        xGpu,
+        stride,
+        0.0,
+        yGpu,
+        stride,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -67,13 +103,16 @@ for (const stride of STRIDES) {
     if (times.length === 0) continue;
     const med = median(times);
     // stored triangle + x + y — logical elements touched, same for every stride
-    const bytes = (n * (n + 1) / 2 + 2 * n) * 4;
+    const bytes = ((n * (n + 1)) / 2 + 2 * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [stride, n, med, gbs]);
     records.push({ stride, n, compute_ms: med, compute_GBs: gbs });
   }
 }
 
-saveResults("ssymv", gpuModel, records, { folder: "ssymv", fileName: "stride.ssymv" });
+saveResults("ssymv", gpuModel, records, {
+  folder: "ssymv",
+  fileName: "stride.ssymv",
+});
 
 cleanup();

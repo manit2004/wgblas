@@ -54,21 +54,55 @@ for (const trans of TRANS) {
 
       const bytesPerMatrix = m * n * 4;
       if (bytesPerMatrix > device.limits.maxStorageBufferBindingSize) {
-        console.log(`  (skipped trans=${trans}, m=${m}, n=${n}: A would exceed maxStorageBufferBindingSize)`);
+        console.log(
+          `  (skipped trans=${trans}, m=${m}, n=${n}: A would exceed maxStorageBufferBindingSize)`,
+        );
         continue;
       }
 
-      const AGpu = GpuMatrix.from(randomFloat32Array(m * n), m, n, lda, "row-major");
+      const AGpu = GpuMatrix.from(
+        randomFloat32Array(m * n),
+        m,
+        n,
+        lda,
+        "row-major",
+      );
       const xGpu = GpuVector.from(randomFloat32Array(xLen));
       const yGpu = GpuVector.from(new Float32Array(yLen));
 
       for (let i = 0; i < WARMUP_ITERS; i++) {
-        await sgemv(device, trans, m, n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1);
+        await sgemv(
+          device,
+          trans,
+          m,
+          n,
+          alpha,
+          AGpu,
+          lda,
+          xGpu,
+          1,
+          beta,
+          yGpu,
+          1,
+        );
       }
 
       const times = [];
       for (let i = 0; i < BENCH_ITERS; i++) {
-        const { gpuTimeMs } = await sgemv(device, trans, m, n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1);
+        const { gpuTimeMs } = await sgemv(
+          device,
+          trans,
+          m,
+          n,
+          alpha,
+          AGpu,
+          lda,
+          xGpu,
+          1,
+          beta,
+          yGpu,
+          1,
+        );
         if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
       }
 
@@ -87,6 +121,9 @@ for (const trans of TRANS) {
   }
 }
 
-saveResults("sgemv", gpuModel, records, { folder: "sgemv", fileName: "trans.sgemv" });
+saveResults("sgemv", gpuModel, records, {
+  folder: "sgemv",
+  fileName: "trans.sgemv",
+});
 
 cleanup();

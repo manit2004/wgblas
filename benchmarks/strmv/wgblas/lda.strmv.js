@@ -49,21 +49,53 @@ for (const trans of TRANS) {
 
       const bytesA = n * lda * 4;
       if (bytesA > device.limits.maxStorageBufferBindingSize) {
-        console.log(`  (skipped trans=${trans}, pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`);
+        console.log(
+          `  (skipped trans=${trans}, pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`,
+        );
         continue;
       }
 
-      const AGpu = GpuMatrix.from(new Float32Array(n * lda), n, n, lda, "row-major");
+      const AGpu = GpuMatrix.from(
+        new Float32Array(n * lda),
+        n,
+        n,
+        lda,
+        "row-major",
+      );
       const xGpu = GpuVector.from(randomFloat32Array(n));
       const yGpu = GpuVector.from(new Float32Array(n));
 
       for (let i = 0; i < WARMUP_ITERS; i++) {
-        await strmv(device, "lower", trans, "non-unit", n, AGpu, lda, xGpu, 1, yGpu, 1);
+        await strmv(
+          device,
+          "lower",
+          trans,
+          "non-unit",
+          n,
+          AGpu,
+          lda,
+          xGpu,
+          1,
+          yGpu,
+          1,
+        );
       }
 
       const times = [];
       for (let i = 0; i < BENCH_ITERS; i++) {
-        const { gpuTimeMs } = await strmv(device, "lower", trans, "non-unit", n, AGpu, lda, xGpu, 1, yGpu, 1);
+        const { gpuTimeMs } = await strmv(
+          device,
+          "lower",
+          trans,
+          "non-unit",
+          n,
+          AGpu,
+          lda,
+          xGpu,
+          1,
+          yGpu,
+          1,
+        );
         if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
       }
 
@@ -74,7 +106,7 @@ for (const trans of TRANS) {
       if (times.length === 0) continue;
       const med = median(times);
       // lower triangle A read + x read + y write — logical elements touched, same regardless of pad
-      const bytes = (n * (n + 1) / 2 + n + n) * 4;
+      const bytes = ((n * (n + 1)) / 2 + n + n) * 4;
       const gbs = bytes / 1e9 / (med / 1e3);
       printRow(COLS, [trans, pad, n, med, gbs]);
       records.push({ trans, pad, n, compute_ms: med, compute_GBs: gbs });
@@ -82,6 +114,9 @@ for (const trans of TRANS) {
   }
 }
 
-saveResults("strmv", gpuModel, records, { folder: "strmv", fileName: "lda.strmv" });
+saveResults("strmv", gpuModel, records, {
+  folder: "strmv",
+  fileName: "lda.strmv",
+});
 
 cleanup();

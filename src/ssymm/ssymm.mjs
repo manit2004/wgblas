@@ -13,16 +13,34 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
-import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import {
+  BM_SMALL,
+  BN_SMALL,
+  BM_LARGE,
+  BN_LARGE,
+  LARGE_TILE_WORKGROUP_THRESHOLD,
+} from "../util/constants.mjs";
 import { TILE_WG_2D } from "../util/constants.mjs";
 import { requireSameDevice } from "../util/device.mjs";
-
 
 // ssymm: C := alpha*A*B + beta*C (side='left') or alpha*B*A + beta*C
 // (side='right'), A symmetric. No fused kernel — symmetrize then sgemm,
 // both on one command encoder. See symmetrize.wgsl.
 export async function ssymm(
-  device, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc, layout = "row-major",
+  device,
+  side,
+  uplo,
+  m,
+  n,
+  alpha,
+  A,
+  lda,
+  B,
+  ldb,
+  beta,
+  C,
+  ldc,
+  layout = "row-major",
 ) {
   const AIsGpu = A instanceof GpuMatrix;
   const BIsGpu = B instanceof GpuMatrix;
@@ -37,17 +55,18 @@ export async function ssymm(
     throw new Error("uplo must be 'lower' or 'upper'.");
   if (layout !== "row-major" && layout !== "column-major")
     throw new Error("layout must be 'row-major' or 'column-major'.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
-  if (typeof beta !== "number")
-    throw new Error("beta must be a number.");
+  if (typeof beta !== "number") throw new Error("beta must be a number.");
   if (Number.isNaN(beta)) throw new Error("beta must not be NaN.");
   if (!Number.isFinite(beta)) throw new Error("beta must be finite.");
   if (
-    !Number.isInteger(m) || !Number.isInteger(n) ||
-    !Number.isInteger(lda) || !Number.isInteger(ldb) || !Number.isInteger(ldc)
+    !Number.isInteger(m) ||
+    !Number.isInteger(n) ||
+    !Number.isInteger(lda) ||
+    !Number.isInteger(ldb) ||
+    !Number.isInteger(ldc)
   )
     throw new Error("m, n, lda, ldb, and ldc must be integers.");
   if (!AIsGpu && !(A instanceof Float32Array))
@@ -69,48 +88,71 @@ export async function ssymm(
 
   // A: symmetric, order = m (side='left') or n (side='right').
   const aOrder = side === "left" ? m : n;
-  if (lda < aOrder) throw new Error("lda must be >= " + (side === "left" ? "m" : "n") + ".");
+  if (lda < aOrder)
+    throw new Error("lda must be >= " + (side === "left" ? "m" : "n") + ".");
   if (AIsGpu) {
-    if (lda !== A.lda) throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (A.rows < aOrder || A.cols < aOrder) throw new Error("A is too small for the given m/n and side.");
+    if (lda !== A.lda)
+      throw new Error("lda must match A.lda when A is a GpuMatrix.");
+    if (A.rows < aOrder || A.cols < aOrder)
+      throw new Error("A is too small for the given m/n and side.");
   } else if (A.length < (aOrder - 1) * lda + aOrder) {
-    throw new Error("A does not have enough elements for the given dimensions and lda.");
+    throw new Error(
+      "A does not have enough elements for the given dimensions and lda.",
+    );
   }
 
   // B: always m x n, no trans flag — same shape rule as sgemm's C.
   const bOuter = effLayoutB === "column-major" ? n : m;
   const bInner = effLayoutB === "column-major" ? m : n;
   if (ldb < bInner)
-    throw new Error(`ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`);
+    throw new Error(
+      `ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`,
+    );
   if (BIsGpu) {
-    if (ldb !== B.lda) throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-    if (B.rows < m || B.cols < n) throw new Error("B is too small for the given m and n.");
+    if (ldb !== B.lda)
+      throw new Error("ldb must match B.lda when B is a GpuMatrix.");
+    if (B.rows < m || B.cols < n)
+      throw new Error("B is too small for the given m and n.");
   } else if (B.length < (bOuter - 1) * ldb + bInner) {
-    throw new Error("B does not have enough elements for the given dimensions and ldb.");
+    throw new Error(
+      "B does not have enough elements for the given dimensions and ldb.",
+    );
   }
 
   // C: always m x n.
   const cOuter = effLayoutC === "column-major" ? n : m;
   const cInner = effLayoutC === "column-major" ? m : n;
   if (ldc < cInner)
-    throw new Error(`ldc must be >= ${effLayoutC === "column-major" ? "rows" : "cols"} of C as stored.`);
+    throw new Error(
+      `ldc must be >= ${effLayoutC === "column-major" ? "rows" : "cols"} of C as stored.`,
+    );
   if (CIsGpu) {
-    if (ldc !== C.lda) throw new Error("ldc must match C.lda when C is a GpuMatrix.");
-    if (C.rows < m || C.cols < n) throw new Error("C is too small for the given m and n.");
+    if (ldc !== C.lda)
+      throw new Error("ldc must match C.lda when C is a GpuMatrix.");
+    if (C.rows < m || C.cols < n)
+      throw new Error("C is too small for the given m and n.");
   } else if (C.length < (cOuter - 1) * ldc + cInner) {
-    throw new Error("C does not have enough elements for the given dimensions and ldc.");
+    throw new Error(
+      "C does not have enough elements for the given dimensions and ldc.",
+    );
   }
 
   // A = A^T, so column-major storage is still A, but the populated
   // triangle swaps — uplo flips (same reasoning ssyr/ssyrk use).
-  const uploEffA = effLayoutA === "column-major" ? (uplo === "lower" ? "upper" : "lower") : uplo;
+  const uploEffA =
+    effLayoutA === "column-major"
+      ? uplo === "lower"
+        ? "upper"
+        : "lower"
+      : uplo;
 
   const transB = effLayoutB === "column-major" ? "transpose" : "no-transpose";
   const transDense = "no-transpose"; // Adense is always row-major
 
   // X*Y (X=Adense,Y=B for side='left', swapped for 'right'). Column-major
   // C: compute C^T instead (swap X/Y, flip trans, swap m_g/n_g) — sgemm's own trick.
-  let mg = m, ng = n;
+  let mg = m,
+    ng = n;
   const kg = aOrder;
   let transX = side === "left" ? transDense : transB;
   let transY = side === "left" ? transB : transDense;
@@ -126,26 +168,45 @@ export async function ssymm(
   const largeWgX = Math.ceil(ng / BN_LARGE);
   const largeWgY = Math.ceil(mg / BM_LARGE);
   const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
-  const gemmPipeline = await getPipeline(device, useLargeTile ? "sgemm_large" : "sgemm_small");
+  const gemmPipeline = await getPipeline(
+    device,
+    useLargeTile ? "sgemm_large" : "sgemm_small",
+  );
   const symPipeline = await getPipeline(device, "symmetrize");
   const gemmWgCount = useLargeTile
     ? {
-      x: requireWorkgroupCount(device, largeWgX, "ssymm", "x"),
-      y: requireWorkgroupCount(device, largeWgY, "ssymm", "y"),
-    }
+        x: requireWorkgroupCount(device, largeWgX, "ssymm", "x"),
+        y: requireWorkgroupCount(device, largeWgY, "ssymm", "y"),
+      }
     : {
-      x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "ssymm", "x"),
-      y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "ssymm", "y"),
-    };
+        x: requireWorkgroupCount(
+          device,
+          Math.ceil(ng / BN_SMALL),
+          "ssymm",
+          "x",
+        ),
+        y: requireWorkgroupCount(
+          device,
+          Math.ceil(mg / BM_SMALL),
+          "ssymm",
+          "y",
+        ),
+      };
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssymm-A", false);
   const BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "ssymm-B", false);
   const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "ssymm-C", true);
-  const AdenseBuffer = createStorageBuffer(device, aOrder * ldDense * 4, "ssymm-Adense");
-  let symParams = null, gemmParams = null;
+  const AdenseBuffer = createStorageBuffer(
+    device,
+    aOrder * ldDense * 4,
+    "ssymm-Adense",
+  );
+  let symParams = null,
+    gemmParams = null;
 
   try {
-    symParams = createParamsBuffer(device,
+    symParams = createParamsBuffer(
+      device,
       [
         { value: aOrder, type: "u32" },
         { value: lda, type: "u32" },
@@ -154,7 +215,11 @@ export async function ssymm(
       ],
       "ssymm-sym-params",
     );
-    const symBindGroup = createBindGroup(device, symPipeline.getBindGroupLayout(0), [ABuffer, AdenseBuffer, symParams]);
+    const symBindGroup = createBindGroup(
+      device,
+      symPipeline.getBindGroupLayout(0),
+      [ABuffer, AdenseBuffer, symParams],
+    );
 
     // X/Y buffers and their own ld, matching swapXY above.
     const XBuffer = swapXY ? BBuffer : AdenseBuffer;
@@ -162,13 +227,14 @@ export async function ssymm(
     const YBuffer = swapXY ? AdenseBuffer : BBuffer;
     const ldY = swapXY ? ldDense : ldb;
 
-    gemmParams = createParamsBuffer(device,
+    gemmParams = createParamsBuffer(
+      device,
       [
-        { value: mg,  type: "u32" },
-        { value: ng,  type: "u32" },
-        { value: kg,  type: "u32" },
+        { value: mg, type: "u32" },
+        { value: ng, type: "u32" },
+        { value: kg, type: "u32" },
         { value: alpha, type: "f32" },
-        { value: beta,  type: "f32" },
+        { value: beta, type: "f32" },
         { value: ldX, type: "u32" },
         { value: ldY, type: "u32" },
         { value: ldc, type: "u32" },
@@ -177,23 +243,45 @@ export async function ssymm(
       ],
       "ssymm-gemm-params",
     );
-    const gemmBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
-      XBuffer,
-      vec4ViewBinding(device, XBuffer),
-      YBuffer,
-      vec4ViewBinding(device, YBuffer),
-      CBuffer,
-      gemmParams,
-    ]);
+    const gemmBindGroup = createBindGroup(
+      device,
+      gemmPipeline.getBindGroupLayout(0),
+      [
+        XBuffer,
+        vec4ViewBinding(device, XBuffer),
+        YBuffer,
+        vec4ViewBinding(device, YBuffer),
+        CBuffer,
+        gemmParams,
+      ],
+    );
 
     const { commandEncoder, querySet } = beginTimedEncoder(device);
-    const symDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
-    const gemmDesc = querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-    encodePass(commandEncoder, symPipeline, symBindGroup, { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) }, symDesc);
-    encodePass(commandEncoder, gemmPipeline, gemmBindGroup, gemmWgCount, gemmDesc);
+    const symDesc = querySet
+      ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } }
+      : undefined;
+    const gemmDesc = querySet
+      ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } }
+      : undefined;
+    encodePass(
+      commandEncoder,
+      symPipeline,
+      symBindGroup,
+      { x: Math.ceil(aOrder / TILE_WG_2D), y: Math.ceil(aOrder / TILE_WG_2D) },
+      symDesc,
+    );
+    encodePass(
+      commandEncoder,
+      gemmPipeline,
+      gemmBindGroup,
+      gemmWgCount,
+      gemmDesc,
+    );
 
     const ts = resolveTimestamp(device, commandEncoder, querySet);
-    const readBuffer = CIsGpu ? null : stageReadback(device, commandEncoder, CBuffer);
+    const readBuffer = CIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, CBuffer);
 
     submit(device, commandEncoder);
 

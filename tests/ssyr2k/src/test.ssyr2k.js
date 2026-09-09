@@ -26,31 +26,50 @@ const aSpec = loadParam("A");
 const ldSpec = loadParam("ld");
 const validationSpecs = {
   device: loadParam("device"),
-  uplo:   loadParam("uplo"),
-  trans:  loadParam("trans"),
+  uplo: loadParam("uplo"),
+  trans: loadParam("trans"),
   layout: loadParam("layout"),
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "must be non-negative", label: "negative" },
+    ],
   },
-  k:      loadParam("k"),
-  alpha:  loadParam("alpha"),
-  beta:   loadParam("beta"),
-  A:      { ...aSpec, ...aSpec["level-3"], dependsOn: ["n", "k", "lda", "trans"] },
-  lda:    ldSpec,
-  B:      { ...loadParam("B"), dependsOn: ["n", "k", "ldb", "trans"] },
-  ldb:    ldSpec,
-  C:      { ...loadParam("C"), dependsOn: ["n", "ldc"] },
-  ldc:    ldSpec,
+  k: loadParam("k"),
+  alpha: loadParam("alpha"),
+  beta: loadParam("beta"),
+  A: { ...aSpec, ...aSpec["level-3"], dependsOn: ["n", "k", "lda", "trans"] },
+  lda: ldSpec,
+  B: { ...loadParam("B"), dependsOn: ["n", "k", "ldb", "trans"] },
+  ldb: ldSpec,
+  C: { ...loadParam("C"), dependsOn: ["n", "ldc"] },
+  ldc: ldSpec,
 };
 
 test("ssyr2k validation", async (t) => {
   await runValidation(
     t,
     validationSpecs,
-    (a) => ssyr2k(a.device, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout),
+    (a) =>
+      ssyr2k(
+        a.device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     { device },
   );
 });
@@ -71,7 +90,23 @@ test("ssyr2k fixtures", async (t) => {
     NUM_RUNS,
     THRESHOLD,
     fixtureSpecs,
-    async (dev, a) => ssyr2k(dev, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout),
+    async (dev, a) =>
+      ssyr2k(
+        dev,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     stdlibReference,
     forwardFactor,
   );
@@ -83,14 +118,34 @@ test("ssyr2k edge cases", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        uplo: tc.uplo, trans: tc.trans,
-        n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        uplo: tc.uplo,
+        trans: tc.trans,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await ssyr2k(device, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc);
+      const got = await ssyr2k(
+        device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });
@@ -103,14 +158,35 @@ test("ssyr2k edge cases (column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        uplo: tc.uplo, trans: tc.trans,
-        n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        uplo: tc.uplo,
+        trans: tc.trans,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await ssyr2k(device, a.uplo, a.trans, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout);
+      const got = await ssyr2k(
+        device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });

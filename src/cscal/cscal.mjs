@@ -50,13 +50,16 @@ export async function cscal(device, n, alpha, x, incx) {
   let readBuffer = null;
 
   try {
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, interleaveComplex32(x), "cscal-x", true);
-    paramsBuffer = createParamsBuffer(device,
+    xBuffer = xIsGpu
+      ? x._buf
+      : uploadBuffer(device, interleaveComplex32(x), "cscal-x", true);
+    paramsBuffer = createParamsBuffer(
+      device,
       [
-        { value: n,        type: "u32" },
+        { value: n, type: "u32" },
         { value: alpha.re, type: "f32" },
         { value: alpha.im, type: "f32" },
-        { value: incx,     type: "u32" },
+        { value: incx, type: "u32" },
       ],
       "cscal-params",
     );
@@ -65,7 +68,8 @@ export async function cscal(device, n, alpha, x, incx) {
       xBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(device,
+    const { commandEncoder, ts } = runComputePass(
+      device,
       pipeline,
       bindGroup,
       calcWorkgroups(device, n),

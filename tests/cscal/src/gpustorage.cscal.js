@@ -26,10 +26,10 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  alpha:  loadParam("alphaComplex"),
-  x:      loadParam("xComplex"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  alpha: loadParam("alphaComplex"),
+  x: loadParam("xComplex"),
 };
 
 async function callGpuResident(dev, a) {

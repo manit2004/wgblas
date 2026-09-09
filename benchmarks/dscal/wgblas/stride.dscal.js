@@ -43,7 +43,9 @@ for (const stride of STRIDES) {
     // 8 bytes per double-double-emulated element, not 4 — see dscal.js.
     const bytesPerBuffer = n * stride * 8;
     if (bytesPerBuffer > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -70,6 +72,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("dscal", gpuModel, records, { folder: "dscal", fileName: "stride.dscal" });
+saveResults("dscal", gpuModel, records, {
+  folder: "dscal",
+  fileName: "stride.dscal",
+});
 
 cleanup();

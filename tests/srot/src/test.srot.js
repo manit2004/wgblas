@@ -24,17 +24,19 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  incy:   loadParam("incy"),
-  x:      loadParam("x"),
-  y:      loadParam("y"),
-  c:      loadParam("cosine"),
-  s:      loadParam("s"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  incy: loadParam("incy"),
+  x: loadParam("x"),
+  y: loadParam("y"),
+  c: loadParam("cosine"),
+  s: loadParam("s"),
 };
 
 test("srot validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => srot(a.device, a.n, a.x, a.incx, a.y, a.incy, a.c, a.s),
     { device },
   );
@@ -42,15 +44,15 @@ test("srot validation", async (t) => {
 
 test("srot fixtures", async (t) => {
   await runFixtures(
-    t,                 // node:test context
-    "srot",            // routine name — used in the diagnostic label
-    device,            // WebGPU device instance
-    NUM_RUNS,          // 100 random inputs
-    1,                 // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
-    validationSpecs,   // param specs used to generate random inputs
-    async (dev, a) => srot(dev, a.n, a.x, a.incx, a.y, a.incy, a.c, a.s),  // GPU call
-    stdlibReference,   // CPU reference
-    forwardFactor,     // |err| / (eps * |bound|) — see helpers.js
+    t, // node:test context
+    "srot", // routine name — used in the diagnostic label
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    1, // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
+    validationSpecs, // param specs used to generate random inputs
+    async (dev, a) => srot(dev, a.n, a.x, a.incx, a.y, a.incy, a.c, a.s), // GPU call
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (eps * |bound|) — see helpers.js
   );
 });
 
@@ -60,23 +62,23 @@ test("srot edge cases", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        n: tc.n,                     // vector length
-        x: new Float32Array(tc.x),   // input/output vector
-        incx: tc.incx,               // stride through x
-        y: new Float32Array(tc.y),   // input/output vector
-        incy: tc.incy,               // stride through y
-        c: tc.c,                     // rotation cosine
-        s: tc.s,                     // rotation sine
+        n: tc.n, // vector length
+        x: new Float32Array(tc.x), // input/output vector
+        incx: tc.incx, // stride through x
+        y: new Float32Array(tc.y), // input/output vector
+        incy: tc.incy, // stride through y
+        c: tc.c, // rotation cosine
+        s: tc.s, // rotation sine
       };
       const got = await srot(
-        device,   // GPU device
-        a.n,      // vector length
-        a.x,      // input/output vector
-        a.incx,   // stride through x
-        a.y,      // input/output vector
-        a.incy,   // stride through y
-        a.c,      // rotation cosine
-        a.s,      // rotation sine
+        device, // GPU device
+        a.n, // vector length
+        a.x, // input/output vector
+        a.incx, // stride through x
+        a.y, // input/output vector
+        a.incy, // stride through y
+        a.c, // rotation cosine
+        a.s, // rotation sine
       );
       const expected = stdlibReference(a);
       assert.deepEqual(got.x, expected.x);

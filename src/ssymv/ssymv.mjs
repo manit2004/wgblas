@@ -13,7 +13,20 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireSameDevice } from "../util/device.mjs";
 
-export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, incy, layout = "row-major") {
+export async function ssymv(
+  device,
+  uplo,
+  n,
+  alpha,
+  A,
+  lda,
+  x,
+  incx,
+  beta,
+  y,
+  incy,
+  layout = "row-major",
+) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
@@ -32,12 +45,10 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     !Number.isInteger(lda)
   )
     throw new Error("n, incx, incy, and lda must be integers.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
-  if (typeof beta !== "number")
-    throw new Error("beta must be a number.");
+  if (typeof beta !== "number") throw new Error("beta must be a number.");
   if (Number.isNaN(beta)) throw new Error("beta must not be NaN.");
   if (!Number.isFinite(beta)) throw new Error("beta must be finite.");
   if (incx <= 0 || incy <= 0)
@@ -58,7 +69,9 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
   if (AIsGpu && !xIsGpu)
     throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
   if (xIsGpu && x._buf === y._buf)
-    throw new Error("x and y must not reference the same GPU buffer when both are GpuVectors.");
+    throw new Error(
+      "x and y must not reference the same GPU buffer when both are GpuVectors.",
+    );
   if (AIsGpu && lda !== A.lda)
     throw new Error("lda must match A.lda when A is a GpuMatrix.");
   if (AIsGpu && (A.rows < n || A.cols < n))
@@ -67,9 +80,7 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
   if (n === 0) return yIsGpu ? {} : { y };
 
   if (!AIsGpu && A.length < (n - 1) * lda + n)
-    throw new Error(
-      "A does not have enough elements for the given n and lda.",
-    );
+    throw new Error("A does not have enough elements for the given n and lda.");
   if (x.length < (n - 1) * incx + 1)
     throw new Error(
       "x does not have enough elements for the given n and incx.",
@@ -81,7 +92,8 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
 
   // GpuMatrix's own layout wins over the argument; A is symmetric, so column-major A reinterpreted row-major just flips which triangle is stored — flip uplo to match.
   const effLayout = AIsGpu ? A.layout : layout;
-  const isLower = effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
+  const isLower =
+    effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
 
   const pipeline = await getPipeline(device, "ssymv");
 
@@ -94,14 +106,15 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssymv-A", false);
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "ssymv-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "ssymv-y", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
-        { value: n,               type: "u32" },
-        { value: alpha,           type: "f32" },
-        { value: beta,            type: "f32" },
-        { value: incx,            type: "u32" },
-        { value: incy,            type: "u32" },
-        { value: lda,             type: "u32" },
+        { value: n, type: "u32" },
+        { value: alpha, type: "f32" },
+        { value: beta, type: "f32" },
+        { value: incx, type: "u32" },
+        { value: incy, type: "u32" },
+        { value: lda, type: "u32" },
         { value: isLower ? 0 : 1, type: "u32" },
       ],
       "ssymv-params",
@@ -115,8 +128,15 @@ export async function ssymv(device, uplo, n, alpha, A, lda, x, incx, beta, y, in
     ]);
 
     const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
-    const readBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
+    const { commandEncoder, ts } = runComputePass(
+      device,
+      pipeline,
+      bindGroup,
+      wgCount,
+    );
+    const readBuffer = yIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, yBuffer);
 
     submit(device, commandEncoder);
 

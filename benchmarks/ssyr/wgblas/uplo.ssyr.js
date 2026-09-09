@@ -42,7 +42,13 @@ for (const uplo of UPLOS) {
     const alpha = 1.0;
 
     const xGpu = GpuVector.from(randomFloat32Array(n));
-    const AGpu = GpuMatrix.from(new Float32Array(n * n), n, n, lda, "row-major");
+    const AGpu = GpuMatrix.from(
+      new Float32Array(n * n),
+      n,
+      n,
+      lda,
+      "row-major",
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await ssyr(device, uplo, n, alpha, xGpu, 1, AGpu, lda);
@@ -50,7 +56,16 @@ for (const uplo of UPLOS) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssyr(device, uplo, n, alpha, xGpu, 1, AGpu, lda);
+      const { gpuTimeMs } = await ssyr(
+        device,
+        uplo,
+        n,
+        alpha,
+        xGpu,
+        1,
+        AGpu,
+        lda,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -67,6 +82,9 @@ for (const uplo of UPLOS) {
   }
 }
 
-saveResults("ssyr", gpuModel, records, { folder: "ssyr", fileName: "uplo.ssyr" });
+saveResults("ssyr", gpuModel, records, {
+  folder: "ssyr",
+  fileName: "uplo.ssyr",
+});
 
 cleanup();

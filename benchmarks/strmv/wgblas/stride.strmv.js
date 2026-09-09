@@ -48,8 +48,12 @@ for (const stride of STRIDES) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * stride * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -58,12 +62,38 @@ for (const stride of STRIDES) {
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await strmv(device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, stride, yGpu, stride, "row-major");
+      await strmv(
+        device,
+        "lower",
+        "no-transpose",
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        stride,
+        yGpu,
+        stride,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await strmv(device, "lower", "no-transpose", "non-unit", n, AGpu, lda, xGpu, stride, yGpu, stride, "row-major");
+      const { gpuTimeMs } = await strmv(
+        device,
+        "lower",
+        "no-transpose",
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        stride,
+        yGpu,
+        stride,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -74,13 +104,16 @@ for (const stride of STRIDES) {
     if (times.length === 0) continue;
     const med = median(times);
     // stored triangle + x + y — logical elements touched, same for every stride
-    const bytes = (n * (n + 1) / 2 + 2 * n) * 4;
+    const bytes = ((n * (n + 1)) / 2 + 2 * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [stride, n, med, gbs]);
     records.push({ stride, n, compute_ms: med, compute_GBs: gbs });
   }
 }
 
-saveResults("strmv", gpuModel, records, { folder: "strmv", fileName: "stride.strmv" });
+saveResults("strmv", gpuModel, records, {
+  folder: "strmv",
+  fileName: "stride.strmv",
+});
 
 cleanup();

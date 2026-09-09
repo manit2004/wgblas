@@ -37,21 +37,26 @@ export function forwardFactor(gpu, ref, a) {
       let dotBound1 = 0; // pass 1: alpha*op(A)*op(B)^T
       let dotBound2 = 0; // pass 2: alpha*op(B)*op(A)^T
       for (let p = 0; p < k; p++) {
-        dotBound1 += Math.abs(matElem(A, lda, layout, trans, i, p)) * Math.abs(matElem(B, ldb, layout, transOther, p, j));
-        dotBound2 += Math.abs(matElem(B, ldb, layout, trans, i, p)) * Math.abs(matElem(A, lda, layout, transOther, p, j));
+        dotBound1 +=
+          Math.abs(matElem(A, lda, layout, trans, i, p)) *
+          Math.abs(matElem(B, ldb, layout, transOther, p, j));
+        dotBound2 +=
+          Math.abs(matElem(B, ldb, layout, trans, i, p)) *
+          Math.abs(matElem(A, lda, layout, transOther, p, j));
       }
 
       const cIn = Math.abs(cElem(C, ldc, layout, i, j));
       // +1 extra unit on each coefficient beyond the exact first-order
       // derivation above, as safety margin against the eps^2 cross-terms
       // that derivation drops.
-      const bound = eps * (
-        (k + 3) * Math.abs(alpha) * dotBound1 +
-        (k + 2) * Math.abs(alpha) * dotBound2 +
-        3 * Math.abs(beta) * cIn
-      );
-      if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
-      else maxFactor = Math.max(maxFactor, err / bound);
+      const bound =
+        eps *
+        ((k + 3) * Math.abs(alpha) * dotBound1 +
+          (k + 2) * Math.abs(alpha) * dotBound2 +
+          3 * Math.abs(beta) * cIn);
+      if (bound === 0) {
+        if (err !== 0) maxFactor = Infinity;
+      } else maxFactor = Math.max(maxFactor, err / bound);
     }
   }
   return maxFactor;

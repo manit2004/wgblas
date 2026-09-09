@@ -12,12 +12,20 @@ function matElem(M, ld, layout, row, col) {
 // op(A)[row,col], zero outside the stored+substituted region — mirrors
 // triangularize.wgsl's own logic, not a mirror-read like ssymm's symElem.
 function triElem(A, lda, layout, uplo, transA, diag, row, col) {
-  if (row === col) return diag === "unit" ? 1 : matElem(A, lda, layout, row, row);
-  const meaningful = transA === "no-transpose"
-    ? (uplo === "lower" ? col <= row : col >= row)
-    : (uplo === "lower" ? col >= row : col <= row);
+  if (row === col)
+    return diag === "unit" ? 1 : matElem(A, lda, layout, row, row);
+  const meaningful =
+    transA === "no-transpose"
+      ? uplo === "lower"
+        ? col <= row
+        : col >= row
+      : uplo === "lower"
+        ? col >= row
+        : col <= row;
   if (!meaningful) return 0;
-  return transA === "no-transpose" ? matElem(A, lda, layout, row, col) : matElem(A, lda, layout, col, row);
+  return transA === "no-transpose"
+    ? matElem(A, lda, layout, row, col)
+    : matElem(A, lda, layout, col, row);
 }
 
 export function forwardFactor(gpu, ref, a) {
@@ -33,14 +41,18 @@ export function forwardFactor(gpu, ref, a) {
 
       let dotBound = 0;
       for (let p = 0; p < aOrder; p++) {
-        dotBound += side === "left"
-          ? Math.abs(triElem(A, lda, layout, uplo, transA, diag, i, p)) * Math.abs(matElem(B, ldb, layout, p, j))
-          : Math.abs(matElem(B, ldb, layout, i, p)) * Math.abs(triElem(A, lda, layout, uplo, transA, diag, p, j));
+        dotBound +=
+          side === "left"
+            ? Math.abs(triElem(A, lda, layout, uplo, transA, diag, i, p)) *
+              Math.abs(matElem(B, ldb, layout, p, j))
+            : Math.abs(matElem(B, ldb, layout, i, p)) *
+              Math.abs(triElem(A, lda, layout, uplo, transA, diag, p, j));
       }
 
       const bound = eps * (aOrder + 1) * Math.abs(alpha) * dotBound;
-      if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
-      else maxFactor = Math.max(maxFactor, err / bound);
+      if (bound === 0) {
+        if (err !== 0) maxFactor = Infinity;
+      } else maxFactor = Math.max(maxFactor, err / bound);
     }
   }
   return maxFactor;

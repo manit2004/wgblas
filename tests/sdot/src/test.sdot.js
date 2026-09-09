@@ -24,15 +24,17 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  incy:   loadParam("incy"),
-  x:      loadParam("x"),
-  y:      loadParam("y"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  incy: loadParam("incy"),
+  x: loadParam("x"),
+  y: loadParam("y"),
 };
 
 test("sdot validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => sdot(a.device, a.n, a.x, a.incx, a.y, a.incy),
     { device },
   );
@@ -40,15 +42,15 @@ test("sdot validation", async (t) => {
 
 test("sdot fixtures", async (t) => {
   await runFixtures(
-    t,                 // node:test context
-    "sdot",            // routine name — used in the diagnostic label
-    device,            // WebGPU device instance
-    NUM_RUNS,          // 100 random inputs
-    1,                 // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
-    validationSpecs,   // param specs used to generate random inputs
-    async (dev, a) => sdot(dev, a.n, a.x, a.incx, a.y, a.incy),  // GPU call
-    stdlibReference,   // CPU reference
-    forwardFactor,     // |err| / (eps * |bound|) — see helpers.js
+    t, // node:test context
+    "sdot", // routine name — used in the diagnostic label
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    1, // threshold 1 — forward error factor ≤ 1 means within one rounding of true result
+    validationSpecs, // param specs used to generate random inputs
+    async (dev, a) => sdot(dev, a.n, a.x, a.incx, a.y, a.incy), // GPU call
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (eps * |bound|) — see helpers.js
   );
 });
 
@@ -58,19 +60,19 @@ test("sdot edge cases", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        x: new Float32Array(c.x),  // input vector
-        incx: c.incx,              // stride through x
-        y: new Float32Array(c.y),  // input vector
-        incy: c.incy,              // stride through y
+        n: c.n, // vector length
+        x: new Float32Array(c.x), // input vector
+        incx: c.incx, // stride through x
+        y: new Float32Array(c.y), // input vector
+        incy: c.incy, // stride through y
       };
       const { dot: got } = await sdot(
-        device,   // GPU device
-        a.n,      // vector length
-        a.x,      // input vector
-        a.incx,   // stride through x
-        a.y,      // input vector
-        a.incy,   // stride through y
+        device, // GPU device
+        a.n, // vector length
+        a.x, // input vector
+        a.incx, // stride through x
+        a.y, // input vector
+        a.incy, // stride through y
       );
       const expected = stdlibReference(a);
       assert.strictEqual(got, expected);

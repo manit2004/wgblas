@@ -14,13 +14,23 @@
 // assertions always run. Nothing here asserts *which* adapter gets picked.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup, gpuName, sscal, saxpy, sgemm, GpuVector, GpuMatrix } from "wgblas";
+import {
+  init,
+  cleanup,
+  gpuName,
+  sscal,
+  saxpy,
+  sgemm,
+  GpuVector,
+  GpuMatrix,
+} from "wgblas";
 import { getPowerPreference } from "../helpers/device.js";
 
 // Honour WGBLAS_POWER_PREFERENCE for the primary, as every other suite does,
 // and ask for the opposite preference to get a second device.
 const primaryPref = getPowerPreference();
-const secondaryPref = primaryPref === "low-power" ? "high-performance" : "low-power";
+const secondaryPref =
+  primaryPref === "low-power" ? "high-performance" : "low-power";
 
 let primary;
 let secondary = null;
@@ -37,7 +47,8 @@ before(async () => {
   primary = await init({ powerPreference: primaryPref });
   try {
     const other = await init({ powerPreference: secondaryPref });
-    if (other === primary) skipReason = `both preferences resolved to the same device`;
+    if (other === primary)
+      skipReason = `both preferences resolved to the same device`;
     else secondary = other;
   } catch (err) {
     skipReason = err.message;
@@ -48,16 +59,30 @@ after(() => cleanup());
 test("init() yields two distinct devices for two option sets", (t) => {
   if (needsTwoDevices(t)) return;
   assert.notEqual(secondary, primary, "expected a second, independent device");
-  assert.ok(gpuName(primary).description, "primary adapter should report a description");
-  assert.ok(gpuName(secondary).description, "secondary adapter should report a description");
+  assert.ok(
+    gpuName(primary).description,
+    "primary adapter should report a description",
+  );
+  assert.ok(
+    gpuName(secondary).description,
+    "secondary adapter should report a description",
+  );
 });
 
 test("a Level 1 routine is correct on each device", async (t) => {
   if (needsTwoDevices(t)) return;
   const mk = () => new Float32Array([1, 2, 3, 4, 5]);
   const expected = new Float32Array([3, 6, 9, 12, 15]);
-  assert.deepEqual((await sscal(primary, 5, 3, mk(), 1)).x, expected, "primary");
-  assert.deepEqual((await sscal(secondary, 5, 3, mk(), 1)).x, expected, "secondary");
+  assert.deepEqual(
+    (await sscal(primary, 5, 3, mk(), 1)).x,
+    expected,
+    "primary",
+  );
+  assert.deepEqual(
+    (await sscal(secondary, 5, 3, mk(), 1)).x,
+    expected,
+    "secondary",
+  );
 });
 
 test("a Level 3 routine is correct on each device", async (t) => {
@@ -67,7 +92,22 @@ test("a Level 3 routine is correct on each device", async (t) => {
   const A = new Float32Array([1, 2, 3, 4]);
   const I = new Float32Array([1, 0, 0, 1]);
   const run = (dev) =>
-    sgemm(dev, "no-transpose", "no-transpose", 2, 2, 2, 1, A, 2, I, 2, 0, new Float32Array(4), 2);
+    sgemm(
+      dev,
+      "no-transpose",
+      "no-transpose",
+      2,
+      2,
+      2,
+      1,
+      A,
+      2,
+      I,
+      2,
+      0,
+      new Float32Array(4),
+      2,
+    );
   assert.deepEqual((await run(primary)).C, A, "primary");
   assert.deepEqual((await run(secondary)).C, A, "secondary");
 });

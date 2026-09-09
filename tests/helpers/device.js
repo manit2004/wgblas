@@ -11,5 +11,7 @@
  * @returns {"low-power"|"high-performance"}
  */
 export function getPowerPreference() {
-  return process.env.WGBLAS_POWER_PREFERENCE === "low-power" ? "low-power" : "high-performance";
+  return process.env.WGBLAS_POWER_PREFERENCE === "low-power"
+    ? "low-power"
+    : "high-performance";
 }

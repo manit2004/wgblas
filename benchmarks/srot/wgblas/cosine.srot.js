@@ -54,7 +54,16 @@ for (const c of COSINES) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await srot(device, n, xGpu, STRIDE, yGpu, STRIDE, c, s);
+      const { gpuTimeMs } = await srot(
+        device,
+        n,
+        xGpu,
+        STRIDE,
+        yGpu,
+        STRIDE,
+        c,
+        s,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -70,6 +79,9 @@ for (const c of COSINES) {
   }
 }
 
-saveResults("srot", gpuModel, records, { folder: "srot", fileName: "cosine.srot" });
+saveResults("srot", gpuModel, records, {
+  folder: "srot",
+  fileName: "cosine.srot",
+});
 
 cleanup();

@@ -26,33 +26,58 @@ const aSpec = loadParam("A");
 const ldSpec = loadParam("ld");
 const validationSpecs = {
   device: loadParam("device"),
-  uplo:   loadParam("uplo"),
+  uplo: loadParam("uplo"),
   transA: loadParam("trans"),
   transB: loadParam("trans"),
   layout: loadParam("layout"),
-  m:      { ...loadParam("m"), baseline: 2 },
+  m: { ...loadParam("m"), baseline: 2 },
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "m, n, and k must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      {
+        value: -1,
+        error: "m, n, and k must be non-negative",
+        label: "negative",
+      },
+    ],
   },
-  k:      loadParam("k"),
-  alpha:  loadParam("alpha"),
-  beta:   loadParam("beta"),
-  A:      { ...aSpec, ...aSpec["level-3"] },
-  lda:    ldSpec,
-  B:      loadParam("B"),
-  ldb:    ldSpec,
-  C:      loadParam("C"),
-  ldc:    ldSpec,
+  k: loadParam("k"),
+  alpha: loadParam("alpha"),
+  beta: loadParam("beta"),
+  A: { ...aSpec, ...aSpec["level-3"] },
+  lda: ldSpec,
+  B: loadParam("B"),
+  ldb: ldSpec,
+  C: loadParam("C"),
+  ldc: ldSpec,
 };
 
 test("sgemmtr validation", async (t) => {
   await runValidation(
     t,
     validationSpecs,
-    (a) => sgemmtr(a.device, a.uplo, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout),
+    (a) =>
+      sgemmtr(
+        a.device,
+        a.uplo,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     { device },
   );
 });
@@ -74,7 +99,25 @@ test("sgemmtr fixtures", async (t) => {
     NUM_RUNS,
     THRESHOLD,
     fixtureSpecs,
-    async (dev, a) => sgemmtr(dev, a.uplo, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout),
+    async (dev, a) =>
+      sgemmtr(
+        dev,
+        a.uplo,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      ),
     stdlibReference,
     forwardFactor,
   );
@@ -87,14 +130,37 @@ test("sgemmtr edge cases", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         uplo: tc.uplo,
-        transA: tc.transA, transB: tc.transB,
-        m: tc.m, n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        transA: tc.transA,
+        transB: tc.transB,
+        m: tc.m,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await sgemmtr(device, a.uplo, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc);
+      const got = await sgemmtr(
+        device,
+        a.uplo,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });
@@ -108,14 +174,38 @@ test("sgemmtr edge cases (column-major)", async (t) => {
       const a = {
         layout: tc.layout,
         uplo: tc.uplo,
-        transA: tc.transA, transB: tc.transB,
-        m: tc.m, n: tc.n, k: tc.k, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        transA: tc.transA,
+        transB: tc.transB,
+        m: tc.m,
+        n: tc.n,
+        k: tc.k,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
-      const got = await sgemmtr(device, a.uplo, a.transA, a.transB, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta, a.C, a.ldc, a.layout);
+      const got = await sgemmtr(
+        device,
+        a.uplo,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+        a.layout,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
     });

@@ -85,9 +85,10 @@ function derive64(base) {
     type: base.type === "float" ? "float64" : "float64array",
     invalid: base.invalid?.map((entry) => ({
       ...entry,
-      error: typeof entry.error === "string"
-        ? entry.error.replace("Float32Array", "Float64Array")
-        : entry.error,
+      error:
+        typeof entry.error === "string"
+          ? entry.error.replace("Float32Array", "Float64Array")
+          : entry.error,
     })),
   };
 }
@@ -152,12 +153,17 @@ export function matrixShape(dependsOn, dims) {
   if (transKey && deps.has("k")) {
     // The two dimension fields, in (outer,inner)-for-no-transpose order —
     // dependsOn's own order carries this, so no field-name special-casing.
-    const [dim1Name, dim2Name] = dependsOn.filter((d) => d === "m" || d === "n" || d === "k");
-    const dim1 = dims[dim1Name], dim2 = dims[dim2Name];
+    const [dim1Name, dim2Name] = dependsOn.filter(
+      (d) => d === "m" || d === "n" || d === "k",
+    );
+    const dim1 = dims[dim1Name],
+      dim2 = dims[dim2Name];
     const rows = isCM ? dim2 : dim1;
     const cols = isCM ? dim1 : dim2;
     const isNoTrans = (dims[transKey] ?? "no-transpose") === "no-transpose";
-    return isNoTrans ? { outer: rows, inner: cols } : { outer: cols, inner: rows };
+    return isNoTrans
+      ? { outer: rows, inner: cols }
+      : { outer: cols, inner: rows };
   }
 
   // Case 2: symmetric matrix whose square order is picked by "side" (e.g. ssymm's A).
@@ -168,11 +174,12 @@ export function matrixShape(dependsOn, dims) {
 
   // Case 3: plain m×n matrix, no trans/side involved (sgemv/ssyr2/etc.'s A, sgemm's C).
   if (deps.has("m") && deps.has("n"))
-    return isCM ? { outer: dims.n, inner: dims.m } : { outer: dims.m, inner: dims.n };
+    return isCM
+      ? { outer: dims.n, inner: dims.m }
+      : { outer: dims.m, inner: dims.n };
 
   // Case 4: symmetric matrix sized by n alone (ssymv/ssyr's A) — always square.
-  if (deps.has("n"))
-    return { outer: dims.n, inner: dims.n };
+  if (deps.has("n")) return { outer: dims.n, inner: dims.n };
 
   // Not a matrix param at all (no ld* dependency) — nothing to size here.
   return null;
@@ -196,7 +203,8 @@ export function ndArrayLen(dependsOn, dims) {
   // Case 1: matrix (depends on some ld*) — defer the shape to matrixShape.
   if (ldKey) {
     const shape = matrixShape(dependsOn, dims);
-    if (shape) return Math.max(0, (shape.outer - 1) * dims[ldKey] + shape.inner);
+    if (shape)
+      return Math.max(0, (shape.outer - 1) * dims[ldKey] + shape.inner);
   }
 
   // Case 2: Level 2 vector — its length flips between m and n depending on trans
@@ -204,8 +212,12 @@ export function ndArrayLen(dependsOn, dims) {
   if (deps.has("trans") && deps.has("m") && deps.has("n") && "m" in dims) {
     const isNoTrans = (dims.trans ?? "no-transpose") === "no-transpose";
     const dim = deps.has("incx")
-      ? (isNoTrans ? dims.n : dims.m)
-      : (isNoTrans ? dims.m : dims.n);
+      ? isNoTrans
+        ? dims.n
+        : dims.m
+      : isNoTrans
+        ? dims.m
+        : dims.n;
     return (dim - 1) * strideOf(deps, dims) + 1;
   }
 
@@ -225,24 +237,42 @@ export function ndArrayLen(dependsOn, dims) {
  * (including the default) builds a Float32Array.
  * @internal
  */
-function resolveNdArray(scenario, dependsOn, baselines, oversize = false, type = "float32array") {
+function resolveNdArray(
+  scenario,
+  dependsOn,
+  baselines,
+  oversize = false,
+  type = "float32array",
+) {
   const deps = new Set(dependsOn ?? []);
   let minLen;
-  if (oversize && deps.has("trans") && deps.has("m") && deps.has("n") && "m" in baselines) {
-    const dim = deps.has("incx") ? (baselines.xN ?? baselines.n) : (baselines.yN ?? baselines.n);
+  if (
+    oversize &&
+    deps.has("trans") &&
+    deps.has("m") &&
+    deps.has("n") &&
+    "m" in baselines
+  ) {
+    const dim = deps.has("incx")
+      ? (baselines.xN ?? baselines.n)
+      : (baselines.yN ?? baselines.n);
     minLen = (dim - 1) * strideOf(deps, baselines) + 1;
   } else {
     minLen = ndArrayLen(dependsOn, baselines);
   }
 
   if (type === "complex32array") {
-    if (scenario === "minimal")  return new Complex32Array(minLen).fill(new Complex32(1, 1));
-    if (scenario === "tooShort") return new Complex32Array(Math.max(0, minLen - 1)).fill(new Complex32(1, 1));
+    if (scenario === "minimal")
+      return new Complex32Array(minLen).fill(new Complex32(1, 1));
+    if (scenario === "tooShort")
+      return new Complex32Array(Math.max(0, minLen - 1)).fill(
+        new Complex32(1, 1),
+      );
     throw new Error(`Unknown array scenario: "${scenario}"`);
   }
 
   const Ctor = typedArrayCtor(type);
-  if (scenario === "minimal")  return new Ctor(minLen).fill(1);
+  if (scenario === "minimal") return new Ctor(minLen).fill(1);
   if (scenario === "tooShort") return new Ctor(Math.max(0, minLen - 1)).fill(1);
   throw new Error(`Unknown array scenario: "${scenario}"`);
 }
@@ -255,11 +285,12 @@ function resolveNdArray(scenario, dependsOn, baselines, oversize = false, type =
  * @internal
  */
 export function resolveParam(scenario) {
-  if (scenario === "tooShort")  return new Float32Array(4).fill(0);
-  if (scenario === "tooLong")   return new Float32Array(6).fill(0);
-  if (scenario === "identity")  return new Float32Array([-2, 0, 0, 0, 0]);
-  if (scenario === "fullMatrix") return new Float32Array([-1, 0.5, -0.5, 0.5, 0.5]);
-  if (scenario === "diagOne")   return new Float32Array([0, 0, 0.5, -0.5, 0]);
+  if (scenario === "tooShort") return new Float32Array(4).fill(0);
+  if (scenario === "tooLong") return new Float32Array(6).fill(0);
+  if (scenario === "identity") return new Float32Array([-2, 0, 0, 0, 0]);
+  if (scenario === "fullMatrix")
+    return new Float32Array([-1, 0.5, -0.5, 0.5, 0.5]);
+  if (scenario === "diagOne") return new Float32Array([0, 0, 0.5, -0.5, 0]);
   if (scenario === "offDiagOne") return new Float32Array([1, 0.5, 0, 0, 0.5]);
   throw new Error(`Unknown param scenario: "${scenario}"`);
 }
@@ -304,11 +335,19 @@ export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
     return resolveNdArray(entry.scenario, dependsOn, baselines, false, type);
   }
   if ("value" in entry) {
-    if (type === "complex32" && entry.value && typeof entry.value === "object" && !Array.isArray(entry.value))
+    if (
+      type === "complex32" &&
+      entry.value &&
+      typeof entry.value === "object" &&
+      !Array.isArray(entry.value)
+    )
       return new Complex32(entry.value.re, entry.value.im);
     if (type === "complex32array" && Array.isArray(entry.value))
       return new Complex32Array(entry.value);
-    if (Array.isArray(entry.value) && (type === "float32array" || type === "float64array"))
+    if (
+      Array.isArray(entry.value) &&
+      (type === "float32array" || type === "float64array")
+    )
       return new (typedArrayCtor(type))(entry.value);
     return entry.value;
   }
@@ -337,13 +376,27 @@ function buildArrayBaselines(specs, baselines) {
     const deps = new Set(spec.dependsOn ?? []);
     if (deps.has("lda")) {
       const ldaMax = specs.lda?.range?.max ?? baselines.lda ?? baselines.n ?? 4;
-      baselines[name] = resolveNdArray("minimal", spec.dependsOn, { ...baselines, lda: ldaMax }, true, spec.type);
+      baselines[name] = resolveNdArray(
+        "minimal",
+        spec.dependsOn,
+        { ...baselines, lda: ldaMax },
+        true,
+        spec.type,
+      );
     } else {
       // Patch incx/incy to range max so the baseline array survives stride edge cases.
       const patched = { ...baselines };
-      if (deps.has("incx") && specs.incx?.range?.max) patched.incx = specs.incx.range.max;
-      if (deps.has("incy") && specs.incy?.range?.max) patched.incy = specs.incy.range.max;
-      baselines[name] = resolveNdArray("minimal", spec.dependsOn, patched, true, spec.type);
+      if (deps.has("incx") && specs.incx?.range?.max)
+        patched.incx = specs.incx.range.max;
+      if (deps.has("incy") && specs.incy?.range?.max)
+        patched.incy = specs.incy.range.max;
+      baselines[name] = resolveNdArray(
+        "minimal",
+        spec.dependsOn,
+        patched,
+        true,
+        spec.type,
+      );
     }
   }
 }
@@ -383,7 +436,11 @@ export async function runValidation(t, specs, call, runtimeBaselines = {}) {
     if ("baseline" in spec) {
       if (spec.type === "complex32array" && Array.isArray(spec.baseline)) {
         baselines[name] = new Complex32Array(spec.baseline);
-      } else if (spec.type === "complex32" && spec.baseline && typeof spec.baseline === "object") {
+      } else if (
+        spec.type === "complex32" &&
+        spec.baseline &&
+        typeof spec.baseline === "object"
+      ) {
         baselines[name] = new Complex32(spec.baseline.re, spec.baseline.im);
       } else if (Array.isArray(spec.baseline)) {
         baselines[name] = new (typedArrayCtor(spec.type))(spec.baseline);
@@ -399,7 +456,7 @@ export async function runValidation(t, specs, call, runtimeBaselines = {}) {
 
   applyTransBaselines(specs, baselines);
   buildArrayBaselines(specs, baselines);
-  
+
   await runInvalidCases(t, specs, baselines, call);
   await runEdgeCases(t, specs, baselines, call);
 }
@@ -413,7 +470,16 @@ async function runInvalidCases(t, specs, baselines, call) {
     for (const entry of spec.invalid ?? []) {
       const label = entry.label ?? JSON.stringify(entry);
       await t.test(`${paramName} invalid: ${label}`, async () => {
-        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn, spec.type) };
+        const args = {
+          ...baselines,
+          [paramName]: resolveEntry(
+            entry,
+            paramName,
+            baselines,
+            spec.dependsOn,
+            spec.type,
+          ),
+        };
         await assert.rejects(
           () => call(args),
           (err) => {
@@ -438,7 +504,16 @@ async function runEdgeCases(t, specs, baselines, call) {
     for (const entry of spec.edge ?? []) {
       const label = entry.label ?? JSON.stringify(entry);
       await t.test(`${paramName} edge: ${label}`, async () => {
-        const args = { ...baselines, [paramName]: resolveEntry(entry, paramName, baselines, spec.dependsOn, spec.type) };
+        const args = {
+          ...baselines,
+          [paramName]: resolveEntry(
+            entry,
+            paramName,
+            baselines,
+            spec.dependsOn,
+            spec.type,
+          ),
+        };
         await call(args);
       });
     }

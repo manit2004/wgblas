@@ -58,7 +58,9 @@ for (const stride of STRIDES) {
     // device reports 256MB for the former, 128MB for the latter).
     const bytesPerBuffer = n * stride * 4;
     if (bytesPerBuffer > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -71,7 +73,16 @@ for (const stride of STRIDES) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await srot(device, n, xGpu, stride, yGpu, stride, c, s);
+      const { gpuTimeMs } = await srot(
+        device,
+        n,
+        xGpu,
+        stride,
+        yGpu,
+        stride,
+        c,
+        s,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -87,6 +98,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("srot", gpuModel, records, { folder: "srot", fileName: "stride.srot" });
+saveResults("srot", gpuModel, records, {
+  folder: "srot",
+  fileName: "stride.srot",
+});
 
 cleanup();

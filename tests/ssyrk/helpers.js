@@ -31,12 +31,16 @@ export function forwardFactor(gpu, ref, a) {
 
       let dotBound = 0;
       for (let p = 0; p < k; p++)
-        dotBound += Math.abs(matElem(A, lda, layout, trans, i, p)) * Math.abs(matElem(A, lda, layout, transB, p, j));
+        dotBound +=
+          Math.abs(matElem(A, lda, layout, trans, i, p)) *
+          Math.abs(matElem(A, lda, layout, transB, p, j));
 
       const cIn = Math.abs(cElem(C, ldc, layout, i, j));
-      const bound = eps * ((k + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * cIn);
-      if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
-      else maxFactor = Math.max(maxFactor, err / bound);
+      const bound =
+        eps * ((k + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * cIn);
+      if (bound === 0) {
+        if (err !== 0) maxFactor = Infinity;
+      } else maxFactor = Math.max(maxFactor, err / bound);
     }
   }
   return maxFactor;

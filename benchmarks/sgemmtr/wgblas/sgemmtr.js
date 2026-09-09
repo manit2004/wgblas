@@ -32,27 +32,79 @@ const records = [];
 printHeader(COLS);
 
 for (const size of SIZES) {
-  const m = size, n = size, k = size;
+  const m = size,
+    n = size,
+    k = size;
   // column-major, consistent with sgemm's own benchmark — not for a cuBLAS
   // comparison here (there is none), just so the two remain directly
   // comparable to each other.
-  const lda = m, ldb = k, ldc = m;
+  const lda = m,
+    ldb = k,
+    ldc = m;
   const alpha = 1.0;
   const beta = 0.0;
 
-  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * k), m, k), m, k, lda, "column-major");
-  const BGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(k * n), k, n), k, n, ldb, "column-major");
-  const CGpu = GpuMatrix.from(new Float32Array(m * n), m, n, ldc, "column-major");
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(m * k), m, k),
+    m,
+    k,
+    lda,
+    "column-major",
+  );
+  const BGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(k * n), k, n),
+    k,
+    n,
+    ldb,
+    "column-major",
+  );
+  const CGpu = GpuMatrix.from(
+    new Float32Array(m * n),
+    m,
+    n,
+    ldc,
+    "column-major",
+  );
 
   // warm up
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await sgemmtr(device, "lower", "no-transpose", "no-transpose", m, n, k, alpha, AGpu, lda, BGpu, ldb, beta, CGpu, ldc);
+    await sgemmtr(
+      device,
+      "lower",
+      "no-transpose",
+      "no-transpose",
+      m,
+      n,
+      k,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
+      beta,
+      CGpu,
+      ldc,
+    );
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await sgemmtr(
-      device, "lower", "no-transpose", "no-transpose", m, n, k, alpha, AGpu, lda, BGpu, ldb, beta, CGpu, ldc,
+      device,
+      "lower",
+      "no-transpose",
+      "no-transpose",
+      m,
+      n,
+      k,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
+      beta,
+      CGpu,
+      ldc,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
@@ -73,7 +125,14 @@ for (const size of SIZES) {
   const gflops = flops / 1e9 / (med / 1e3);
   const gbs = bytes / 1e9 / (med / 1e3);
   printRow(COLS, [m, n, k, med, gflops, gbs]);
-  records.push({ m, n, k, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+  records.push({
+    m,
+    n,
+    k,
+    compute_ms: med,
+    compute_GFLOPs: gflops,
+    compute_GBs: gbs,
+  });
 }
 
 saveResults("sgemmtr", gpuModel, records, { folder: "sgemmtr" });

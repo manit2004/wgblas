@@ -25,7 +25,11 @@ test("repeat init() with identical options returns the same device", async () =>
 test("differing options yield a distinct device, not an error", async () => {
   const plain = await init({ powerPreference });
   const benchmarking = await init({ powerPreference, benchmark: true });
-  assert.notEqual(benchmarking, plain, "benchmark:true must get its own device");
+  assert.notEqual(
+    benchmarking,
+    plain,
+    "benchmark:true must get its own device",
+  );
   // ...and each remains individually cached.
   assert.equal(await init({ powerPreference }), plain);
   assert.equal(await init({ powerPreference, benchmark: true }), benchmarking);
@@ -35,7 +39,11 @@ test("gpuName() reports per-device, defaulting to the first init", async () => {
   const first = await init({ powerPreference });
   const byDefault = gpuName();
   const explicit = gpuName(first);
-  assert.deepEqual(explicit, byDefault, "explicit primary should match the default");
+  assert.deepEqual(
+    explicit,
+    byDefault,
+    "explicit primary should match the default",
+  );
   assert.ok(byDefault.description, "expected an adapter description");
 });
 
@@ -43,7 +51,11 @@ test("cleanup() releases every cached device", async () => {
   await init({ powerPreference });
   await init({ powerPreference, benchmark: true });
   cleanup();
-  assert.throws(() => gpuName(), /call init\(\) first/, "cleanup should clear device state");
+  assert.throws(
+    () => gpuName(),
+    /call init\(\) first/,
+    "cleanup should clear device state",
+  );
   // Re-initializing after cleanup works and starts a fresh cache.
   const fresh = await init({ powerPreference });
   assert.ok(fresh, "expected re-init after cleanup to succeed");
@@ -57,23 +69,42 @@ test("cleanup(device) releases only that device", async () => {
   cleanup(benchmarking);
 
   // The survivor stays usable, and its cache entry stays intact.
-  assert.equal(await init({ powerPreference }), plain, "surviving device should still be cached");
-  assert.ok(gpuName(plain).description, "surviving device should still report its adapter");
+  assert.equal(
+    await init({ powerPreference }),
+    plain,
+    "surviving device should still be cached",
+  );
+  assert.ok(
+    gpuName(plain).description,
+    "surviving device should still report its adapter",
+  );
   // The released one is gone from the cache, so asking again builds a new device.
   const rebuilt = await init({ powerPreference, benchmark: true });
-  assert.notEqual(rebuilt, benchmarking, "released device should not come back from the cache");
+  assert.notEqual(
+    rebuilt,
+    benchmarking,
+    "released device should not come back from the cache",
+  );
   cleanup();
 });
 
 test("cleanup(device) promotes a survivor to be the default device", async () => {
   const plain = await init({ powerPreference });
   const benchmarking = await init({ powerPreference, benchmark: true });
-  assert.deepEqual(gpuName(), gpuName(plain), "first init should start as the default");
+  assert.deepEqual(
+    gpuName(),
+    gpuName(plain),
+    "first init should start as the default",
+  );
 
   cleanup(plain); // release the current default
 
   // gpuName() with no argument must still answer, now via the survivor.
-  assert.deepEqual(gpuName(), gpuName(benchmarking), "survivor should become the default");
+  assert.deepEqual(
+    gpuName(),
+    gpuName(benchmarking),
+    "survivor should become the default",
+  );
   cleanup();
 });
 

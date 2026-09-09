@@ -25,14 +25,16 @@ after(() => {
 // validation.js's complex32/complex32array handling).
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  alpha:  loadParam("alphaComplex"),
-  x:      loadParam("xComplex"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  alpha: loadParam("alphaComplex"),
+  x: loadParam("xComplex"),
 };
 
 test("cscal validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => cscal(a.device, a.n, a.alpha, a.x, a.incx),
     { device },
   );

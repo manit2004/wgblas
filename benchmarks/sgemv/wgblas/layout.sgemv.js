@@ -39,8 +39,12 @@ for (const layout of LAYOUTS) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped layout=${layout}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped layout=${layout}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -49,12 +53,40 @@ for (const layout of LAYOUTS) {
     const AGpu = GpuMatrix.from(randomFloat32Array(n * lda), n, n, lda, layout);
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await sgemv(device, "no-transpose", n, n, 1.0, AGpu, lda, xGpu, 1, 0.0, yGpu, 1, layout);
+      await sgemv(
+        device,
+        "no-transpose",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        0.0,
+        yGpu,
+        1,
+        layout,
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await sgemv(device, "no-transpose", n, n, 1.0, AGpu, lda, xGpu, 1, 0.0, yGpu, 1, layout);
+      const { gpuTimeMs } = await sgemv(
+        device,
+        "no-transpose",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        0.0,
+        yGpu,
+        1,
+        layout,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -72,6 +104,9 @@ for (const layout of LAYOUTS) {
   }
 }
 
-saveResults("sgemv", gpuModel, records, { folder: "sgemv", fileName: "layout.sgemv" });
+saveResults("sgemv", gpuModel, records, {
+  folder: "sgemv",
+  fileName: "layout.sgemv",
+});
 
 cleanup();

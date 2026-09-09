@@ -46,8 +46,12 @@ for (const uplo of UPLOS) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped uplo=${uplo}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped uplo=${uplo}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -56,12 +60,38 @@ for (const uplo of UPLOS) {
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await strmv(device, uplo, "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1, yGpu, 1, "row-major");
+      await strmv(
+        device,
+        uplo,
+        "no-transpose",
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        yGpu,
+        1,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await strmv(device, uplo, "no-transpose", "non-unit", n, AGpu, lda, xGpu, 1, yGpu, 1, "row-major");
+      const { gpuTimeMs } = await strmv(
+        device,
+        uplo,
+        "no-transpose",
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        yGpu,
+        1,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -72,13 +102,16 @@ for (const uplo of UPLOS) {
     if (times.length === 0) continue;
     const med = median(times);
     // stored triangle + x + y — logical elements touched, same for every uplo
-    const bytes = (n * (n + 1) / 2 + 2 * n) * 4;
+    const bytes = ((n * (n + 1)) / 2 + 2 * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [uplo, n, med, gbs]);
     records.push({ uplo, n, compute_ms: med, compute_GBs: gbs });
   }
 }
 
-saveResults("strmv", gpuModel, records, { folder: "strmv", fileName: "uplo.strmv" });
+saveResults("strmv", gpuModel, records, {
+  folder: "strmv",
+  fileName: "uplo.strmv",
+});
 
 cleanup();

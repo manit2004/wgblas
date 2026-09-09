@@ -41,7 +41,15 @@ for (const n of SIZES) {
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await saxpy(device, n, alpha, xGpu, STRIDE, yGpu, STRIDE);
+    const { gpuTimeMs } = await saxpy(
+      device,
+      n,
+      alpha,
+      xGpu,
+      STRIDE,
+      yGpu,
+      STRIDE,
+    );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
 
