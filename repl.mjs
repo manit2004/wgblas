@@ -3,7 +3,7 @@ import {
   init, cleanup,
   GpuVector, GpuMatrix,
   Complex32, Complex32Array, Complex64, Complex64Array,
-  sscal, cscal, dscal, sswap, saxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
+  sscal, cscal, dscal, sswap, saxpy, daxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
 } from "wgblas";
 
 const device = await init();
@@ -15,7 +15,7 @@ Object.assign(r.context, {
   GpuVector, GpuMatrix,
   Complex32, Complex32Array, Complex64, Complex64Array,
   Float32Array, Float64Array,
-  sscal, cscal, dscal, sswap, saxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
+  sscal, cscal, dscal, sswap, saxpy, daxpy, scopy, sdot, ddot, sasum, dasum, snrm2, isamax, idamax, srot, srotm, sgemv, ssymv, strsv, sger, ssyr, ssyr2, sgemm, sgemmtr, ssyrk, ssyr2k, ssymm, strmm, strsm,
 });
 
 r.defineCommand("help", {
@@ -28,6 +28,7 @@ r.defineCommand("help", {
   dscal (device, n, alpha, x, incx)                        (x: Float64Array or GpuVector)
   sswap (device, n, x, incx, y, incy)
   saxpy (device, n, alpha, x, incx, y, incy)
+  daxpy (device, n, alpha, x, incx, y, incy)              (x, y: Float64Array or GpuVector)
   scopy (device, n, x, incx, y, incy)
   sdot  (device, n, x, incx, y, incy)
   sasum (device, n, x, incx)
@@ -53,7 +54,7 @@ r.defineCommand("help", {
   strsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
-  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum)
+  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy)
   GpuVector.from(Complex32Array) v.read()  v.destroy()  (for cscal)
   GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()
 

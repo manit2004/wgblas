@@ -51,6 +51,10 @@
       "import": "./src/saxpy/saxpy.mjs",
       "types": "./src/saxpy/saxpy.d.mts"
     },
+    "./daxpy": {
+      "import": "./src/daxpy/daxpy.mjs",
+      "types": "./src/daxpy/daxpy.d.mts"
+    },
     "./scopy": {
       "import": "./src/scopy/scopy.mjs",
       "types": "./src/scopy/scopy.d.mts"
@@ -202,6 +206,7 @@
     "@stdlib/array-complex64": "^0.3.2",
     "@stdlib/blas-base-cscal": "^0.1.1",
     "@stdlib/blas-base-dasum": "^0.4.1",
+    "@stdlib/blas-base-daxpy": "^0.4.1",
     "@stdlib/blas-base-ddot": "^0.4.1",
     "@stdlib/blas-base-dscal": "^0.4.1",
     "@stdlib/blas-base-idamax": "^0.1.1",

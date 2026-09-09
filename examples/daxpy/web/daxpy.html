@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>daxpy — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, daxpy, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 5;
+        const alpha = 2;
+        const x = new Float64Array([1, 2, 3, 4, 5]);
+        const y = new Float64Array([10, 20, 30, 40, 50]);
+
+        const xBefore = Array.from(x).map(v => v.toFixed(4)).join(", ");
+        const yBefore = Array.from(y).map(v => v.toFixed(4)).join(", ");
+
+        const { y: resultY } = await daxpy(device, n, alpha, x, 1, y, 1);
+
+        document.getElementById("out").textContent =
+          "x before: " + xBefore +
+          "\ny before: " + yBefore +
+          "\ny after:  " + Array.from(resultY).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

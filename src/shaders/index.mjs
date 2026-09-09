@@ -113,6 +113,14 @@ routineShaders.dscal = {
   dscal,
 };
 
+import daxpy from "./daxpy.wgsl"; // f64 sibling of saxpy — one ddMulProtected + one ddAddProtected per element, no reduction shader needed
+routineShaders.daxpy = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  daxpy,
+};
+
 import ddGreater from "./f64/utils/greater.wgsl";
 import ddEqual from "./f64/utils/equal.wgsl";
 import idamax from "./idamax.wgsl";

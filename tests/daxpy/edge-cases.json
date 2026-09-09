@@ -1,0 +1,11 @@
+[
+  { "label": "alpha=0 — y unchanged even with large x", "n": 3, "alpha": 0, "x": [100, 200, 300], "incx": 1, "y": [3, 4, 5], "incy": 1 },
+  { "label": "alpha=1 — reduces to y[i] += x[i]", "n": 3, "alpha": 1, "x": [1, 2, 3], "incx": 1, "y": [4, 5, 6], "incy": 1 },
+  { "label": "alpha=-1 — reduces to y[i] -= x[i]", "n": 3, "alpha": -1, "x": [1, 2, 3], "incx": 1, "y": [4, 5, 6], "incy": 1 },
+  { "label": "x all zeros — y unchanged regardless of alpha", "n": 3, "alpha": 5, "x": [0, 0, 0], "incx": 1, "y": [1, 2, 3], "incy": 1 },
+  { "label": "incx=2, incy=1 — independent strides", "n": 3, "alpha": 2, "x": [1, 99, 2, 99, 3], "incx": 2, "y": [10, 20, 30], "incy": 1 },
+  { "label": "n=1 — single element", "n": 1, "alpha": 2, "x": [5], "incx": 1, "y": [3], "incy": 1 },
+  { "label": "x aliased with y (y := (alpha+1)*x)", "n": 3, "alpha": 2, "x": [1, 2, 3], "incx": 1, "y": [1, 2, 3], "incy": 1 },
+  { "label": "values beyond the f32 mantissa — within double-double tolerance, not bit-exact f64", "n": 3, "alpha": 1.0000000000000002, "x": [1.0000000000000002, -2.0000000000000004, 3.0000000000000009], "incx": 1, "y": [1.0000000000000002, 2.0000000000000004, 1], "incy": 1 },
+  { "label": "catastrophic cancellation — alpha*x nearly cancels y", "n": 2, "alpha": 1e8, "x": [1, 1], "incx": 1, "y": [-99999999.99999999, -100000000.00000001], "incy": 1 }
+]

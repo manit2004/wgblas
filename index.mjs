@@ -13,6 +13,7 @@ export { cscal } from "./src/cscal/cscal.mjs";
 export { dscal } from "./src/dscal/dscal.mjs";
 export { sswap } from "./src/sswap/sswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
+export { daxpy } from "./src/daxpy/daxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";
 export { sdot } from "./src/sdot/sdot.mjs";
 export { sasum } from "./src/sasum/sasum.mjs";
