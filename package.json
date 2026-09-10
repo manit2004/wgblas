@@ -7,149 +7,149 @@
   "types": "./index.d.mts",
   "exports": {
     ".": {
-      "import": "./index.mjs",
-      "types": "./index.d.mts"
+      "types": "./index.d.mts",
+      "import": "./index.mjs"
     },
     "./browser": "./dist/wgblas.browser.js",
     "./classes/GpuVector": {
-      "import": "./src/classes/GpuVector.mjs",
-      "types": "./src/classes/GpuVector.d.mts"
+      "types": "./src/classes/GpuVector.d.mts",
+      "import": "./src/classes/GpuVector.mjs"
     },
     "./classes/GpuMatrix": {
-      "import": "./src/classes/GpuMatrix.mjs",
-      "types": "./src/classes/GpuMatrix.d.mts"
+      "types": "./src/classes/GpuMatrix.d.mts",
+      "import": "./src/classes/GpuMatrix.mjs"
     },
     "./classes/Complex32": {
-      "import": "./src/classes/Complex32.mjs",
-      "types": "./src/classes/Complex32.d.mts"
+      "types": "./src/classes/Complex32.d.mts",
+      "import": "./src/classes/Complex32.mjs"
     },
     "./classes/Complex64": {
-      "import": "./src/classes/Complex64.mjs",
-      "types": "./src/classes/Complex64.d.mts"
+      "types": "./src/classes/Complex64.d.mts",
+      "import": "./src/classes/Complex64.mjs"
     },
     "./random": {
-      "import": "./src/random/random.mjs",
-      "types": "./src/random/random.d.mts"
+      "types": "./src/random/random.d.mts",
+      "import": "./src/random/random.mjs"
     },
     "./sscal": {
-      "import": "./src/sscal/sscal.mjs",
-      "types": "./src/sscal/sscal.d.mts"
+      "types": "./src/sscal/sscal.d.mts",
+      "import": "./src/sscal/sscal.mjs"
     },
     "./cscal": {
-      "import": "./src/cscal/cscal.mjs",
-      "types": "./src/cscal/cscal.d.mts"
+      "types": "./src/cscal/cscal.d.mts",
+      "import": "./src/cscal/cscal.mjs"
     },
     "./dscal": {
-      "import": "./src/dscal/dscal.mjs",
-      "types": "./src/dscal/dscal.d.mts"
+      "types": "./src/dscal/dscal.d.mts",
+      "import": "./src/dscal/dscal.mjs"
     },
     "./sswap": {
-      "import": "./src/sswap/sswap.mjs",
-      "types": "./src/sswap/sswap.d.mts"
+      "types": "./src/sswap/sswap.d.mts",
+      "import": "./src/sswap/sswap.mjs"
     },
     "./saxpy": {
-      "import": "./src/saxpy/saxpy.mjs",
-      "types": "./src/saxpy/saxpy.d.mts"
+      "types": "./src/saxpy/saxpy.d.mts",
+      "import": "./src/saxpy/saxpy.mjs"
     },
     "./daxpy": {
-      "import": "./src/daxpy/daxpy.mjs",
-      "types": "./src/daxpy/daxpy.d.mts"
+      "types": "./src/daxpy/daxpy.d.mts",
+      "import": "./src/daxpy/daxpy.mjs"
     },
     "./scopy": {
-      "import": "./src/scopy/scopy.mjs",
-      "types": "./src/scopy/scopy.d.mts"
+      "types": "./src/scopy/scopy.d.mts",
+      "import": "./src/scopy/scopy.mjs"
     },
     "./sdot": {
-      "import": "./src/sdot/sdot.mjs",
-      "types": "./src/sdot/sdot.d.mts"
+      "types": "./src/sdot/sdot.d.mts",
+      "import": "./src/sdot/sdot.mjs"
     },
     "./sasum": {
-      "import": "./src/sasum/sasum.mjs",
-      "types": "./src/sasum/sasum.d.mts"
+      "types": "./src/sasum/sasum.d.mts",
+      "import": "./src/sasum/sasum.mjs"
     },
     "./dasum": {
-      "import": "./src/dasum/dasum.mjs",
-      "types": "./src/dasum/dasum.d.mts"
+      "types": "./src/dasum/dasum.d.mts",
+      "import": "./src/dasum/dasum.mjs"
     },
     "./ddot": {
-      "import": "./src/ddot/ddot.mjs",
-      "types": "./src/ddot/ddot.d.mts"
+      "types": "./src/ddot/ddot.d.mts",
+      "import": "./src/ddot/ddot.mjs"
     },
     "./snrm2": {
-      "import": "./src/snrm2/snrm2.mjs",
-      "types": "./src/snrm2/snrm2.d.mts"
+      "types": "./src/snrm2/snrm2.d.mts",
+      "import": "./src/snrm2/snrm2.mjs"
     },
     "./isamax": {
-      "import": "./src/isamax/isamax.mjs",
-      "types": "./src/isamax/isamax.d.mts"
+      "types": "./src/isamax/isamax.d.mts",
+      "import": "./src/isamax/isamax.mjs"
     },
     "./idamax": {
-      "import": "./src/idamax/idamax.mjs",
-      "types": "./src/idamax/idamax.d.mts"
+      "types": "./src/idamax/idamax.d.mts",
+      "import": "./src/idamax/idamax.mjs"
     },
     "./srot": {
-      "import": "./src/srot/srot.mjs",
-      "types": "./src/srot/srot.d.mts"
+      "types": "./src/srot/srot.d.mts",
+      "import": "./src/srot/srot.mjs"
     },
     "./srotm": {
-      "import": "./src/srotm/srotm.mjs",
-      "types": "./src/srotm/srotm.d.mts"
+      "types": "./src/srotm/srotm.d.mts",
+      "import": "./src/srotm/srotm.mjs"
     },
     "./sgemv": {
-      "import": "./src/sgemv/sgemv.mjs",
-      "types": "./src/sgemv/sgemv.d.mts"
+      "types": "./src/sgemv/sgemv.d.mts",
+      "import": "./src/sgemv/sgemv.mjs"
     },
     "./ssymv": {
-      "import": "./src/ssymv/ssymv.mjs",
-      "types": "./src/ssymv/ssymv.d.mts"
+      "types": "./src/ssymv/ssymv.d.mts",
+      "import": "./src/ssymv/ssymv.mjs"
     },
     "./strmv": {
-      "import": "./src/strmv/strmv.mjs",
-      "types": "./src/strmv/strmv.d.mts"
+      "types": "./src/strmv/strmv.d.mts",
+      "import": "./src/strmv/strmv.mjs"
     },
     "./strsv": {
-      "import": "./src/strsv/strsv.mjs",
-      "types": "./src/strsv/strsv.d.mts"
+      "types": "./src/strsv/strsv.d.mts",
+      "import": "./src/strsv/strsv.mjs"
     },
     "./sger": {
-      "import": "./src/sger/sger.mjs",
-      "types": "./src/sger/sger.d.mts"
+      "types": "./src/sger/sger.d.mts",
+      "import": "./src/sger/sger.mjs"
     },
     "./ssyr": {
-      "import": "./src/ssyr/ssyr.mjs",
-      "types": "./src/ssyr/ssyr.d.mts"
+      "types": "./src/ssyr/ssyr.d.mts",
+      "import": "./src/ssyr/ssyr.mjs"
     },
     "./ssyr2": {
-      "import": "./src/ssyr2/ssyr2.mjs",
-      "types": "./src/ssyr2/ssyr2.d.mts"
+      "types": "./src/ssyr2/ssyr2.d.mts",
+      "import": "./src/ssyr2/ssyr2.mjs"
     },
     "./sgemm": {
-      "import": "./src/sgemm/sgemm.mjs",
-      "types": "./src/sgemm/sgemm.d.mts"
+      "types": "./src/sgemm/sgemm.d.mts",
+      "import": "./src/sgemm/sgemm.mjs"
     },
     "./sgemmtr": {
-      "import": "./src/sgemmtr/sgemmtr.mjs",
-      "types": "./src/sgemmtr/sgemmtr.d.mts"
+      "types": "./src/sgemmtr/sgemmtr.d.mts",
+      "import": "./src/sgemmtr/sgemmtr.mjs"
     },
     "./ssyrk": {
-      "import": "./src/ssyrk/ssyrk.mjs",
-      "types": "./src/ssyrk/ssyrk.d.mts"
+      "types": "./src/ssyrk/ssyrk.d.mts",
+      "import": "./src/ssyrk/ssyrk.mjs"
     },
     "./ssyr2k": {
-      "import": "./src/ssyr2k/ssyr2k.mjs",
-      "types": "./src/ssyr2k/ssyr2k.d.mts"
+      "types": "./src/ssyr2k/ssyr2k.d.mts",
+      "import": "./src/ssyr2k/ssyr2k.mjs"
     },
     "./ssymm": {
-      "import": "./src/ssymm/ssymm.mjs",
-      "types": "./src/ssymm/ssymm.d.mts"
+      "types": "./src/ssymm/ssymm.d.mts",
+      "import": "./src/ssymm/ssymm.mjs"
     },
     "./strmm": {
-      "import": "./src/strmm/strmm.mjs",
-      "types": "./src/strmm/strmm.d.mts"
+      "types": "./src/strmm/strmm.d.mts",
+      "import": "./src/strmm/strmm.mjs"
     },
     "./strsm": {
-      "import": "./src/strsm/strsm.mjs",
-      "types": "./src/strsm/strsm.d.mts"
+      "types": "./src/strsm/strsm.d.mts",
+      "import": "./src/strsm/strsm.mjs"
     }
   },
   "files": [
@@ -240,6 +240,7 @@
     "jscpd": "^5.2.0",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
+    "publint": "^0.3.24",
     "typedoc": "^0.28.19",
     "typedoc-plugin-katex": "^0.1.2",
     "typescript": "^6.0.3",
