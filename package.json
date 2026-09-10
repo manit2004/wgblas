@@ -203,6 +203,7 @@
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
+    "@size-limit/file": "^13.0.3",
     "@stdlib/array-complex64": "^0.3.2",
     "@stdlib/blas-base-cscal": "^0.1.1",
     "@stdlib/blas-base-dasum": "^0.4.1",
@@ -241,6 +242,7 @@
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
     "publint": "^0.3.24",
+    "size-limit": "^13.0.3",
     "typedoc": "^0.28.19",
     "typedoc-plugin-katex": "^0.1.2",
     "typescript": "^6.0.3",
@@ -252,12 +254,20 @@
     "docs": "npx typedoc && npm run build:browser",
     "prepublishOnly": "npm run build:browser",
     "coverage": "c8 --reporter=text --reporter=html node --test $(find tests -name 'test.*.js')",
-    "cpd": "jscpd src"
+    "cpd": "jscpd src",
+    "size": "npm run build:browser && size-limit"
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [
       "prettier --write",
       "eslint"
     ]
-  }
+  },
+  "size-limit": [
+    {
+      "name": "browser bundle (brotli)",
+      "path": "dist/wgblas.browser.js",
+      "limit": "45 KB"
+    }
+  ]
 }
