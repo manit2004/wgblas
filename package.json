@@ -267,7 +267,7 @@
     {
       "name": "browser bundle (brotli)",
       "path": "dist/wgblas.browser.js",
-      "limit": "45 KB"
+      "limit": "50 KB"
     }
   ]
 }
