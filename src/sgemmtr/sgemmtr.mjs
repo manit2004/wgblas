@@ -18,7 +18,7 @@ import {
   BN_LARGE,
   LARGE_TILE_WORKGROUP_THRESHOLD,
 } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function sgemmtr(
   device,
@@ -42,8 +42,7 @@ export async function sgemmtr(
   let BIsGpu = B instanceof GpuMatrix;
   const CIsGpu = C instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "sgemmtr", { A, B, C });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");

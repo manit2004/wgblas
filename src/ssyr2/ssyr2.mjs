@@ -11,7 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function ssyr2(
   device,
@@ -30,8 +30,7 @@ export async function ssyr2(
   const yIsGpu = y instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "ssyr2", { A, x, y });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");

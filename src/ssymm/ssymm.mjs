@@ -21,7 +21,7 @@ import {
   LARGE_TILE_WORKGROUP_THRESHOLD,
 } from "../util/constants.mjs";
 import { TILE_WG_2D } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // ssymm: C := alpha*A*B + beta*C (side='left') or alpha*B*A + beta*C
 // (side='right'), A symmetric. No fused kernel — symmetrize then sgemm,
@@ -46,8 +46,7 @@ export async function ssymm(
   const BIsGpu = B instanceof GpuMatrix;
   const CIsGpu = C instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "ssymm", { A, B, C });
   if (side !== "left" && side !== "right")
     throw new Error("side must be 'left' or 'right'.");

@@ -19,7 +19,7 @@ import {
   BN_LARGE,
   LARGE_TILE_WORKGROUP_THRESHOLD,
 } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // ssyrk: C := uplo(alpha*op(A)*op(A)^T + beta*C). No dedicated shader —
 // sgemmtr's kernel with A duplicated into a separate B buffer (B := A).
@@ -40,8 +40,7 @@ export async function ssyrk(
   const AIsGpu = A instanceof GpuMatrix;
   const CIsGpu = C instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "ssyrk", { A, C });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");

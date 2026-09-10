@@ -12,7 +12,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // daxpy: y := alpha * x + y, double-double (Dekker) f64 emulation of saxpy —
 // x, y, and alpha are each split into an f32 (hi, lo) pair; WGSL has no f64 type.
@@ -20,8 +20,7 @@ export async function daxpy(device, n, alpha, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||

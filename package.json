@@ -249,7 +249,9 @@
     "prepare": "husky",
     "build:browser": "node scripts/build-browser.mjs",
     "docs": "npx typedoc && npm run build:browser",
-    "prepublishOnly": "npm run build:browser"
+    "prepublishOnly": "npm run build:browser",
+    "coverage": "c8 --reporter=text --reporter=html node --test $(find tests -name 'test.*.js')",
+    "cpd": "jscpd src"
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [

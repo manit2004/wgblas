@@ -12,7 +12,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { requireWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function sgemv(
   device,
@@ -33,8 +33,7 @@ export async function sgemv(
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "sgemv", { A, x, y });
   if (trans !== "no-transpose" && trans !== "transpose")
     throw new Error("trans must be 'no-transpose' or 'transpose'.");

@@ -18,7 +18,7 @@ import {
   BN_LARGE,
   LARGE_TILE_WORKGROUP_THRESHOLD,
 } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // ssyr2k: C := uplo(alpha*op(A)*op(B)^T + alpha*op(B)*op(A)^T + beta*C). No
 // dedicated shader — two sgemmtr passes on one encoder, second with beta=1.
@@ -42,8 +42,7 @@ export async function ssyr2k(
   const BIsGpu = B instanceof GpuMatrix;
   const CIsGpu = C instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "ssyr2k", { A, B, C });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");

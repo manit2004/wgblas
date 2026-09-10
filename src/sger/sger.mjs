@@ -11,7 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function sger(
   device,
@@ -28,8 +28,7 @@ export async function sger(
 ) {
   const AIsGpu = A instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "sger", { A, x, y });
   if (layout !== "row-major" && layout !== "column-major")
     throw new Error("layout must be 'row-major' or 'column-major'.");

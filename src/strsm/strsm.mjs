@@ -25,7 +25,7 @@ import {
   LARGE_TILE_WORKGROUP_THRESHOLD,
 } from "../util/constants.mjs";
 import { BLOCK_SIZE } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // strsm: B := alpha*op(A)^-1*B (side='left') or alpha*B*op(A)^-1 (side='right'),
 // A triangular. Blocked substitution (strsv's own technique, generalized to
@@ -50,8 +50,7 @@ export async function strsm(
   const BIsGpu = B instanceof GpuMatrix;
   const isUnit = diag === "unit";
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "strsm", { A, B });
   if (side !== "left" && side !== "right")
     throw new Error("side must be 'left' or 'right'.");

@@ -14,13 +14,12 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 import { WGS } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function dasum(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "dasum", { x });
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");

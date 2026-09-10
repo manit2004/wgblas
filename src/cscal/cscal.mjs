@@ -13,7 +13,7 @@ import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { Complex32, Complex32Array } from "../classes/Complex32.mjs";
 import { interleaveComplex32 } from "../util/complex.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // cscal: x := alpha * x, complex. alpha is a Complex32; x is a Complex32Array
 // or a Complex32Array-backed GpuVector, interleaved [re0, im0, re1, im1, ...]
@@ -21,8 +21,7 @@ import { requireSameDevice } from "../util/device.mjs";
 export async function cscal(device, n, alpha, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "cscal", { x });
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");

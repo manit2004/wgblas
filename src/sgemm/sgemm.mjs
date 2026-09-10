@@ -20,7 +20,7 @@ import {
   BN_LARGE,
   LARGE_TILE_WORKGROUP_THRESHOLD,
 } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function sgemm(
   device,
@@ -43,8 +43,7 @@ export async function sgemm(
   let BIsGpu = B instanceof GpuMatrix;
   const CIsGpu = C instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "sgemm", { A, B, C });
   if (transA !== "no-transpose" && transA !== "transpose")
     throw new Error("transA must be 'no-transpose' or 'transpose'.");

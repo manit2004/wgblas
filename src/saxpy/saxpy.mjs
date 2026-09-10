@@ -11,14 +11,13 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function saxpy(device, n, alpha, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "saxpy", { x, y });
   if (
     !Number.isInteger(n) ||

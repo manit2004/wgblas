@@ -21,7 +21,7 @@ import {
   LARGE_TILE_WORKGROUP_THRESHOLD,
 } from "../util/constants.mjs";
 import { TILE_WG_2D } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // strmm: B := alpha*op(A)*B (side='left') or alpha*B*op(A) (side='right'), A
 // triangular. Triangularize then sgemm, one command encoder. B is both
@@ -46,8 +46,7 @@ export async function strmm(
   const BIsGpu = B instanceof GpuMatrix;
   const isUnit = diag === "unit";
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "strmm", { A, B });
   if (side !== "left" && side !== "right")
     throw new Error("side must be 'left' or 'right'.");

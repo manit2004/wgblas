@@ -14,14 +14,13 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 import { WGS } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function ddot(device, n, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "ddot", { x, y });
   if (
     !Number.isInteger(n) ||

@@ -12,15 +12,14 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dscal: x := alpha * x, double-double (Dekker) f64 emulation of sscal — x
 // and alpha are each split into an f32 (hi, lo) pair; WGSL has no f64 type.
 export async function dscal(device, n, alpha, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
   if (typeof alpha !== "number") throw new Error("alpha must be a number.");
