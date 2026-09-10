@@ -10,7 +10,11 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup, gpuName } from "wgblas";
-import { getDevice, getAdapter } from "../../../src/init.mjs";
+import {
+  getDevice,
+  getAdapter,
+  isBenchmarkEnabled,
+} from "../../../src/init.mjs";
 import { getPowerPreference } from "../../helpers/device.js";
 
 const powerPreference = getPowerPreference();
@@ -32,6 +36,28 @@ test("getDevice() and getAdapter() throw before any init() call", () => {
   );
 });
 
+// Order-independent — isBenchmarkEnabled() doesn't touch init() state at all,
+// it just looks up whatever device it's handed. A device that never went
+// through init() (or none at all, if called before any init()) has no entry
+// in the internal metadata map, so this exercises the `?? false` fallback
+// rather than every other call site's registered-device path.
+test("isBenchmarkEnabled() defaults to false for an unregistered device", () => {
+  assert.equal(isBenchmarkEnabled({ label: "never-from-init" }), false);
+});
+
+// dumpShaders's toggles-array ternary in init.mjs only takes its "true"
+// branch on the process's very first init() call (the `if (!_gpu)` guard
+// means every later call skips straight past it) — so this has to run
+// before any other init() in the file, right after the throws-before-init
+// check above.
+test("first init() call with dumpShaders:true builds a working device", async () => {
+  const device = await init({ powerPreference, dumpShaders: true });
+  assert.ok(device, "expected init() to succeed with dumpShaders:true");
+  // No prior instance exists yet, so there's nothing to mismatch against —
+  // unlike the "changed after first init()" case below, this must be silent.
+  assert.ok(gpuName(device).description, "expected a working adapter");
+});
+
 test("repeat init() with identical options returns the same device", async () => {
   const first = await init({ powerPreference });
   const second = await init({ powerPreference });
@@ -51,6 +77,15 @@ test("differing options yield a distinct device, not an error", async () => {
   assert.equal(await init({ powerPreference, benchmark: true }), benchmarking);
 });
 
+test("getDevice() returns the primary device once one exists", async () => {
+  const first = await init({ powerPreference });
+  assert.equal(
+    getDevice(),
+    first,
+    "expected getDevice() to answer with the primary device",
+  );
+});
+
 test("gpuName() reports per-device, defaulting to the first init", async () => {
   const first = await init({ powerPreference });
   const byDefault = gpuName();
@@ -61,6 +96,24 @@ test("gpuName() reports per-device, defaulting to the first init", async () => {
     "explicit primary should match the default",
   );
   assert.ok(byDefault.description, "expected an adapter description");
+});
+
+test('gpuName() falls back to "unknown" for missing adapter info fields', async () => {
+  // Real adapters always report a description, so this fallback needs a
+  // deliberately blanked-out info object — adapter.info is a plain
+  // writable/configurable own property, so no environment faking needed.
+  const device = await init({ powerPreference });
+  const adapter = getAdapter(device);
+  const originalInfo = adapter.info;
+  adapter.info = { device: "", description: "" };
+  try {
+    assert.deepEqual(gpuName(device), {
+      description: "unknown",
+      device: "unknown",
+    });
+  } finally {
+    adapter.info = originalInfo;
+  }
 });
 
 test("cleanup() releases every cached device", async () => {
@@ -136,10 +189,10 @@ test("cleanup(device) is idempotent and ignores unknown devices", async () => {
 test("dumpShaders can only be set by the process's first init() call", async () => {
   // dumpShaders is a toggle on the shared WebGPU instance, fixed once by
   // whichever init() call creates it first — not per-device like
-  // powerPreference/benchmark. By this point in the suite, some earlier
-  // init() has already created the instance with dumpShaders: false, so a
-  // later call on a genuinely new (powerPreference, benchmark) key that asks
-  // for dumpShaders: true must warn and be ignored, not silently succeed.
+  // powerPreference/benchmark. This file's first init() call (above) already
+  // created the instance with dumpShaders: true, so a later call on a
+  // genuinely new (powerPreference, benchmark) key that asks for
+  // dumpShaders: false must warn and be ignored, not silently succeed.
   const otherPref =
     powerPreference === "low-power" ? "high-performance" : "low-power";
 
@@ -148,7 +201,7 @@ test("dumpShaders can only be set by the process's first init() call", async () 
   console.warn = (...args) => warnings.push(args.join(" "));
   let device;
   try {
-    device = await init({ powerPreference: otherPref, dumpShaders: true });
+    device = await init({ powerPreference: otherPref, dumpShaders: false });
   } finally {
     console.warn = originalWarn;
   }
