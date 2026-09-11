@@ -40,6 +40,22 @@ test("cscal validation", async (t) => {
   );
 });
 
+test("cscal reports gpuTimeMs in benchmark mode", async () => {
+  const bDevice = await init({
+    powerPreference: getPowerPreference(),
+    benchmark: true,
+  });
+  const result = await cscal(
+    bDevice,
+    2,
+    new Complex32(2, 0),
+    new Complex32Array([1, 1, 2, 2]),
+    1,
+  );
+  assert.equal(typeof result.gpuTimeMs, "number");
+  assert.ok(result.gpuTimeMs >= 0);
+});
+
 test("cscal fixtures", async (t) => {
   await runFixtures(
     t,

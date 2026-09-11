@@ -68,6 +68,23 @@ test("daxpy fixtures (GPU-resident)", async (t) => {
   );
 });
 
+// callGpuResident always reads y back itself regardless of what daxpy()
+// returned, so it can't see daxpy's own n<=0 return value — this calls daxpy
+// directly to check the GPU-resident early return actually is `{}` (never
+// exercised by the fixtures/edge-case tests above, which never pass n<=0).
+test("daxpy returns {} for n<=0 with a GPU-resident y", async () => {
+  await withGpuResources(
+    {
+      x: GpuVector.from(new Float64Array([1, 2])),
+      y: GpuVector.from(new Float64Array([3, 4])),
+    },
+    async ({ x, y }) => {
+      const result = await daxpy(device, 0, 2, x, 1, y, 1);
+      assert.deepEqual(result, {});
+    },
+  );
+});
+
 test("daxpy edge cases (GPU-resident)", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {

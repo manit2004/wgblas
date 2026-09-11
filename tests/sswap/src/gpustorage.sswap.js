@@ -56,6 +56,23 @@ test("sswap fixtures (GPU-resident)", async (t) => {
   );
 });
 
+// callGpuResident always reads x/y back itself regardless of what sswap()
+// returned, so it can't see sswap's own n<=0 return value — this calls sswap
+// directly to check the GPU-resident early return actually is `{}` (never
+// exercised by the fixtures/edge-case tests above, which never pass n<=0).
+test("sswap returns {} for n<=0 with a GPU-resident x/y", async () => {
+  await withGpuResources(
+    {
+      x: GpuVector.from(new Float32Array([1, 2])),
+      y: GpuVector.from(new Float32Array([3, 4])),
+    },
+    async ({ x, y }) => {
+      const result = await sswap(device, 0, x, 1, y, 1);
+      assert.deepEqual(result, {});
+    },
+  );
+});
+
 test("sswap edge cases (GPU-resident)", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {

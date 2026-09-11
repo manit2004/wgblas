@@ -9,7 +9,8 @@
     { "special": "array",     "error": "x must be a Complex32Array or GpuVector", "label": "plain Array []" },
     { "special": "object",    "error": "x must be a Complex32Array or GpuVector", "label": "plain object {}" },
     { "special": "number",    "error": "x must be a Complex32Array or GpuVector", "label": "number" },
-    { "scenario": "tooShort", "error": "x does not have enough elements", "label": "one complex element short for the active vector length" }
+    { "scenario": "tooShort", "error": "x does not have enough elements", "label": "one complex element short for the active vector length" },
+    { "scenario": "wrongDtypeGpuVector", "error": "x must be a Complex32Array-backed GpuVector", "label": "GpuVector backed by the wrong dtype (Float32Array)" }
   ],
   "edge": [
     { "scenario": "minimal", "label": "exactly the minimum valid length — must not throw" }
