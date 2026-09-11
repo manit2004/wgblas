@@ -4,6 +4,17 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    // TS 6.x bundles GPUDevice/GPUBuffer/etc. natively, so this is a no-op
+    // there — but an older tsc (e.g. a global install a bare `tsc` picks up
+    // instead of `npx tsc`) has no native WebGPU types and needs it spelled
+    // out. @webgpu/types itself needs "DOM" too (GPUDevice extends EventTarget).
+    "types": ["@webgpu/types"],
+    // TS 6.x's native GPU* declarations collide with @webgpu/types' own
+    // (TS2403/TS6200). skipLibCheck only skips third-party .d.ts files, not
+    // this project's own — those still get fully checked.
+    "skipLibCheck": true,
     "paths": {
       "wgblas": ["./index.d.mts"],
       "wgblas/classes/GpuVector": ["./src/classes/GpuVector.d.mts"],
