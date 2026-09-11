@@ -63,16 +63,16 @@ export { strsm } from "./src/strsm/strsm.mjs";
  *   whichever Dawn picked) to stderr as it compiles. A Dawn passthrough, not a wgblas format —
  *   no effect in the browser, which gives pages no API to request compiled shader IR (default: `false`)
  *
- * @example Default (high-performance GPU)
+ * **Default (high-performance GPU):**
  * {@includeCode examples/init/init.js}
  *
- * @example Low-power (integrated GPU)
+ * **Low-power (integrated GPU):**
  * {@includeCode examples/init-low-power/init-low-power.js}
  *
- * @example Benchmark mode
+ * **Benchmark mode:**
  * {@includeCode examples/init-benchmark/init-benchmark.js}
  *
- * @example Two GPUs at once
+ * **Two GPUs at once:**
  * {@includeCode examples/init-two-gpus/init-two-gpus.js}
  *
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
@@ -95,7 +95,6 @@ export declare function init(options?: {
  *
  * @param device - the device to release; omit to release all of them.
  *
- * @example
  * {@includeCode examples/cleanup/cleanup.js}
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L56-L65)
  * @category Core
@@ -108,7 +107,6 @@ export declare function cleanup(device?: GPUDevice): void;
  * @param device - which device to report on; defaults to the one from the first
  *   `init()` call. Pass it explicitly when driving more than one GPU.
  *
- * @example
  * {@includeCode examples/init/init.js}
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L81-L87)
  * @category Core

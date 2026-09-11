@@ -12,7 +12,6 @@ export declare class Complex64 {
    * @param re - real component, full f64 precision
    * @param im - imaginary component, full f64 precision
    *
-   * @example
    * {@includeCode ../../examples/complex64/complex64.js}
    */
   constructor(re: number, im: number);
@@ -39,7 +38,6 @@ export declare class Complex64Array extends Array<Complex64> {
    *   entries), a flat interleaved `[re, im, re, im, ...]` list of numbers,
    *   or an iterable of existing Complex64 instances to copy
    *
-   * @example
    * {@includeCode ../../examples/complex64array/complex64array.js}
    */
   constructor(arg?: number | Iterable<number> | Iterable<Complex64>);

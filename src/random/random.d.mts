@@ -5,10 +5,10 @@
  * @param low - lower bound (default: -1)
  * @param high - upper bound (default: 1)
  *
- * @example Default range [-1, 1)
+ * **Default range [-1, 1):**
  * {@includeCode ../../examples/randomfloat32array/randomfloat32array.js}
  *
- * @example Custom range [0, 10)
+ * **Custom range [0, 10):**
  * {@includeCode ../../examples/randomfloat32array-custom/randomfloat32array-custom.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1">Source code: random.mjs (L1)</a>
  * @category Utilities
@@ -26,10 +26,10 @@ export declare function randomFloat32Array(
  * @param low - lower bound (default: -1)
  * @param high - upper bound (default: 1)
  *
- * @example Default range [-1, 1)
+ * **Default range [-1, 1):**
  * {@includeCode ../../examples/randomfloat64array/randomfloat64array.js}
  *
- * @example Custom range [0, 10)
+ * **Custom range [0, 10):**
  * {@includeCode ../../examples/randomfloat64array-custom/randomfloat64array-custom.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7">Source code: random.mjs (L7)</a>
  * @category Utilities
@@ -61,10 +61,9 @@ export declare function randomFloat64Array(
  * @param diagHigh - upper bound for diagonal entries (default: 15)
  * @param layout - `'row-major'` or `'column-major'` storage order (default: `'row-major'`)
  *
- * @example
  * {@includeCode ../../examples/randomtriangularfloat32array/randomtriangularfloat32array.js}
  *
- * @example Column-major storage
+ * **Column-major storage:**
  * {@includeCode ../../examples/randomtriangularfloat32array-columnmajor/randomtriangularfloat32array-columnmajor.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L13">Source code: random.mjs (L13)</a>
  * @category Utilities

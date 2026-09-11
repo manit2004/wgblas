@@ -33,7 +33,6 @@ export declare class GpuVector {
    * @param data - input vector data
    * @returns GpuVector backed by a GPU buffer
    *
-   * @example
    * {@includeCode ../../examples/gpuvector-from/gpuvector-from.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array): GpuVector;
@@ -44,7 +43,6 @@ export declare class GpuVector {
    * @returns vector data in the same shape it was created from — a
    * Float32Array, Float64Array, Complex32Array, or Complex64Array
    *
-   * @example
    * {@includeCode ../../examples/gpuvector-read/gpuvector-read.js}
    */
   read(): Promise<Float32Array | Float64Array | Complex32Array | Complex64Array>;
@@ -53,7 +51,6 @@ export declare class GpuVector {
    * Destroys the underlying GPU buffer. Call when the vector is no longer needed
    * to free GPU memory — especially important in long-running programs.
    *
-   * @example
    * {@includeCode ../../examples/gpuvector-destroy/gpuvector-destroy.js}
    */
   destroy(): void;

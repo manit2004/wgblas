@@ -59,7 +59,6 @@ export declare class GpuMatrix {
    * @param lda    - leading dimension (default: `cols` for row-major, `rows` for column-major)
    * @param layout - storage layout (default: `'row-major'`)
    *
-   * @example
    * {@includeCode ../../examples/gpumatrix-from/gpumatrix-from.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
@@ -70,7 +69,6 @@ export declare class GpuMatrix {
    * exceeds the dense minimum, the leading-dimension padding is stripped so
    * the returned array is always tightly packed.
    *
-   * @example
    * {@includeCode ../../examples/gpumatrix-read/gpumatrix-read.js}
    */
   read(): Promise<Float32Array | Float64Array | Complex32Array | Complex64Array>;
@@ -79,7 +77,6 @@ export declare class GpuMatrix {
    * Destroys the underlying GPU buffer. Call when the matrix is no longer
    * needed to free GPU memory.
    *
-   * @example
    * {@includeCode ../../examples/gpumatrix-destroy/gpumatrix-destroy.js}
    */
   destroy(): void;
