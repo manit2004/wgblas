@@ -6,20 +6,10 @@
  * @param high - upper bound (default: 1)
  *
  * @example Default range [-1, 1)
- * ```js
- * import { randomFloat32Array } from "wgblas";
- *
- * const x = randomFloat32Array(4);
- * console.log(x); // Float32Array [ -0.42, 0.81, -0.07, 0.55 ]
- * ```
+ * {@includeCode ../../examples/randomfloat32array/randomfloat32array.js}
  *
  * @example Custom range [0, 10)
- * ```js
- * import { randomFloat32Array } from "wgblas";
- *
- * const x = randomFloat32Array(4, 0, 10);
- * console.log(x);
- * ```
+ * {@includeCode ../../examples/randomfloat32array-custom/randomfloat32array-custom.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1">Source code: random.mjs (L1)</a>
  * @category Utilities
  */
@@ -37,20 +27,10 @@ export declare function randomFloat32Array(
  * @param high - upper bound (default: 1)
  *
  * @example Default range [-1, 1)
- * ```js
- * import { randomFloat64Array } from "wgblas";
- *
- * const x = randomFloat64Array(4);
- * console.log(x); // Float64Array [ -0.42, 0.81, -0.07, 0.55 ]
- * ```
+ * {@includeCode ../../examples/randomfloat64array/randomfloat64array.js}
  *
  * @example Custom range [0, 10)
- * ```js
- * import { randomFloat64Array } from "wgblas";
- *
- * const x = randomFloat64Array(4, 0, 10);
- * console.log(x);
- * ```
+ * {@includeCode ../../examples/randomfloat64array-custom/randomfloat64array-custom.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7">Source code: random.mjs (L7)</a>
  * @category Utilities
  */
@@ -82,22 +62,10 @@ export declare function randomFloat64Array(
  * @param layout - `'row-major'` or `'column-major'` storage order (default: `'row-major'`)
  *
  * @example
- * ```js
- * import { randomTriangularFloat32Array } from "wgblas";
- *
- * const n = 4, lda = n;
- * const A = randomTriangularFloat32Array(n, lda, "lower");
- * console.log(A);
- * ```
+ * {@includeCode ../../examples/randomtriangularfloat32array/randomtriangularfloat32array.js}
  *
  * @example Column-major storage
- * ```js
- * import { randomTriangularFloat32Array } from "wgblas";
- *
- * const n = 4, lda = n;
- * const A = randomTriangularFloat32Array(n, lda, "lower", -1, 1, 5, 15, "column-major");
- * console.log(A);
- * ```
+ * {@includeCode ../../examples/randomtriangularfloat32array-columnmajor/randomtriangularfloat32array-columnmajor.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L13">Source code: random.mjs (L13)</a>
  * @category Utilities
  */

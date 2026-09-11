@@ -1,20 +1,22 @@
-<svg id="bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="ms vs n">
-<style>#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .bg{fill:#fcfcfb}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .bg{fill:#1a1a19}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .gr{stroke:#2c2c2a}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ax{stroke:#383835}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .at{fill:#898781}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .lt{fill:#c3c2b7}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln1{stroke:#3987e5}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk1{fill:#3987e5;stroke:#1a1a19}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln2{stroke:#008300}#bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .bg{fill:#1a1a19}:root[data-theme=dark] #bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ax{stroke:#383835}:root[data-theme=dark] #bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-sger-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk2{stroke:#1a1a19}</style>
+<svg id="bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="ms vs n">
+<style>#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .bg{fill:#fcfcfb}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .bg{fill:#1a1a19}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .gr{stroke:#2c2c2a}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ax{stroke:#383835}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .at{fill:#898781}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .lt{fill:#c3c2b7}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln1{stroke:#3987e5}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk1{fill:#3987e5;stroke:#1a1a19}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln2{stroke:#008300}#bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .bg{fill:#1a1a19}:root[data-theme=dark] #bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ax{stroke:#383835}:root[data-theme=dark] #bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-sgemv-default-intel_r_iris_r_xe_graphics_tgl_gt2-ms .mk2{stroke:#1a1a19}</style>
 <rect class="bg" width="600" height="260"/>
 <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
-<line class="gr" x1="58" y1="180.0" x2="584" y2="180.0"/>
-<line class="gr" x1="58" y1="140.0" x2="584" y2="140.0"/>
-<line class="gr" x1="58" y1="100.0" x2="584" y2="100.0"/>
-<line class="gr" x1="58" y1="60.0" x2="584" y2="60.0"/>
+<line class="gr" x1="58" y1="186.7" x2="584" y2="186.7"/>
+<line class="gr" x1="58" y1="153.3" x2="584" y2="153.3"/>
+<line class="gr" x1="58" y1="120.0" x2="584" y2="120.0"/>
+<line class="gr" x1="58" y1="86.7" x2="584" y2="86.7"/>
+<line class="gr" x1="58" y1="53.3" x2="584" y2="53.3"/>
 <line class="gr" x1="58" y1="20.0" x2="584" y2="20.0"/>
 <line class="ax" x1="58" y1="20" x2="58" y2="220"/>
 <line class="ax" x1="58" y1="220" x2="584" y2="220"/>
 <text class="at" x="52" y="224.0" text-anchor="end">0</text>
-<text class="at" x="52" y="184.0" text-anchor="end">2.00</text>
-<text class="at" x="52" y="144.0" text-anchor="end">4.00</text>
-<text class="at" x="52" y="104.0" text-anchor="end">6.00</text>
-<text class="at" x="52" y="64.0" text-anchor="end">8.00</text>
-<text class="at" x="52" y="24.0" text-anchor="end">10.00</text>
+<text class="at" x="52" y="190.7" text-anchor="end">1.00</text>
+<text class="at" x="52" y="157.3" text-anchor="end">2.00</text>
+<text class="at" x="52" y="124.0" text-anchor="end">3.00</text>
+<text class="at" x="52" y="90.7" text-anchor="end">4.00</text>
+<text class="at" x="52" y="57.3" text-anchor="end">5.00</text>
+<text class="at" x="52" y="24.0" text-anchor="end">6.00</text>
 <text class="lt" x="12" y="120.0" text-anchor="middle" transform="rotate(-90 12 120.0)">ms</text>
 <text class="at" x="58.0" y="236" text-anchor="middle">32</text>
 <text class="at" x="133.1" y="236" text-anchor="middle">64</text>
@@ -25,14 +27,14 @@
 <text class="at" x="457.9" y="236" text-anchor="middle">1.3K</text>
 <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
-<polyline class="ln1" points="58.0,218.7 133.1,218.7 208.3,218.7 283.4,217.4 358.6,214.8 433.7,204.3 457.9,192.5 508.9,179.4 584.0,20.8"/>
-<circle class="mk1" cx="58.0" cy="218.7" r="4"/>
-<circle class="mk1" cx="133.1" cy="218.7" r="4"/>
-<circle class="mk1" cx="208.3" cy="218.7" r="4"/>
-<circle class="mk1" cx="283.4" cy="217.4" r="4"/>
-<circle class="mk1" cx="358.6" cy="214.8" r="4"/>
-<circle class="mk1" cx="433.7" cy="204.3" r="4"/>
-<circle class="mk1" cx="457.9" cy="192.5" r="4"/>
-<circle class="mk1" cx="508.9" cy="179.4" r="4"/>
-<circle class="mk1" cx="584.0" cy="20.8" r="4"/>
+<polyline class="ln1" points="58.0,217.8 133.1,217.8 208.3,215.6 283.4,215.6 358.6,211.3 433.7,200.3 457.9,189.4 508.9,156.6 584.0,34.3"/>
+<circle class="mk1" cx="58.0" cy="217.8" r="4"/>
+<circle class="mk1" cx="133.1" cy="217.8" r="4"/>
+<circle class="mk1" cx="208.3" cy="215.6" r="4"/>
+<circle class="mk1" cx="283.4" cy="215.6" r="4"/>
+<circle class="mk1" cx="358.6" cy="211.3" r="4"/>
+<circle class="mk1" cx="433.7" cy="200.3" r="4"/>
+<circle class="mk1" cx="457.9" cy="189.4" r="4"/>
+<circle class="mk1" cx="508.9" cy="156.6" r="4"/>
+<circle class="mk1" cx="584.0" cy="34.3" r="4"/>
 </svg>

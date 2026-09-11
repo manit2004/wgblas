@@ -60,17 +60,7 @@ export declare class GpuMatrix {
    * @param layout - storage layout (default: `'row-major'`)
    *
    * @example
-   * ```js
-   * import { init, GpuMatrix } from "wgblas";
-   *
-   * await init();
-   * // 2×3 matrix: [[1,2,3],[4,5,6]]
-   * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
-   * console.log(mat.rows, mat.cols, mat.lda); // 2 3 3
-   *
-   * // Same logical matrix, column-major storage
-   * const matCol = GpuMatrix.from(new Float32Array([1,4,2,5,3,6]), 2, 3, undefined, "column-major");
-   * ```
+   * {@includeCode ../../examples/gpumatrix-from/gpumatrix-from.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
 
@@ -81,14 +71,7 @@ export declare class GpuMatrix {
    * the returned array is always tightly packed.
    *
    * @example
-   * ```js
-   * import { init, GpuMatrix } from "wgblas";
-   *
-   * await init();
-   * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
-   * const data = await mat.read();
-   * console.log(data); // Float32Array [1, 2, 3, 4, 5, 6]
-   * ```
+   * {@includeCode ../../examples/gpumatrix-read/gpumatrix-read.js}
    */
   read(): Promise<Float32Array | Float64Array | Complex32Array | Complex64Array>;
 
@@ -97,13 +80,7 @@ export declare class GpuMatrix {
    * needed to free GPU memory.
    *
    * @example
-   * ```js
-   * import { init, GpuMatrix } from "wgblas";
-   *
-   * await init();
-   * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
-   * mat.destroy();
-   * ```
+   * {@includeCode ../../examples/gpumatrix-destroy/gpumatrix-destroy.js}
    */
   destroy(): void;
 }

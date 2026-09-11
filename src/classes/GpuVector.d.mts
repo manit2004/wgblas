@@ -34,16 +34,7 @@ export declare class GpuVector {
    * @returns GpuVector backed by a GPU buffer
    *
    * @example
-   * ```js
-   * import { init, GpuVector } from "wgblas";
-   *
-   * await init();
-   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
-   * console.log("length:", vec.length, "dtype:", vec.dtype.name);
-   *
-   * const dvec = GpuVector.from(new Float64Array([1.1, 2.2, 3.3]));
-   * console.log("dtype:", dvec.dtype.name); // Float64Array
-   * ```
+   * {@includeCode ../../examples/gpuvector-from/gpuvector-from.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array): GpuVector;
 
@@ -54,14 +45,7 @@ export declare class GpuVector {
    * Float32Array, Float64Array, Complex32Array, or Complex64Array
    *
    * @example
-   * ```js
-   * import { init, GpuVector } from "wgblas";
-   *
-   * await init();
-   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
-   * const data = await vec.read();
-   * console.log(data);
-   * ```
+   * {@includeCode ../../examples/gpuvector-read/gpuvector-read.js}
    */
   read(): Promise<Float32Array | Float64Array | Complex32Array | Complex64Array>;
 
@@ -70,14 +54,7 @@ export declare class GpuVector {
    * to free GPU memory — especially important in long-running programs.
    *
    * @example
-   * ```js
-   * import { init, GpuVector } from "wgblas";
-   *
-   * await init();
-   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
-   * vec.destroy();
-   * console.log("GPU buffer released");
-   * ```
+   * {@includeCode ../../examples/gpuvector-destroy/gpuvector-destroy.js}
    */
   destroy(): void;
 }

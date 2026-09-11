@@ -13,12 +13,7 @@ export declare class Complex64 {
    * @param im - imaginary component, full f64 precision
    *
    * @example
-   * ```js
-   * import { Complex64 } from "wgblas";
-   *
-   * const z = new Complex64(1.1, 2.2); // 1.1 + 2.2i
-   * console.log(z.re, z.im); // 1.1 2.2
-   * ```
+   * {@includeCode ../../examples/complex64/complex64.js}
    */
   constructor(re: number, im: number);
 
@@ -45,15 +40,7 @@ export declare class Complex64Array extends Array<Complex64> {
    *   or an iterable of existing Complex64 instances to copy
    *
    * @example
-   * ```js
-   * import { Complex64, Complex64Array } from "wgblas";
-   *
-   * const a = new Complex64Array([1.1, 5.5, 3.3, 8.8]); // [1.1+5.5i, 3.3+8.8i]
-   * console.log(a.length, a[0].re, a[0].im); // 2 1.1 5.5
-   *
-   * const b = new Complex64Array([new Complex64(1, 2), new Complex64(3, 4)]);
-   * const c = new Complex64Array(3); // 3 zero-valued entries
-   * ```
+   * {@includeCode ../../examples/complex64array/complex64array.js}
    */
   constructor(arg?: number | Iterable<number> | Iterable<Complex64>);
 }

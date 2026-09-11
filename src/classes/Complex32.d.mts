@@ -12,12 +12,7 @@ export declare class Complex32 {
    * @param im - imaginary component, rounded to the nearest f32
    *
    * @example
-   * ```js
-   * import { Complex32 } from "wgblas";
-   *
-   * const z = new Complex32(1, 2); // 1 + 2i
-   * console.log(z.re, z.im); // 1 2
-   * ```
+   * {@includeCode ../../examples/complex32/complex32.js}
    */
   constructor(re: number, im: number);
 
@@ -44,15 +39,7 @@ export declare class Complex32Array extends Array<Complex32> {
    *   or an iterable of existing Complex32 instances to copy
    *
    * @example
-   * ```js
-   * import { Complex32, Complex32Array } from "wgblas";
-   *
-   * const a = new Complex32Array([1, 5, 3, 8]); // [1+5i, 3+8i]
-   * console.log(a.length, a[0].re, a[0].im); // 2 1 5
-   *
-   * const b = new Complex32Array([new Complex32(1, 2), new Complex32(3, 4)]);
-   * const c = new Complex32Array(3); // 3 zero-valued entries
-   * ```
+   * {@includeCode ../../examples/complex32array/complex32array.js}
    */
   constructor(arg?: number | Iterable<number> | Iterable<Complex32>);
 }

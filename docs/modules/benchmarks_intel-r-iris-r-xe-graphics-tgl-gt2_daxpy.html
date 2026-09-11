@@ -1,0 +1,645 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/daxpy | wgblas</title><meta name="description" content="Documentation for wgblas"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css"/><script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script><script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script><script>
+					window.__typeDocPluginKatexOptions={"delimiters":[{"left":"$$","right":"$$","display":true},{"left":"$","right":"$","display":false}]};
+					window.addEventListener('load', () => window.renderMathInElement(document.body, window.__typeDocPluginKatexOptions));
+				</script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">wgblas</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/daxpy</a></li></ul>
+<h1>Module benchmarks/intel-r-iris-r-xe-graphics-tgl-gt2/daxpy</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Benchmark results for daxpy on Intel R Iris R Xe Graphics Tgl Gt2.</p>
+<h2 id="intel-r-iris-r-xe-graphics-tgl-gt2" class="tsd-anchor-link">Intel R Iris R Xe Graphics Tgl Gt2<a href="#intel-r-iris-r-xe-graphics-tgl-gt2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0655</td>
+<td>0.0117</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0655</td>
+<td>0.0234</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0655</td>
+<td>0.0469</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0655</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0655</td>
+<td>1.5000</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.1311</td>
+<td>3.0000</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.2621</td>
+<td>6.0000</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>0.9175</td>
+<td>6.8571</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>2.4248</td>
+<td>10.3784</td>
+</tr>
+<tr>
+<td>4194304</td>
+<td>5.1118</td>
+<td>19.6923</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>22.0201</td>
+<td>18.2857</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-default-14.svg" alt="daxpy-default GB/s chart"></p>
+<p><img src="../media/ms-default-14.svg" alt="daxpy-default ms chart"></p>
+<h2 id="see-also" class="tsd-anchor-link">See also<a href="#see-also" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/daxpy/wgblas/daxpy.js">daxpy.js</a> — WebGPU benchmark script</li>
+</ul>
+<h2 id="stride-sweep" class="tsd-anchor-link">Stride sweep<a href="#stride-sweep" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Unless noted otherwise, every result above uses unit stride (<code>incx = incy = 1</code>) — the normal case, and the coalesced, best-case GPU access pattern. Real usage sometimes passes a non-unit stride (e.g. operating on a row or column of a larger matrix, where <code>incx = lda</code>), which breaks memory coalescing and costs measurably more. This section sweeps a few representative strides to characterize that cost separately, collapsed below by default — expand a stride to see its table and chart.</p>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — stride = 4</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0655</td>
+<td>0.0117</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0655</td>
+<td>0.0234</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0655</td>
+<td>0.0469</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0655</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0655</td>
+<td>1.5000</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.1966</td>
+<td>2.0000</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.5898</td>
+<td>2.6667</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>2.4248</td>
+<td>2.5946</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>5.1773</td>
+<td>4.8608</td>
+</tr>
+<tr>
+<td>4194304</td>
+<td>21.3320</td>
+<td>4.7189</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride4-1.svg" alt="daxpy-stride4 GB/s chart"></p>
+<p><img src="../media/ms-stride4-1.svg" alt="daxpy-stride4 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — stride = 5</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0655</td>
+<td>0.0117</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0655</td>
+<td>0.0234</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0655</td>
+<td>0.0469</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0655</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.0655</td>
+<td>1.5000</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.1966</td>
+<td>2.0000</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.7209</td>
+<td>2.1818</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>2.7525</td>
+<td>2.2857</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>6.4225</td>
+<td>3.9184</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride5-1.svg" alt="daxpy-stride5 GB/s chart"></p>
+<p><img src="../media/ms-stride5-1.svg" alt="daxpy-stride5 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — stride = 32</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0.0655</td>
+<td>0.0117</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.0655</td>
+<td>0.0234</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0655</td>
+<td>0.0469</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0655</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.1966</td>
+<td>0.5000</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.5243</td>
+<td>0.7500</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>1.6384</td>
+<td>0.9600</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>5.1118</td>
+<td>1.2308</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride32-1.svg" alt="daxpy-stride32 GB/s chart"></p>
+<p><img src="../media/ms-stride32-1.svg" alt="daxpy-stride32 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — stride = 33</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>64</td>
+<td>0.0655</td>
+<td>0.0234</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.0655</td>
+<td>0.0469</td>
+</tr>
+<tr>
+<td>512</td>
+<td>0.0655</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.1966</td>
+<td>0.5000</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.5243</td>
+<td>0.7500</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>2.3593</td>
+<td>0.6667</td>
+</tr>
+<tr>
+<td>262144</td>
+<td>5.2429</td>
+<td>1.2000</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride33-1.svg" alt="daxpy-stride33 GB/s chart"></p>
+<p><img src="../media/ms-stride33-1.svg" alt="daxpy-stride33 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — stride = 255</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>512</td>
+<td>0.0655</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.1311</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.1966</td>
+<td>0.5000</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.6554</td>
+<td>0.6000</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>1.9988</td>
+<td>0.7869</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride255-1.svg" alt="daxpy-stride255 GB/s chart"></p>
+<p><img src="../media/ms-stride255-1.svg" alt="daxpy-stride255 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — stride = 256</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>512</td>
+<td>0.0655</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>0.1311</td>
+<td>0.1875</td>
+</tr>
+<tr>
+<td>4096</td>
+<td>0.1966</td>
+<td>0.5000</td>
+</tr>
+<tr>
+<td>16384</td>
+<td>0.7209</td>
+<td>0.5455</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>1.9661</td>
+<td>0.8000</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-stride256-1.svg" alt="daxpy-stride256 GB/s chart"></p>
+<p><img src="../media/ms-stride256-1.svg" alt="daxpy-stride256 ms chart"></p>
+</details>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/daxpy/wgblas/stride.daxpy.js">stride.daxpy.js</a> — WebGPU stride-sweep benchmark script</li>
+</ul>
+<h2 id="alpha-sweep" class="tsd-anchor-link">alpha sweep<a href="#alpha-sweep" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><code>alpha</code> is a plain multiplier here: the kernel applies it unconditionally, with no branch for any particular value. A flat sweep is therefore the expected result and is recorded as a measured null. Levels include <code>0</code>, <code>1</code> and a denormal-producing <code>1e-38</code> because those are the values a shader <em>could</em> special-case if it ever grew a branch — and <code>strsm</code> is the routine where one does.</p>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — alpha = -3.75</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.2621</td>
+<td>6.0000</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>2.3593</td>
+<td>10.6667</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>21.8235</td>
+<td>18.4505</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-alphaneg3p75.svg" alt="daxpy-alphaneg3p75 GB/s chart"></p>
+<p><img src="../media/ms-alphaneg3p75.svg" alt="daxpy-alphaneg3p75 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — alpha = 0</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.2621</td>
+<td>6.0000</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>3.0474</td>
+<td>8.2581</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>22.3478</td>
+<td>18.0176</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-alpha0.svg" alt="daxpy-alpha0 GB/s chart"></p>
+<p><img src="../media/ms-alpha0.svg" alt="daxpy-alpha0 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — alpha = 1e-38</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.2621</td>
+<td>6.0000</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>2.9491</td>
+<td>8.5333</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>22.0856</td>
+<td>18.2315</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-alpha1eneg38.svg" alt="daxpy-alpha1eneg38 GB/s chart"></p>
+<p><img src="../media/ms-alpha1eneg38.svg" alt="daxpy-alpha1eneg38 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — alpha = 1</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.2621</td>
+<td>6.0000</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>2.3593</td>
+<td>10.6667</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>22.3478</td>
+<td>18.0176</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-alpha1.svg" alt="daxpy-alpha1 GB/s chart"></p>
+<p><img src="../media/ms-alpha1.svg" alt="daxpy-alpha1 ms chart"></p>
+</details>
+<details>
+<summary>Intel R Iris R Xe Graphics Tgl Gt2 — alpha = 2.5</summary>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>compute ms</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1024</td>
+<td>0.0655</td>
+<td>0.3750</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>0.2621</td>
+<td>6.0000</td>
+</tr>
+<tr>
+<td>1048576</td>
+<td>3.4734</td>
+<td>7.2453</td>
+</tr>
+<tr>
+<td>16777216</td>
+<td>21.8890</td>
+<td>18.3952</td>
+</tr>
+</tbody>
+</table>
+<p><img src="../media/gbps-alpha2p5.svg" alt="daxpy-alpha2p5 GB/s chart"></p>
+<p><img src="../media/ms-alpha2p5.svg" alt="daxpy-alpha2p5 ms chart"></p>
+</details>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="https://github.com/manit2004/wgblas/blob/main/benchmarks/daxpy/wgblas/alpha.daxpy.js">alpha.daxpy.js</a> — WebGPU alpha-sweep benchmark script</li>
+</ul>
+</div></section></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#intel-r-iris-r-xe-graphics-tgl-gt2"><span>Intel <wbr/>R <wbr/>Iris <wbr/>R <wbr/>Xe <wbr/>Graphics <wbr/>Tgl <wbr/>Gt2</span></a><a href="#see-also"><span>See also</span></a><a href="#stride-sweep"><span>Stride sweep</span></a><a href="#alpha-sweep"><span>alpha sweep</span></a></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>
