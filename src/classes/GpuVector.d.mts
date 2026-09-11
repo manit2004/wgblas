@@ -30,12 +30,27 @@ export declare class GpuVector {
    * Complex64Array gets the same double-double split applied independently
    * to its real and imaginary components, interleaved per (hi, lo) channel.
    *
+   * Omitting the device falls back to the one from the last {@link init} call
+   * — the historical form, and fine for a single-GPU program. Pass a device
+   * explicitly (matching every routine's own `(device, ...)` convention)
+   * when driving more than one GPU at once, since a GpuVector is bound for
+   * life to whichever device created it.
+   *
    * @param data - input vector data
    * @returns GpuVector backed by a GPU buffer
    *
    * {@includeCode ../../examples/gpuvector-from/gpuvector-from.js}
+   *
+   * **Explicit device (multi-GPU):**
+   * {@includeCode ../../examples/gpuvector-from-device/gpuvector-from-device.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array): GpuVector;
+  /**
+   * @param device - GPUDevice from `init()` — the vector is bound to this device for life
+   * @param data - input vector data
+   * @returns GpuVector backed by a GPU buffer
+   */
+  static from(device: GPUDevice, data: Float32Array | Float64Array | Complex32Array | Complex64Array): GpuVector;
 
   /**
    * Reads the vector data back from GPU memory.

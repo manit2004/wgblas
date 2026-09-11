@@ -53,6 +53,12 @@ export declare class GpuMatrix {
    * padding. `data` must have at least `rows * lda` (row-major) or
    * `cols * lda` (column-major) elements.
    *
+   * Omitting the device falls back to the one from the last {@link init} call
+   * — the historical form, and fine for a single-GPU program. Pass a device
+   * explicitly (matching every routine's own `(device, ...)` convention)
+   * when driving more than one GPU at once, since a GpuMatrix is bound for
+   * life to whichever device created it.
+   *
    * @param data   - matrix data, in the order matching `layout`
    * @param rows   - number of rows
    * @param cols   - number of columns
@@ -60,8 +66,20 @@ export declare class GpuMatrix {
    * @param layout - storage layout (default: `'row-major'`)
    *
    * {@includeCode ../../examples/gpumatrix-from/gpumatrix-from.js}
+   *
+   * **Explicit device (multi-GPU):**
+   * {@includeCode ../../examples/gpumatrix-from-device/gpumatrix-from-device.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
+  /**
+   * @param device - GPUDevice from `init()` — the matrix is bound to this device for life
+   * @param data   - matrix data, in the order matching `layout`
+   * @param rows   - number of rows
+   * @param cols   - number of columns
+   * @param lda    - leading dimension (default: `cols` for row-major, `rows` for column-major)
+   * @param layout - storage layout (default: `'row-major'`)
+   */
+  static from(device: GPUDevice, data: Float32Array | Float64Array | Complex32Array | Complex64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
 
   /**
    * Downloads the matrix from GPU memory and returns a dense array of shape
