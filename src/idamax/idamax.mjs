@@ -14,14 +14,12 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble } from "../util/f64.mjs";
 import { WGS } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
-
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function idamax(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "idamax", { x });
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
@@ -37,9 +35,22 @@ export async function idamax(device, n, x, incx) {
     );
 
   // Concatenated f64 helpers (WGSL has no #include); ddAbs is unconditional in idamax.wgsl, so x is split as-is.
-  const f64Deps = ["f64/dekker", "f64/utils/abs", "f64/utils/greater", "f64/utils/equal"];
-  const pipelineMain = await getPipeline(device, [...f64Deps, "idamax"], "idamax_main");
-  const pipelineReduce = await getPipeline(device, [...f64Deps, "reduction/argmaxF64"], "reduce_f64");
+  const f64Deps = [
+    "f64/dekker",
+    "f64/utils/abs",
+    "f64/utils/greater",
+    "f64/utils/equal",
+  ];
+  const pipelineMain = await getPipeline(
+    device,
+    [...f64Deps, "idamax"],
+    "idamax_main",
+  );
+  const pipelineReduce = await getPipeline(
+    device,
+    [...f64Deps, "reduction/argmaxF64"],
+    "reduce_f64",
+  );
 
   let xHiBuffer = null;
   let xLoBuffer = null;
@@ -59,11 +70,24 @@ export async function idamax(device, n, x, incx) {
       xHiBuffer = uploadBuffer(device, hi, "idamax-xHi", false);
       xLoBuffer = uploadBuffer(device, lo, "idamax-xLo", false);
     }
-    partialsValHiBuffer = createStorageBuffer(device, 2 * WGS * 4, "idamax-partials-val-hi");
-    partialsValLoBuffer = createStorageBuffer(device, 2 * WGS * 4, "idamax-partials-val-lo");
-    partialsIdxBuffer = createStorageBuffer(device, 2 * WGS * 4, "idamax-partials-idx");
+    partialsValHiBuffer = createStorageBuffer(
+      device,
+      2 * WGS * 4,
+      "idamax-partials-val-hi",
+    );
+    partialsValLoBuffer = createStorageBuffer(
+      device,
+      2 * WGS * 4,
+      "idamax-partials-val-lo",
+    );
+    partialsIdxBuffer = createStorageBuffer(
+      device,
+      2 * WGS * 4,
+      "idamax-partials-idx",
+    );
     resultBuffer = createResultBuffer(device, 4, "idamax-result"); // u32 index
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -79,7 +103,8 @@ export async function idamax(device, n, x, incx) {
       partialsIdxBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(device,
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+      device,
       pipelineMain,
       bgMain,
       2 * WGS,
@@ -87,13 +112,18 @@ export async function idamax(device, n, x, incx) {
 
     submit(device, enc1);
 
-    const bgReduce = createBindGroup(device, pipelineReduce.getBindGroupLayout(0), [
-      partialsValHiBuffer,
-      partialsValLoBuffer,
-      partialsIdxBuffer,
-      resultBuffer,
-    ]);
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(device,
+    const bgReduce = createBindGroup(
+      device,
+      pipelineReduce.getBindGroupLayout(0),
+      [
+        partialsValHiBuffer,
+        partialsValLoBuffer,
+        partialsIdxBuffer,
+        resultBuffer,
+      ],
+    );
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+      device,
       pipelineReduce,
       bgReduce,
       1,

@@ -21,7 +21,8 @@ const _meta = new WeakMap();
 // never mention one (GpuVector.from(data), GpuMatrix.from(data, ...)).
 let _primary = null;
 
-const optionsKey = ({ powerPreference, benchmark }) => `${powerPreference}::${benchmark}`;
+const optionsKey = ({ powerPreference, benchmark }) =>
+  `${powerPreference}::${benchmark}`;
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -53,7 +54,9 @@ export async function init({
       _dumpShaders = dumpShaders;
     } else {
       if (dumpShaders)
-        console.warn("dumpShaders has no effect in the browser — see init()'s docs.");
+        console.warn(
+          "dumpShaders has no effect in the browser — see init()'s docs.",
+        );
       _gpu = navigator.gpu;
     }
   } else if (dumpShaders !== _dumpShaders && typeof window === "undefined") {
@@ -62,7 +65,7 @@ export async function init({
     // init() cannot change it.
     console.warn(
       `dumpShaders: ${dumpShaders} was requested, but the WebGPU instance was already created with ` +
-      `dumpShaders: ${_dumpShaders}. The first init() call fixes this for the process.`,
+        `dumpShaders: ${_dumpShaders}. The first init() call fixes this for the process.`,
     );
   }
 

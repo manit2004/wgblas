@@ -20,13 +20,15 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  x:      loadParam("x"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  x: loadParam("x"),
 };
 
 test("snrm2 validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => snrm2(a.device, a.n, a.x, a.incx),
     { device },
   );
@@ -34,15 +36,15 @@ test("snrm2 validation", async (t) => {
 
 test("snrm2 fixtures", async (t) => {
   await runFixtures(
-    t,                 // node:test context
-    "snrm2",           // routine name — used in the diagnostic label
-    device,            // WebGPU device instance
-    NUM_RUNS,          // 100 random inputs
-    50,                // threshold 50 ULP — GPU uses tree reduction, CPU is sequential; rounding order differs
-    validationSpecs,   // param specs used to generate random inputs
-    async (dev, a) => snrm2(dev, a.n, a.x, a.incx),        // GPU call
-    stdlibReference,   // CPU reference
-    (gpu, ref) => ulpDiff(gpu.nrm2, ref),                    // raw ULP difference between scalar results
+    t, // node:test context
+    "snrm2", // routine name — used in the diagnostic label
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    50, // threshold 50 ULP — GPU uses tree reduction, CPU is sequential; rounding order differs
+    validationSpecs, // param specs used to generate random inputs
+    async (dev, a) => snrm2(dev, a.n, a.x, a.incx), // GPU call
+    stdlibReference, // CPU reference
+    (gpu, ref) => ulpDiff(gpu.nrm2, ref), // raw ULP difference between scalar results
   );
 });
 
@@ -52,15 +54,15 @@ test("snrm2 edge cases", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        x: new Float32Array(c.x),  // input vector
-        incx: c.incx,              // stride through x
+        n: c.n, // vector length
+        x: new Float32Array(c.x), // input vector
+        incx: c.incx, // stride through x
       };
       const { nrm2: got } = await snrm2(
-        device,   // GPU device
-        a.n,      // vector length
-        a.x,      // input vector
-        a.incx,   // stride through x
+        device, // GPU device
+        a.n, // vector length
+        a.x, // input vector
+        a.incx, // stride through x
       );
       const expected = stdlibReference(a);
       assert.strictEqual(got, expected);

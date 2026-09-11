@@ -33,24 +33,71 @@ const records = [];
 printHeader(COLS);
 
 for (const size of SIZES) {
-  const n = size, k = size;
+  const n = size,
+    k = size;
   // column-major: lda >= rows, matching cuBLAS's native layout
-  const lda = n, ldb = n, ldc = n;
+  const lda = n,
+    ldb = n,
+    ldc = n;
   const alpha = 1.0;
   const beta = 0.0;
 
-  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(n * k), n, k), n, k, lda, "column-major");
-  const BGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(n * k), n, k), n, k, ldb, "column-major");
-  const CGpu = GpuMatrix.from(new Float32Array(n * n), n, n, ldc, "column-major");
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(n * k), n, k),
+    n,
+    k,
+    lda,
+    "column-major",
+  );
+  const BGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(n * k), n, k),
+    n,
+    k,
+    ldb,
+    "column-major",
+  );
+  const CGpu = GpuMatrix.from(
+    new Float32Array(n * n),
+    n,
+    n,
+    ldc,
+    "column-major",
+  );
 
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await ssyr2k(device, "lower", "no-transpose", n, k, alpha, AGpu, lda, BGpu, ldb, beta, CGpu, ldc);
+    await ssyr2k(
+      device,
+      "lower",
+      "no-transpose",
+      n,
+      k,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
+      beta,
+      CGpu,
+      ldc,
+    );
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await ssyr2k(
-      device, "lower", "no-transpose", n, k, alpha, AGpu, lda, BGpu, ldb, beta, CGpu, ldc,
+      device,
+      "lower",
+      "no-transpose",
+      n,
+      k,
+      alpha,
+      AGpu,
+      lda,
+      BGpu,
+      ldb,
+      beta,
+      CGpu,
+      ldc,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }
@@ -71,7 +118,13 @@ for (const size of SIZES) {
   const gflops = flops / 1e9 / (med / 1e3);
   const gbs = bytes / 1e9 / (med / 1e3);
   printRow(COLS, [n, k, med, gflops, gbs]);
-  records.push({ n, k, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+  records.push({
+    n,
+    k,
+    compute_ms: med,
+    compute_GFLOPs: gflops,
+    compute_GBs: gbs,
+  });
 }
 
 saveResults("ssyr2k", gpuModel, records, { folder: "ssyr2k" });

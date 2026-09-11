@@ -45,8 +45,12 @@ for (const trans of TRANS) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped trans=${trans}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped trans=${trans}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -54,12 +58,34 @@ for (const trans of TRANS) {
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await strsv(device, "lower", trans, "non-unit", n, AGpu, lda, xGpu, 1, "row-major");
+      await strsv(
+        device,
+        "lower",
+        trans,
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        "row-major",
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await strsv(device, "lower", trans, "non-unit", n, AGpu, lda, xGpu, 1, "row-major");
+      const { gpuTimeMs } = await strsv(
+        device,
+        "lower",
+        trans,
+        "non-unit",
+        n,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        "row-major",
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -69,13 +95,16 @@ for (const trans of TRANS) {
     if (times.length === 0) continue;
     const med = median(times);
     // stored triangle + x read/write — logical elements touched, same for every trans
-    const bytes = (n * (n + 1) / 2 + 2 * n) * 4;
+    const bytes = ((n * (n + 1)) / 2 + 2 * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [trans, n, med, gbs]);
     records.push({ trans, n, compute_ms: med, compute_GBs: gbs });
   }
 }
 
-saveResults("strsv", gpuModel, records, { folder: "strsv", fileName: "trans.strsv" });
+saveResults("strsv", gpuModel, records, {
+  folder: "strsv",
+  fileName: "trans.strsv",
+});
 
 cleanup();

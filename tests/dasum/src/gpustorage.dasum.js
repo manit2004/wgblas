@@ -27,13 +27,16 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  x:      loadParam("x64"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  x: loadParam("x64"),
 };
 
 // Cap n for fixtures — validationSpecs allows up to 1000, which makes property tests slow.
-const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
+const fixtureSpecs = {
+  ...validationSpecs,
+  n: { ...validationSpecs.n, range: { min: 1, max: 50 } },
+};
 
 async function callGpuResident(dev, a) {
   return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {
@@ -43,15 +46,15 @@ async function callGpuResident(dev, a) {
 
 test("dasum fixtures (GPU-resident)", async (t) => {
   await runFixtures(
-    t,                      // node:test context
+    t, // node:test context
     "dasum (GPU-resident)", // routine name — used in the diagnostic label
-    device,                 // WebGPU device instance
-    NUM_RUNS,               // 100 random inputs
-    THRESHOLD,              // max allowed f64 ULP difference
-    fixtureSpecs,           // param specs used to generate random inputs
-    callGpuResident,        // GPU call — wraps x into a GpuVector
-    stdlibReference,        // CPU reference
-    (gpu, ref) => ulpDiff64(gpu.asum, ref),       // raw f64 ULP difference between results
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    THRESHOLD, // max allowed f64 ULP difference
+    fixtureSpecs, // param specs used to generate random inputs
+    callGpuResident, // GPU call — wraps x into a GpuVector
+    stdlibReference, // CPU reference
+    (gpu, ref) => ulpDiff64(gpu.asum, ref), // raw f64 ULP difference between results
   );
 });
 
@@ -59,9 +62,9 @@ test("dasum edge cases (GPU-resident)", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        x: new Float64Array(c.x),  // input vector
-        incx: c.incx,              // stride through x
+        n: c.n, // vector length
+        x: new Float64Array(c.x), // input vector
+        incx: c.incx, // stride through x
       };
       const { asum: got } = await callGpuResident(device, a);
       const expected = stdlibReference(a);

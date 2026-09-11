@@ -9,6 +9,11 @@ import { backwardResidualFactor } from "../helpers.js";
 import { strsmReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 import edgeCasesColumnMajor from "../edge-cases-column-major.json" with { type: "json" };
+import { BLOCK_SIZE } from "../../../src/util/constants.mjs";
+import {
+  randomFloat32Array,
+  randomTriangularFloat32Array,
+} from "../../../src/random/random.mjs";
 
 const NUM_RUNS = 100;
 // Higher than strsv's THRESHOLD=3 — strsm's explicit block inverse adds a
@@ -26,33 +31,56 @@ after(() => {
 const nSpec = loadParam("n");
 const validationSpecs = {
   device: loadParam("device"),
-  side:   loadParam("side"),
-  uplo:   loadParam("uplo"),
+  side: loadParam("side"),
+  uplo: loadParam("uplo"),
   transA: loadParam("trans"),
-  diag:   loadParam("diag"),
+  diag: loadParam("diag"),
   layout: loadParam("layout"),
-  m:      { ...loadParam("m"), baseline: 2 },
+  m: { ...loadParam("m"), baseline: 2 },
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "must be non-negative", label: "negative" },
+    ],
   },
   alpha: loadParam("alpha"),
   // triangular: true keeps the diagonal away from 0, like strsv. Range
   // tightened to [-0.5,0.5]: with diag='unit', entries near ±1 can make a
   // block's explicit inverse grow combinatorially (strsm's own technique).
-  A:     { ...loadParam("A"), dependsOn: ["m", "n", "lda", "side"], triangular: true, range: { elementMin: -0.5, elementMax: 0.5 } },
-  lda:   loadParam("ld"),
-  B:     { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
-  ldb:   loadParam("ld"),
+  A: {
+    ...loadParam("A"),
+    dependsOn: ["m", "n", "lda", "side"],
+    triangular: true,
+    range: { elementMin: -0.5, elementMax: 0.5 },
+  },
+  lda: loadParam("ld"),
+  B: { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
+  ldb: loadParam("ld"),
 };
 
 test("strsm validation", async (t) => {
   await runValidation(
     t,
     validationSpecs,
-    (a) => strsm(a.device, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb, a.layout),
+    (a) =>
+      strsm(
+        a.device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.layout,
+      ),
     { device },
   );
 });
@@ -73,7 +101,22 @@ test("strsm fixtures", async (t) => {
     NUM_RUNS,
     THRESHOLD,
     fixtureSpecs,
-    async (dev, a) => strsm(dev, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb, a.layout),
+    async (dev, a) =>
+      strsm(
+        dev,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.layout,
+      ),
     stdlibReference,
     backwardResidualFactor,
   );
@@ -85,15 +128,38 @@ test("strsm edge cases", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        side: tc.side, uplo: tc.uplo, transA: tc.transA, diag: tc.diag,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        transA: tc.transA,
+        diag: tc.diag,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
       };
-      const got = await strsm(device, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb);
+      const got = await strsm(
+        device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+      );
       const expected = stdlibReference(a);
       const factor = backwardResidualFactor(got, expected, a);
-      assert.ok(factor <= THRESHOLD, `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`);
+      assert.ok(
+        factor <= THRESHOLD,
+        `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+      );
     });
   }
 });
@@ -107,7 +173,20 @@ test("strsm NaN/Inf semantics", async (t) => {
   await t.test("alpha=0 — poisoned B becomes a literal zero", async () => {
     const A = new Float32Array([1, 0, 1, 1]); // finite, valid lower-triangular
     const B = new Float32Array([Infinity, NaN, 3, 4]);
-    const got = await strsm(device, "left", "lower", "no-transpose", "non-unit", 2, 2, 0, A, 2, B, 2);
+    const got = await strsm(
+      device,
+      "left",
+      "lower",
+      "no-transpose",
+      "non-unit",
+      2,
+      2,
+      0,
+      A,
+      2,
+      B,
+      2,
+    );
     assert.deepEqual(got.B, new Float32Array([0, 0, 0, 0]));
   });
 });
@@ -118,15 +197,96 @@ test("strsm edge cases (column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        side: tc.side, uplo: tc.uplo, transA: tc.transA, diag: tc.diag,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        transA: tc.transA,
+        diag: tc.diag,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
       };
-      const got = await strsm(device, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb, a.layout);
+      const got = await strsm(
+        device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.layout,
+      );
       const expected = stdlibReference(a);
       const factor = backwardResidualFactor(got, expected, a);
-      assert.ok(factor <= THRESHOLD, `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`);
+      assert.ok(
+        factor <= THRESHOLD,
+        `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+      );
+    });
+  }
+});
+
+// The property fixtures above cap m/n at 20 (see fixtureSpecs) to keep them
+// fast, so strsm's per-block loop (BLOCK_SIZE=64) never runs more than one
+// block anywhere else in this suite — the "trailing update" step (gather A's
+// off-diagonal block, subtract its contribution from the remaining B) only
+// exists for a second-or-later block. aOrder=BLOCK_SIZE+6 forces exactly two
+// blocks; the three (side, uplo) combinations below cover both loop
+// directions (`forward` true and false) and both block-transfer orientations
+// (side='left' gathers rows, side='right' gathers columns).
+test("strsm exercises more than one block (aOrder > BLOCK_SIZE)", async (t) => {
+  const aOrder = BLOCK_SIZE + 6;
+  const otherLen = 5;
+  for (const [side, uplo] of [
+    ["left", "lower"],
+    ["left", "upper"],
+    ["right", "lower"],
+  ]) {
+    await t.test(`side='${side}', uplo='${uplo}'`, async () => {
+      const m = side === "left" ? aOrder : otherLen;
+      const n = side === "left" ? otherLen : aOrder;
+      const A = randomTriangularFloat32Array(aOrder, aOrder, uplo, -0.5, 0.5);
+      const B = randomFloat32Array(m * n, -1, 1);
+      const a = {
+        side,
+        uplo,
+        transA: "no-transpose",
+        diag: "non-unit",
+        m,
+        n,
+        alpha: 1,
+        A,
+        lda: aOrder,
+        B,
+        ldb: n,
+      };
+      const got = await strsm(
+        device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+      );
+      const factor = backwardResidualFactor(got, null, a);
+      assert.ok(
+        factor <= THRESHOLD,
+        `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+      );
     });
   }
 });

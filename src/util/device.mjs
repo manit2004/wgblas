@@ -3,6 +3,20 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 
 /**
+ * Throws if `device` is not a `GPUDevice`.
+ *
+ * Every routine's first guard, extracted since the check and message are
+ * identical across all of them.
+ *
+ * @param {GPUDevice} device - the value to check
+ * @throws {Error} if `device` is not a `GPUDevice`
+ */
+export function requireGpuDevice(device) {
+  if (!(device instanceof GPUDevice))
+    throw new Error("device must be a GPUDevice.");
+}
+
+/**
  * Throws if any GPU-resident operand belongs to a device other than the one
  * the routine was called with.
  *
@@ -22,12 +36,13 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  */
 export function requireSameDevice(device, routine, operands) {
   for (const [name, value] of Object.entries(operands)) {
-    if (!(value instanceof GpuVector) && !(value instanceof GpuMatrix)) continue;
+    if (!(value instanceof GpuVector) && !(value instanceof GpuMatrix))
+      continue;
     if (value.device !== device) {
       throw new Error(
         `${routine}: ${name} belongs to a different GPUDevice than the one passed in. ` +
-        "GPU buffers cannot be shared across devices — recreate the operand on this " +
-        "device, or call the routine with the device that owns it.",
+          "GPU buffers cannot be shared across devices — recreate the operand on this " +
+          "device, or call the routine with the device that owns it.",
       );
     }
   }

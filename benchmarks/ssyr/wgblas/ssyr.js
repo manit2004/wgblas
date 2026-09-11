@@ -35,7 +35,13 @@ for (const size of SIZES) {
   const alpha = 1.0;
 
   const xGpu = GpuVector.from(randomFloat32Array(n));
-  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(n * n), n, n), n, n, lda, "column-major");
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(n * n), n, n),
+    n,
+    n,
+    lda,
+    "column-major",
+  );
 
   // warm up — uplo="lower", lda tight; see uplo.ssyr.js and lda.ssyr.js for
   // the two independent real effects found on those axes.
@@ -46,7 +52,14 @@ for (const size of SIZES) {
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await ssyr(
-      device, "lower", n, alpha, xGpu, 1, AGpu, lda,
+      device,
+      "lower",
+      n,
+      alpha,
+      xGpu,
+      1,
+      AGpu,
+      lda,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }

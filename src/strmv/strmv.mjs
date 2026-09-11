@@ -11,16 +11,28 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
-export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, incy, layout = "row-major") {
+export async function strmv(
+  device,
+  uplo,
+  trans,
+  diag,
+  n,
+  A,
+  lda,
+  x,
+  incx,
+  y,
+  incy,
+  layout = "row-major",
+) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
   const AIsGpu = A instanceof GpuMatrix;
   const isUnit = diag === "unit";
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "strmv", { A, x, y });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
@@ -68,9 +80,7 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
   if (n === 0) return yIsGpu ? {} : { y };
 
   if (!AIsGpu && A.length < (n - 1) * lda + n)
-    throw new Error(
-      "A does not have enough elements for the given n and lda.",
-    );
+    throw new Error("A does not have enough elements for the given n and lda.");
   if (x.length < (n - 1) * incx + 1)
     throw new Error(
       "x does not have enough elements for the given n and incx.",
@@ -84,7 +94,9 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
   const effLayout = AIsGpu ? A.layout : layout;
   const isColMajor = effLayout === "column-major";
   const isLower = isColMajor ? uplo === "upper" : uplo === "lower";
-  const isNoTrans = isColMajor ? trans === "transpose" : trans === "no-transpose";
+  const isNoTrans = isColMajor
+    ? trans === "transpose"
+    : trans === "no-transpose";
 
   const pipeline = await getPipeline(device, "strmv");
 
@@ -97,15 +109,16 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strmv-A", false);
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strmv-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "strmv-y", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
-        { value: n,             type: "u32" },
-        { value: incx,          type: "u32" },
-        { value: incy,          type: "u32" },
-        { value: lda,           type: "u32" },
+        { value: n, type: "u32" },
+        { value: incx, type: "u32" },
+        { value: incy, type: "u32" },
+        { value: lda, type: "u32" },
         { value: isNoTrans ? 0 : 1, type: "u32" },
-        { value: isLower ? 0 : 1,   type: "u32" },
-        { value: isUnit ? 1 : 0,    type: "u32" },
+        { value: isLower ? 0 : 1, type: "u32" },
+        { value: isUnit ? 1 : 0, type: "u32" },
       ],
       "strmv-params",
     );
@@ -118,8 +131,15 @@ export async function strmv(device, uplo, trans, diag, n, A, lda, x, incx, y, in
     ]);
 
     const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
-    const readBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
+    const { commandEncoder, ts } = runComputePass(
+      device,
+      pipeline,
+      bindGroup,
+      wgCount,
+    );
+    const readBuffer = yIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, yBuffer);
 
     submit(device, commandEncoder);
 

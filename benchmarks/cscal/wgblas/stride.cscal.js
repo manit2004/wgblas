@@ -47,11 +47,15 @@ for (const stride of STRIDES) {
     // complex element (re+im, f32 each), not 4.
     const bytesPerBuffer = n * stride * 8;
     if (bytesPerBuffer > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
-    const xGpu = GpuVector.from(new Complex32Array(randomFloat32Array(2 * n * stride)));
+    const xGpu = GpuVector.from(
+      new Complex32Array(randomFloat32Array(2 * n * stride)),
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await cscal(device, n, alpha, xGpu, stride);
@@ -74,6 +78,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("cscal", gpuModel, records, { folder: "cscal", fileName: "stride.cscal" });
+saveResults("cscal", gpuModel, records, {
+  folder: "cscal",
+  fileName: "stride.cscal",
+});
 
 cleanup();

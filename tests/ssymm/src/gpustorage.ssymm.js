@@ -8,7 +8,11 @@ import { getPowerPreference } from "../../helpers/device.js";
 import { ssymm } from "wgblas/ssymm";
 import { loadParam } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
-import { padMatrix, unpadMatrix, withGpuResources } from "../../helpers/gpustorage.js";
+import {
+  padMatrix,
+  unpadMatrix,
+  withGpuResources,
+} from "../../helpers/gpustorage.js";
 import { forwardFactor } from "../helpers.js";
 import { ssymmReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
@@ -27,24 +31,27 @@ after(() => {
 
 const nSpec = loadParam("n");
 const validationSpecs = {
-  side:   loadParam("side"),
-  uplo:   loadParam("uplo"),
+  side: loadParam("side"),
+  uplo: loadParam("uplo"),
   layout: loadParam("layout"),
-  m:      { ...loadParam("m"), baseline: 2 },
+  m: { ...loadParam("m"), baseline: 2 },
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "must be non-negative", label: "negative" },
+    ],
   },
-  alpha:  loadParam("alpha"),
-  beta:   loadParam("beta"),
-  A:      { ...loadParam("A"), dependsOn: ["m", "n", "lda", "side"] },
-  lda:    loadParam("ld"),
-  B:      { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
-  ldb:    loadParam("ld"),
-  C:      loadParam("C"),
-  ldc:    loadParam("ld"),
+  alpha: loadParam("alpha"),
+  beta: loadParam("beta"),
+  A: { ...loadParam("A"), dependsOn: ["m", "n", "lda", "side"] },
+  lda: loadParam("ld"),
+  B: { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
+  ldb: loadParam("ld"),
+  C: loadParam("C"),
+  ldc: loadParam("ld"),
 };
 
 // Cap m/n — validationSpecs' full range is too slow for property tests.
@@ -67,12 +74,44 @@ async function callGpuResident(dev, a) {
 
   return withGpuResources(
     {
-      A: GpuMatrix.from(padMatrix(a.A, aOuterCount, a.lda), aOrder, aOrder, a.lda, layout),
-      B: GpuMatrix.from(padMatrix(a.B, bOuterCount, a.ldb), a.m, a.n, a.ldb, layout),
-      C: GpuMatrix.from(padMatrix(a.C, cOuterCount, a.ldc), a.m, a.n, a.ldc, layout),
+      A: GpuMatrix.from(
+        padMatrix(a.A, aOuterCount, a.lda),
+        aOrder,
+        aOrder,
+        a.lda,
+        layout,
+      ),
+      B: GpuMatrix.from(
+        padMatrix(a.B, bOuterCount, a.ldb),
+        a.m,
+        a.n,
+        a.ldb,
+        layout,
+      ),
+      C: GpuMatrix.from(
+        padMatrix(a.C, cOuterCount, a.ldc),
+        a.m,
+        a.n,
+        a.ldc,
+        layout,
+      ),
     },
     async ({ A, B, C }) => {
-      await ssymm(dev, a.side, a.uplo, a.m, a.n, a.alpha, A, a.lda, B, a.ldb, a.beta, C, a.ldc);
+      await ssymm(
+        dev,
+        a.side,
+        a.uplo,
+        a.m,
+        a.n,
+        a.alpha,
+        A,
+        a.lda,
+        B,
+        a.ldb,
+        a.beta,
+        C,
+        a.ldc,
+      );
       const dense = await C.read();
       return { C: unpadMatrix(dense, a.C, a.m, a.n, a.ldc, layout) };
     },
@@ -97,12 +136,18 @@ test("ssymm edge cases (GPU-resident)", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        side: tc.side, uplo: tc.uplo,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
@@ -116,12 +161,18 @@ test("ssymm edge cases (GPU-resident, column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        side: tc.side, uplo: tc.uplo,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
         beta: tc.beta,
-        C: new Float32Array(tc.C), ldc: tc.ldc,
+        C: new Float32Array(tc.C),
+        ldc: tc.ldc,
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);

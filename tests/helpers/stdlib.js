@@ -73,7 +73,12 @@ function makeYReference(stdlibFn, prefix = () => []) {
 // convert x into/out of whatever type stdlibFn actually expects — default is
 // a defensive `.slice()` and identity, but cscal overrides both to bridge
 // Complex32Array <-> stdlib's own interleaved Complex64Array.
-function makeXReference(stdlibFn, prefix = () => [], toX = (x) => x.slice(), fromX = (x) => x) {
+function makeXReference(
+  stdlibFn,
+  prefix = () => [],
+  toX = (x) => x.slice(),
+  fromX = (x) => x,
+) {
   return (a) => {
     const x = toX(a.x);
     stdlibFn(a.n, ...prefix(a), x, a.incx);
@@ -88,7 +93,18 @@ function makeXReference(stdlibFn, prefix = () => [], toX = (x) => x.slice(), fro
 function makeMatVecReference(stdlibFn, dims) {
   return (a) => {
     const out = a.y.slice();
-    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.A.slice(), a.lda, a.x.slice(), a.incx, a.beta, out, a.incy);
+    stdlibFn(
+      a.layout ?? "row-major",
+      ...dims(a),
+      a.alpha,
+      a.A.slice(),
+      a.lda,
+      a.x.slice(),
+      a.incx,
+      a.beta,
+      out,
+      a.incy,
+    );
     return { y: out };
   };
 }
@@ -100,7 +116,14 @@ function makeMatVecReference(stdlibFn, dims) {
 function makeMatXReference(stdlibFn, dims) {
   return (a) => {
     const x = a.x.slice();
-    stdlibFn(a.layout ?? "row-major", ...dims(a), a.A.slice(), a.lda, x, a.incx);
+    stdlibFn(
+      a.layout ?? "row-major",
+      ...dims(a),
+      a.A.slice(),
+      a.lda,
+      x,
+      a.incx,
+    );
     return { x };
   };
 }
@@ -112,7 +135,17 @@ function makeMatXReference(stdlibFn, dims) {
 function makeMatrixReference(stdlibFn, dims) {
   return (a) => {
     const A = a.A.slice();
-    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
+    stdlibFn(
+      a.layout ?? "row-major",
+      ...dims(a),
+      a.alpha,
+      a.x.slice(),
+      a.incx,
+      a.y.slice(),
+      a.incy,
+      A,
+      a.lda,
+    );
     return { A };
   };
 }
@@ -124,7 +157,15 @@ function makeMatrixReference(stdlibFn, dims) {
 function makeSymMatrixReference(stdlibFn, dims) {
   return (a) => {
     const A = a.A.slice();
-    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, A, a.lda);
+    stdlibFn(
+      a.layout ?? "row-major",
+      ...dims(a),
+      a.alpha,
+      a.x.slice(),
+      a.incx,
+      A,
+      a.lda,
+    );
     return { A };
   };
 }
@@ -135,7 +176,17 @@ function makeSymMatrixReference(stdlibFn, dims) {
 function makeSymMatrix2Reference(stdlibFn, dims) {
   return (a) => {
     const A = a.A.slice();
-    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.x.slice(), a.incx, a.y.slice(), a.incy, A, a.lda);
+    stdlibFn(
+      a.layout ?? "row-major",
+      ...dims(a),
+      a.alpha,
+      a.x.slice(),
+      a.incx,
+      a.y.slice(),
+      a.incy,
+      A,
+      a.lda,
+    );
     return { A };
   };
 }
@@ -149,7 +200,18 @@ function makeSymMatrix2Reference(stdlibFn, dims) {
 function makeMatMatReference(stdlibFn, dims) {
   return (a) => {
     const C = a.C.slice();
-    stdlibFn(a.layout ?? "row-major", ...dims(a), a.alpha, a.A.slice(), a.lda, a.B.slice(), a.ldb, a.beta, C, a.ldc);
+    stdlibFn(
+      a.layout ?? "row-major",
+      ...dims(a),
+      a.alpha,
+      a.A.slice(),
+      a.lda,
+      a.B.slice(),
+      a.ldb,
+      a.beta,
+      C,
+      a.ldc,
+    );
     return { C };
   };
 }
@@ -216,8 +278,15 @@ export const snrm2Reference = makeReducerReference(stdlibSnrm2);
 export const isamaxReference = makeReducerReference(stdlibIsamax);
 export const idamaxReference = makeReducerReference(stdlibIdamax);
 
-export const sgemvReference = makeMatVecReference(stdlibSgemv, (a) => [a.trans, a.m, a.n]);
-export const ssymvReference = makeMatVecReference(stdlibSsymv, (a) => [a.uplo, a.n]);
+export const sgemvReference = makeMatVecReference(stdlibSgemv, (a) => [
+  a.trans,
+  a.m,
+  a.n,
+]);
+export const ssymvReference = makeMatVecReference(stdlibSsymv, (a) => [
+  a.uplo,
+  a.n,
+]);
 
 // stdlib's strmv solves in place on x (no separate y, no incy) — this remaps
 // its result into the shape wgblas's API returns: a y-sized array where only
@@ -226,21 +295,48 @@ export const ssymvReference = makeMatVecReference(stdlibSsymv, (a) => [a.uplo, a
 // natively supports both orders.
 export function strmvReference(a) {
   const xCopy = a.x.slice();
-  stdlibStrmv(a.layout ?? "row-major", a.uplo, a.trans, a.diag, a.n, a.A.slice(), a.lda, xCopy, a.incx);
+  stdlibStrmv(
+    a.layout ?? "row-major",
+    a.uplo,
+    a.trans,
+    a.diag,
+    a.n,
+    a.A.slice(),
+    a.lda,
+    xCopy,
+    a.incx,
+  );
   const out = new Float32Array(a.y);
   for (let i = 0; i < a.n; i++) out[i * a.incy] = xCopy[i * a.incx];
   return { y: out };
 }
 
-export const strsvReference = makeMatXReference(stdlibStrsv, (a) => [a.uplo, a.trans, a.diag, a.n]);
+export const strsvReference = makeMatXReference(stdlibStrsv, (a) => [
+  a.uplo,
+  a.trans,
+  a.diag,
+  a.n,
+]);
 
 export const sgerReference = makeMatrixReference(stdlibSger, (a) => [a.m, a.n]);
 
-export const ssyrReference = makeSymMatrixReference(stdlibSsyr, (a) => [a.uplo, a.n]);
+export const ssyrReference = makeSymMatrixReference(stdlibSsyr, (a) => [
+  a.uplo,
+  a.n,
+]);
 
-export const ssyr2Reference = makeSymMatrix2Reference(stdlibSsyr2, (a) => [a.uplo, a.n]);
+export const ssyr2Reference = makeSymMatrix2Reference(stdlibSsyr2, (a) => [
+  a.uplo,
+  a.n,
+]);
 
-export const sgemmReference = makeMatMatReference(stdlibSgemm, (a) => [a.transA, a.transB, a.m, a.n, a.k]);
+export const sgemmReference = makeMatMatReference(stdlibSgemm, (a) => [
+  a.transA,
+  a.transB,
+  a.m,
+  a.n,
+  a.k,
+]);
 
 export const sgemmtrReference = makeMatMatTriangularReference(sgemmReference);
 
@@ -250,9 +346,20 @@ export const sgemmtrReference = makeMatMatTriangularReference(sgemmReference);
 export const ssyrkReference = makeMatMatTriangularReference((a) => {
   const transB = a.trans === "no-transpose" ? "transpose" : "no-transpose";
   return sgemmReference({
-    transA: a.trans, transB, m: a.n, n: a.n, k: a.k,
-    alpha: a.alpha, A: a.A, lda: a.lda, B: a.A, ldb: a.lda,
-    beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
+    transA: a.trans,
+    transB,
+    m: a.n,
+    n: a.n,
+    k: a.k,
+    alpha: a.alpha,
+    A: a.A,
+    lda: a.lda,
+    B: a.A,
+    ldb: a.lda,
+    beta: a.beta,
+    C: a.C,
+    ldc: a.ldc,
+    layout: a.layout,
   });
 });
 
@@ -263,14 +370,36 @@ export const ssyrkReference = makeMatMatTriangularReference((a) => {
 export const ssyr2kReference = makeMatMatTriangularReference((a) => {
   const transOther = a.trans === "no-transpose" ? "transpose" : "no-transpose";
   const { C: afterTerm1 } = sgemmReference({
-    transA: a.trans, transB: transOther, m: a.n, n: a.n, k: a.k,
-    alpha: a.alpha, A: a.A, lda: a.lda, B: a.B, ldb: a.ldb,
-    beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
+    transA: a.trans,
+    transB: transOther,
+    m: a.n,
+    n: a.n,
+    k: a.k,
+    alpha: a.alpha,
+    A: a.A,
+    lda: a.lda,
+    B: a.B,
+    ldb: a.ldb,
+    beta: a.beta,
+    C: a.C,
+    ldc: a.ldc,
+    layout: a.layout,
   });
   return sgemmReference({
-    transA: a.trans, transB: transOther, m: a.n, n: a.n, k: a.k,
-    alpha: a.alpha, A: a.B, lda: a.ldb, B: a.A, ldb: a.lda,
-    beta: 1.0, C: afterTerm1, ldc: a.ldc, layout: a.layout,
+    transA: a.trans,
+    transB: transOther,
+    m: a.n,
+    n: a.n,
+    k: a.k,
+    alpha: a.alpha,
+    A: a.B,
+    lda: a.ldb,
+    B: a.A,
+    ldb: a.lda,
+    beta: 1.0,
+    C: afterTerm1,
+    ldc: a.ldc,
+    layout: a.layout,
   });
 });
 
@@ -302,13 +431,25 @@ function denseSymmetric(A, lda, order, uplo, layout) {
 export const ssymmReference = (a) => {
   const aOrder = a.side === "left" ? a.m : a.n;
   const denseA = denseSymmetric(a.A, a.lda, aOrder, a.uplo, a.layout);
-  const [matA, ldA, matB, ldB] = a.side === "left"
-    ? [denseA, aOrder, a.B, a.ldb]
-    : [a.B, a.ldb, denseA, aOrder];
+  const [matA, ldA, matB, ldB] =
+    a.side === "left"
+      ? [denseA, aOrder, a.B, a.ldb]
+      : [a.B, a.ldb, denseA, aOrder];
   return sgemmReference({
-    transA: "no-transpose", transB: "no-transpose", m: a.m, n: a.n, k: aOrder,
-    alpha: a.alpha, A: matA, lda: ldA, B: matB, ldb: ldB,
-    beta: a.beta, C: a.C, ldc: a.ldc, layout: a.layout,
+    transA: "no-transpose",
+    transB: "no-transpose",
+    m: a.m,
+    n: a.n,
+    k: aOrder,
+    alpha: a.alpha,
+    A: matA,
+    lda: ldA,
+    B: matB,
+    ldb: ldB,
+    beta: a.beta,
+    C: a.C,
+    ldc: a.ldc,
+    layout: a.layout,
   });
 };
 
@@ -320,14 +461,33 @@ function denseTriangular(A, lda, order, uplo, transA, diag, layout) {
   const isCM = (layout ?? "row-major") === "column-major";
   const readA = (row, col) => (isCM ? A[col * lda + row] : A[row * lda + col]);
   const out = new Float32Array(order * order);
-  const writeOut = (row, col, v) => { out[isCM ? col * order + row : row * order + col] = v; };
+  const writeOut = (row, col, v) => {
+    out[isCM ? col * order + row : row * order + col] = v;
+  };
   for (let i = 0; i < order; i++) {
     for (let j = 0; j < order; j++) {
-      if (i === j) { writeOut(i, j, diag === "unit" ? 1 : readA(i, i)); continue; }
-      const meaningful = transA === "no-transpose"
-        ? (uplo === "lower" ? j <= i : j >= i)
-        : (uplo === "lower" ? j >= i : j <= i);
-      writeOut(i, j, meaningful ? readA(transA === "no-transpose" ? i : j, transA === "no-transpose" ? j : i) : 0);
+      if (i === j) {
+        writeOut(i, j, diag === "unit" ? 1 : readA(i, i));
+        continue;
+      }
+      const meaningful =
+        transA === "no-transpose"
+          ? uplo === "lower"
+            ? j <= i
+            : j >= i
+          : uplo === "lower"
+            ? j >= i
+            : j <= i;
+      writeOut(
+        i,
+        j,
+        meaningful
+          ? readA(
+              transA === "no-transpose" ? i : j,
+              transA === "no-transpose" ? j : i,
+            )
+          : 0,
+      );
     }
   }
   return out;
@@ -342,14 +502,34 @@ function denseTriangular(A, lda, order, uplo, transA, diag, layout) {
 export const strmmReference = (a) => {
   const layout = a.layout ?? "row-major";
   const aOrder = a.side === "left" ? a.m : a.n;
-  const denseA = denseTriangular(a.A, a.lda, aOrder, a.uplo, a.transA, a.diag, layout);
-  const [matA, ldA, matB, ldB] = a.side === "left"
-    ? [denseA, aOrder, a.B, a.ldb]
-    : [a.B, a.ldb, denseA, aOrder];
+  const denseA = denseTriangular(
+    a.A,
+    a.lda,
+    aOrder,
+    a.uplo,
+    a.transA,
+    a.diag,
+    layout,
+  );
+  const [matA, ldA, matB, ldB] =
+    a.side === "left"
+      ? [denseA, aOrder, a.B, a.ldb]
+      : [a.B, a.ldb, denseA, aOrder];
   const { C } = sgemmReference({
-    transA: "no-transpose", transB: "no-transpose", m: a.m, n: a.n, k: aOrder,
-    alpha: a.alpha, A: matA, lda: ldA, B: matB, ldb: ldB,
-    beta: 0.0, C: a.B, ldc: a.ldb, layout,
+    transA: "no-transpose",
+    transB: "no-transpose",
+    m: a.m,
+    n: a.n,
+    k: aOrder,
+    alpha: a.alpha,
+    A: matA,
+    lda: ldA,
+    B: matB,
+    ldb: ldB,
+    beta: 0.0,
+    C: a.B,
+    ldc: a.ldb,
+    layout,
   });
   return { B: C };
 };
@@ -358,9 +538,21 @@ export const strmmReference = (a) => {
 // via direct forward/backward substitution on the already zero-filled
 // op(A) — simple and independent of strsm.mjs's own block-inversion
 // technique, so it's a genuine cross-check, not just a restatement.
-function solveTriangular(denseA, aOrder, B, ldb, layout, m, n, side, alpha, opIsLower) {
+function solveTriangular(
+  denseA,
+  aOrder,
+  B,
+  ldb,
+  layout,
+  m,
+  n,
+  side,
+  alpha,
+  opIsLower,
+) {
   const isCM = layout === "column-major";
-  const aElem = (row, col) => (isCM ? denseA[col * aOrder + row] : denseA[row * aOrder + col]);
+  const aElem = (row, col) =>
+    isCM ? denseA[col * aOrder + row] : denseA[row * aOrder + col];
   const idxOf = (row, col) => (isCM ? col * ldb + row : row * ldb + col);
   const out = Float32Array.from(B);
 
@@ -369,8 +561,12 @@ function solveTriangular(denseA, aOrder, B, ldb, layout, m, n, side, alpha, opIs
       const i = opIsLower ? step : aOrder - 1 - step;
       for (let j = 0; j < n; j++) {
         let acc = alpha * B[idxOf(i, j)];
-        if (opIsLower) { for (let k = 0; k < i; k++) acc -= aElem(i, k) * out[idxOf(k, j)]; }
-        else { for (let k = i + 1; k < aOrder; k++) acc -= aElem(i, k) * out[idxOf(k, j)]; }
+        if (opIsLower) {
+          for (let k = 0; k < i; k++) acc -= aElem(i, k) * out[idxOf(k, j)];
+        } else {
+          for (let k = i + 1; k < aOrder; k++)
+            acc -= aElem(i, k) * out[idxOf(k, j)];
+        }
         out[idxOf(i, j)] = acc / aElem(i, i);
       }
     }
@@ -379,8 +575,12 @@ function solveTriangular(denseA, aOrder, B, ldb, layout, m, n, side, alpha, opIs
       const j = opIsLower ? aOrder - 1 - step : step;
       for (let i = 0; i < m; i++) {
         let acc = alpha * B[idxOf(i, j)];
-        if (opIsLower) { for (let k = j + 1; k < aOrder; k++) acc -= out[idxOf(i, k)] * aElem(k, j); }
-        else { for (let k = 0; k < j; k++) acc -= out[idxOf(i, k)] * aElem(k, j); }
+        if (opIsLower) {
+          for (let k = j + 1; k < aOrder; k++)
+            acc -= out[idxOf(i, k)] * aElem(k, j);
+        } else {
+          for (let k = 0; k < j; k++) acc -= out[idxOf(i, k)] * aElem(k, j);
+        }
         out[idxOf(i, j)] = acc / aElem(j, j);
       }
     }
@@ -398,8 +598,27 @@ export const strsmReference = (a) => {
   if (a.alpha === 0) return { B: new Float32Array(a.B.length) };
   const layout = a.layout ?? "row-major";
   const aOrder = a.side === "left" ? a.m : a.n;
-  const denseA = denseTriangular(a.A, a.lda, aOrder, a.uplo, a.transA, a.diag, layout);
+  const denseA = denseTriangular(
+    a.A,
+    a.lda,
+    aOrder,
+    a.uplo,
+    a.transA,
+    a.diag,
+    layout,
+  );
   const opIsLower = (a.transA === "no-transpose") === (a.uplo === "lower");
-  const B = solveTriangular(denseA, aOrder, a.B, a.ldb, layout, a.m, a.n, a.side, a.alpha, opIsLower);
+  const B = solveTriangular(
+    denseA,
+    aOrder,
+    a.B,
+    a.ldb,
+    layout,
+    a.m,
+    a.n,
+    a.side,
+    a.alpha,
+    opIsLower,
+  );
   return { B };
 };

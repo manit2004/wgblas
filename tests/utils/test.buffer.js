@@ -10,7 +10,10 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import {
-  uploadBuffer, createStorageBuffer, createResultBuffer, destroyBuffers,
+  uploadBuffer,
+  createStorageBuffer,
+  createResultBuffer,
+  destroyBuffers,
 } from "../../src/util/buffer.mjs";
 import { getPowerPreference } from "../helpers/device.js";
 
@@ -27,8 +30,16 @@ test("createStorageBuffer rejects an oversized intermediate", () => {
   assert.throws(
     () => createStorageBuffer(device, overLimit, "my-intermediate"),
     (err) => {
-      assert.match(err.message, /Buffer "my-intermediate" needs \d+ bytes/, "should name the buffer");
-      assert.match(err.message, /maxStorageBufferBindingSize/, "should name the limit");
+      assert.match(
+        err.message,
+        /Buffer "my-intermediate" needs \d+ bytes/,
+        "should name the buffer",
+      );
+      assert.match(
+        err.message,
+        /maxStorageBufferBindingSize/,
+        "should name the limit",
+      );
       return true;
     },
   );
@@ -69,12 +80,21 @@ test("the limit itself is allowed, one byte past it is not", (t) => {
   // unreasonable (this machine reports 128 MiB; some devices report far more).
   const CAP = 512 * 1024 * 1024;
   if (max > CAP) {
-    t.skip(`maxStorageBufferBindingSize is ${max} bytes — too large to allocate here`);
+    t.skip(
+      `maxStorageBufferBindingSize is ${max} bytes — too large to allocate here`,
+    );
     return;
   }
   const atLimit = createStorageBuffer(device, max, "at-limit");
-  assert.equal(atLimit.size, max, "a buffer exactly at the limit must be allowed");
+  assert.equal(
+    atLimit.size,
+    max,
+    "a buffer exactly at the limit must be allowed",
+  );
   destroyBuffers(atLimit);
 
-  assert.throws(() => createStorageBuffer(device, max + 1, "one-past"), /exceeding this device/);
+  assert.throws(
+    () => createStorageBuffer(device, max + 1, "one-past"),
+    /exceeding this device/,
+  );
 });

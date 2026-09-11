@@ -44,12 +44,20 @@ for (const pad of PADS) {
 
     const bytesA = n * lda * 4;
     if (bytesA > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
     const xGpu = GpuVector.from(randomFloat32Array(n));
-    const AGpu = GpuMatrix.from(new Float32Array(n * lda), n, n, lda, "row-major");
+    const AGpu = GpuMatrix.from(
+      new Float32Array(n * lda),
+      n,
+      n,
+      lda,
+      "row-major",
+    );
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await ssyr(device, "lower", n, alpha, xGpu, 1, AGpu, lda);
@@ -57,7 +65,16 @@ for (const pad of PADS) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssyr(device, "lower", n, alpha, xGpu, 1, AGpu, lda);
+      const { gpuTimeMs } = await ssyr(
+        device,
+        "lower",
+        n,
+        alpha,
+        xGpu,
+        1,
+        AGpu,
+        lda,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -74,6 +91,9 @@ for (const pad of PADS) {
   }
 }
 
-saveResults("ssyr", gpuModel, records, { folder: "ssyr", fileName: "lda.ssyr" });
+saveResults("ssyr", gpuModel, records, {
+  folder: "ssyr",
+  fileName: "lda.ssyr",
+});
 
 cleanup();

@@ -11,18 +11,16 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function sscal(device, n, alpha, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "sscal", { x });
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
   if (incx <= 0) throw new Error("incx must be positive.");
@@ -42,7 +40,8 @@ export async function sscal(device, n, alpha, x, incx) {
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sscal-x", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: alpha, type: "f32" },
@@ -55,7 +54,8 @@ export async function sscal(device, n, alpha, x, incx) {
       xBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(device,
+    const { commandEncoder, ts } = runComputePass(
+      device,
       pipeline,
       bindGroup,
       calcWorkgroups(device, n),

@@ -51,8 +51,10 @@ export function splitComplex64(data, n = data.length) {
   const hi = new Float32Array(n * 2);
   const lo = new Float32Array(n * 2);
   for (let i = 0; i < n; i++) {
-    hi[i * 2] = reHi[i]; hi[i * 2 + 1] = imHi[i];
-    lo[i * 2] = reLo[i]; lo[i * 2 + 1] = imLo[i];
+    hi[i * 2] = reHi[i];
+    hi[i * 2 + 1] = imHi[i];
+    lo[i * 2] = reLo[i];
+    lo[i * 2 + 1] = imLo[i];
   }
   return { hi, lo };
 }
@@ -67,11 +69,15 @@ export function splitComplex64(data, n = data.length) {
  */
 export function mergeComplex64(hi, lo) {
   const n = hi.length / 2;
-  const reHi = new Float32Array(n), reLo = new Float32Array(n);
-  const imHi = new Float32Array(n), imLo = new Float32Array(n);
+  const reHi = new Float32Array(n),
+    reLo = new Float32Array(n);
+  const imHi = new Float32Array(n),
+    imLo = new Float32Array(n);
   for (let i = 0; i < n; i++) {
-    reHi[i] = hi[i * 2]; imHi[i] = hi[i * 2 + 1];
-    reLo[i] = lo[i * 2]; imLo[i] = lo[i * 2 + 1];
+    reHi[i] = hi[i * 2];
+    imHi[i] = hi[i * 2 + 1];
+    reLo[i] = lo[i * 2];
+    imLo[i] = lo[i * 2 + 1];
   }
   const re = mergeDoubleDouble(reHi, reLo);
   const im = mergeDoubleDouble(imHi, imLo);

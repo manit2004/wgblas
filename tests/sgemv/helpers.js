@@ -17,12 +17,13 @@ const eps = 2 ** -23;
 export function forwardFactor(gpu, ref, a) {
   const { trans, m, n, alpha, A, lda, x, incx, beta, y, incy, layout } = a;
   const isNoTrans = trans === "no-transpose";
-  const yLen   = isNoTrans ? m : n;
+  const yLen = isNoTrans ? m : n;
   const nTerms = isNoTrans ? n : m;
   // A[row,col] flat index — column-major storage swaps which dimension lda strides over.
-  const at = layout === "column-major"
-    ? (row, col) => A[col * lda + row]
-    : (row, col) => A[row * lda + col];
+  const at =
+    layout === "column-major"
+      ? (row, col) => A[col * lda + row]
+      : (row, col) => A[row * lda + col];
 
   let maxFactor = 0;
   for (let i = 0; i < yLen; i++) {
@@ -37,9 +38,13 @@ export function forwardFactor(gpu, ref, a) {
         dotBound += Math.abs(at(j, i)) * Math.abs(x[j * incx]);
     }
 
-    const bound = eps * ((nTerms + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * Math.abs(y[i * incy]));
-    if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
-    else maxFactor = Math.max(maxFactor, err / bound);
+    const bound =
+      eps *
+      ((nTerms + 1) * Math.abs(alpha) * dotBound +
+        Math.abs(beta) * Math.abs(y[i * incy]));
+    if (bound === 0) {
+      if (err !== 0) maxFactor = Infinity;
+    } else maxFactor = Math.max(maxFactor, err / bound);
   }
   return maxFactor;
 }

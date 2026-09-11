@@ -4,13 +4,25 @@ export function forwardFactor(gpu, ref, a) {
   const flag = a.param[0];
   let h11, h21, h12, h22;
   if (flag === -1) {
-    h11 = a.param[1]; h21 = a.param[2]; h12 = a.param[3]; h22 = a.param[4];
+    h11 = a.param[1];
+    h21 = a.param[2];
+    h12 = a.param[3];
+    h22 = a.param[4];
   } else if (flag === 0) {
-    h11 = 1.0; h21 = a.param[2]; h12 = a.param[3]; h22 = 1.0;
+    h11 = 1.0;
+    h21 = a.param[2];
+    h12 = a.param[3];
+    h22 = 1.0;
   } else if (flag === 1) {
-    h11 = a.param[1]; h21 = -1.0; h12 = 1.0; h22 = a.param[4];
+    h11 = a.param[1];
+    h21 = -1.0;
+    h12 = 1.0;
+    h22 = a.param[4];
   } else if (flag === -2) {
-    h11 = 1.0; h21 = 0.0; h12 = 0.0; h22 = 1.0;
+    h11 = 1.0;
+    h21 = 0.0;
+    h12 = 0.0;
+    h22 = 1.0;
   } else {
     throw new Error(`Unknown srotm flag: ${flag}`);
   }

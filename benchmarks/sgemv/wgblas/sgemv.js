@@ -37,20 +37,50 @@ for (const size of SIZES) {
   const alpha = 1.0;
   const beta = 0.0;
 
-  const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * n), m, n), m, n, lda, "column-major");
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(randomFloat32Array(m * n), m, n),
+    m,
+    n,
+    lda,
+    "column-major",
+  );
   const xGpu = GpuVector.from(randomFloat32Array(n));
   const yGpu = GpuVector.from(new Float32Array(m));
 
   // warm up — trans="no-transpose" only; see trans.sgemv.js for
   // trans="transpose" and its much stronger aspect-ratio sensitivity.
   for (let i = 0; i < WARMUP_ITERS; i++) {
-    await sgemv(device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, STRIDE, beta, yGpu, STRIDE);
+    await sgemv(
+      device,
+      "no-transpose",
+      m,
+      n,
+      alpha,
+      AGpu,
+      lda,
+      xGpu,
+      STRIDE,
+      beta,
+      yGpu,
+      STRIDE,
+    );
   }
 
   const times = [];
   for (let i = 0; i < BENCH_ITERS; i++) {
     const { gpuTimeMs } = await sgemv(
-      device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, STRIDE, beta, yGpu, STRIDE,
+      device,
+      "no-transpose",
+      m,
+      n,
+      alpha,
+      AGpu,
+      lda,
+      xGpu,
+      STRIDE,
+      beta,
+      yGpu,
+      STRIDE,
     );
     if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
   }

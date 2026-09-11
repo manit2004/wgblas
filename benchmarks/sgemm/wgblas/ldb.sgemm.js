@@ -24,7 +24,14 @@ const SIZES = [32, 64, 128, 256, 512, 1024];
 const PADS = [0, 1, 8, 16, 32, 64];
 const TRANS_B = ["no-transpose", "transpose"];
 
-const COLS = ["transB", "pad", "n", "compute_ms", "compute_GFLOPs", "compute_GBs"];
+const COLS = [
+  "transB",
+  "pad",
+  "n",
+  "compute_ms",
+  "compute_GFLOPs",
+  "compute_GBs",
+];
 
 const powerPreference =
   process.argv[2] === "low-power" ? "low-power" : "high-performance";
@@ -38,7 +45,9 @@ printHeader(COLS);
 for (const transB of TRANS_B) {
   for (const pad of PADS) {
     for (const size of SIZES) {
-      const m = size, n = size, k = size;
+      const m = size,
+        n = size,
+        k = size;
       const lda = k;
       const [bRows, bCols] = transB === "no-transpose" ? [k, n] : [n, k];
       const ldb = bCols + pad;
@@ -46,21 +55,71 @@ for (const transB of TRANS_B) {
 
       const bytesB = bRows * ldb * 4;
       if (bytesB > device.limits.maxStorageBufferBindingSize) {
-        console.log(`  (skipped transB=${transB}, pad=${pad}, n=${size}: B would exceed maxStorageBufferBindingSize)`);
+        console.log(
+          `  (skipped transB=${transB}, pad=${pad}, n=${size}: B would exceed maxStorageBufferBindingSize)`,
+        );
         continue;
       }
 
-      const AGpu = GpuMatrix.from(randomFloat32Array(m * k), m, k, lda, "row-major");
-      const BGpu = GpuMatrix.from(new Float32Array(bRows * ldb), bRows, bCols, ldb, "row-major");
-      const CGpu = GpuMatrix.from(new Float32Array(m * n), m, n, ldc, "row-major");
+      const AGpu = GpuMatrix.from(
+        randomFloat32Array(m * k),
+        m,
+        k,
+        lda,
+        "row-major",
+      );
+      const BGpu = GpuMatrix.from(
+        new Float32Array(bRows * ldb),
+        bRows,
+        bCols,
+        ldb,
+        "row-major",
+      );
+      const CGpu = GpuMatrix.from(
+        new Float32Array(m * n),
+        m,
+        n,
+        ldc,
+        "row-major",
+      );
 
       for (let i = 0; i < WARMUP_ITERS; i++) {
-        await sgemm(device, "no-transpose", transB, m, n, k, 1.0, AGpu, lda, BGpu, ldb, 0.0, CGpu, ldc);
+        await sgemm(
+          device,
+          "no-transpose",
+          transB,
+          m,
+          n,
+          k,
+          1.0,
+          AGpu,
+          lda,
+          BGpu,
+          ldb,
+          0.0,
+          CGpu,
+          ldc,
+        );
       }
 
       const times = [];
       for (let i = 0; i < BENCH_ITERS; i++) {
-        const { gpuTimeMs } = await sgemm(device, "no-transpose", transB, m, n, k, 1.0, AGpu, lda, BGpu, ldb, 0.0, CGpu, ldc);
+        const { gpuTimeMs } = await sgemm(
+          device,
+          "no-transpose",
+          transB,
+          m,
+          n,
+          k,
+          1.0,
+          AGpu,
+          lda,
+          BGpu,
+          ldb,
+          0.0,
+          CGpu,
+          ldc,
+        );
         if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
       }
 
@@ -76,11 +135,21 @@ for (const transB of TRANS_B) {
       const gflops = flops / 1e9 / (med / 1e3);
       const gbs = bytes / 1e9 / (med / 1e3);
       printRow(COLS, [transB, pad, size, med, gflops, gbs]);
-      records.push({ transB, pad, n: size, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+      records.push({
+        transB,
+        pad,
+        n: size,
+        compute_ms: med,
+        compute_GFLOPs: gflops,
+        compute_GBs: gbs,
+      });
     }
   }
 }
 
-saveResults("sgemm", gpuModel, records, { folder: "sgemm", fileName: "ldb.sgemm" });
+saveResults("sgemm", gpuModel, records, {
+  folder: "sgemm",
+  fileName: "ldb.sgemm",
+});
 
 cleanup();

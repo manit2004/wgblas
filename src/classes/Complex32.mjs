@@ -59,17 +59,23 @@ export class Complex32Array extends Array {
     if (items[0] instanceof Complex32) {
       for (const z of items) {
         if (!(z instanceof Complex32))
-          throw new Error("Complex32Array expects every element to be a Complex32.");
+          throw new Error(
+            "Complex32Array expects every element to be a Complex32.",
+          );
         this.push(z);
       }
       return;
     }
 
     if (items.length % 2 !== 0)
-      throw new Error("Complex32Array expects an even number of interleaved [re, im, ...] values.");
+      throw new Error(
+        "Complex32Array expects an even number of interleaved [re, im, ...] values.",
+      );
     for (let i = 0; i < items.length; i += 2) {
       if (typeof items[i] !== "number" || typeof items[i + 1] !== "number")
-        throw new Error("Complex32Array expects interleaved [re, im, ...] values to be numbers.");
+        throw new Error(
+          "Complex32Array expects interleaved [re, im, ...] values to be numbers.",
+        );
       this.push(new Complex32(items[i], items[i + 1]));
     }
   }

@@ -53,26 +53,33 @@ export declare class GpuMatrix {
    * padding. `data` must have at least `rows * lda` (row-major) or
    * `cols * lda` (column-major) elements.
    *
+   * Omitting the device falls back to the one from the last {@link init} call
+   * — the historical form, and fine for a single-GPU program. Pass a device
+   * explicitly (matching every routine's own `(device, ...)` convention)
+   * when driving more than one GPU at once, since a GpuMatrix is bound for
+   * life to whichever device created it.
+   *
    * @param data   - matrix data, in the order matching `layout`
    * @param rows   - number of rows
    * @param cols   - number of columns
    * @param lda    - leading dimension (default: `cols` for row-major, `rows` for column-major)
    * @param layout - storage layout (default: `'row-major'`)
    *
-   * @example
-   * ```js
-   * import { init, GpuMatrix } from "wgblas";
+   * {@includeCode ../../examples/gpumatrix-from/gpumatrix-from.js}
    *
-   * await init();
-   * // 2×3 matrix: [[1,2,3],[4,5,6]]
-   * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
-   * console.log(mat.rows, mat.cols, mat.lda); // 2 3 3
-   *
-   * // Same logical matrix, column-major storage
-   * const matCol = GpuMatrix.from(new Float32Array([1,4,2,5,3,6]), 2, 3, undefined, "column-major");
-   * ```
+   * **Explicit device (multi-GPU):**
+   * {@includeCode ../../examples/gpumatrix-from-device/gpumatrix-from-device.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
+  /**
+   * @param device - GPUDevice from `init()` — the matrix is bound to this device for life
+   * @param data   - matrix data, in the order matching `layout`
+   * @param rows   - number of rows
+   * @param cols   - number of columns
+   * @param lda    - leading dimension (default: `cols` for row-major, `rows` for column-major)
+   * @param layout - storage layout (default: `'row-major'`)
+   */
+  static from(device: GPUDevice, data: Float32Array | Float64Array | Complex32Array | Complex64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
 
   /**
    * Downloads the matrix from GPU memory and returns a dense array of shape
@@ -80,15 +87,7 @@ export declare class GpuMatrix {
    * exceeds the dense minimum, the leading-dimension padding is stripped so
    * the returned array is always tightly packed.
    *
-   * @example
-   * ```js
-   * import { init, GpuMatrix } from "wgblas";
-   *
-   * await init();
-   * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
-   * const data = await mat.read();
-   * console.log(data); // Float32Array [1, 2, 3, 4, 5, 6]
-   * ```
+   * {@includeCode ../../examples/gpumatrix-read/gpumatrix-read.js}
    */
   read(): Promise<Float32Array | Float64Array | Complex32Array | Complex64Array>;
 
@@ -96,14 +95,7 @@ export declare class GpuMatrix {
    * Destroys the underlying GPU buffer. Call when the matrix is no longer
    * needed to free GPU memory.
    *
-   * @example
-   * ```js
-   * import { init, GpuMatrix } from "wgblas";
-   *
-   * await init();
-   * const mat = GpuMatrix.from(new Float32Array([1,2,3,4,5,6]), 2, 3);
-   * mat.destroy();
-   * ```
+   * {@includeCode ../../examples/gpumatrix-destroy/gpumatrix-destroy.js}
    */
   destroy(): void;
 }

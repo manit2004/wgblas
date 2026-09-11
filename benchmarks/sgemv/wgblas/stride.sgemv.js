@@ -54,22 +54,54 @@ for (const stride of STRIDES) {
     const bytesY = m * stride * 4;
     const maxBytes = Math.max(bytesA, bytesX, bytesY);
     if (maxBytes > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, m=${m}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped stride=${stride}, m=${m}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
-    const AGpu = GpuMatrix.from(toColumnMajor(randomFloat32Array(m * n), m, n), m, n, lda, "column-major");
+    const AGpu = GpuMatrix.from(
+      toColumnMajor(randomFloat32Array(m * n), m, n),
+      m,
+      n,
+      lda,
+      "column-major",
+    );
     const xGpu = GpuVector.from(randomFloat32Array(n * stride));
     const yGpu = GpuVector.from(new Float32Array(m * stride));
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await sgemv(device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, stride, beta, yGpu, stride);
+      await sgemv(
+        device,
+        "no-transpose",
+        m,
+        n,
+        alpha,
+        AGpu,
+        lda,
+        xGpu,
+        stride,
+        beta,
+        yGpu,
+        stride,
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
       const { gpuTimeMs } = await sgemv(
-        device, "no-transpose", m, n, alpha, AGpu, lda, xGpu, stride, beta, yGpu, stride,
+        device,
+        "no-transpose",
+        m,
+        n,
+        alpha,
+        AGpu,
+        lda,
+        xGpu,
+        stride,
+        beta,
+        yGpu,
+        stride,
       );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
@@ -89,6 +121,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("sgemv", gpuModel, records, { folder: "sgemv", fileName: "stride.sgemv" });
+saveResults("sgemv", gpuModel, records, {
+  folder: "sgemv",
+  fileName: "stride.sgemv",
+});
 
 cleanup();

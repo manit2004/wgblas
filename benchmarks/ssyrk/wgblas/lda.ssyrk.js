@@ -39,11 +39,19 @@ for (const trans of TRANS) {
       const lda = k + pad;
       const bytesA = n * lda * 4;
       if (bytesA > device.limits.maxStorageBufferBindingSize) {
-        console.log(`  (skipped trans=${trans} pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`);
+        console.log(
+          `  (skipped trans=${trans} pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`,
+        );
         continue;
       }
 
-      const A = GpuMatrix.from(new Float32Array(n * lda), n, k, lda, "row-major");
+      const A = GpuMatrix.from(
+        new Float32Array(n * lda),
+        n,
+        k,
+        lda,
+        "row-major",
+      );
       const C = GpuMatrix.from(new Float32Array(n * n), n, n, n, "row-major");
 
       for (let i = 0; i < WARMUP_ITERS; i++) {
@@ -52,7 +60,19 @@ for (const trans of TRANS) {
 
       const times = [];
       for (let i = 0; i < BENCH_ITERS; i++) {
-        const { gpuTimeMs } = await ssyrk(device, "lower", trans, n, k, 1.0, A, lda, 0.0, C, n);
+        const { gpuTimeMs } = await ssyrk(
+          device,
+          "lower",
+          trans,
+          n,
+          k,
+          1.0,
+          A,
+          lda,
+          0.0,
+          C,
+          n,
+        );
         if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
       }
 
@@ -69,6 +89,9 @@ for (const trans of TRANS) {
   }
 }
 
-saveResults("ssyrk", gpuModel, records, { folder: "ssyrk", fileName: "lda.ssyrk" });
+saveResults("ssyrk", gpuModel, records, {
+  folder: "ssyrk",
+  fileName: "lda.ssyrk",
+});
 
 cleanup();

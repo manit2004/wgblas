@@ -20,9 +20,7 @@ console.log("y =", y);
 await ssyr2(device, "upper", n, 1, xGpu, 1, yGpu, 1, AGpu, AGpu.lda);
 const result = await AGpu.read();
 console.log("A = x*y^T + y*x^T (upper triangle) =");
-console.table([result.slice(0, 3),
-               result.slice(3, 6),
-               result.slice(6, 9)]);   // [[2,3,4],[0,4,5],[0,0,6]]
+console.table([result.slice(0, 3), result.slice(3, 6), result.slice(6, 9)]); // [[2,3,4],[0,4,5],[0,0,6]]
 
 xGpu.destroy();
 yGpu.destroy();

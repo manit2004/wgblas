@@ -54,7 +54,9 @@ for (const stride of STRIDES) {
     // device reports 256MB for the former, 128MB for the latter).
     const bytesPerBuffer = n * stride * 4;
     if (bytesPerBuffer > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -68,7 +70,15 @@ for (const stride of STRIDES) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await saxpy(device, n, alpha, xGpu, stride, yGpu, stride);
+      const { gpuTimeMs } = await saxpy(
+        device,
+        n,
+        alpha,
+        xGpu,
+        stride,
+        yGpu,
+        stride,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -84,6 +94,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("saxpy", gpuModel, records, { folder: "saxpy", fileName: "stride.saxpy" });
+saveResults("saxpy", gpuModel, records, {
+  folder: "saxpy",
+  fileName: "stride.saxpy",
+});
 
 cleanup();

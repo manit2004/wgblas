@@ -20,14 +20,16 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  alpha:  loadParam("alpha"),
-  x:      loadParam("x"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  alpha: loadParam("alpha"),
+  x: loadParam("x"),
 };
 
 test("sscal validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => sscal(a.device, a.n, a.alpha, a.x, a.incx),
     { device },
   );
@@ -35,15 +37,15 @@ test("sscal validation", async (t) => {
 
 test("sscal fixtures", async (t) => {
   await runFixtures(
-    t,                 // node:test context
-    "sscal",           // routine name — used in the diagnostic label
-    device,            // WebGPU device instance
-    NUM_RUNS,          // 100 random inputs
-    0,                 // threshold 0 — scalar multiply is exact at f32, output must match bit-for-bit
-    validationSpecs,   // param specs used to generate random inputs
-    async (dev, a) => sscal(dev, a.n, a.alpha, a.x, a.incx),  // GPU call
-    stdlibReference,   // CPU reference
-    (gpu, ref) => maxUlp(gpu.x, ref.x).max,                     // max ULP across all elements of x
+    t, // node:test context
+    "sscal", // routine name — used in the diagnostic label
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    0, // threshold 0 — scalar multiply is exact at f32, output must match bit-for-bit
+    validationSpecs, // param specs used to generate random inputs
+    async (dev, a) => sscal(dev, a.n, a.alpha, a.x, a.incx), // GPU call
+    stdlibReference, // CPU reference
+    (gpu, ref) => maxUlp(gpu.x, ref.x).max, // max ULP across all elements of x
   );
 });
 
@@ -53,17 +55,17 @@ test("sscal edge cases", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        alpha: c.alpha,            // scale factor
-        x: new Float32Array(c.x),  // vector to scale
-        incx: c.incx,              // stride through x
+        n: c.n, // vector length
+        alpha: c.alpha, // scale factor
+        x: new Float32Array(c.x), // vector to scale
+        incx: c.incx, // stride through x
       };
       const got = await sscal(
-        device,   // GPU device
-        a.n,      // vector length
-        a.alpha,  // scale factor
-        a.x,      // vector to scale
-        a.incx,   // stride through x
+        device, // GPU device
+        a.n, // vector length
+        a.alpha, // scale factor
+        a.x, // vector to scale
+        a.incx, // stride through x
       );
       const expected = stdlibReference(a);
       assert.deepEqual(got.x, expected.x);

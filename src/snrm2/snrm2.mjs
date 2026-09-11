@@ -13,14 +13,12 @@ import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { WGS } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
-
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function snrm2(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "snrm2", { x });
   if (!Number.isInteger(n) || !Number.isInteger(incx))
     throw new Error("n and incx must be integers.");
@@ -46,13 +44,19 @@ export async function snrm2(device, n, x, incx) {
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "snrm2-x", false);
     // 2*WGS partial (scale, ssq) pairs — see snrm2.wgsl for what they represent.
-    partialsScaleBuffer = createStorageBuffer(device,
+    partialsScaleBuffer = createStorageBuffer(
+      device,
       2 * WGS * 4,
       "snrm2-partials-scale",
     );
-    partialsSsqBuffer = createStorageBuffer(device, 2 * WGS * 4, "snrm2-partials-ssq");
+    partialsSsqBuffer = createStorageBuffer(
+      device,
+      2 * WGS * 4,
+      "snrm2-partials-ssq",
+    );
     resultBuffer = createResultBuffer(device, 4, "snrm2-result"); // final f32 scalar
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -66,7 +70,8 @@ export async function snrm2(device, n, x, incx) {
       partialsSsqBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(device,
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+      device,
       pipelineMain,
       bgMain,
       2 * WGS,
@@ -74,12 +79,13 @@ export async function snrm2(device, n, x, incx) {
 
     submit(device, enc1);
 
-    const bgReduce = createBindGroup(device, pipelineReduce.getBindGroupLayout(0), [
-      partialsScaleBuffer,
-      partialsSsqBuffer,
-      resultBuffer,
-    ]);
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(device,
+    const bgReduce = createBindGroup(
+      device,
+      pipelineReduce.getBindGroupLayout(0),
+      [partialsScaleBuffer, partialsSsqBuffer, resultBuffer],
+    );
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+      device,
       pipelineReduce,
       bgReduce,
       1,

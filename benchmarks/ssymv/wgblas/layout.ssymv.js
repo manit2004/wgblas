@@ -39,8 +39,12 @@ for (const layout of LAYOUTS) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped layout=${layout}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped layout=${layout}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -49,12 +53,38 @@ for (const layout of LAYOUTS) {
     const AGpu = GpuMatrix.from(randomFloat32Array(n * lda), n, n, lda, layout);
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await ssymv(device, "lower", n, 1.0, AGpu, lda, xGpu, 1, 0.0, yGpu, 1, layout);
+      await ssymv(
+        device,
+        "lower",
+        n,
+        1.0,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        0.0,
+        yGpu,
+        1,
+        layout,
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssymv(device, "lower", n, 1.0, AGpu, lda, xGpu, 1, 0.0, yGpu, 1, layout);
+      const { gpuTimeMs } = await ssymv(
+        device,
+        "lower",
+        n,
+        1.0,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        0.0,
+        yGpu,
+        1,
+        layout,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -65,13 +95,16 @@ for (const layout of LAYOUTS) {
     if (times.length === 0) continue;
     const med = median(times);
     // stored triangle + x + y — logical elements touched, same for every layout
-    const bytes = (n * (n + 1) / 2 + 2 * n) * 4;
+    const bytes = ((n * (n + 1)) / 2 + 2 * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [layout, n, med, gbs]);
     records.push({ layout, n, compute_ms: med, compute_GBs: gbs });
   }
 }
 
-saveResults("ssymv", gpuModel, records, { folder: "ssymv", fileName: "layout.ssymv" });
+saveResults("ssymv", gpuModel, records, {
+  folder: "ssymv",
+  fileName: "layout.ssymv",
+});
 
 cleanup();

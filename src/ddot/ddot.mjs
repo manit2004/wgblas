@@ -14,15 +14,13 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 import { WGS } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
-
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function ddot(device, n, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "ddot", { x, y });
   if (
     !Number.isInteger(n) ||
@@ -59,8 +57,15 @@ export async function ddot(device, n, x, incx, y, incy) {
   // module has only one @compute. Only the first pass multiplies, so
   // f64/utils/multiply.wgsl is left out of the reduction's module.
   const ddCore = ["f64/dekker", "f64/utils/add"];
-  const pipelineMain = await getPipeline(device, [...ddCore, "f64/utils/multiply", "ddot"]);
-  const pipelineReduce = await getPipeline(device, [...ddCore, "reduction/sumF64"]);
+  const pipelineMain = await getPipeline(device, [
+    ...ddCore,
+    "f64/utils/multiply",
+    "ddot",
+  ]);
+  const pipelineReduce = await getPipeline(device, [
+    ...ddCore,
+    "reduction/sumF64",
+  ]);
 
   let xHiBuffer = null;
   let xLoBuffer = null;
@@ -89,11 +94,20 @@ export async function ddot(device, n, x, incx, y, incy) {
       yHiBuffer = uploadBuffer(device, ySplit.hi, "ddot-yHi", false);
       yLoBuffer = uploadBuffer(device, ySplit.lo, "ddot-yLo", false);
     }
-    partialsHiBuffer = createStorageBuffer(device, 2 * WGS * 4, "ddot-partialsHi");
-    partialsLoBuffer = createStorageBuffer(device, 2 * WGS * 4, "ddot-partialsLo");
+    partialsHiBuffer = createStorageBuffer(
+      device,
+      2 * WGS * 4,
+      "ddot-partialsHi",
+    );
+    partialsLoBuffer = createStorageBuffer(
+      device,
+      2 * WGS * 4,
+      "ddot-partialsLo",
+    );
     resultHiBuffer = createResultBuffer(device, 4, "ddot-result-hi");
     resultLoBuffer = createResultBuffer(device, 4, "ddot-result-lo");
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -102,14 +116,17 @@ export async function ddot(device, n, x, incx, y, incy) {
       "ddot-params",
     );
 
-    const bgMain = createBindGroup(device,
-      pipelineMain.getBindGroupLayout(0),
-      [
-        xHiBuffer, xLoBuffer, yHiBuffer, yLoBuffer,
-        partialsHiBuffer, partialsLoBuffer, paramsBuffer,
-      ],
-    );
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(device,
+    const bgMain = createBindGroup(device, pipelineMain.getBindGroupLayout(0), [
+      xHiBuffer,
+      xLoBuffer,
+      yHiBuffer,
+      yLoBuffer,
+      partialsHiBuffer,
+      partialsLoBuffer,
+      paramsBuffer,
+    ]);
+    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
+      device,
       pipelineMain,
       bgMain,
       2 * WGS,
@@ -117,11 +134,13 @@ export async function ddot(device, n, x, incx, y, incy) {
 
     submit(device, enc1);
 
-    const bgReduce = createBindGroup(device,
+    const bgReduce = createBindGroup(
+      device,
       pipelineReduce.getBindGroupLayout(0),
       [partialsHiBuffer, partialsLoBuffer, resultHiBuffer, resultLoBuffer],
     );
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(device,
+    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
+      device,
       pipelineReduce,
       bgReduce,
       1,

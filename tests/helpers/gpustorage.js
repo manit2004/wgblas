@@ -18,7 +18,14 @@ export function padMatrix(A, outerCount, lda) {
 // Inverse of padMatrix: read() strips lda padding to dense rows*cols
 // (row-major) or cols*rows (column-major), but the CPU reference keeps the
 // original strided shape. `original` fills the untouched padding gaps.
-export function unpadMatrix(dense, original, rows, cols, lda, layout = "row-major") {
+export function unpadMatrix(
+  dense,
+  original,
+  rows,
+  cols,
+  lda,
+  layout = "row-major",
+) {
   const isRowMajor = layout !== "column-major";
   const outer = isRowMajor ? rows : cols;
   const inner = isRowMajor ? cols : rows;

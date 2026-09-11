@@ -15,7 +15,7 @@ test-util-%:
 	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test tests/utils/test.$*.js
 
 test-%:
-	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test tests/$*/src/test.$*.js
+	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test $$(find tests/$*/src -name 'test.*.js')
 
 test-gpu-%:
 	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test tests/$*/src/gpustorage.$*.js

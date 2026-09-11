@@ -24,30 +24,48 @@ after(() => {
 const nSpec = loadParam("n");
 const validationSpecs = {
   device: loadParam("device"),
-  side:   loadParam("side"),
-  uplo:   loadParam("uplo"),
+  side: loadParam("side"),
+  uplo: loadParam("uplo"),
   transA: loadParam("trans"),
-  diag:   loadParam("diag"),
+  diag: loadParam("diag"),
   layout: loadParam("layout"),
-  m:      { ...loadParam("m"), baseline: 2 },
+  m: { ...loadParam("m"), baseline: 2 },
   n: {
     ...nSpec,
     baseline: 2,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "must be non-negative", label: "negative" },
+    ],
   },
   alpha: loadParam("alpha"),
-  A:     { ...loadParam("A"), dependsOn: ["m", "n", "lda", "side"] },
-  lda:   loadParam("ld"),
-  B:     { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
-  ldb:   loadParam("ld"),
+  A: { ...loadParam("A"), dependsOn: ["m", "n", "lda", "side"] },
+  lda: loadParam("ld"),
+  B: { ...loadParam("B"), dependsOn: ["m", "n", "ldb"] },
+  ldb: loadParam("ld"),
 };
 
 test("strmm validation", async (t) => {
   await runValidation(
     t,
     validationSpecs,
-    (a) => strmm(a.device, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb, a.layout),
+    (a) =>
+      strmm(
+        a.device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.layout,
+      ),
     { device },
   );
 });
@@ -68,7 +86,22 @@ test("strmm fixtures", async (t) => {
     NUM_RUNS,
     THRESHOLD,
     fixtureSpecs,
-    async (dev, a) => strmm(dev, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb, a.layout),
+    async (dev, a) =>
+      strmm(
+        dev,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.layout,
+      ),
     stdlibReference,
     forwardFactor,
   );
@@ -80,12 +113,32 @@ test("strmm edge cases", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        side: tc.side, uplo: tc.uplo, transA: tc.transA, diag: tc.diag,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        transA: tc.transA,
+        diag: tc.diag,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
       };
-      const got = await strmm(device, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb);
+      const got = await strmm(
+        device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.B, expected.B);
     });
@@ -98,12 +151,33 @@ test("strmm edge cases (column-major)", async (t) => {
     await t.test(tc.label, async () => {
       const a = {
         layout: tc.layout,
-        side: tc.side, uplo: tc.uplo, transA: tc.transA, diag: tc.diag,
-        m: tc.m, n: tc.n, alpha: tc.alpha,
-        A: new Float32Array(tc.A), lda: tc.lda,
-        B: new Float32Array(tc.B), ldb: tc.ldb,
+        side: tc.side,
+        uplo: tc.uplo,
+        transA: tc.transA,
+        diag: tc.diag,
+        m: tc.m,
+        n: tc.n,
+        alpha: tc.alpha,
+        A: new Float32Array(tc.A),
+        lda: tc.lda,
+        B: new Float32Array(tc.B),
+        ldb: tc.ldb,
       };
-      const got = await strmm(device, a.side, a.uplo, a.transA, a.diag, a.m, a.n, a.alpha, a.A, a.lda, a.B, a.ldb, a.layout);
+      const got = await strmm(
+        device,
+        a.side,
+        a.uplo,
+        a.transA,
+        a.diag,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.layout,
+      );
       const expected = stdlibReference(a);
       assert.deepEqual(got.B, expected.B);
     });

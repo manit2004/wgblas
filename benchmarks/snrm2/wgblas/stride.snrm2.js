@@ -54,7 +54,9 @@ for (const stride of STRIDES) {
     // device reports 256MB for the former, 128MB for the latter).
     const bytesPerBuffer = n * stride * 4;
     if (bytesPerBuffer > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped stride=${stride}, n=${n}: buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -81,6 +83,9 @@ for (const stride of STRIDES) {
   }
 }
 
-saveResults("snrm2", gpuModel, records, { folder: "snrm2", fileName: "stride.snrm2" });
+saveResults("snrm2", gpuModel, records, {
+  folder: "snrm2",
+  fileName: "stride.snrm2",
+});
 
 cleanup();

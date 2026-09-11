@@ -8,10 +8,20 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
-import { uploadBuffer, createParamsBuffer, stageReadback, destroyBuffers } from "../../src/util/buffer.mjs";
+import {
+  uploadBuffer,
+  createParamsBuffer,
+  stageReadback,
+  destroyBuffers,
+} from "../../src/util/buffer.mjs";
 import { createBindGroup } from "../../src/util/bindgroup.mjs";
 import { getPipeline } from "../../src/util/pipeline.mjs";
-import { beginTimedEncoder, encodePass, runComputePass, submit } from "../../src/util/compute.mjs";
+import {
+  beginTimedEncoder,
+  encodePass,
+  runComputePass,
+  submit,
+} from "../../src/util/compute.mjs";
 import { extractResult } from "../../src/util/result.mjs";
 import { calcWorkgroups } from "../../src/util/workgroup.mjs";
 import { getPowerPreference } from "../helpers/device.js";
@@ -28,30 +38,50 @@ after(() => cleanup());
 /** Buffers plus a bind group for `x := alpha*x`. Caller destroys via `.free()`. */
 function sscalSetup(data, alpha) {
   const xBuf = uploadBuffer(device, data, "compute-x", true);
-  const params = createParamsBuffer(device, [
-    { value: data.length, type: "u32" },
-    { value: alpha, type: "f32" },
-    { value: 1, type: "u32" },
-  ], "compute-params");
-  const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [xBuf, params]);
+  const params = createParamsBuffer(
+    device,
+    [
+      { value: data.length, type: "u32" },
+      { value: alpha, type: "f32" },
+      { value: 1, type: "u32" },
+    ],
+    "compute-params",
+  );
+  const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
+    xBuf,
+    params,
+  ]);
   return { xBuf, params, bindGroup, free: () => destroyBuffers(xBuf, params) };
 }
 
 test("beginTimedEncoder returns an encoder, with no query set off benchmark mode", () => {
-  const { commandEncoder, querySet, passDescriptor } = beginTimedEncoder(device);
+  const { commandEncoder, querySet, passDescriptor } =
+    beginTimedEncoder(device);
   assert.ok(commandEncoder, "expected a command encoder");
-  assert.equal(querySet, null, "benchmark mode is off, so there should be no query set");
+  assert.equal(
+    querySet,
+    null,
+    "benchmark mode is off, so there should be no query set",
+  );
   assert.equal(passDescriptor, undefined, "and no timestampWrites descriptor");
 });
 
 test("runComputePass encodes a dispatch that actually runs", async () => {
   const s = sscalSetup(new Float32Array([1, 2, 3, 4]), 3);
   try {
-    const { commandEncoder, ts } = runComputePass(device, pipeline, s.bindGroup, calcWorkgroups(device, 4));
+    const { commandEncoder, ts } = runComputePass(
+      device,
+      pipeline,
+      s.bindGroup,
+      calcWorkgroups(device, 4),
+    );
     assert.equal(ts, null, "no timestamps without benchmark mode");
     const rb = stageReadback(device, commandEncoder, s.xBuf);
     submit(device, commandEncoder);
-    assert.deepEqual(await extractResult(rb, Float32Array), new Float32Array([3, 6, 9, 12]));
+    assert.deepEqual(
+      await extractResult(rb, Float32Array),
+      new Float32Array([3, 6, 9, 12]),
+    );
   } finally {
     s.free();
   }
@@ -69,8 +99,11 @@ test("encodePass can put several dependent passes on one encoder", async () => {
     encodePass(commandEncoder, pipeline, s.bindGroup, wg);
     const rb = stageReadback(device, commandEncoder, s.xBuf);
     submit(device, commandEncoder);
-    assert.deepEqual(await extractResult(rb, Float32Array), new Float32Array([8, 16, 24, 32]),
-      "three sequential doublings should compound");
+    assert.deepEqual(
+      await extractResult(rb, Float32Array),
+      new Float32Array([8, 16, 24, 32]),
+      "three sequential doublings should compound",
+    );
   } finally {
     s.free();
   }
@@ -95,8 +128,16 @@ test("a {x, y} count dispatches the same as an explicit z of 1", async () => {
     }
   };
   const twoD = await run({ x: 1, y: 1 });
-  assert.deepEqual(twoD, new Float32Array([2, 4, 6, 8]), "{x, y} should dispatch normally");
-  assert.deepEqual(await run({ x: 1, y: 1, z: 1 }), twoD, "an explicit z of 1 must match");
+  assert.deepEqual(
+    twoD,
+    new Float32Array([2, 4, 6, 8]),
+    "{x, y} should dispatch normally",
+  );
+  assert.deepEqual(
+    await run({ x: 1, y: 1, z: 1 }),
+    twoD,
+    "an explicit z of 1 must match",
+  );
 });
 
 test("submitting an encoder twice is rejected", async () => {
@@ -105,12 +146,20 @@ test("submitting an encoder twice is rejected", async () => {
   const s = sscalSetup(new Float32Array([1, 2]), 2);
   try {
     const { commandEncoder } = beginTimedEncoder(device);
-    encodePass(commandEncoder, pipeline, s.bindGroup, calcWorkgroups(device, 2));
+    encodePass(
+      commandEncoder,
+      pipeline,
+      s.bindGroup,
+      calcWorkgroups(device, 2),
+    );
     submit(device, commandEncoder);
     device.pushErrorScope("validation");
     submit(device, commandEncoder); // encoder already consumed
     const err = await device.popErrorScope();
-    assert.ok(err, "re-finishing a consumed encoder should be a validation error");
+    assert.ok(
+      err,
+      "re-finishing a consumed encoder should be a validation error",
+    );
   } finally {
     s.free();
   }

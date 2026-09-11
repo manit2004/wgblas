@@ -63,45 +63,17 @@ export { strsm } from "./src/strsm/strsm.mjs";
  *   whichever Dawn picked) to stderr as it compiles. A Dawn passthrough, not a wgblas format —
  *   no effect in the browser, which gives pages no API to request compiled shader IR (default: `false`)
  *
- * @example Default (high-performance GPU)
- * ```js
- * import { init, gpuName } from "wgblas";
- * await init();
- * const { description, device } = gpuName();
- * console.log("description:", description, "device:", device);
- * ```
+ * **Default (high-performance GPU):**
+ * {@includeCode examples/init/init.js}
  *
- * @example Low-power (integrated GPU)
- * ```js
- * import { init, gpuName } from "wgblas";
- * await init({ powerPreference: "low-power" });
- * const { description, device } = gpuName();
- * console.log("description:", description, "device:", device);
- * ```
+ * **Low-power (integrated GPU):**
+ * {@includeCode examples/init-low-power/init-low-power.js}
  *
- * @example Benchmark mode
- * ```js
- * import { init, sscal } from "wgblas";
- * const device = await init({ benchmark: true });
- * const n = 5;
- * const alpha = 2.0;
- * const x = new Float32Array([1, 2, 3, 4, 5]);
- * const { x: result, gpuTimeMs } = await sscal(device, n, alpha, x, 1);
- * console.log(`Result: [${Array.from(result).join(", ")}]`);
- * console.log(`GPU time: ${gpuTimeMs.toFixed(3)} ms`);
- * ```
- * @example Two GPUs at once
- * ```js
- * import { init, cleanup, gpuName, sscal } from "wgblas";
- * const dGpu = await init({ powerPreference: "high-performance" });
- * const iGpu = await init({ powerPreference: "low-power" });
- * console.log(gpuName(dGpu).description, "and", gpuName(iGpu).description);
- * const [a, b] = await Promise.all([
- *   sscal(dGpu, 4, 2, new Float32Array([1, 2, 3, 4]), 1),
- *   sscal(iGpu, 4, 5, new Float32Array([1, 2, 3, 4]), 1),
- * ]);
- * cleanup(); // releases both
- * ```
+ * **Benchmark mode:**
+ * {@includeCode examples/init-benchmark/init-benchmark.js}
+ *
+ * **Two GPUs at once:**
+ * {@includeCode examples/init-two-gpus/init-two-gpus.js}
  *
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
  * @category Core
@@ -123,14 +95,7 @@ export declare function init(options?: {
  *
  * @param device - the device to release; omit to release all of them.
  *
- * @example
- * ```js
- * import { init, cleanup, gpuName } from "wgblas";
- *
- * await init();
- * console.log("GPU:", gpuName().description);
- * if (typeof process !== "undefined") cleanup(); // Node.js only — browser cleanup is automatic
- * ```
+ * {@includeCode examples/cleanup/cleanup.js}
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L56-L65)
  * @category Core
  */
@@ -142,13 +107,7 @@ export declare function cleanup(device?: GPUDevice): void;
  * @param device - which device to report on; defaults to the one from the first
  *   `init()` call. Pass it explicitly when driving more than one GPU.
  *
- * @example
- * ```js
- * import { init, gpuName } from "wgblas";
- * await init();
- * const { description, device } = gpuName();
- * console.log("description:", description, "device:", device);
- * ```
+ * {@includeCode examples/init/init.js}
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L81-L87)
  * @category Core
  */

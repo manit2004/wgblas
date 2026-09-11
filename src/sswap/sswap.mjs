@@ -11,14 +11,13 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function sswap(device, n, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "sswap", { x, y });
   if (
     !Number.isInteger(n) ||
@@ -57,7 +56,8 @@ export async function sswap(device, n, x, incx, y, incy) {
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sswap-x", true);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sswap-y", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -71,19 +71,25 @@ export async function sswap(device, n, x, incx, y, incy) {
       yBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(device,
+    const { commandEncoder, ts } = runComputePass(
+      device,
       pipeline,
       bindGroup,
       calcWorkgroups(device, n),
     );
-    xReadBuffer = xIsGpu ? null : stageReadback(device, commandEncoder, xBuffer);
-    yReadBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yBuffer);
+    xReadBuffer = xIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, xBuffer);
+    yReadBuffer = yIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, yBuffer);
 
     submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (xIsGpu) { // xIsGpu === yIsGpu, enforced above (x.constructor !== y.constructor throws)
+    if (xIsGpu) {
+      // xIsGpu === yIsGpu, enforced above (x.constructor !== y.constructor throws)
       if (gpuTimeMs !== undefined) return { gpuTimeMs };
       return {};
     }

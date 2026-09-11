@@ -38,8 +38,13 @@ for (const layout of LAYOUTS) {
     const ldb = n;
     const ldc = n;
 
-    if (Math.max(n * lda * 4, n * ldb * 4, n * ldc * 4) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped layout=${layout}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(n * lda * 4, n * ldb * 4, n * ldc * 4) >
+      device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped layout=${layout}, n=${n}: a matrix would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -48,12 +53,42 @@ for (const layout of LAYOUTS) {
     const CGpu = GpuMatrix.from(new Float32Array(n * ldc), n, n, ldc, layout);
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
-      await ssymm(device, "left", "lower", n, n, 1.0, AGpu, lda, BGpu, ldb, 0.0, CGpu, ldc, layout);
+      await ssymm(
+        device,
+        "left",
+        "lower",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        0.0,
+        CGpu,
+        ldc,
+        layout,
+      );
     }
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssymm(device, "left", "lower", n, n, 1.0, AGpu, lda, BGpu, ldb, 0.0, CGpu, ldc, layout);
+      const { gpuTimeMs } = await ssymm(
+        device,
+        "left",
+        "lower",
+        n,
+        n,
+        1.0,
+        AGpu,
+        lda,
+        BGpu,
+        ldb,
+        0.0,
+        CGpu,
+        ldc,
+        layout,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -69,10 +104,19 @@ for (const layout of LAYOUTS) {
     const bytes = (3 * n * n + 3 * n * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [layout, n, med, gflops, gbs]);
-    records.push({ layout, n, compute_ms: med, compute_GFLOPs: gflops, compute_GBs: gbs });
+    records.push({
+      layout,
+      n,
+      compute_ms: med,
+      compute_GFLOPs: gflops,
+      compute_GBs: gbs,
+    });
   }
 }
 
-saveResults("ssymm", gpuModel, records, { folder: "ssymm", fileName: "layout.ssymm" });
+saveResults("ssymm", gpuModel, records, {
+  folder: "ssymm",
+  fileName: "layout.ssymm",
+});
 
 cleanup();

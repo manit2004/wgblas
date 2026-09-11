@@ -24,11 +24,11 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  incy:   loadParam("incy"),
-  x:      loadParam("x"),
-  y:      loadParam("y"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  incy: loadParam("incy"),
+  x: loadParam("x"),
+  y: loadParam("y"),
 };
 
 async function callGpuResident(dev, a) {
@@ -43,14 +43,14 @@ async function callGpuResident(dev, a) {
 
 test("scopy fixtures (GPU-resident)", async (t) => {
   await runFixtures(
-    t,                      // node:test context
+    t, // node:test context
     "scopy (GPU-resident)", // routine name — used in the diagnostic label
-    device,                 // WebGPU device instance
-    NUM_RUNS,               // 100 random inputs
-    0,                      // threshold 0 — scopy is exact, output must match reference bit-for-bit
-    validationSpecs,        // param specs used to generate random inputs
-    callGpuResident,        // GPU call — wraps x and y into GpuVectors
-    stdlibReference,        // CPU reference
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    0, // threshold 0 — scopy is exact, output must match reference bit-for-bit
+    validationSpecs, // param specs used to generate random inputs
+    callGpuResident, // GPU call — wraps x and y into GpuVectors
+    stdlibReference, // CPU reference
     (gpu, ref) => maxUlp(gpu.y, ref.y).max, // max ULP across all elements of y
   );
 });
@@ -59,11 +59,11 @@ test("scopy edge cases (GPU-resident)", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        x: new Float32Array(c.x),  // source vector
-        incx: c.incx,              // stride through x
-        y: new Float32Array(c.y),  // destination vector — overwritten with x
-        incy: c.incy,              // stride through y
+        n: c.n, // vector length
+        x: new Float32Array(c.x), // source vector
+        incx: c.incx, // stride through x
+        y: new Float32Array(c.y), // destination vector — overwritten with x
+        incy: c.incy, // stride through y
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);

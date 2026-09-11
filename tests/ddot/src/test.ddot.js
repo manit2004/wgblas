@@ -37,18 +37,23 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  incy:   loadParam("incy"),
-  x:      loadParam("x64"),
-  y:      loadParam("y64"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  incy: loadParam("incy"),
+  x: loadParam("x64"),
+  y: loadParam("y64"),
 };
 
 // Cap n for fixtures — validationSpecs allows up to 1000, which makes property tests slow.
-const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
+const fixtureSpecs = {
+  ...validationSpecs,
+  n: { ...validationSpecs.n, range: { min: 1, max: 50 } },
+};
 
 test("ddot validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => ddot(a.device, a.n, a.x, a.incx, a.y, a.incy),
     { device },
   );
@@ -56,15 +61,15 @@ test("ddot validation", async (t) => {
 
 test("ddot fixtures", async (t) => {
   await runFixtures(
-    t,                 // node:test context
-    "ddot",            // routine name — used in the diagnostic label
-    device,            // WebGPU device instance
-    NUM_RUNS,          // 100 random inputs
-    THRESHOLD,         // forward error factor cap — see above
-    fixtureSpecs,      // param specs used to generate random inputs
+    t, // node:test context
+    "ddot", // routine name — used in the diagnostic label
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    THRESHOLD, // forward error factor cap — see above
+    fixtureSpecs, // param specs used to generate random inputs
     async (dev, a) => ddot(dev, a.n, a.x, a.incx, a.y, a.incy), // GPU call
-    stdlibReference,   // CPU reference
-    forwardFactor,     // |err| / (n * eps * sum|x_i*y_i|) — see helpers.js
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (n * eps * sum|x_i*y_i|) — see helpers.js
   );
 });
 
@@ -76,19 +81,19 @@ test("ddot edge cases", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        x: new Float64Array(c.x),  // input vector
-        incx: c.incx,              // stride through x
-        y: new Float64Array(c.y),  // input vector
-        incy: c.incy,              // stride through y
+        n: c.n, // vector length
+        x: new Float64Array(c.x), // input vector
+        incx: c.incx, // stride through x
+        y: new Float64Array(c.y), // input vector
+        incy: c.incy, // stride through y
       };
       const got = await ddot(
-        device,   // GPU device
-        a.n,      // vector length
-        a.x,      // input vector
-        a.incx,   // stride through x
-        a.y,      // input vector
-        a.incy,   // stride through y
+        device, // GPU device
+        a.n, // vector length
+        a.x, // input vector
+        a.incx, // stride through x
+        a.y, // input vector
+        a.incy, // stride through y
       );
       const expected = stdlibReference(a);
       const factor = forwardFactor(got, expected, a);

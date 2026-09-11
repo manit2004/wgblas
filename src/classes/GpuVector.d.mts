@@ -30,22 +30,27 @@ export declare class GpuVector {
    * Complex64Array gets the same double-double split applied independently
    * to its real and imaginary components, interleaved per (hi, lo) channel.
    *
+   * Omitting the device falls back to the one from the last {@link init} call
+   * — the historical form, and fine for a single-GPU program. Pass a device
+   * explicitly (matching every routine's own `(device, ...)` convention)
+   * when driving more than one GPU at once, since a GpuVector is bound for
+   * life to whichever device created it.
+   *
    * @param data - input vector data
    * @returns GpuVector backed by a GPU buffer
    *
-   * @example
-   * ```js
-   * import { init, GpuVector } from "wgblas";
+   * {@includeCode ../../examples/gpuvector-from/gpuvector-from.js}
    *
-   * await init();
-   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
-   * console.log("length:", vec.length, "dtype:", vec.dtype.name);
-   *
-   * const dvec = GpuVector.from(new Float64Array([1.1, 2.2, 3.3]));
-   * console.log("dtype:", dvec.dtype.name); // Float64Array
-   * ```
+   * **Explicit device (multi-GPU):**
+   * {@includeCode ../../examples/gpuvector-from-device/gpuvector-from-device.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array): GpuVector;
+  /**
+   * @param device - GPUDevice from `init()` — the vector is bound to this device for life
+   * @param data - input vector data
+   * @returns GpuVector backed by a GPU buffer
+   */
+  static from(device: GPUDevice, data: Float32Array | Float64Array | Complex32Array | Complex64Array): GpuVector;
 
   /**
    * Reads the vector data back from GPU memory.
@@ -53,15 +58,7 @@ export declare class GpuVector {
    * @returns vector data in the same shape it was created from — a
    * Float32Array, Float64Array, Complex32Array, or Complex64Array
    *
-   * @example
-   * ```js
-   * import { init, GpuVector } from "wgblas";
-   *
-   * await init();
-   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
-   * const data = await vec.read();
-   * console.log(data);
-   * ```
+   * {@includeCode ../../examples/gpuvector-read/gpuvector-read.js}
    */
   read(): Promise<Float32Array | Float64Array | Complex32Array | Complex64Array>;
 
@@ -69,15 +66,7 @@ export declare class GpuVector {
    * Destroys the underlying GPU buffer. Call when the vector is no longer needed
    * to free GPU memory — especially important in long-running programs.
    *
-   * @example
-   * ```js
-   * import { init, GpuVector } from "wgblas";
-   *
-   * await init();
-   * const vec = GpuVector.from(new Float32Array([1, 2, 3, 4]));
-   * vec.destroy();
-   * console.log("GPU buffer released");
-   * ```
+   * {@includeCode ../../examples/gpuvector-destroy/gpuvector-destroy.js}
    */
   destroy(): void;
 }

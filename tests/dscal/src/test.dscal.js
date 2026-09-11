@@ -37,17 +37,22 @@ after(() => {
 // values, which would always double-double-split to a zero lo component.
 const validationSpecs = {
   device: loadParam("device"),
-  n:      loadParam("n"),
-  incx:   loadParam("incx"),
-  alpha:  loadParam("alpha64"),
-  x:      loadParam("x64"),
+  n: loadParam("n"),
+  incx: loadParam("incx"),
+  alpha: loadParam("alpha64"),
+  x: loadParam("x64"),
 };
 
 // Cap n for fixtures — validationSpecs allows up to 1000, which makes property tests slow.
-const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
+const fixtureSpecs = {
+  ...validationSpecs,
+  n: { ...validationSpecs.n, range: { min: 1, max: 50 } },
+};
 
 test("dscal validation", async (t) => {
-  await runValidation(t, validationSpecs,
+  await runValidation(
+    t,
+    validationSpecs,
     (a) => dscal(a.device, a.n, a.alpha, a.x, a.incx),
     { device },
   );
@@ -55,15 +60,15 @@ test("dscal validation", async (t) => {
 
 test("dscal fixtures", async (t) => {
   await runFixtures(
-    t,                 // node:test context
-    "dscal",           // routine name — used in the diagnostic label
-    device,            // WebGPU device instance
-    NUM_RUNS,          // 100 random inputs
-    THRESHOLD,         // forward error factor cap — see above
-    fixtureSpecs,      // param specs used to generate random inputs
+    t, // node:test context
+    "dscal", // routine name — used in the diagnostic label
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    THRESHOLD, // forward error factor cap — see above
+    fixtureSpecs, // param specs used to generate random inputs
     async (dev, a) => dscal(dev, a.n, a.alpha, a.x, a.incx), // GPU call
-    stdlibReference,   // CPU reference
-    forwardFactor,     // |err| / (eps * |alpha * x_i|) — see helpers.js
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (eps * |alpha * x_i|) — see helpers.js
   );
 });
 
@@ -75,17 +80,17 @@ test("dscal edge cases", async (t) => {
   for (const c of edgeCases) {
     await t.test(c.label, async () => {
       const a = {
-        n: c.n,                    // vector length
-        alpha: c.alpha,            // scale factor
-        x: new Float64Array(c.x),  // vector to scale
-        incx: c.incx,              // stride through x
+        n: c.n, // vector length
+        alpha: c.alpha, // scale factor
+        x: new Float64Array(c.x), // vector to scale
+        incx: c.incx, // stride through x
       };
       const got = await dscal(
-        device,   // GPU device
-        a.n,      // vector length
-        a.alpha,  // scale factor
-        a.x,      // vector to scale
-        a.incx,   // stride through x
+        device, // GPU device
+        a.n, // vector length
+        a.alpha, // scale factor
+        a.x, // vector to scale
+        a.incx, // stride through x
       );
       const expected = stdlibReference(a);
       const factor = forwardFactor(got, expected, a);

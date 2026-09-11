@@ -12,7 +12,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // daxpy: y := alpha * x + y, double-double (Dekker) f64 emulation of saxpy —
 // x, y, and alpha are each split into an f32 (hi, lo) pair; WGSL has no f64 type.
@@ -20,16 +20,14 @@ export async function daxpy(device, n, alpha, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   if (
     !Number.isInteger(n) ||
     !Number.isInteger(incx) ||
     !Number.isInteger(incy)
   )
     throw new Error("n, incx, and incy must be integers.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
   if (!(x instanceof Float64Array) && !xIsGpu)
@@ -63,7 +61,9 @@ export async function daxpy(device, n, alpha, x, incx, y, incy) {
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(device, [...f64Deps, "daxpy"]);
 
-  const { hi: alphaHi, lo: alphaLo } = splitDoubleDouble(new Float64Array([alpha]));
+  const { hi: alphaHi, lo: alphaLo } = splitDoubleDouble(
+    new Float64Array([alpha]),
+  );
 
   let xHiBuffer = null;
   let xLoBuffer = null;
@@ -87,13 +87,14 @@ export async function daxpy(device, n, alpha, x, incx, y, incy) {
       yHiBuffer = uploadBuffer(device, ySplit.hi, "daxpy-yHi", true);
       yLoBuffer = uploadBuffer(device, ySplit.lo, "daxpy-yLo", true);
     }
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
-        { value: n,          type: "u32" },
+        { value: n, type: "u32" },
         { value: alphaHi[0], type: "f32" },
         { value: alphaLo[0], type: "f32" },
-        { value: incx,       type: "u32" },
-        { value: incy,       type: "u32" },
+        { value: incx, type: "u32" },
+        { value: incy, type: "u32" },
       ],
       "daxpy-params",
     );
@@ -105,19 +106,25 @@ export async function daxpy(device, n, alpha, x, incx, y, incy) {
       yLoBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(device,
+    const { commandEncoder, ts } = runComputePass(
+      device,
       pipeline,
       bindGroup,
       calcWorkgroups(device, n),
     );
-    readHiBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yHiBuffer);
-    readLoBuffer = yIsGpu ? null : stageReadback(device, commandEncoder, yLoBuffer);
+    readHiBuffer = yIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, yHiBuffer);
+    readLoBuffer = yIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, yLoBuffer);
 
     submit(device, commandEncoder);
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (yIsGpu) { // xIsGpu === yIsGpu, enforced above
+    if (yIsGpu) {
+      // xIsGpu === yIsGpu, enforced above
       if (gpuTimeMs !== undefined) return { gpuTimeMs };
       return {};
     }

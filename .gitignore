@@ -17,3 +17,6 @@ dist/
 
 # local secrets
 .env
+
+# coverage reports
+coverage/

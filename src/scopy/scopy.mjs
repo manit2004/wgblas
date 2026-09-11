@@ -11,14 +11,13 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
-import { requireSameDevice } from "../util/device.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function scopy(device, n, x, incx, y, incy) {
   const xIsGpu = x instanceof GpuVector;
   const yIsGpu = y instanceof GpuVector;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "scopy", { x, y });
   if (
     !Number.isInteger(n) ||
@@ -56,7 +55,8 @@ export async function scopy(device, n, x, incx, y, incy) {
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "scopy-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "scopy-y", true);
-    paramsBuffer = createParamsBuffer(device,
+    paramsBuffer = createParamsBuffer(
+      device,
       [
         { value: n, type: "u32" },
         { value: incx, type: "u32" },
@@ -70,7 +70,8 @@ export async function scopy(device, n, x, incx, y, incy) {
       yBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder, ts } = runComputePass(device,
+    const { commandEncoder, ts } = runComputePass(
+      device,
       pipeline,
       bindGroup,
       calcWorkgroups(device, n),
@@ -81,7 +82,8 @@ export async function scopy(device, n, x, incx, y, incy) {
 
     const gpuTimeMs = await extractTimestamp(ts);
 
-    if (yIsGpu) { // xIsGpu === yIsGpu, enforced above
+    if (yIsGpu) {
+      // xIsGpu === yIsGpu, enforced above
       if (gpuTimeMs !== undefined) return { gpuTimeMs };
       return {};
     }

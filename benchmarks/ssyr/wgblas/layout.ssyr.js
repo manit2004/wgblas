@@ -39,8 +39,12 @@ for (const layout of LAYOUTS) {
 
     const bytesA = n * lda * 4;
     const bytesVec = n * 4;
-    if (Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped layout=${layout}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`);
+    if (
+      Math.max(bytesA, bytesVec) > device.limits.maxStorageBufferBindingSize
+    ) {
+      console.log(
+        `  (skipped layout=${layout}, n=${n}: a buffer would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -53,7 +57,17 @@ for (const layout of LAYOUTS) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssyr(device, "lower", n, 1.0, xGpu, 1, AGpu, lda, layout);
+      const { gpuTimeMs } = await ssyr(
+        device,
+        "lower",
+        n,
+        1.0,
+        xGpu,
+        1,
+        AGpu,
+        lda,
+        layout,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -70,6 +84,9 @@ for (const layout of LAYOUTS) {
   }
 }
 
-saveResults("ssyr", gpuModel, records, { folder: "ssyr", fileName: "layout.ssyr" });
+saveResults("ssyr", gpuModel, records, {
+  folder: "ssyr",
+  fileName: "layout.ssyr",
+});
 
 cleanup();

@@ -8,7 +8,11 @@ import { getPowerPreference } from "../../helpers/device.js";
 import { sger } from "wgblas/sger";
 import { loadParam } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
-import { padMatrix, unpadMatrix, withGpuResources } from "../../helpers/gpustorage.js";
+import {
+  padMatrix,
+  unpadMatrix,
+  withGpuResources,
+} from "../../helpers/gpustorage.js";
 import { forwardFactor } from "../helpers.js";
 import { sgerReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
@@ -28,19 +32,22 @@ after(() => {
 const nSpec = loadParam("n");
 const validationSpecs = {
   device: loadParam("device"),
-  m:      loadParam("m"),
+  m: loadParam("m"),
   n: {
     ...nSpec,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "n must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "n must be non-negative", label: "negative" },
+    ],
   },
-  alpha:  loadParam("alpha"),
-  x:      { ...loadParam("x"), dependsOn: ["m", "incx"] },
-  incx:   loadParam("incx"),
-  y:      { ...loadParam("y"), dependsOn: ["n", "incy"] },
-  incy:   loadParam("incy"),
-  A:      loadParam("A"),
-  lda:    loadParam("lda"),
+  alpha: loadParam("alpha"),
+  x: { ...loadParam("x"), dependsOn: ["m", "incx"] },
+  incx: loadParam("incx"),
+  y: { ...loadParam("y"), dependsOn: ["n", "incy"] },
+  incy: loadParam("incy"),
+  A: loadParam("A"),
+  lda: loadParam("lda"),
   layout: loadParam("layout"),
 };
 
@@ -60,7 +67,13 @@ async function callGpuResident(dev, a) {
   const outerCount = isColMajor ? a.n : a.m; // rows for row-major, cols for column-major
   return withGpuResources(
     {
-      A: GpuMatrix.from(padMatrix(a.A, outerCount, a.lda), a.m, a.n, a.lda, layout),
+      A: GpuMatrix.from(
+        padMatrix(a.A, outerCount, a.lda),
+        a.m,
+        a.n,
+        a.lda,
+        layout,
+      ),
       x: GpuVector.from(a.x),
       y: GpuVector.from(a.y),
     },
@@ -74,15 +87,15 @@ async function callGpuResident(dev, a) {
 
 test("sger fixtures (GPU-resident)", async (t) => {
   await runFixtures(
-    t,                    // node:test context
+    t, // node:test context
     "sger (GPU-resident)", // routine name — used in the diagnostic label
-    device,               // WebGPU device instance
-    NUM_RUNS,             // 100 random inputs
-    THRESHOLD,            // threshold 2 — forward error factor ≤ 2 means within two roundings of true result
-    fixtureSpecs,         // param specs used to generate random inputs (m, n capped at 50 for speed)
-    callGpuResident,      // GPU call — wraps A, x, y into GpuMatrix/GpuVectors
-    stdlibReference,      // CPU reference
-    forwardFactor,        // |err| / (eps * forward bound) — see helpers.js
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    THRESHOLD, // threshold 2 — forward error factor ≤ 2 means within two roundings of true result
+    fixtureSpecs, // param specs used to generate random inputs (m, n capped at 50 for speed)
+    callGpuResident, // GPU call — wraps A, x, y into GpuMatrix/GpuVectors
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (eps * forward bound) — see helpers.js
   );
 });
 
@@ -90,15 +103,15 @@ test("sger edge cases (GPU-resident)", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        m: tc.m,                     // rows of A (length of x)
-        n: tc.n,                     // columns of A (length of y)
-        alpha: tc.alpha,             // scale factor for x*y^T
-        x: new Float32Array(tc.x),   // input vector
-        incx: tc.incx,               // stride through x
-        y: new Float32Array(tc.y),   // input vector
-        incy: tc.incy,               // stride through y
-        A: new Float32Array(tc.A),   // matrix, row-major, size m*lda
-        lda: tc.lda,                 // leading dimension (row stride) of A
+        m: tc.m, // rows of A (length of x)
+        n: tc.n, // columns of A (length of y)
+        alpha: tc.alpha, // scale factor for x*y^T
+        x: new Float32Array(tc.x), // input vector
+        incx: tc.incx, // stride through x
+        y: new Float32Array(tc.y), // input vector
+        incy: tc.incy, // stride through y
+        A: new Float32Array(tc.A), // matrix, row-major, size m*lda
+        lda: tc.lda, // leading dimension (row stride) of A
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
@@ -111,16 +124,16 @@ test("sger edge cases (GPU-resident, column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {
     await t.test(tc.label, async () => {
       const a = {
-        m: tc.m,                     // rows of A (length of x)
-        n: tc.n,                     // columns of A (length of y)
-        alpha: tc.alpha,             // scale factor for x*y^T
-        x: new Float32Array(tc.x),   // input vector
-        incx: tc.incx,               // stride through x
-        y: new Float32Array(tc.y),   // input vector
-        incy: tc.incy,               // stride through y
-        A: new Float32Array(tc.A),   // matrix, column-major, size n*lda
-        lda: tc.lda,                 // leading dimension (column stride) of A
-        layout: tc.layout,           // "column-major"
+        m: tc.m, // rows of A (length of x)
+        n: tc.n, // columns of A (length of y)
+        alpha: tc.alpha, // scale factor for x*y^T
+        x: new Float32Array(tc.x), // input vector
+        incx: tc.incx, // stride through x
+        y: new Float32Array(tc.y), // input vector
+        incy: tc.incy, // stride through y
+        A: new Float32Array(tc.A), // matrix, column-major, size n*lda
+        lda: tc.lda, // leading dimension (column stride) of A
+        layout: tc.layout, // "column-major"
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);

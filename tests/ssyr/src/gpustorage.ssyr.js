@@ -8,7 +8,11 @@ import { getPowerPreference } from "../../helpers/device.js";
 import { ssyr } from "wgblas/ssyr";
 import { loadParam } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
-import { padMatrix, unpadMatrix, withGpuResources } from "../../helpers/gpustorage.js";
+import {
+  padMatrix,
+  unpadMatrix,
+  withGpuResources,
+} from "../../helpers/gpustorage.js";
 import { forwardFactor } from "../helpers.js";
 import { ssyrReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
@@ -28,22 +32,28 @@ after(() => {
 const nSpec = loadParam("n");
 const validationSpecs = {
   device: loadParam("device"),
-  uplo:   loadParam("uplo"),
+  uplo: loadParam("uplo"),
   n: {
     ...nSpec,
-    edge:    nSpec.edge.filter((e) => e.value !== -1),
-    invalid: [...nSpec.invalid, { value: -1, error: "n must be non-negative", label: "negative" }],
+    edge: nSpec.edge.filter((e) => e.value !== -1),
+    invalid: [
+      ...nSpec.invalid,
+      { value: -1, error: "n must be non-negative", label: "negative" },
+    ],
   },
-  alpha:  loadParam("alpha"),
-  x:      { ...loadParam("x"), dependsOn: ["n", "incx"] },
-  incx:   loadParam("incx"),
-  A:      { ...loadParam("A"), dependsOn: ["n", "lda"] },
-  lda:    loadParam("lda"),
+  alpha: loadParam("alpha"),
+  x: { ...loadParam("x"), dependsOn: ["n", "incx"] },
+  incx: loadParam("incx"),
+  A: { ...loadParam("A"), dependsOn: ["n", "lda"] },
+  lda: loadParam("lda"),
   layout: loadParam("layout"),
 };
 
 // Cap n: validationSpecs allows up to 1000 but n×n matrices at that size make property tests slow.
-const fixtureSpecs = { ...validationSpecs, n: { ...validationSpecs.n, range: { min: 1, max: 50 } } };
+const fixtureSpecs = {
+  ...validationSpecs,
+  n: { ...validationSpecs.n, range: { min: 1, max: 50 } },
+};
 
 // GpuMatrix's own layout wins over ssyr's layout arg, so a GPU-resident A
 // never passes `layout` to ssyr() itself — only to GpuMatrix.from/unpadMatrix.
@@ -65,15 +75,15 @@ async function callGpuResident(dev, a) {
 
 test("ssyr fixtures (GPU-resident)", async (t) => {
   await runFixtures(
-    t,                    // node:test context
+    t, // node:test context
     "ssyr (GPU-resident)", // routine name — used in the diagnostic label
-    device,               // WebGPU device instance
-    NUM_RUNS,             // 100 random inputs
-    THRESHOLD,            // threshold 2 — forward error factor ≤ 2 means within two roundings of true result
-    fixtureSpecs,         // param specs used to generate random inputs (n capped at 50 for speed)
-    callGpuResident,      // GPU call — wraps A, x into GpuMatrix/GpuVector
-    stdlibReference,      // CPU reference
-    forwardFactor,        // |err| / (eps * forward bound) — see helpers.js
+    device, // WebGPU device instance
+    NUM_RUNS, // 100 random inputs
+    THRESHOLD, // threshold 2 — forward error factor ≤ 2 means within two roundings of true result
+    fixtureSpecs, // param specs used to generate random inputs (n capped at 50 for speed)
+    callGpuResident, // GPU call — wraps A, x into GpuMatrix/GpuVector
+    stdlibReference, // CPU reference
+    forwardFactor, // |err| / (eps * forward bound) — see helpers.js
   );
 });
 
@@ -81,13 +91,13 @@ test("ssyr edge cases (GPU-resident)", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        uplo: tc.uplo,               // which triangle of the symmetric matrix is stored
-        n: tc.n,                     // matrix dimension (n×n)
-        alpha: tc.alpha,             // scale factor for x*x^T
-        x: new Float32Array(tc.x),   // input vector
-        incx: tc.incx,               // stride through x
-        A: new Float32Array(tc.A),   // matrix, row-major, size n*lda
-        lda: tc.lda,                 // leading dimension (row stride) of A
+        uplo: tc.uplo, // which triangle of the symmetric matrix is stored
+        n: tc.n, // matrix dimension (n×n)
+        alpha: tc.alpha, // scale factor for x*x^T
+        x: new Float32Array(tc.x), // input vector
+        incx: tc.incx, // stride through x
+        A: new Float32Array(tc.A), // matrix, row-major, size n*lda
+        lda: tc.lda, // leading dimension (row stride) of A
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
@@ -100,14 +110,14 @@ test("ssyr edge cases (GPU-resident, column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {
     await t.test(tc.label, async () => {
       const a = {
-        uplo: tc.uplo,               // which triangle of the symmetric matrix is stored
-        n: tc.n,                     // matrix dimension (n×n)
-        alpha: tc.alpha,             // scale factor for x*x^T
-        x: new Float32Array(tc.x),   // input vector
-        incx: tc.incx,               // stride through x
-        A: new Float32Array(tc.A),   // matrix, column-major, size n*lda
-        lda: tc.lda,                 // leading dimension (column stride) of A
-        layout: tc.layout,           // "column-major"
+        uplo: tc.uplo, // which triangle of the symmetric matrix is stored
+        n: tc.n, // matrix dimension (n×n)
+        alpha: tc.alpha, // scale factor for x*x^T
+        x: new Float32Array(tc.x), // input vector
+        incx: tc.incx, // stride through x
+        A: new Float32Array(tc.A), // matrix, column-major, size n*lda
+        lda: tc.lda, // leading dimension (column stride) of A
+        layout: tc.layout, // "column-major"
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);

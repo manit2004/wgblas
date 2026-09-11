@@ -53,17 +53,23 @@ export class Complex64Array extends Array {
     if (items[0] instanceof Complex64) {
       for (const z of items) {
         if (!(z instanceof Complex64))
-          throw new Error("Complex64Array expects every element to be a Complex64.");
+          throw new Error(
+            "Complex64Array expects every element to be a Complex64.",
+          );
         this.push(z);
       }
       return;
     }
 
     if (items.length % 2 !== 0)
-      throw new Error("Complex64Array expects an even number of interleaved [re, im, ...] values.");
+      throw new Error(
+        "Complex64Array expects an even number of interleaved [re, im, ...] values.",
+      );
     for (let i = 0; i < items.length; i += 2) {
       if (typeof items[i] !== "number" || typeof items[i + 1] !== "number")
-        throw new Error("Complex64Array expects interleaved [re, im, ...] values to be numbers.");
+        throw new Error(
+          "Complex64Array expects interleaved [re, im, ...] values to be numbers.",
+        );
       this.push(new Complex64(items[i], items[i + 1]));
     }
   }

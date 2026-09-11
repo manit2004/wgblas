@@ -27,17 +27,17 @@ after(() => {
 
 const validationSpecs = {
   device: loadParam("device"),
-  trans:  loadParam("trans"),
-  m:      loadParam("m"),
-  n:      loadParam("n"),
-  alpha:  loadParam("alpha"),
-  beta:   loadParam("beta"),
-  lda:    loadParam("lda"),
-  A:      loadParam("A"),
-  x:      loadParam("x"),
-  incx:   loadParam("incx"),
-  y:      loadParam("y"),
-  incy:   loadParam("incy"),
+  trans: loadParam("trans"),
+  m: loadParam("m"),
+  n: loadParam("n"),
+  alpha: loadParam("alpha"),
+  beta: loadParam("beta"),
+  lda: loadParam("lda"),
+  A: loadParam("A"),
+  x: loadParam("x"),
+  incx: loadParam("incx"),
+  y: loadParam("y"),
+  incy: loadParam("incy"),
   layout: loadParam("layout"),
 };
 
@@ -56,12 +56,31 @@ async function callGpuResident(dev, a) {
   const outerCount = layout === "column-major" ? a.n : a.m; // rows for row-major, cols for column-major
   return withGpuResources(
     {
-      A: GpuMatrix.from(padMatrix(a.A, outerCount, a.lda), a.m, a.n, a.lda, layout),
+      A: GpuMatrix.from(
+        padMatrix(a.A, outerCount, a.lda),
+        a.m,
+        a.n,
+        a.lda,
+        layout,
+      ),
       x: GpuVector.from(a.x),
       y: GpuVector.from(a.y),
     },
     async ({ A, x, y }) => {
-      await sgemv(dev, a.trans, a.m, a.n, a.alpha, A, a.lda, x, a.incx, a.beta, y, a.incy);
+      await sgemv(
+        dev,
+        a.trans,
+        a.m,
+        a.n,
+        a.alpha,
+        A,
+        a.lda,
+        x,
+        a.incx,
+        a.beta,
+        y,
+        a.incy,
+      );
       return { y: await y.read() };
     },
   );
@@ -69,15 +88,15 @@ async function callGpuResident(dev, a) {
 
 test("sgemv fixtures (GPU-resident)", async (t) => {
   await runFixtures(
-    t,                      // node:test context
+    t, // node:test context
     "sgemv (GPU-resident)", // routine name — used in the diagnostic label
-    device,                 // WebGPU device instance
-    NUM_RUNS,               // number of fast-check runs
-    THRESHOLD,              // max allowed forward error factor
-    fixtureSpecs,           // param specs used to generate random inputs (m, n capped at 50 for speed)
-    callGpuResident,        // GPU call — wraps A, x, y into GpuMatrix/GpuVectors
-    stdlibReference,        // CPU reference
-    forwardFactor,          // error metric: max |err| / (eps * per-element bound) across output
+    device, // WebGPU device instance
+    NUM_RUNS, // number of fast-check runs
+    THRESHOLD, // max allowed forward error factor
+    fixtureSpecs, // param specs used to generate random inputs (m, n capped at 50 for speed)
+    callGpuResident, // GPU call — wraps A, x, y into GpuMatrix/GpuVectors
+    stdlibReference, // CPU reference
+    forwardFactor, // error metric: max |err| / (eps * per-element bound) across output
   );
 });
 
@@ -85,17 +104,17 @@ test("sgemv edge cases (GPU-resident)", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
       const a = {
-        trans: tc.trans,             // whether to use A or Aᵀ
-        m: tc.m,                     // rows of A
-        n: tc.n,                     // columns of A
-        alpha: tc.alpha,             // scale factor for A·x
-        A: new Float32Array(tc.A),   // matrix, row-major, size m*lda
-        lda: tc.lda,                 // leading dimension (row stride) of A
-        x: new Float32Array(tc.x),   // input vector
-        incx: tc.incx,               // stride through x
-        beta: tc.beta,               // scale factor applied to existing y before accumulating
-        y: new Float32Array(tc.y),   // input/output vector
-        incy: tc.incy,               // stride through y
+        trans: tc.trans, // whether to use A or Aᵀ
+        m: tc.m, // rows of A
+        n: tc.n, // columns of A
+        alpha: tc.alpha, // scale factor for A·x
+        A: new Float32Array(tc.A), // matrix, row-major, size m*lda
+        lda: tc.lda, // leading dimension (row stride) of A
+        x: new Float32Array(tc.x), // input vector
+        incx: tc.incx, // stride through x
+        beta: tc.beta, // scale factor applied to existing y before accumulating
+        y: new Float32Array(tc.y), // input/output vector
+        incy: tc.incy, // stride through y
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);
@@ -108,18 +127,18 @@ test("sgemv edge cases (GPU-resident, column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {
     await t.test(tc.label, async () => {
       const a = {
-        trans: tc.trans,             // whether to use A or Aᵀ
-        m: tc.m,                     // rows of A
-        n: tc.n,                     // columns of A
-        alpha: tc.alpha,             // scale factor for A·x
-        A: new Float32Array(tc.A),   // matrix, column-major, size n*lda
-        lda: tc.lda,                 // leading dimension (column stride) of A
-        x: new Float32Array(tc.x),   // input vector
-        incx: tc.incx,               // stride through x
-        beta: tc.beta,               // scale factor applied to existing y before accumulating
-        y: new Float32Array(tc.y),   // input/output vector
-        incy: tc.incy,               // stride through y
-        layout: tc.layout,           // "column-major"
+        trans: tc.trans, // whether to use A or Aᵀ
+        m: tc.m, // rows of A
+        n: tc.n, // columns of A
+        alpha: tc.alpha, // scale factor for A·x
+        A: new Float32Array(tc.A), // matrix, column-major, size n*lda
+        lda: tc.lda, // leading dimension (column stride) of A
+        x: new Float32Array(tc.x), // input vector
+        incx: tc.incx, // stride through x
+        beta: tc.beta, // scale factor applied to existing y before accumulating
+        y: new Float32Array(tc.y), // input/output vector
+        incy: tc.incy, // stride through y
+        layout: tc.layout, // "column-major"
       };
       const got = await callGpuResident(device, a);
       const expected = stdlibReference(a);

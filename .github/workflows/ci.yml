@@ -25,6 +25,9 @@ jobs:
       - name: Lint
         run: npx eslint .
 
+      - name: Format check
+        run: npx prettier --check "src/**/*.{js,mjs,cjs}" "tests/**/*.{js,mjs,cjs}" "examples/**/*.{js,mjs,cjs}" "benchmarks/**/*.{js,mjs,cjs}" "scripts/**/*.{js,mjs,cjs}" "*.{js,mjs,cjs}"
+
       - name: Audit
         run: npm audit --audit-level=high
 

@@ -11,26 +11,46 @@ import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
 import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
-import { calcWorkgroups, requireWorkgroups, requireWorkgroupCount } from "../util/workgroup.mjs";
+import {
+  calcWorkgroups,
+  requireWorkgroups,
+  requireWorkgroupCount,
+} from "../util/workgroup.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
+import {
+  BM_SMALL,
+  BN_SMALL,
+  BM_LARGE,
+  BN_LARGE,
+  LARGE_TILE_WORKGROUP_THRESHOLD,
+} from "../util/constants.mjs";
 import { BLOCK_SIZE } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
-
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // strsm: B := alpha*op(A)^-1*B (side='left') or alpha*B*op(A)^-1 (side='right'),
 // A triangular. Blocked substitution (strsv's own technique, generalized to
 // a matrix RHS): strsv_invert_block + sgemm, unchanged; every per-block B/A
 // access goes through block_transfer.wgsl (see that shader for why).
 export async function strsm(
-  device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb, layout = "row-major",
+  device,
+  side,
+  uplo,
+  transA,
+  diag,
+  m,
+  n,
+  alpha,
+  A,
+  lda,
+  B,
+  ldb,
+  layout = "row-major",
 ) {
   const AIsGpu = A instanceof GpuMatrix;
   const BIsGpu = B instanceof GpuMatrix;
   const isUnit = diag === "unit";
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "strsm", { A, B });
   if (side !== "left" && side !== "right")
     throw new Error("side must be 'left' or 'right'.");
@@ -42,11 +62,15 @@ export async function strsm(
     throw new Error("diag must be 'unit' or 'non-unit'.");
   if (layout !== "row-major" && layout !== "column-major")
     throw new Error("layout must be 'row-major' or 'column-major'.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
-  if (!Number.isInteger(m) || !Number.isInteger(n) || !Number.isInteger(lda) || !Number.isInteger(ldb))
+  if (
+    !Number.isInteger(m) ||
+    !Number.isInteger(n) ||
+    !Number.isInteger(lda) ||
+    !Number.isInteger(ldb)
+  )
     throw new Error("m, n, lda, and ldb must be integers.");
   if (!AIsGpu && !(A instanceof Float32Array))
     throw new Error("A must be a Float32Array or GpuMatrix.");
@@ -62,30 +86,51 @@ export async function strsm(
 
   // A: triangular, order = m (side='left') or n (side='right').
   const aOrder = side === "left" ? m : n;
-  if (lda < aOrder) throw new Error("lda must be >= " + (side === "left" ? "m" : "n") + ".");
+  if (lda < aOrder)
+    throw new Error("lda must be >= " + (side === "left" ? "m" : "n") + ".");
   if (AIsGpu) {
-    if (lda !== A.lda) throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (A.rows < aOrder || A.cols < aOrder) throw new Error("A is too small for the given m/n and side.");
+    if (lda !== A.lda)
+      throw new Error("lda must match A.lda when A is a GpuMatrix.");
+    if (A.rows < aOrder || A.cols < aOrder)
+      throw new Error("A is too small for the given m/n and side.");
   } else if (A.length < (aOrder - 1) * lda + aOrder) {
-    throw new Error("A does not have enough elements for the given dimensions and lda.");
+    throw new Error(
+      "A does not have enough elements for the given dimensions and lda.",
+    );
   }
 
   // B: always m x n, overwritten in place with the same ldb.
   const bOuter = effLayoutB === "column-major" ? n : m;
   const bInner = effLayoutB === "column-major" ? m : n;
   if (ldb < bInner)
-    throw new Error(`ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`);
+    throw new Error(
+      `ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`,
+    );
   if (BIsGpu) {
-    if (ldb !== B.lda) throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-    if (B.rows < m || B.cols < n) throw new Error("B is too small for the given m and n.");
+    if (ldb !== B.lda)
+      throw new Error("ldb must match B.lda when B is a GpuMatrix.");
+    if (B.rows < m || B.cols < n)
+      throw new Error("B is too small for the given m and n.");
   } else if (B.length < (bOuter - 1) * ldb + bInner) {
-    throw new Error("B does not have enough elements for the given dimensions and ldb.");
+    throw new Error(
+      "B does not have enough elements for the given dimensions and ldb.",
+    );
   }
 
   // A isn't symmetric: column-major = genuine transpose, so flip transA;
   // transposing also swaps which triangle looks stored, so flip uplo too.
-  const uploEffA = effLayoutA === "column-major" ? (uplo === "lower" ? "upper" : "lower") : uplo;
-  const transEffA = effLayoutA === "column-major" ? (transA === "no-transpose" ? "transpose" : "no-transpose") : transA;
+  const uploEffA =
+    effLayoutA === "column-major"
+      ? uplo === "lower"
+        ? "upper"
+        : "lower"
+      : uplo;
+  const transEffA =
+    effLayoutA === "column-major"
+      ? transA === "no-transpose"
+        ? "transpose"
+        : "no-transpose"
+      : transA;
 
   const otherLen = side === "left" ? n : m;
   const blockIsRow = side === "left";
@@ -132,7 +177,11 @@ export async function strsm(
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strsm-A", false);
     BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "strsm-B", true);
-    AinvBuffer = createStorageBuffer(device, numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4, "strsm-Ainv");
+    AinvBuffer = createStorageBuffer(
+      device,
+      numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4,
+      "strsm-Ainv",
+    );
 
     // Pre-scale B by alpha once (reuses sscal, so no per-block alpha handling).
     // Skipped for alpha=0 — sscal computes 0*B[i], which leaks NaN/Inf from a
@@ -147,7 +196,11 @@ export async function strsm(
         ],
         "strsm-scale-params",
       );
-      preScaleBindGroup = createBindGroup(device, scalarPipeline.getBindGroupLayout(0), [BBuffer, scaleParams]);
+      preScaleBindGroup = createBindGroup(
+        device,
+        scalarPipeline.getBindGroupLayout(0),
+        [BBuffer, scaleParams],
+      );
     }
 
     // Every diagonal block's inverse, fully parallel, one dispatch, unchanged.
@@ -161,7 +214,11 @@ export async function strsm(
       ],
       "strsm-invert-params",
     );
-    const invertBindGroup = createBindGroup(device, invertPipeline.getBindGroupLayout(0), [ABuffer, AinvBuffer, invertParams]);
+    const invertBindGroup = createBindGroup(
+      device,
+      invertPipeline.getBindGroupLayout(0),
+      [ABuffer, AinvBuffer, invertParams],
+    );
 
     // Reusable scratch buffers, sized for the worst case, bound at offset 0.
     const Bblock = scratch(BLOCK_SIZE * otherLen * 4, "strsm-Bblock");
@@ -177,8 +234,12 @@ export async function strsm(
       // AinvBuffer is a safe dummy for both) and beta=0.
       const zeroLargeWgX = Math.ceil(bInner / BN_LARGE);
       const zeroLargeWgY = Math.ceil(bOuter / BM_LARGE);
-      const zeroUseLarge = zeroLargeWgX * zeroLargeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
-      const zeroPipeline = await getPipeline(device, zeroUseLarge ? "sgemm_large" : "sgemm_small");
+      const zeroUseLarge =
+        zeroLargeWgX * zeroLargeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
+      const zeroPipeline = await getPipeline(
+        device,
+        zeroUseLarge ? "sgemm_large" : "sgemm_small",
+      );
       const zeroParams = params(
         [
           { value: bOuter, type: "u32" },
@@ -194,183 +255,334 @@ export async function strsm(
         ],
         "strsm-zero-params",
       );
-      const zeroBindGroup = createBindGroup(device, zeroPipeline.getBindGroupLayout(0), [
-        AinvBuffer,
-        vec4ViewBinding(device, AinvBuffer),
-        AinvBuffer,
-        vec4ViewBinding(device, AinvBuffer),
-        BBuffer,
-        zeroParams,
-      ]);
+      const zeroBindGroup = createBindGroup(
+        device,
+        zeroPipeline.getBindGroupLayout(0),
+        [
+          AinvBuffer,
+          vec4ViewBinding(device, AinvBuffer),
+          AinvBuffer,
+          vec4ViewBinding(device, AinvBuffer),
+          BBuffer,
+          zeroParams,
+        ],
+      );
       const zeroWgCount = zeroUseLarge
-        ? { x: requireWorkgroupCount(device, zeroLargeWgX, "strsm", "x"), y: requireWorkgroupCount(device, zeroLargeWgY, "strsm", "y") }
-        : { x: requireWorkgroupCount(device, Math.ceil(bInner / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(device, Math.ceil(bOuter / BM_SMALL), "strsm", "y") };
-      const zeroDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, zeroPipeline, zeroBindGroup, zeroWgCount, zeroDesc);
+        ? {
+            x: requireWorkgroupCount(device, zeroLargeWgX, "strsm", "x"),
+            y: requireWorkgroupCount(device, zeroLargeWgY, "strsm", "y"),
+          }
+        : {
+            x: requireWorkgroupCount(
+              device,
+              Math.ceil(bInner / BN_SMALL),
+              "strsm",
+              "x",
+            ),
+            y: requireWorkgroupCount(
+              device,
+              Math.ceil(bOuter / BM_SMALL),
+              "strsm",
+              "y",
+            ),
+          };
+      const zeroDesc = querySet
+        ? {
+            timestampWrites: {
+              querySet,
+              beginningOfPassWriteIndex: 0,
+              endOfPassWriteIndex: 1,
+            },
+          }
+        : undefined;
+      encodePass(
+        commandEncoder,
+        zeroPipeline,
+        zeroBindGroup,
+        zeroWgCount,
+        zeroDesc,
+      );
     } else {
       if (preScaleBindGroup) {
-        encodePass(commandEncoder, scalarPipeline, preScaleBindGroup, calcWorkgroups(device, bScaleLen));
+        encodePass(
+          commandEncoder,
+          scalarPipeline,
+          preScaleBindGroup,
+          calcWorkgroups(device, bScaleLen),
+        );
       }
-      const invertDesc = querySet ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } } : undefined;
-      encodePass(commandEncoder, invertPipeline, invertBindGroup, { x: BLOCK_SIZE, y: numBlocks }, invertDesc);
+      const invertDesc = querySet
+        ? { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } }
+        : undefined;
+      encodePass(
+        commandEncoder,
+        invertPipeline,
+        invertBindGroup,
+        { x: BLOCK_SIZE, y: numBlocks },
+        invertDesc,
+      );
 
       for (let bi = 0; bi < blockStarts.length; bi++) {
-      const blockStart = blockStarts[bi];
-      const blockEnd = Math.min(blockStart + BLOCK_SIZE, aOrder);
-      const blockLen = blockEnd - blockStart;
-      const blockIndex = blockStart / BLOCK_SIZE;
-      const isLastPass = bi === blockStarts.length - 1;
+        const blockStart = blockStarts[bi];
+        const blockEnd = Math.min(blockStart + BLOCK_SIZE, aOrder);
+        const blockLen = blockEnd - blockStart;
+        const blockIndex = blockStart / BLOCK_SIZE;
+        const isLastPass = bi === blockStarts.length - 1;
 
-      // 1) gather B's current block into a tight scratch buffer.
-      const gatherBParams = params(
-        [
-          { value: blockStart, type: "u32" },
-          { value: blockLen, type: "u32" },
-          { value: 0, type: "u32" },
-          { value: otherLen, type: "u32" },
-          { value: ldb, type: "u32" },
-          { value: effLayoutB === "column-major" ? 1 : 0, type: "u32" },
-          { value: blockIsRow ? 1 : 0, type: "u32" },
-          { value: 2, type: "u32" }, // gather
-        ],
-        "strsm-gather-B-params",
-      );
-      const gatherBBindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [Bblock, BBuffer, gatherBParams]);
-      encodePass(commandEncoder, transferPipeline, gatherBBindGroup, requireWorkgroups(device, "strsm", blockLen, otherLen));
-
-      // 2) apply: Xblock := op(Ainv_block) @ Bblock (side='left'), or the
-      // transpose-trick equivalent for side='right' (same trick strmm uses).
-      {
-        const mg = blockLen, ng = otherLen, kg = blockLen;
-        const largeWgX = Math.ceil(ng / BN_LARGE), largeWgY = Math.ceil(mg / BM_LARGE);
-        const useLarge = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
-        const gemmPipeline = await getPipeline(device, useLarge ? "sgemm_large" : "sgemm_small");
-        const applyParams = params(
+        // 1) gather B's current block into a tight scratch buffer.
+        const gatherBParams = params(
           [
-            { value: mg, type: "u32" },
-            { value: ng, type: "u32" },
-            { value: kg, type: "u32" },
-            { value: 1.0, type: "f32" }, // alpha already applied to B up front
-            { value: 0.0, type: "f32" }, // beta — fresh output, no accumulation
-            { value: BLOCK_SIZE, type: "u32" }, // ldX = Ainv's own dense stride
-            { value: otherLen, type: "u32" }, // ldY = Bblock's own tight stride
-            { value: otherLen, type: "u32" }, // ldc = Xblock's own tight stride
-            { value: side === "right" ? 1 : 0, type: "u32" }, // transX: side='right' needs Ainv^T
-            { value: 0, type: "u32" }, // transY: Bblock is always read as-is
+            { value: blockStart, type: "u32" },
+            { value: blockLen, type: "u32" },
+            { value: 0, type: "u32" },
+            { value: otherLen, type: "u32" },
+            { value: ldb, type: "u32" },
+            { value: effLayoutB === "column-major" ? 1 : 0, type: "u32" },
+            { value: blockIsRow ? 1 : 0, type: "u32" },
+            { value: 2, type: "u32" }, // gather
           ],
-          "strsm-apply-params",
+          "strsm-gather-B-params",
         );
-        const ainvBlock = { buffer: AinvBuffer, offset: blockIndex * BLOCK_SIZE * BLOCK_SIZE * 4, size: BLOCK_SIZE * BLOCK_SIZE * 4 };
-        const applyBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
-          ainvBlock,
-          vec4ViewBinding(device, ainvBlock),
-          Bblock,
-          vec4ViewBinding(device, Bblock),
-          Xblock,
-          applyParams,
-        ]);
-        const wg = useLarge
-          ? { x: requireWorkgroupCount(device, largeWgX, "strsm", "x"), y: requireWorkgroupCount(device, largeWgY, "strsm", "y") }
-          : { x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "strsm", "y") };
-        encodePass(commandEncoder, gemmPipeline, applyBindGroup, wg);
-      }
+        const gatherBBindGroup = createBindGroup(
+          device,
+          transferPipeline.getBindGroupLayout(0),
+          [Bblock, BBuffer, gatherBParams],
+        );
+        encodePass(
+          commandEncoder,
+          transferPipeline,
+          gatherBBindGroup,
+          requireWorkgroups(device, "strsm", blockLen, otherLen),
+        );
 
-      // 3) scatter the solved block back into B.
-      const rangeStart = forward ? blockEnd : 0;
-      const rangeEnd = forward ? aOrder : blockStart;
-      const hasRemaining = rangeStart < rangeEnd;
-      const scatterParams = params(
-        [
-          { value: blockStart, type: "u32" },
-          { value: blockLen, type: "u32" },
-          { value: 0, type: "u32" },
-          { value: otherLen, type: "u32" },
-          { value: ldb, type: "u32" },
-          { value: effLayoutB === "column-major" ? 1 : 0, type: "u32" },
-          { value: blockIsRow ? 1 : 0, type: "u32" },
-          { value: 0, type: "u32" }, // overwrite
-        ],
-        "strsm-scatter-params",
-      );
-      const scatterBindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [Xblock, BBuffer, scatterParams]);
-      const scatterDesc = isLastPass && !hasRemaining && querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, transferPipeline, scatterBindGroup, requireWorkgroups(device, "strsm", blockLen, otherLen), scatterDesc);
+        // 2) apply: Xblock := op(Ainv_block) @ Bblock (side='left'), or the
+        // transpose-trick equivalent for side='right' (same trick strmm uses).
+        {
+          const mg = blockLen,
+            ng = otherLen,
+            kg = blockLen;
+          const largeWgX = Math.ceil(ng / BN_LARGE),
+            largeWgY = Math.ceil(mg / BM_LARGE);
+          const useLarge =
+            largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
+          const gemmPipeline = await getPipeline(
+            device,
+            useLarge ? "sgemm_large" : "sgemm_small",
+          );
+          const applyParams = params(
+            [
+              { value: mg, type: "u32" },
+              { value: ng, type: "u32" },
+              { value: kg, type: "u32" },
+              { value: 1.0, type: "f32" }, // alpha already applied to B up front
+              { value: 0.0, type: "f32" }, // beta — fresh output, no accumulation
+              { value: BLOCK_SIZE, type: "u32" }, // ldX = Ainv's own dense stride
+              { value: otherLen, type: "u32" }, // ldY = Bblock's own tight stride
+              { value: otherLen, type: "u32" }, // ldc = Xblock's own tight stride
+              { value: side === "right" ? 1 : 0, type: "u32" }, // transX: side='right' needs Ainv^T
+              { value: 0, type: "u32" }, // transY: Bblock is always read as-is
+            ],
+            "strsm-apply-params",
+          );
+          const ainvBlock = {
+            buffer: AinvBuffer,
+            offset: blockIndex * BLOCK_SIZE * BLOCK_SIZE * 4,
+            size: BLOCK_SIZE * BLOCK_SIZE * 4,
+          };
+          const applyBindGroup = createBindGroup(
+            device,
+            gemmPipeline.getBindGroupLayout(0),
+            [
+              ainvBlock,
+              vec4ViewBinding(device, ainvBlock),
+              Bblock,
+              vec4ViewBinding(device, Bblock),
+              Xblock,
+              applyParams,
+            ],
+          );
+          const wg = useLarge
+            ? {
+                x: requireWorkgroupCount(device, largeWgX, "strsm", "x"),
+                y: requireWorkgroupCount(device, largeWgY, "strsm", "y"),
+              }
+            : {
+                x: requireWorkgroupCount(
+                  device,
+                  Math.ceil(ng / BN_SMALL),
+                  "strsm",
+                  "x",
+                ),
+                y: requireWorkgroupCount(
+                  device,
+                  Math.ceil(mg / BM_SMALL),
+                  "strsm",
+                  "y",
+                ),
+              };
+          encodePass(commandEncoder, gemmPipeline, applyBindGroup, wg);
+        }
 
-      // 4) trailing update: subtract this block's contribution from B.
-      if (!hasRemaining) continue;
-      const remCount = rangeEnd - rangeStart;
-
-      const gatherAParams = params(
-        [
-          { value: rangeStart, type: "u32" },
-          { value: remCount, type: "u32" },
-          { value: blockStart, type: "u32" },
-          { value: blockLen, type: "u32" },
-          { value: lda, type: "u32" },
-          { value: transEffA === "transpose" ? 1 : 0, type: "u32" },
-          { value: blockIsRow ? 1 : 0, type: "u32" },
-          { value: 2, type: "u32" }, // gather
-        ],
-        "strsm-gather-A-params",
-      );
-      const gatherABindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [Aoff, ABuffer, gatherAParams]);
-      encodePass(commandEncoder, transferPipeline, gatherABindGroup, requireWorkgroups(device, "strsm", remCount, blockLen));
-
-      {
-        const mg = remCount, ng = otherLen, kg = blockLen;
-        const largeWgX = Math.ceil(ng / BN_LARGE), largeWgY = Math.ceil(mg / BM_LARGE);
-        const useLarge = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
-        const gemmPipeline = await getPipeline(device, useLarge ? "sgemm_large" : "sgemm_small");
-        const updateParams = params(
+        // 3) scatter the solved block back into B.
+        const rangeStart = forward ? blockEnd : 0;
+        const rangeEnd = forward ? aOrder : blockStart;
+        const hasRemaining = rangeStart < rangeEnd;
+        const scatterParams = params(
           [
-            { value: mg, type: "u32" },
-            { value: ng, type: "u32" },
-            { value: kg, type: "u32" },
-            { value: 1.0, type: "f32" },
-            { value: 0.0, type: "f32" },
-            { value: blockLen, type: "u32" }, // ldX = Aoff's own tight stride
-            { value: otherLen, type: "u32" }, // ldY = Xblock's own tight stride
-            { value: otherLen, type: "u32" }, // ldc = delta's own tight stride
-            { value: 0, type: "u32" }, // transX: Aoff already read in the right orientation
-            { value: 0, type: "u32" }, // transY: Xblock read as-is
+            { value: blockStart, type: "u32" },
+            { value: blockLen, type: "u32" },
+            { value: 0, type: "u32" },
+            { value: otherLen, type: "u32" },
+            { value: ldb, type: "u32" },
+            { value: effLayoutB === "column-major" ? 1 : 0, type: "u32" },
+            { value: blockIsRow ? 1 : 0, type: "u32" },
+            { value: 0, type: "u32" }, // overwrite
           ],
-          "strsm-update-params",
+          "strsm-scatter-params",
         );
-        const updateBindGroup = createBindGroup(device, gemmPipeline.getBindGroupLayout(0), [
-          Aoff,
-          vec4ViewBinding(device, Aoff),
-          Xblock,
-          vec4ViewBinding(device, Xblock),
-          delta,
-          updateParams,
-        ]);
-        const wg = useLarge
-          ? { x: requireWorkgroupCount(device, largeWgX, "strsm", "x"), y: requireWorkgroupCount(device, largeWgY, "strsm", "y") }
-          : { x: requireWorkgroupCount(device, Math.ceil(ng / BN_SMALL), "strsm", "x"), y: requireWorkgroupCount(device, Math.ceil(mg / BM_SMALL), "strsm", "y") };
-        encodePass(commandEncoder, gemmPipeline, updateBindGroup, wg);
-      }
+        const scatterBindGroup = createBindGroup(
+          device,
+          transferPipeline.getBindGroupLayout(0),
+          [Xblock, BBuffer, scatterParams],
+        );
+        const scatterDesc =
+          isLastPass && !hasRemaining && querySet
+            ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } }
+            : undefined;
+        encodePass(
+          commandEncoder,
+          transferPipeline,
+          scatterBindGroup,
+          requireWorkgroups(device, "strsm", blockLen, otherLen),
+          scatterDesc,
+        );
 
-      const scatterSubParams = params(
-        [
-          { value: rangeStart, type: "u32" },
-          { value: remCount, type: "u32" },
-          { value: 0, type: "u32" },
-          { value: otherLen, type: "u32" },
-          { value: ldb, type: "u32" },
-          { value: effLayoutB === "column-major" ? 1 : 0, type: "u32" },
-          { value: blockIsRow ? 1 : 0, type: "u32" },
-          { value: 1, type: "u32" }, // subtract
-        ],
-        "strsm-scatter-sub-params",
-      );
-      const scatterSubBindGroup = createBindGroup(device, transferPipeline.getBindGroupLayout(0), [delta, BBuffer, scatterSubParams]);
-      const subDesc = isLastPass && querySet ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } } : undefined;
-      encodePass(commandEncoder, transferPipeline, scatterSubBindGroup, requireWorkgroups(device, "strsm", remCount, otherLen), subDesc);
+        // 4) trailing update: subtract this block's contribution from B.
+        if (!hasRemaining) continue;
+        const remCount = rangeEnd - rangeStart;
+
+        const gatherAParams = params(
+          [
+            { value: rangeStart, type: "u32" },
+            { value: remCount, type: "u32" },
+            { value: blockStart, type: "u32" },
+            { value: blockLen, type: "u32" },
+            { value: lda, type: "u32" },
+            { value: transEffA === "transpose" ? 1 : 0, type: "u32" },
+            { value: blockIsRow ? 1 : 0, type: "u32" },
+            { value: 2, type: "u32" }, // gather
+          ],
+          "strsm-gather-A-params",
+        );
+        const gatherABindGroup = createBindGroup(
+          device,
+          transferPipeline.getBindGroupLayout(0),
+          [Aoff, ABuffer, gatherAParams],
+        );
+        encodePass(
+          commandEncoder,
+          transferPipeline,
+          gatherABindGroup,
+          requireWorkgroups(device, "strsm", remCount, blockLen),
+        );
+
+        {
+          const mg = remCount,
+            ng = otherLen,
+            kg = blockLen;
+          const largeWgX = Math.ceil(ng / BN_LARGE),
+            largeWgY = Math.ceil(mg / BM_LARGE);
+          const useLarge =
+            largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
+          const gemmPipeline = await getPipeline(
+            device,
+            useLarge ? "sgemm_large" : "sgemm_small",
+          );
+          const updateParams = params(
+            [
+              { value: mg, type: "u32" },
+              { value: ng, type: "u32" },
+              { value: kg, type: "u32" },
+              { value: 1.0, type: "f32" },
+              { value: 0.0, type: "f32" },
+              { value: blockLen, type: "u32" }, // ldX = Aoff's own tight stride
+              { value: otherLen, type: "u32" }, // ldY = Xblock's own tight stride
+              { value: otherLen, type: "u32" }, // ldc = delta's own tight stride
+              { value: 0, type: "u32" }, // transX: Aoff already read in the right orientation
+              { value: 0, type: "u32" }, // transY: Xblock read as-is
+            ],
+            "strsm-update-params",
+          );
+          const updateBindGroup = createBindGroup(
+            device,
+            gemmPipeline.getBindGroupLayout(0),
+            [
+              Aoff,
+              vec4ViewBinding(device, Aoff),
+              Xblock,
+              vec4ViewBinding(device, Xblock),
+              delta,
+              updateParams,
+            ],
+          );
+          const wg = useLarge
+            ? {
+                x: requireWorkgroupCount(device, largeWgX, "strsm", "x"),
+                y: requireWorkgroupCount(device, largeWgY, "strsm", "y"),
+              }
+            : {
+                x: requireWorkgroupCount(
+                  device,
+                  Math.ceil(ng / BN_SMALL),
+                  "strsm",
+                  "x",
+                ),
+                y: requireWorkgroupCount(
+                  device,
+                  Math.ceil(mg / BM_SMALL),
+                  "strsm",
+                  "y",
+                ),
+              };
+          encodePass(commandEncoder, gemmPipeline, updateBindGroup, wg);
+        }
+
+        const scatterSubParams = params(
+          [
+            { value: rangeStart, type: "u32" },
+            { value: remCount, type: "u32" },
+            { value: 0, type: "u32" },
+            { value: otherLen, type: "u32" },
+            { value: ldb, type: "u32" },
+            { value: effLayoutB === "column-major" ? 1 : 0, type: "u32" },
+            { value: blockIsRow ? 1 : 0, type: "u32" },
+            { value: 1, type: "u32" }, // subtract
+          ],
+          "strsm-scatter-sub-params",
+        );
+        const scatterSubBindGroup = createBindGroup(
+          device,
+          transferPipeline.getBindGroupLayout(0),
+          [delta, BBuffer, scatterSubParams],
+        );
+        const subDesc =
+          isLastPass && querySet
+            ? { timestampWrites: { querySet, endOfPassWriteIndex: 1 } }
+            : undefined;
+        encodePass(
+          commandEncoder,
+          transferPipeline,
+          scatterSubBindGroup,
+          requireWorkgroups(device, "strsm", remCount, otherLen),
+          subDesc,
+        );
       }
     }
 
     const ts = resolveTimestamp(device, commandEncoder, querySet);
-    const readBuffer = BIsGpu ? null : stageReadback(device, commandEncoder, BBuffer);
+    const readBuffer = BIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, BBuffer);
 
     submit(device, commandEncoder);
 

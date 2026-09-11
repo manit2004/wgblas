@@ -16,7 +16,23 @@ function cElem(C, ldc, layout, row, col) {
 }
 
 export function forwardFactor(gpu, ref, a) {
-  const { uplo, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, layout } = a;
+  const {
+    uplo,
+    transA,
+    transB,
+    m,
+    n,
+    k,
+    alpha,
+    A,
+    lda,
+    B,
+    ldb,
+    beta,
+    C,
+    ldc,
+    layout,
+  } = a;
   const isLower = uplo === "lower";
 
   let maxFactor = 0;
@@ -33,12 +49,16 @@ export function forwardFactor(gpu, ref, a) {
 
       let dotBound = 0;
       for (let p = 0; p < k; p++)
-        dotBound += Math.abs(matElem(A, lda, layout, transA, i, p)) * Math.abs(matElem(B, ldb, layout, transB, p, j));
+        dotBound +=
+          Math.abs(matElem(A, lda, layout, transA, i, p)) *
+          Math.abs(matElem(B, ldb, layout, transB, p, j));
 
       const cIn = Math.abs(cElem(C, ldc, layout, i, j));
-      const bound = eps * ((k + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * cIn);
-      if (bound === 0) { if (err !== 0) maxFactor = Infinity; }
-      else maxFactor = Math.max(maxFactor, err / bound);
+      const bound =
+        eps * ((k + 1) * Math.abs(alpha) * dotBound + Math.abs(beta) * cIn);
+      if (bound === 0) {
+        if (err !== 0) maxFactor = Infinity;
+      } else maxFactor = Math.max(maxFactor, err / bound);
     }
   }
   return maxFactor;

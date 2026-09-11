@@ -37,24 +37,67 @@ for (const trans of TRANS) {
   for (const n of SIZES) {
     const k = n;
     for (const pad of PADS) {
-      const lda = k + pad, ldb = k + pad;
+      const lda = k + pad,
+        ldb = k + pad;
       const bytesA = n * lda * 4;
       if (bytesA > device.limits.maxStorageBufferBindingSize) {
-        console.log(`  (skipped trans=${trans} pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`);
+        console.log(
+          `  (skipped trans=${trans} pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`,
+        );
         continue;
       }
 
-      const A = GpuMatrix.from(new Float32Array(n * lda), n, k, lda, "row-major");
-      const B = GpuMatrix.from(new Float32Array(n * ldb), n, k, ldb, "row-major");
+      const A = GpuMatrix.from(
+        new Float32Array(n * lda),
+        n,
+        k,
+        lda,
+        "row-major",
+      );
+      const B = GpuMatrix.from(
+        new Float32Array(n * ldb),
+        n,
+        k,
+        ldb,
+        "row-major",
+      );
       const C = GpuMatrix.from(new Float32Array(n * n), n, n, n, "row-major");
 
       for (let i = 0; i < WARMUP_ITERS; i++) {
-        await ssyr2k(device, "lower", trans, n, k, 1.0, A, lda, B, ldb, 0.0, C, n);
+        await ssyr2k(
+          device,
+          "lower",
+          trans,
+          n,
+          k,
+          1.0,
+          A,
+          lda,
+          B,
+          ldb,
+          0.0,
+          C,
+          n,
+        );
       }
 
       const times = [];
       for (let i = 0; i < BENCH_ITERS; i++) {
-        const { gpuTimeMs } = await ssyr2k(device, "lower", trans, n, k, 1.0, A, lda, B, ldb, 0.0, C, n);
+        const { gpuTimeMs } = await ssyr2k(
+          device,
+          "lower",
+          trans,
+          n,
+          k,
+          1.0,
+          A,
+          lda,
+          B,
+          ldb,
+          0.0,
+          C,
+          n,
+        );
         if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
       }
 
@@ -72,6 +115,9 @@ for (const trans of TRANS) {
   }
 }
 
-saveResults("ssyr2k", gpuModel, records, { folder: "ssyr2k", fileName: "lda.ssyr2k" });
+saveResults("ssyr2k", gpuModel, records, {
+  folder: "ssyr2k",
+  fileName: "lda.ssyr2k",
+});
 
 cleanup();

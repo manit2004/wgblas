@@ -45,7 +45,9 @@ for (const pad of PADS) {
 
     const bytesA = n * lda * 4;
     if (bytesA > device.limits.maxStorageBufferBindingSize) {
-      console.log(`  (skipped pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`);
+      console.log(
+        `  (skipped pad=${pad}, n=${n}: A would exceed maxStorageBufferBindingSize)`,
+      );
       continue;
     }
 
@@ -65,7 +67,19 @@ for (const pad of PADS) {
 
     const times = [];
     for (let i = 0; i < BENCH_ITERS; i++) {
-      const { gpuTimeMs } = await ssymv(device, "lower", n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1);
+      const { gpuTimeMs } = await ssymv(
+        device,
+        "lower",
+        n,
+        alpha,
+        AGpu,
+        lda,
+        xGpu,
+        1,
+        beta,
+        yGpu,
+        1,
+      );
       if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
     }
 
@@ -77,13 +91,16 @@ for (const pad of PADS) {
     const med = median(times);
     // lower triangle A read + x read + y read + y write — logical elements
     // touched, same regardless of pad
-    const bytes = (n * (n + 1) / 2 + n + 2 * n) * 4;
+    const bytes = ((n * (n + 1)) / 2 + n + 2 * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [pad, n, med, gbs]);
     records.push({ pad, n, compute_ms: med, compute_GBs: gbs });
   }
 }
 
-saveResults("ssymv", gpuModel, records, { folder: "ssymv", fileName: "lda.ssymv" });
+saveResults("ssymv", gpuModel, records, {
+  folder: "ssymv",
+  fileName: "lda.ssymv",
+});
 
 cleanup();

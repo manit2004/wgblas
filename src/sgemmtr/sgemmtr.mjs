@@ -11,19 +11,38 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
-import { BM_SMALL, BN_SMALL, BM_LARGE, BN_LARGE, LARGE_TILE_WORKGROUP_THRESHOLD } from "../util/constants.mjs";
-import { requireSameDevice } from "../util/device.mjs";
-
+import {
+  BM_SMALL,
+  BN_SMALL,
+  BM_LARGE,
+  BN_LARGE,
+  LARGE_TILE_WORKGROUP_THRESHOLD,
+} from "../util/constants.mjs";
+import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 export async function sgemmtr(
-  device, uplo, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, layout = "row-major",
+  device,
+  uplo,
+  transA,
+  transB,
+  m,
+  n,
+  k,
+  alpha,
+  A,
+  lda,
+  B,
+  ldb,
+  beta,
+  C,
+  ldc,
+  layout = "row-major",
 ) {
   let AIsGpu = A instanceof GpuMatrix;
   let BIsGpu = B instanceof GpuMatrix;
   const CIsGpu = C instanceof GpuMatrix;
 
-  if (!(device instanceof GPUDevice))
-    throw new Error("device must be a GPUDevice.");
+  requireGpuDevice(device);
   requireSameDevice(device, "sgemmtr", { A, B, C });
   if (uplo !== "lower" && uplo !== "upper")
     throw new Error("uplo must be 'lower' or 'upper'.");
@@ -33,12 +52,10 @@ export async function sgemmtr(
     throw new Error("transB must be 'no-transpose' or 'transpose'.");
   if (layout !== "row-major" && layout !== "column-major")
     throw new Error("layout must be 'row-major' or 'column-major'.");
-  if (typeof alpha !== "number")
-    throw new Error("alpha must be a number.");
+  if (typeof alpha !== "number") throw new Error("alpha must be a number.");
   if (Number.isNaN(alpha)) throw new Error("alpha must not be NaN.");
   if (!Number.isFinite(alpha)) throw new Error("alpha must be finite.");
-  if (typeof beta !== "number")
-    throw new Error("beta must be a number.");
+  if (typeof beta !== "number") throw new Error("beta must be a number.");
   if (Number.isNaN(beta)) throw new Error("beta must not be NaN.");
   if (!Number.isFinite(beta)) throw new Error("beta must be finite.");
   if (
@@ -60,7 +77,8 @@ export async function sgemmtr(
     throw new Error("C must be a GpuMatrix when A or B is a GpuMatrix.");
   if (CIsGpu && (!AIsGpu || !BIsGpu))
     throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
-  if (m < 0 || n < 0 || k < 0) throw new Error("m, n, and k must be non-negative.");
+  if (m < 0 || n < 0 || k < 0)
+    throw new Error("m, n, and k must be non-negative.");
   if (lda <= 0 || ldb <= 0 || ldc <= 0)
     throw new Error("lda, ldb, and ldc must be positive.");
   if (m === 0 || n === 0) return CIsGpu ? {} : { C };
@@ -77,14 +95,19 @@ export async function sgemmtr(
   const aOuter = transA === "no-transpose" ? aRows : aCols; // # of stored chunks
   const aInner = transA === "no-transpose" ? aCols : aRows; // required chunk length
   if (lda < aInner)
-    throw new Error(`lda must be >= ${effLayoutA === "column-major" ? "rows" : "cols"} of A as stored.`);
+    throw new Error(
+      `lda must be >= ${effLayoutA === "column-major" ? "rows" : "cols"} of A as stored.`,
+    );
   if (AIsGpu) {
-    if (lda !== A.lda) throw new Error("lda must match A.lda when A is a GpuMatrix.");
+    if (lda !== A.lda)
+      throw new Error("lda must match A.lda when A is a GpuMatrix.");
     const [aLogRows, aLogCols] = transA === "no-transpose" ? [m, k] : [k, m];
     if (A.rows < aLogRows || A.cols < aLogCols)
       throw new Error("A is too small for the given m, k, and transA.");
   } else if (A.length < (aOuter - 1) * lda + aInner) {
-    throw new Error("A does not have enough elements for the given dimensions and lda.");
+    throw new Error(
+      "A does not have enough elements for the given dimensions and lda.",
+    );
   }
 
   // B: same reasoning as A, with op(B) = k x n.
@@ -93,26 +116,37 @@ export async function sgemmtr(
   const bOuter = transB === "no-transpose" ? bRows : bCols;
   const bInner = transB === "no-transpose" ? bCols : bRows;
   if (ldb < bInner)
-    throw new Error(`ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`);
+    throw new Error(
+      `ldb must be >= ${effLayoutB === "column-major" ? "rows" : "cols"} of B as stored.`,
+    );
   if (BIsGpu) {
-    if (ldb !== B.lda) throw new Error("ldb must match B.lda when B is a GpuMatrix.");
+    if (ldb !== B.lda)
+      throw new Error("ldb must match B.lda when B is a GpuMatrix.");
     const [bLogRows, bLogCols] = transB === "no-transpose" ? [k, n] : [n, k];
     if (B.rows < bLogRows || B.cols < bLogCols)
       throw new Error("B is too small for the given n, k, and transB.");
   } else if (B.length < (bOuter - 1) * ldb + bInner) {
-    throw new Error("B does not have enough elements for the given dimensions and ldb.");
+    throw new Error(
+      "B does not have enough elements for the given dimensions and ldb.",
+    );
   }
 
   // C: always m x n (no trans flag) — layout only affects lda/storage order.
   const cOuter = effLayoutC === "column-major" ? n : m;
   const cInner = effLayoutC === "column-major" ? m : n;
   if (ldc < cInner)
-    throw new Error(`ldc must be >= ${effLayoutC === "column-major" ? "rows" : "cols"} of C as stored.`);
+    throw new Error(
+      `ldc must be >= ${effLayoutC === "column-major" ? "rows" : "cols"} of C as stored.`,
+    );
   if (CIsGpu) {
-    if (ldc !== C.lda) throw new Error("ldc must match C.lda when C is a GpuMatrix.");
-    if (C.rows < m || C.cols < n) throw new Error("C is too small for the given m and n.");
+    if (ldc !== C.lda)
+      throw new Error("ldc must match C.lda when C is a GpuMatrix.");
+    if (C.rows < m || C.cols < n)
+      throw new Error("C is too small for the given m and n.");
   } else if (C.length < (cOuter - 1) * ldc + cInner) {
-    throw new Error("C does not have enough elements for the given dimensions and ldc.");
+    throw new Error(
+      "C does not have enough elements for the given dimensions and ldc.",
+    );
   }
 
   // Column-major A/B reinterpreted row-major is A^T/B^T — flip the trans flag.
@@ -143,18 +177,22 @@ export async function sgemmtr(
   const largeWgY = Math.ceil(m / BM_LARGE);
   const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
 
-  const pipeline = await getPipeline(device, useLargeTile ? "sgemmtr_large" : "sgemmtr_small");
+  const pipeline = await getPipeline(
+    device,
+    useLargeTile ? "sgemmtr_large" : "sgemmtr_small",
+  );
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sgemmtr-A", false);
   const BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "sgemmtr-B", false);
   const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "sgemmtr-C", true);
-  const paramsBuffer = createParamsBuffer(device,
+  const paramsBuffer = createParamsBuffer(
+    device,
     [
-      { value: m,   type: "u32" },
-      { value: n,   type: "u32" },
-      { value: k,   type: "u32" },
+      { value: m, type: "u32" },
+      { value: n, type: "u32" },
+      { value: k, type: "u32" },
       { value: alpha, type: "f32" },
-      { value: beta,  type: "f32" },
+      { value: beta, type: "f32" },
       { value: lda, type: "u32" },
       { value: ldb, type: "u32" },
       { value: ldc, type: "u32" },
@@ -175,15 +213,32 @@ export async function sgemmtr(
 
     const wgCount = useLargeTile
       ? {
-        x: requireWorkgroupCount(device, largeWgX, "sgemmtr", "x"),
-        y: requireWorkgroupCount(device, largeWgY, "sgemmtr", "y"),
-      }
+          x: requireWorkgroupCount(device, largeWgX, "sgemmtr", "x"),
+          y: requireWorkgroupCount(device, largeWgY, "sgemmtr", "y"),
+        }
       : {
-        x: requireWorkgroupCount(device, Math.ceil(n / BN_SMALL), "sgemmtr", "x"),
-        y: requireWorkgroupCount(device, Math.ceil(m / BM_SMALL), "sgemmtr", "y"),
-      };
-    const { commandEncoder, ts } = runComputePass(device, pipeline, bindGroup, wgCount);
-    const readBuffer = CIsGpu ? null : stageReadback(device, commandEncoder, CBuffer);
+          x: requireWorkgroupCount(
+            device,
+            Math.ceil(n / BN_SMALL),
+            "sgemmtr",
+            "x",
+          ),
+          y: requireWorkgroupCount(
+            device,
+            Math.ceil(m / BM_SMALL),
+            "sgemmtr",
+            "y",
+          ),
+        };
+    const { commandEncoder, ts } = runComputePass(
+      device,
+      pipeline,
+      bindGroup,
+      wgCount,
+    );
+    const readBuffer = CIsGpu
+      ? null
+      : stageReadback(device, commandEncoder, CBuffer);
 
     submit(device, commandEncoder);
 
