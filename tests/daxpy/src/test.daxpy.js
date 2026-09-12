@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { daxpy } from "wgblas/daxpy";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -105,4 +105,19 @@ test("daxpy edge cases", async (t) => {
       );
     });
   }
+});
+
+// n=0 has zero logical elements to touch, so the only correct behavior is a
+// true no-op. The edge-cases block above only asserts "does not throw" for
+// n<=0 entries, so an implementation that scribbles on y before an early
+// return (or otherwise mishandles n=0) would still pass everything above.
+// This checks y comes back byte-identical to what went in.
+test("daxpy zero-dimension (regression)", async () => {
+  const x = randomFloat64Array(8, -1, 1, 300);
+  const y = randomFloat64Array(8, -1, 1, 301);
+  const before = y.slice();
+
+  const got = await daxpy(device, 0, 2.5, x, 1, y, 1);
+
+  assert.deepEqual(Array.from(got.y), Array.from(before));
 });

@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { scopy } from "wgblas/scopy";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -74,4 +74,19 @@ test("scopy edge cases", async (t) => {
       assert.deepEqual(got.y, expected.y);
     });
   }
+});
+
+// n=0 has zero logical elements to touch, so the only correct behavior is a
+// true no-op. The edge-cases block above only asserts "does not throw" for
+// n<=0 entries, so an implementation that scribbles on y before an early
+// return (or otherwise mishandles n=0) would still pass everything above.
+// This checks y comes back byte-identical to what went in.
+test("scopy zero-dimension (regression)", async () => {
+  const x = randomFloat32Array(8, -1, 1, 300);
+  const y = randomFloat32Array(8, -1, 1, 301);
+  const before = y.slice();
+
+  const got = await scopy(device, 0, x, 1, y, 1);
+
+  assert.deepEqual(Array.from(got.y), Array.from(before));
 });

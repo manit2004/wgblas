@@ -235,6 +235,74 @@ test("sgemmtr large-tile path (regression)", async (t) => {
   }
 });
 
+// k=0 (with m,n>0) makes the matrix product term vanish entirely, so within
+// the uplo triangle C should collapse to beta*C, and the opposite triangle
+// must stay byte-identical (sgemmtr only reads/writes the named triangle).
+// runEdgeCases (see tests/helpers/validation.js) only asserts that calls
+// don't throw, so an implementation that skips applying beta within the
+// triangle when k=0, or that touches the untouched triangle, would still
+// pass every existing case — this test checks actual per-element values.
+test("sgemmtr zero-dimension (k=0) (regression)", async (t) => {
+  const M = 4,
+    N = 4,
+    K = 0;
+  const beta = 0.5;
+
+  for (const uplo of ["lower", "upper"]) {
+    await t.test(`uplo=${uplo}`, async () => {
+      // transA='no-transpose' stores A as M x K (each of its M rows has 0
+      // elements) and transB='transpose' stores B as N x K (each of its N
+      // rows has 0 elements) — both non-empty buffers (WebGPU rejects a
+      // zero-byte storage binding), per sgemmtr.mjs's own length validation,
+      // with lda/ldb at their K=0 minimum of 1.
+      const a = {
+        uplo,
+        transA: "no-transpose",
+        transB: "transpose",
+        m: M,
+        n: N,
+        k: K,
+        alpha: 1.5,
+        A: new Float32Array(3),
+        lda: 1,
+        B: new Float32Array(3),
+        ldb: 1,
+        beta,
+        C: randomFloat32Array(M * N, -5, 5, uplo === "lower" ? 300 : 301),
+        ldc: N,
+      };
+      const cBefore = Float32Array.from(a.C);
+      const got = await sgemmtr(
+        device,
+        a.uplo,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
+      for (let row = 0; row < M; row++) {
+        for (let col = 0; col < N; col++) {
+          const i = row * N + col;
+          const inTriangle = uplo === "lower" ? col <= row : col >= row;
+          const expected = inTriangle
+            ? Math.fround(beta * cBefore[i])
+            : cBefore[i];
+          assert.equal(got.C[i], expected, `row=${row}, col=${col}`);
+        }
+      }
+    });
+  }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("sgemmtr edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

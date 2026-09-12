@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssymm } from "wgblas/ssymm";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -148,6 +148,83 @@ test("ssymm edge cases", async (t) => {
       assert.deepEqual(got.C, expected.C);
     });
   }
+});
+
+// m=0 or n=0 ties directly to C's own shape, so the touched region is
+// vacuous in both cases — the routine must return C completely untouched,
+// not scaled by beta over zero elements (nothing distinguishes those here).
+// runEdgeCases (see tests/helpers/validation.js) only asserts that calls
+// don't throw, so an implementation that scribbles on C (e.g. via its
+// symmetrize/gemm passes) before or instead of returning early would still
+// pass every existing case — this test checks C comes back byte-identical.
+test("ssymm zero-dimension (regression)", async (t) => {
+  await t.test("m=0", async () => {
+    const a = {
+      side: "left",
+      uplo: "lower",
+      m: 0,
+      n: 4,
+      alpha: 1.5,
+      A: new Float32Array(0),
+      lda: 1,
+      B: new Float32Array(0),
+      ldb: 1,
+      beta: 0.5,
+      C: randomFloat32Array(16, -5, 5, 300),
+      ldc: 4,
+    };
+    const cBefore = Float32Array.from(a.C);
+    const got = await ssymm(
+      device,
+      a.side,
+      a.uplo,
+      a.m,
+      a.n,
+      a.alpha,
+      a.A,
+      a.lda,
+      a.B,
+      a.ldb,
+      a.beta,
+      a.C,
+      a.ldc,
+    );
+    assert.deepEqual(got.C, cBefore);
+  });
+
+  await t.test("n=0", async () => {
+    const a = {
+      side: "left",
+      uplo: "lower",
+      m: 4,
+      n: 0,
+      alpha: 1.5,
+      A: new Float32Array(0),
+      lda: 1,
+      B: new Float32Array(0),
+      ldb: 1,
+      beta: 0.5,
+      C: randomFloat32Array(16, -5, 5, 301),
+      ldc: 4,
+    };
+    const cBefore = Float32Array.from(a.C);
+    const got = await ssymm(
+      device,
+      a.side,
+      a.uplo,
+      a.m,
+      a.n,
+      a.alpha,
+      a.A,
+      a.lda,
+      a.B,
+      a.ldb,
+      a.beta,
+      a.C,
+      a.ldc,
+    );
+    assert.deepEqual(got.C, cBefore);
+  });
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.

@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { snrm2 } from "wgblas/snrm2";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -68,4 +68,16 @@ test("snrm2 edge cases", async (t) => {
       assert.strictEqual(got, expected);
     });
   }
+});
+
+// n=0 has zero logical elements to touch, so the only correct norm is
+// exactly 0. The edge-cases block above only asserts "does not throw" for
+// n<=0 entries, so an implementation that mishandles n=0 (e.g. dispatches a
+// pass over stale buffer contents) could still pass everything above.
+test("snrm2 zero-dimension (regression)", async () => {
+  const x = randomFloat32Array(8, -1, 1, 300);
+
+  const { nrm2: got } = await snrm2(device, 0, x, 1);
+
+  assert.strictEqual(got, 0);
 });

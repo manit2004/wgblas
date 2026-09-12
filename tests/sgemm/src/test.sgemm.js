@@ -228,6 +228,61 @@ test("sgemm large-tile path (regression)", async (t) => {
   }
 });
 
+// k=0 (with m,n>0) makes the matrix product term vanish entirely, so the
+// whole operation should collapse to C := beta*C. runEdgeCases (see
+// tests/helpers/validation.js) only asserts that calls don't throw, so an
+// implementation that skips applying beta to C when k=0 (or scribbles on C
+// before an early return) would still pass every existing case — this test
+// checks the actual output values against a bit-exact CPU computation.
+test("sgemm zero-dimension (k=0) (regression)", async (t) => {
+  await t.test("k=0 collapses to C := beta*C", async () => {
+    const M = 4,
+      N = 4,
+      K = 0;
+    const beta = 0.5;
+    // transA='no-transpose' stores A as M x K (each of its M rows has 0
+    // elements) and transB='transpose' stores B as N x K (each of its N rows
+    // has 0 elements) — both non-empty buffers (WebGPU rejects a zero-byte
+    // storage binding), per sgemm.mjs's own length validation, with lda/ldb
+    // at their K=0 minimum of 1.
+    const a = {
+      transA: "no-transpose",
+      transB: "transpose",
+      m: M,
+      n: N,
+      k: K,
+      alpha: 1.5,
+      A: new Float32Array(3),
+      lda: 1,
+      B: new Float32Array(3),
+      ldb: 1,
+      beta,
+      C: randomFloat32Array(M * N, -5, 5, 300),
+      ldc: N,
+    };
+    const cBefore = Float32Array.from(a.C);
+    const got = await sgemm(
+      device,
+      a.transA,
+      a.transB,
+      a.m,
+      a.n,
+      a.k,
+      a.alpha,
+      a.A,
+      a.lda,
+      a.B,
+      a.ldb,
+      a.beta,
+      a.C,
+      a.ldc,
+    );
+    for (let i = 0; i < cBefore.length; i++) {
+      assert.equal(got.C[i], Math.fround(beta * cBefore[i]), `element ${i}`);
+    }
+  });
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("sgemm edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

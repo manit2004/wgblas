@@ -238,7 +238,6 @@
     "fast-check": "^4.8.0",
     "globals": "^17.7.0",
     "husky": "^9.1.7",
-    "jscpd": "^5.2.0",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
     "publint": "^0.3.24",

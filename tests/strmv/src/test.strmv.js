@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { strmv } from "wgblas/strmv";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -135,6 +135,34 @@ test("strmv edge cases", async (t) => {
       assert.deepEqual(got, expected);
     });
   }
+});
+
+// The TODO's zero-dimension concern: existing edge cases only assert
+// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
+// an implementation that scribbles on y before an early return would still
+// pass everything. strmv is out-of-place (result goes into y, x stays
+// untouched as input), and n is the only dimension (it ties A's order and
+// x's/y's lengths together), so n=0 is fully vacuous — the test guards that
+// y comes back byte-for-byte untouched.
+test("strmv zero-dimension (regression)", async (t) => {
+  await t.test("n=0", async () => {
+    const yBefore = randomFloat32Array(4, -1, 1, 9501);
+    const y = Float32Array.from(yBefore);
+    const got = await strmv(
+      device,
+      "lower",
+      "no-transpose",
+      "non-unit",
+      0, // n=0
+      new Float32Array(0), // A: 0x0 has no elements
+      1,
+      new Float32Array(0), // x: length n=0
+      1,
+      y,
+      1,
+    );
+    assert.deepEqual(got.y, yBefore);
+  });
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.

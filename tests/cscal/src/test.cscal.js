@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { cscal } from "wgblas/cscal";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -86,4 +86,24 @@ test("cscal edge cases", async (t) => {
       assert.deepEqual(got.x, expected.x);
     });
   }
+});
+
+// n=0 has zero logical elements to touch, so the only correct behavior is a
+// true no-op. The edge-cases block above only asserts "does not throw" for
+// n<=0 entries, so an implementation that scribbles on x before an early
+// return (or otherwise mishandles n=0) would still pass everything above.
+// This checks x comes back byte-identical to what went in.
+test("cscal zero-dimension (regression)", async () => {
+  const re = randomFloat32Array(8, -1, 1, 300);
+  const im = randomFloat32Array(8, -1, 1, 301);
+  const interleaved = [];
+  for (let i = 0; i < re.length; i++) interleaved.push(re[i], im[i]);
+  const x = new Complex32Array(interleaved);
+  // Array.from (not Complex32Array's own .map) so this is a plain Array,
+  // matching the shape of the Array.from(got.x) it's compared against below.
+  const before = Array.from(x, (z) => new Complex32(z.re, z.im));
+
+  const got = await cscal(device, 0, new Complex32(2, -3), x, 1);
+
+  assert.deepEqual(Array.from(got.x), before);
 });

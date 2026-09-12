@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssyr2 } from "wgblas/ssyr2";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -133,6 +133,32 @@ test("ssyr2 edge cases", async (t) => {
       assert.deepEqual(got.A, expected.A);
     });
   }
+});
+
+// The TODO's zero-dimension concern: existing edge cases only assert
+// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
+// an implementation that scribbles on A before an early return would still
+// pass everything. n is the only dimension here (it ties A's order and
+// x's/y's lengths together), so n=0 is fully vacuous — the test guards that
+// A comes back byte-for-byte untouched.
+test("ssyr2 zero-dimension (regression)", async (t) => {
+  await t.test("n=0", async () => {
+    const before = randomFloat32Array(4, -1, 1, 9401);
+    const A = Float32Array.from(before);
+    const got = await ssyr2(
+      device,
+      "lower",
+      0, // n=0
+      1.5,
+      new Float32Array(0), // x: length n=0
+      1,
+      new Float32Array(0), // y: length n=0
+      1,
+      A,
+      1,
+    );
+    assert.deepEqual(got.A, before);
+  });
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
