@@ -115,33 +115,13 @@ int main(void) {
         }
     }
 
-    // write JSON results — manual, three-key shape (transA, transB, n)
-    // isn't covered by any shared helper.
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda",               gpu_dir);
-    asprintf(&out_dir,   "%s/sgemm",              base_dir);
-    asprintf(&file_path, "%s/trans.sgemm.json",   out_dir);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    if (!fp) { perror(file_path); return 1; }
-    fprintf(fp, "[\n");
-    for (int i = 0; i < ri; i++) {
-        fprintf(fp,
-            "  { \"transA\": \"%s\", \"transB\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, "
-            "\"compute_GFLOPs\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            rec_ta[i], rec_tb[i], rec_n[i], med_times[i], gflops_vals[i], gbs_vals[i],
-            i < ri - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    // write JSON results — three-key shape (transA, transB, n).
+    record_field fields[] = {
+        { "transA", FIELD_STRING, rec_ta },
+        { "transB", FIELD_STRING, rec_tb },
+        { "n", FIELD_INT, rec_n },
+    };
+    save_results(gpu_model, "sgemm", "trans.sgemm", fields, 3, med_times, gbs_vals, gflops_vals, ri);
     free(rec_ta);
     free(rec_tb);
     free(rec_n);

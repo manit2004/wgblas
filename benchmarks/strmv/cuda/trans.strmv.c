@@ -91,32 +91,8 @@ int main(void) {
         }
     }
 
-    // write JSON results — manual, "trans" isn't one of the shared helper's
-    // field names (those cover stride/pad/uplo).
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda",               gpu_dir);
-    asprintf(&out_dir,   "%s/strmv",              base_dir);
-    asprintf(&file_path, "%s/trans.strmv.json",   out_dir);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    if (!fp) { perror(file_path); return 1; }
-    fprintf(fp, "[\n");
-    for (int i = 0; i < ri; i++) {
-        fprintf(fp,
-            "  { \"trans\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            rec_trans[i], rec_n[i], med_times[i], gbs_vals[i],
-            i < ri - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    // write JSON results — {trans, n} is exactly what save_results_trans covers.
+    save_results_trans(gpu_model, "strmv", "trans.strmv", rec_trans, rec_n, med_times, gbs_vals, ri);
     free(rec_trans);
     free(rec_n);
     free(med_times);

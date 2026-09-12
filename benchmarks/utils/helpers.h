@@ -72,356 +72,171 @@ static int cmp_float(const void *a, const void *b) {
     return (fa > fb) - (fa < fb);
 }
 
+/** Tag for one JSON record field's value type in `record_field`. */
+typedef enum { FIELD_INT, FIELD_FLOAT, FIELD_STRING } field_type;
+
 /**
- * Writes benchmark results to
- * `benchmarks/results/<gpu_model>/cuda/<routine>.json`, creating directories
- * as needed. Output format matches the wgblas JSON schema so that
- * `gen-bench-tables.py` can consume both backends uniformly.
- *
- * @param routine   routine name, e.g. `"saxpy"`
- * @param gpu_model slug from `get_gpu_model()`
- * @param sizes     array of `n` values used in the benchmark
- * @param med_times median compute times in milliseconds, one per size
- * @param gbs_vals  throughput in GB/s, one per size
- * @param n         number of entries in `sizes`, `med_times`, and `gbs_vals`
+ * One JSON key written by `save_results`: `name` is the literal JSON key,
+ * `type` says how to read `values`, and `values` points to an array with one
+ * entry per record — `int*`, `float*`, or `const char**` matching `type`.
+ * A float field is written with `%g` (not `%.4f`) so 0, 1, and denormals
+ * like `1e-38` all round-trip as valid JSON numbers instead of collapsing to
+ * `"0.0000"`.
  */
-static void save_results(const char *routine, const char *gpu_model,
-                         int *sizes, float *med_times, float *gbs_vals, int n) {
-    char *gpu_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,  "benchmarks/results/%s", gpu_model);
-    asprintf(&out_dir,  "%s/cuda", gpu_dir);
-    asprintf(&file_path, "benchmarks/results/%s/cuda/%s.json", gpu_model, routine);
+typedef struct {
+    const char *name;
+    field_type type;
+    const void *values;
+} record_field;
+
+/**
+ * Writes one JSON record per index in `[0, n)` to
+ * `benchmarks/results/<gpu_model>/cuda/<folder>/<file_name>.json`, creating
+ * directories as needed:
+ * `{ <fields[0].name>: ..., ..., "compute_ms": ..., ["compute_GFLOPs": ...,] "compute_GBs": ... }`
+ *
+ * This is the one writer behind every benchmark's results file. Previously
+ * each swept-parameter shape (a stride sweep, an lda-padding sweep, a uplo
+ * sweep, two or three keys swept at once, ...) had its own hand-copied
+ * path-construction-plus-printf-loop — nine near-identical `save_results_*`
+ * variants in this header, plus several routines' own `.c` files hand-rolling
+ * a tenth copy because none of the nine supported more than one swept key.
+ * A record shape is now just an array of `record_field`s (empty for a plain
+ * `{n, compute_ms, compute_GBs}` shape), so a new sweep — single-key,
+ * multi-key, or a mix of int/float/string keys — needs no new function.
+ *
+ * @param gpu_model   slug from `get_gpu_model()`
+ * @param folder      subfolder under `cuda/` to nest the file in, e.g. `"saxpy"`
+ * @param file_name   file name without `.json`, e.g. `"stride.saxpy"`
+ * @param fields      swept key(s), in the order they should appear before
+ *                    the fixed trailing fields; NULL/0 for none
+ * @param n_fields    number of entries in `fields`
+ * @param med_times   median compute time in ms, one per record
+ * @param gbs_vals    throughput in GB/s, one per record
+ * @param gflops_vals throughput in GFLOP/s, one per record, or NULL to omit
+ *                    the `compute_GFLOPs` key entirely
+ * @param n           number of records (length of every per-record array above)
+ */
+static void save_results(const char *gpu_model, const char *folder, const char *file_name,
+                          const record_field *fields, int n_fields,
+                          float *med_times, float *gbs_vals, float *gflops_vals, int n) {
+    char *gpu_dir, *base_dir, *out_dir, *file_path;
+    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
+    asprintf(&base_dir,  "%s/cuda", gpu_dir);
+    asprintf(&out_dir,   "%s/%s", base_dir, folder);
+    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
     mkdir("benchmarks/results", 0755); // 0755: owner rwx
     mkdir(gpu_dir, 0755);
+    mkdir(base_dir, 0755);
     mkdir(out_dir, 0755);
     FILE *fp = fopen(file_path, "w");
     fprintf(fp, "[\n");
     for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
+        fprintf(fp, "  { ");
+        for (int j = 0; j < n_fields; j++) {
+            switch (fields[j].type) {
+                case FIELD_INT:
+                    fprintf(fp, "\"%s\": %d, ", fields[j].name, ((const int *)fields[j].values)[i]);
+                    break;
+                case FIELD_FLOAT:
+                    fprintf(fp, "\"%s\": %g, ", fields[j].name, ((const float *)fields[j].values)[i]);
+                    break;
+                case FIELD_STRING:
+                    fprintf(fp, "\"%s\": \"%s\", ", fields[j].name, ((const char **)fields[j].values)[i]);
+                    break;
+            }
+        }
+        fprintf(fp, "\"compute_ms\": %.4f, ", med_times[i]);
+        if (gflops_vals) fprintf(fp, "\"compute_GFLOPs\": %.4f, ", gflops_vals[i]);
+        fprintf(fp, "\"compute_GBs\": %.4f }%s\n", gbs_vals[i], i < n - 1 ? "," : "");
     }
     fprintf(fp, "]\n");
     fclose(fp);
     free(gpu_dir);
+    free(base_dir);
     free(out_dir);
     free(file_path);
 }
 
-/**
- * Like `save_results`, but writes to `benchmarks/results/<gpu_model>/cuda/<folder>/<file_name>.json`
- * instead of the flat `cuda/<routine>.json` layout — for routines with more
- * than one benchmark variant (e.g. a stride sweep alongside the main
- * unit-stride one), mirroring `saveResults`'s `{ folder, fileName }` option
- * in `helpers.mjs`.
- *
- * @param routine   routine name, e.g. `"saxpy"` (unused in the output path here, kept for signature symmetry with `save_results`)
- * @param gpu_model slug from `get_gpu_model()`
- * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"saxpy"`
- * @param file_name file name without `.json`, e.g. `"saxpy"`
- * @param sizes     array of `n` values used in the benchmark
- * @param med_times median compute times in milliseconds, one per size
- * @param gbs_vals  throughput in GB/s, one per size
- * @param n         number of entries in `sizes`, `med_times`, and `gbs_vals`
- */
+// The eight functions below are back-compat shims over `save_results` above,
+// kept so the ~100 existing call sites across the individual routine
+// benchmarks (`save_results_ex`/`_stride`/`_pad`/`_uplo`/`_trans`/`_flag`/
+// `_scalar`/`_pad_ex`) need no changes — each just builds the `record_field`
+// array its own record shape needs and delegates. `routine` in
+// `save_results_ex` is unused, kept only for call-site compatibility.
+
 static void save_results_ex(const char *routine, const char *gpu_model,
                              const char *folder, const char *file_name,
                              int *sizes, float *med_times, float *gbs_vals, int n) {
-    (void)routine; // kept for signature symmetry with save_results, unused here
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755); // 0755: owner rwx
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    (void)routine;
+    record_field fields[] = { { "n", FIELD_INT, sizes } };
+    save_results(gpu_model, folder, file_name, fields, 1, med_times, gbs_vals, NULL, n);
 }
 
-/**
- * Like `save_results_ex`, but each record also carries a `stride` field —
- * for stride-sweep benchmarks (e.g. `stride.saxpy.c`), matching the record
- * shape `saveResults` writes for `stride.saxpy.js` in `helpers.mjs`.
- *
- * @param gpu_model slug from `get_gpu_model()`
- * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"saxpy"`
- * @param file_name file name without `.json`, e.g. `"stride.saxpy"`
- * @param strides   array of `incx`/`incy` values used, one per record
- * @param sizes     array of `n` values used, one per record
- * @param med_times median compute times in milliseconds, one per record
- * @param gbs_vals  throughput in GB/s, one per record
- * @param n         number of entries in `strides`, `sizes`, `med_times`, and `gbs_vals`
- */
 static void save_results_stride(const char *gpu_model, const char *folder, const char *file_name,
                                  int *strides, int *sizes, float *med_times, float *gbs_vals, int n) {
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755); // 0755: owner rwx
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"stride\": %d, \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            strides[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    record_field fields[] = {
+        { "stride", FIELD_INT, strides },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, folder, file_name, fields, 2, med_times, gbs_vals, NULL, n);
 }
 
-/**
- * Like `save_results_stride`, but for an `lda`-padding sweep — each record
- * carries `pad` (the number of elements added to a tight `lda`) instead of
- * `stride`. Used by `lda.<routine>.c` benchmarks (e.g. ssymv, ssyr, ssyr2,
- * sger), whose lda-sensitivity mechanisms were confirmed empirically to
- * differ per routine — see .md.
- *
- * @param gpu_model slug from `get_gpu_model()`
- * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"ssymv"`
- * @param file_name file name without `.json`, e.g. `"lda.ssymv"`
- * @param pads      array of lda-padding amounts (elements) used, one per record
- * @param sizes     array of `n` values used, one per record
- * @param med_times median compute times in milliseconds, one per record
- * @param gbs_vals  throughput in GB/s, one per record
- * @param n         number of entries in `pads`, `sizes`, `med_times`, and `gbs_vals`
- */
 static void save_results_pad(const char *gpu_model, const char *folder, const char *file_name,
                               int *pads, int *sizes, float *med_times, float *gbs_vals, int n) {
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"pad\": %d, \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            pads[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    record_field fields[] = {
+        { "pad", FIELD_INT, pads },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, folder, file_name, fields, 2, med_times, gbs_vals, NULL, n);
 }
 
-/**
- * Like `save_results_stride`, but for a `uplo` sweep — each record carries
- * `uplo` (`"lower"` or `"upper"`) instead of `stride`. Used by
- * `uplo.<routine>.c` benchmarks (e.g. ssyr, ssyr2), whose uplo-sensitivity
- * was confirmed empirically to be real (~1.7-1.8x, dispatch-order workload
- * imbalance) — see .md.
- *
- * @param gpu_model slug from `get_gpu_model()`
- * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"ssyr"`
- * @param file_name file name without `.json`, e.g. `"uplo.ssyr"`
- * @param uplos     array of `"lower"`/`"upper"` strings, one per record
- * @param sizes     array of `n` values used, one per record
- * @param med_times median compute times in milliseconds, one per record
- * @param gbs_vals  throughput in GB/s, one per record
- * @param n         number of entries in `uplos`, `sizes`, `med_times`, and `gbs_vals`
- */
 static void save_results_uplo(const char *gpu_model, const char *folder, const char *file_name,
                                const char **uplos, int *sizes, float *med_times, float *gbs_vals, int n) {
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"uplo\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            uplos[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    record_field fields[] = {
+        { "uplo", FIELD_STRING, uplos },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, folder, file_name, fields, 2, med_times, gbs_vals, NULL, n);
 }
 
-/**
- * Like `save_results_uplo`, but for a `trans` sweep — each record carries
- * `trans` (`"no-transpose"` or `"transpose"`) instead of `uplo`. Used by
- * `trans.<routine>.c` single-axis trans benchmarks (e.g. strmv, ssyrk).
- *
- * @param gpu_model slug from `get_gpu_model()`
- * @param folder    subfolder under `cuda/` to nest the file in, e.g. `"ssyrk"`
- * @param file_name file name without `.json`, e.g. `"trans.ssyrk"`
- * @param transes   array of `"no-transpose"`/`"transpose"` strings, one per record
- * @param sizes     array of `n` values used, one per record
- * @param med_times median compute times in milliseconds, one per record
- * @param gbs_vals  throughput in GB/s, one per record
- * @param n         number of entries in `transes`, `sizes`, `med_times`, and `gbs_vals`
- */
 static void save_results_trans(const char *gpu_model, const char *folder, const char *file_name,
                                 const char **transes, int *sizes, float *med_times, float *gbs_vals, int n) {
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"trans\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            transes[i], sizes[i], med_times[i], gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    record_field fields[] = {
+        { "trans", FIELD_STRING, transes },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, folder, file_name, fields, 2, med_times, gbs_vals, NULL, n);
 }
 
-/**
- * Returns the median of `arr[0..n-1]`. Copies the array before sorting so
- * the original is not mutated.
- *
- * @param arr array of floats
- * @param n   array length
- * @returns median value
- */
-/**
- * Like `save_results_uplo`, but the record's key name is a parameter rather
- * than baked in. Added so a flag sweep over a *new* parameter (`diag`, and
- * whatever comes next) needs no further copy of this function — the earlier
- * `save_results_uplo`/`save_results_trans` are left as they are so existing
- * benchmarks keep compiling unchanged.
- *
- * @param gpu_model slug from `get_gpu_model()`
- * @param folder    subfolder under `cuda/`, e.g. `"strsv"`
- * @param file_name file name without `.json`, e.g. `"diag.strsv"`
- * @param key_name  JSON field name for the swept value, e.g. `"diag"`
- * @param values    swept value per record, e.g. `"unit"`/`"non-unit"`
- * @param sizes     `n` per record
- * @param med_times median compute time in ms per record
- * @param gbs_vals  throughput in GB/s per record
- * @param n         number of records
- */
 static void save_results_flag(const char *gpu_model, const char *folder, const char *file_name,
                               const char *key_name, const char **values, int *sizes,
                               float *med_times, float *gbs_vals, float *gflops_vals, int n) {
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"%s\": \"%s\", \"n\": %d, \"compute_ms\": %.4f, ", key_name, values[i], sizes[i], med_times[i]);
-        if (gflops_vals) fprintf(fp, "\"compute_GFLOPs\": %.4f, ", gflops_vals[i]);
-        fprintf(fp, "\"compute_GBs\": %.4f }%s\n", gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    record_field fields[] = {
+        { key_name, FIELD_STRING, values },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, folder, file_name, fields, 2, med_times, gbs_vals, gflops_vals, n);
 }
 
-/**
- * Like `save_results_flag`, but the swept value is a float — for scalar sweeps
- * (`alpha`, `beta`, and srot's `c`/`s`). Written with `%g` so 0, 1 and 1e-38
- * all round-trip as valid JSON numbers rather than as `0.0000`, which would
- * collapse a denormal level onto zero.
- */
 static void save_results_scalar(const char *gpu_model, const char *folder, const char *file_name,
                                 const char *key_name, float *values, int *sizes,
                                 float *med_times, float *gbs_vals, float *gflops_vals, int n) {
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"%s\": %g, \"n\": %d, \"compute_ms\": %.4f, ", key_name, values[i], sizes[i], med_times[i]);
-        if (gflops_vals) fprintf(fp, "\"compute_GFLOPs\": %.4f, ", gflops_vals[i]);
-        fprintf(fp, "\"compute_GBs\": %.4f }%s\n", gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    record_field fields[] = {
+        { key_name, FIELD_FLOAT, values },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, folder, file_name, fields, 2, med_times, gbs_vals, gflops_vals, n);
 }
 
-/**
- * Pad-keyed saver carrying both metrics — the Level 3 counterpart to
- * `save_results_pad`, which writes `compute_GBs` only. Pass NULL for
- * `gflops_vals` to omit that field.
- */
 static void save_results_pad_ex(const char *gpu_model, const char *folder, const char *file_name,
                                 int *pads, int *sizes, float *med_times, float *gbs_vals,
                                 float *gflops_vals, int n) {
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda", gpu_dir);
-    asprintf(&out_dir,   "%s/%s", base_dir, folder);
-    asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    fprintf(fp, "[\n");
-    for (int i = 0; i < n; i++) {
-        fprintf(fp, "  { \"pad\": %d, \"n\": %d, \"compute_ms\": %.4f, ", pads[i], sizes[i], med_times[i]);
-        if (gflops_vals) fprintf(fp, "\"compute_GFLOPs\": %.4f, ", gflops_vals[i]);
-        fprintf(fp, "\"compute_GBs\": %.4f }%s\n", gbs_vals[i], i < n - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir); free(base_dir); free(out_dir); free(file_path);
+    record_field fields[] = {
+        { "pad", FIELD_INT, pads },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, folder, file_name, fields, 2, med_times, gbs_vals, gflops_vals, n);
 }
 
 /**
@@ -450,6 +265,14 @@ static size_t host_bytes_available(void) {
     return avail;
 }
 
+/**
+ * Returns the median of `arr[0..n-1]`. Copies the array before sorting so
+ * the original is not mutated.
+ *
+ * @param arr array of floats
+ * @param n   array length
+ * @returns median value
+ */
 static float median(float *arr, int n) {
     float *tmp = malloc(n * sizeof(float));
     memcpy(tmp, arr, n * sizeof(float));
