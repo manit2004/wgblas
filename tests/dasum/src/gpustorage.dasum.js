@@ -39,7 +39,7 @@ const fixtureSpecs = {
 };
 
 async function callGpuResident(dev, a) {
-  return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {
+  return withGpuResources({ x: () => GpuVector.from(a.x) }, async ({ x }) => {
     return await dasum(dev, a.n, x, a.incx);
   });
 }

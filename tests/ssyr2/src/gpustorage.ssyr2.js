@@ -64,9 +64,10 @@ async function callGpuResident(dev, a) {
   const layout = a.layout ?? "row-major";
   return withGpuResources(
     {
-      A: GpuMatrix.from(padMatrix(a.A, a.n, a.lda), a.n, a.n, a.lda, layout),
-      x: GpuVector.from(a.x),
-      y: GpuVector.from(a.y),
+      A: () =>
+        GpuMatrix.from(padMatrix(a.A, a.n, a.lda), a.n, a.n, a.lda, layout),
+      x: () => GpuVector.from(a.x),
+      y: () => GpuVector.from(a.y),
     },
     async ({ A, x, y }) => {
       await ssyr2(dev, a.uplo, a.n, a.alpha, x, a.incx, y, a.incy, A, a.lda);

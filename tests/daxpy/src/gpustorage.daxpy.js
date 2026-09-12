@@ -46,7 +46,7 @@ const fixtureSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => {
       await daxpy(dev, a.n, a.alpha, x, a.incx, y, a.incy);
       return { y: await y.read() };
@@ -75,8 +75,8 @@ test("daxpy fixtures (GPU-resident)", async (t) => {
 test("daxpy returns {} for n<=0 with a GPU-resident y", async () => {
   await withGpuResources(
     {
-      x: GpuVector.from(new Float64Array([1, 2])),
-      y: GpuVector.from(new Float64Array([3, 4])),
+      x: () => GpuVector.from(new Float64Array([1, 2])),
+      y: () => GpuVector.from(new Float64Array([3, 4])),
     },
     async ({ x, y }) => {
       const result = await daxpy(device, 0, 2, x, 1, y, 1);

@@ -35,7 +35,7 @@ const validationSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => await sdot(dev, a.n, x, a.incx, y, a.incy),
   );
 }

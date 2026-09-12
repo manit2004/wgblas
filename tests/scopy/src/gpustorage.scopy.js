@@ -33,7 +33,7 @@ const validationSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => {
       await scopy(dev, a.n, x, a.incx, y, a.incy);
       return { y: await y.read() };
@@ -62,8 +62,8 @@ test("scopy fixtures (GPU-resident)", async (t) => {
 test("scopy returns {} for n<=0 with a GPU-resident y", async () => {
   await withGpuResources(
     {
-      x: GpuVector.from(new Float32Array([1, 2])),
-      y: GpuVector.from(new Float32Array([3, 4])),
+      x: () => GpuVector.from(new Float32Array([1, 2])),
+      y: () => GpuVector.from(new Float32Array([3, 4])),
     },
     async ({ x, y }) => {
       const result = await scopy(device, 0, x, 1, y, 1);

@@ -33,7 +33,7 @@ const validationSpecs = {
 };
 
 async function callGpuResident(dev, a) {
-  return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {
+  return withGpuResources({ x: () => GpuVector.from(a.x) }, async ({ x }) => {
     await cscal(dev, a.n, a.alpha, x, a.incx);
     return { x: await x.read() };
   });
@@ -59,7 +59,7 @@ test("cscal reports gpuTimeMs in benchmark mode (GPU-resident)", async () => {
     benchmark: true,
   });
   await withGpuResources(
-    { x: GpuVector.from(bDevice, new Complex32Array([1, 1, 2, 2])) },
+    { x: () => GpuVector.from(bDevice, new Complex32Array([1, 1, 2, 2])) },
     async ({ x }) => {
       const result = await cscal(bDevice, 2, new Complex32(2, 0), x, 1);
       assert.equal(typeof result.gpuTimeMs, "number");
@@ -74,7 +74,7 @@ test("cscal reports gpuTimeMs in benchmark mode (GPU-resident)", async () => {
 // exercised by the fixtures/edge-case tests above, which never pass n<=0).
 test("cscal returns {} for n<=0 with a GPU-resident x", async () => {
   await withGpuResources(
-    { x: GpuVector.from(new Complex32Array([1, 2])) },
+    { x: () => GpuVector.from(new Complex32Array([1, 2])) },
     async ({ x }) => {
       const result = await cscal(device, 0, new Complex32(2, 0), x, 1);
       assert.deepEqual(result, {});

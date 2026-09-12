@@ -36,7 +36,7 @@ const validationSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => {
       await srot(dev, a.n, x, a.incx, y, a.incy, a.c, a.s);
       const [xOut, yOut] = await Promise.all([x.read(), y.read()]);
@@ -66,8 +66,8 @@ test("srot fixtures (GPU-resident)", async (t) => {
 test("srot returns {} for n<=0 with a GPU-resident x/y", async () => {
   await withGpuResources(
     {
-      x: GpuVector.from(new Float32Array([1, 2])),
-      y: GpuVector.from(new Float32Array([3, 4])),
+      x: () => GpuVector.from(new Float32Array([1, 2])),
+      y: () => GpuVector.from(new Float32Array([3, 4])),
     },
     async ({ x, y }) => {
       const result = await srot(device, 0, x, 1, y, 1, 1, 0);

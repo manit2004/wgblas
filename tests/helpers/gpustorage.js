@@ -37,9 +37,18 @@ export function unpadMatrix(
 }
 
 // Runs body(resources) and destroys every resource afterward, success or
-// failure. `resources` is a plain object of GpuVector/GpuMatrix handles.
-export async function withGpuResources(resources, body) {
+// failure. `factories` is a plain object of zero-arg functions, each
+// returning one GpuVector/GpuMatrix handle (e.g. `{ x: () => GpuVector.from(a.x) }`)
+// — not the handles themselves, which would all get constructed before this
+// function even runs, leaking any handle built before a later one throws.
+// Building them one at a time inside the try means the finally only ever
+// needs to destroy what actually got created.
+export async function withGpuResources(factories, body) {
+  const resources = {};
   try {
+    for (const [key, factory] of Object.entries(factories)) {
+      resources[key] = factory();
+    }
     return await body(resources);
   } finally {
     for (const r of Object.values(resources)) r.destroy();

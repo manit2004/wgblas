@@ -56,7 +56,7 @@ const validationSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => {
       await srotm(dev, a.n, x, a.incx, y, a.incy, a.param);
       const [xOut, yOut] = await Promise.all([x.read(), y.read()]);

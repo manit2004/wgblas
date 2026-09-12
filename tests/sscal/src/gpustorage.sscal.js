@@ -31,7 +31,7 @@ const validationSpecs = {
 };
 
 async function callGpuResident(dev, a) {
-  return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {
+  return withGpuResources({ x: () => GpuVector.from(a.x) }, async ({ x }) => {
     await sscal(dev, a.n, a.alpha, x, a.incx);
     return { x: await x.read() };
   });
@@ -57,7 +57,7 @@ test("sscal fixtures (GPU-resident)", async (t) => {
 // exercised by the fixtures/edge-case tests above, which never pass n<=0).
 test("sscal returns {} for n<=0 with a GPU-resident x", async () => {
   await withGpuResources(
-    { x: GpuVector.from(new Float32Array([1, 2])) },
+    { x: () => GpuVector.from(new Float32Array([1, 2])) },
     async ({ x }) => {
       const result = await sscal(device, 0, 2, x, 1);
       assert.deepEqual(result, {});

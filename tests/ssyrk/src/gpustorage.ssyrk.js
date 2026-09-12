@@ -67,20 +67,22 @@ async function callGpuResident(dev, a) {
 
   return withGpuResources(
     {
-      A: GpuMatrix.from(
-        padMatrix(a.A, aOuterCount, a.lda),
-        aRows,
-        aCols,
-        a.lda,
-        layout,
-      ),
-      C: GpuMatrix.from(
-        padMatrix(a.C, cOuterCount, a.ldc),
-        a.n,
-        a.n,
-        a.ldc,
-        layout,
-      ),
+      A: () =>
+        GpuMatrix.from(
+          padMatrix(a.A, aOuterCount, a.lda),
+          aRows,
+          aCols,
+          a.lda,
+          layout,
+        ),
+      C: () =>
+        GpuMatrix.from(
+          padMatrix(a.C, cOuterCount, a.ldc),
+          a.n,
+          a.n,
+          a.ldc,
+          layout,
+        ),
     },
     async ({ A, C }) => {
       await ssyrk(
