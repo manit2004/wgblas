@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ddot } from "wgblas/ddot";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -103,4 +103,17 @@ test("ddot edge cases", async (t) => {
       );
     });
   }
+});
+
+// n=0 has zero logical elements to touch, so the only correct dot product is
+// exactly 0. The edge-cases block above only asserts "does not throw" for
+// n<=0 entries, so an implementation that mishandles n=0 (e.g. dispatches a
+// pass over stale buffer contents) could still pass everything above.
+test("ddot zero-dimension (regression)", async () => {
+  const x = randomFloat64Array(8, -1, 1, 300);
+  const y = randomFloat64Array(8, -1, 1, 301);
+
+  const { dot: got } = await ddot(device, 0, x, 1, y, 1);
+
+  assert.strictEqual(got, 0);
 });

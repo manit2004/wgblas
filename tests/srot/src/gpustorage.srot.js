@@ -36,7 +36,7 @@ const validationSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => {
       await srot(dev, a.n, x, a.incx, y, a.incy, a.c, a.s);
       const [xOut, yOut] = await Promise.all([x.read(), y.read()]);
@@ -56,6 +56,23 @@ test("srot fixtures (GPU-resident)", async (t) => {
     callGpuResident, // GPU call — wraps x and y into GpuVectors
     stdlibReference, // CPU reference
     forwardFactor, // |err| / (eps * |bound|) — see helpers.js
+  );
+});
+
+// callGpuResident always reads x/y back itself regardless of what srot()
+// returned, so it can't see srot's own n<=0 return value — this calls srot
+// directly to check the GPU-resident early return actually is `{}` (never
+// exercised by the fixtures/edge-case tests above, which never pass n<=0).
+test("srot returns {} for n<=0 with a GPU-resident x/y", async () => {
+  await withGpuResources(
+    {
+      x: () => GpuVector.from(new Float32Array([1, 2])),
+      y: () => GpuVector.from(new Float32Array([3, 4])),
+    },
+    async ({ x, y }) => {
+      const result = await srot(device, 0, x, 1, y, 1, 1, 0);
+      assert.deepEqual(result, {});
+    },
   );
 });
 

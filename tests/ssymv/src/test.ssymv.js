@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssymv } from "wgblas/ssymv";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -138,6 +138,34 @@ test("ssymv edge cases", async (t) => {
       assert.deepEqual(got.y, expected.y);
     });
   }
+});
+
+// The TODO's zero-dimension concern: existing edge cases only assert
+// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
+// an implementation that scribbles on y before an early return, or applies
+// beta when it shouldn't, would still pass everything. n is the only
+// dimension here (it ties A's order, x's length, and y's length together),
+// so n=0 is fully vacuous — the test guards that y comes back byte-for-byte
+// untouched.
+test("ssymv zero-dimension (regression)", async (t) => {
+  await t.test("n=0", async () => {
+    const yBefore = randomFloat32Array(4, -1, 1, 9201);
+    const y = Float32Array.from(yBefore);
+    const got = await ssymv(
+      device,
+      "lower",
+      0, // n=0
+      1.5,
+      new Float32Array(0), // A: 0x0 has no elements
+      1,
+      new Float32Array(0), // x: length n=0
+      1,
+      0.5, // beta != 0, != 1
+      y,
+      1,
+    );
+    assert.deepEqual(got.y, yBefore);
+  });
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.

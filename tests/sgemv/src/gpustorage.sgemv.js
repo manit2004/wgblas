@@ -56,15 +56,16 @@ async function callGpuResident(dev, a) {
   const outerCount = layout === "column-major" ? a.n : a.m; // rows for row-major, cols for column-major
   return withGpuResources(
     {
-      A: GpuMatrix.from(
-        padMatrix(a.A, outerCount, a.lda),
-        a.m,
-        a.n,
-        a.lda,
-        layout,
-      ),
-      x: GpuVector.from(a.x),
-      y: GpuVector.from(a.y),
+      A: () =>
+        GpuMatrix.from(
+          padMatrix(a.A, outerCount, a.lda),
+          a.m,
+          a.n,
+          a.lda,
+          layout,
+        ),
+      x: () => GpuVector.from(a.x),
+      y: () => GpuVector.from(a.y),
     },
     async ({ A, x, y }) => {
       await sgemv(

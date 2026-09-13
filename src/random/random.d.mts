@@ -4,12 +4,19 @@
  * @param n - number of elements
  * @param low - lower bound (default: -1)
  * @param high - upper bound (default: 1)
+ * @param seed - omit for genuine randomness (`Math.random`, the default);
+ *   pass any number for a deterministic, reproducible sequence (mulberry32) —
+ *   useful for regression tests that need "random-looking" data without
+ *   flaking between runs
  *
  * **Default range [-1, 1):**
  * {@includeCode ../../examples/randomfloat32array/randomfloat32array.js}
  *
  * **Custom range [0, 10):**
  * {@includeCode ../../examples/randomfloat32array-custom/randomfloat32array-custom.js}
+ *
+ * **Seeded (deterministic):**
+ * {@includeCode ../../examples/randomfloat32array-seeded/randomfloat32array-seeded.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1">Source code: random.mjs (L1)</a>
  * @category Utilities
  */
@@ -17,6 +24,7 @@ export declare function randomFloat32Array(
   n: number,
   low?: number,
   high?: number,
+  seed?: number,
 ): Float32Array;
 
 /**
@@ -25,12 +33,19 @@ export declare function randomFloat32Array(
  * @param n - number of elements
  * @param low - lower bound (default: -1)
  * @param high - upper bound (default: 1)
+ * @param seed - omit for genuine randomness (`Math.random`, the default);
+ *   pass any number for a deterministic, reproducible sequence (mulberry32) —
+ *   useful for regression tests that need "random-looking" data without
+ *   flaking between runs
  *
  * **Default range [-1, 1):**
  * {@includeCode ../../examples/randomfloat64array/randomfloat64array.js}
  *
  * **Custom range [0, 10):**
  * {@includeCode ../../examples/randomfloat64array-custom/randomfloat64array-custom.js}
+ *
+ * **Seeded (deterministic):**
+ * {@includeCode ../../examples/randomfloat64array-seeded/randomfloat64array-seeded.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7">Source code: random.mjs (L7)</a>
  * @category Utilities
  */
@@ -38,6 +53,7 @@ export declare function randomFloat64Array(
   n: number,
   low?: number,
   high?: number,
+  seed?: number,
 ): Float64Array;
 
 /**

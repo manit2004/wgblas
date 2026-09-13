@@ -22,11 +22,36 @@ test("randomFloat32Array defaults to [-1, 1)", () => {
   for (const v of x) assert.ok(v >= -1 && v < 1);
 });
 
+test("randomFloat32Array with a seed is deterministic", () => {
+  const a = randomFloat32Array(50, -3, 5, 42);
+  const b = randomFloat32Array(50, -3, 5, 42);
+  assert.deepEqual(Array.from(a), Array.from(b));
+  for (const v of a) assert.ok(v >= -3 && v < 5, `${v} out of [-3, 5)`);
+});
+
+test("randomFloat32Array with different seeds differs", () => {
+  const a = randomFloat32Array(50, -3, 5, 1);
+  const b = randomFloat32Array(50, -3, 5, 2);
+  assert.notDeepEqual(Array.from(a), Array.from(b));
+});
+
+test("randomFloat32Array without a seed is not deterministic", () => {
+  const a = randomFloat32Array(50);
+  const b = randomFloat32Array(50);
+  assert.notDeepEqual(Array.from(a), Array.from(b));
+});
+
 test("randomFloat64Array returns n values within [low, high)", () => {
   const x = randomFloat64Array(200, 10, 20);
   assert.ok(x instanceof Float64Array);
   assert.equal(x.length, 200);
   for (const v of x) assert.ok(v >= 10 && v < 20);
+});
+
+test("randomFloat64Array with a seed is deterministic", () => {
+  const a = randomFloat64Array(50, 10, 20, 42);
+  const b = randomFloat64Array(50, 10, 20, 42);
+  assert.deepEqual(Array.from(a), Array.from(b));
 });
 
 test("randomTriangularFloat32Array rejects an invalid uplo", () => {

@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { strsv } from "wgblas/strsv";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -135,6 +135,32 @@ test("strsv edge cases", async (t) => {
       assert.deepEqual(got, expected);
     });
   }
+});
+
+// The TODO's zero-dimension concern: existing edge cases only assert
+// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
+// an implementation that scribbles on x before an early return would still
+// pass everything. strsv is in-place on x (no separate y, no beta), and n
+// is the only dimension (it ties A's order and x's length together), so
+// n=0 is fully vacuous — the test guards that x comes back byte-for-byte
+// untouched.
+test("strsv zero-dimension (regression)", async (t) => {
+  await t.test("n=0", async () => {
+    const xBefore = randomFloat32Array(4, -1, 1, 9601);
+    const x = Float32Array.from(xBefore);
+    const got = await strsv(
+      device,
+      "lower",
+      "no-transpose",
+      "non-unit",
+      0, // n=0
+      new Float32Array(0), // A: 0x0 has no elements
+      1,
+      x,
+      1,
+    );
+    assert.deepEqual(got.x, xBefore);
+  });
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.

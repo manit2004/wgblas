@@ -1,10 +1,10 @@
 var wgblas = (() => {
-  var ia = Object.create;
+  var na = Object.create;
   var pe = Object.defineProperty;
-  var na = Object.getOwnPropertyDescriptor;
-  var ua = Object.getOwnPropertyNames;
-  var la = Object.getPrototypeOf,
-    ma = Object.prototype.hasOwnProperty;
+  var ua = Object.getOwnPropertyDescriptor;
+  var la = Object.getOwnPropertyNames;
+  var ma = Object.getPrototypeOf,
+    fa = Object.prototype.hasOwnProperty;
   var de = ((r) =>
     typeof require < "u"
       ? require
@@ -29,17 +29,17 @@ var wgblas = (() => {
     },
     Te = (r, t, e, o) => {
       if ((t && typeof t == "object") || typeof t == "function")
-        for (let a of ua(t))
-          !ma.call(r, a) &&
+        for (let a of la(t))
+          !fa.call(r, a) &&
             a !== e &&
             pe(r, a, {
               get: () => t[a],
-              enumerable: !(o = na(t, a)) || o.enumerable,
+              enumerable: !(o = ua(t, a)) || o.enumerable,
             });
       return r;
     };
   var we = (r, t, e) => (
-      (e = r != null ? ia(la(r)) : {}),
+      (e = r != null ? na(ma(r)) : {}),
       Te(
         t || !r || !r.__esModule
           ? pe(e, "default", { value: r, enumerable: !0 })
@@ -47,9 +47,9 @@ var wgblas = (() => {
         r,
       )
     ),
-    fa = (r) => Te(pe({}, "__esModule", { value: !0 }), r);
+    ca = (r) => Te(pe({}, "__esModule", { value: !0 }), r);
   var Se,
-    Ye = V(() => {
+    Xe = V(() => {
       Se = `// sscal: x = alpha * x
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
@@ -75,9 +75,9 @@ fn main(
 }
 `;
     });
-  var $e,
-    Xe = V(() => {
-      $e = `// cscal: x := alpha * x, complex. x is one interleaved f32 array
+  var Ze,
+    $e = V(() => {
+      Ze = `// cscal: x := alpha * x, complex. x is one interleaved f32 array
 // (re0, im0, re1, im1, ...), matching Complex32Array/GpuVector's storage
 // (and cuBLAS's cuComplex / stdlib's Complex64Array) \u2014 no repacking needed
 // between JS and GPU.
@@ -112,9 +112,9 @@ fn main(
 }
 `;
     });
-  var Qe,
-    Ze = V(() => {
-      Qe = `// sswap: x <-> y
+  var Je,
+    Qe = V(() => {
+      Je = `// sswap: x <-> y
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -142,9 +142,9 @@ fn main(
 }
 `;
     });
-  var rt,
-    Je = V(() => {
-      rt = `// saxpy: y = alpha * x + y
+  var et,
+    rt = V(() => {
+      et = `// saxpy: y = alpha * x + y
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -171,9 +171,9 @@ fn main(
 }
 `;
     });
-  var tt,
-    et = V(() => {
-      tt = `// scopy: y = x
+  var ot,
+    tt = V(() => {
+      ot = `// scopy: y = x
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -199,9 +199,9 @@ fn main(
 }
 `;
     });
-  var at,
-    ot = V(() => {
-      at = `// sdot: result = sum(x[i] * y[i])
+  var st,
+    at = V(() => {
+      st = `// sdot: result = sum(x[i] * y[i])
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/sum.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:        array<f32>;
@@ -257,7 +257,7 @@ fn main(
 `;
     });
   var ke,
-    st = V(() => {
+    it = V(() => {
       ke = `// sum reduction: collapses 2*WGS partials into one scalar.
 // dispatch: 1 workgroup of WGS threads.
 // partials must have exactly 2*WGS entries.
@@ -286,9 +286,9 @@ fn reduce(
 }
 `;
     });
-  var nt,
-    it = V(() => {
-      nt = `// sasum: result = sum(|x[i]|)
+  var ut,
+    nt = V(() => {
+      ut = `// sasum: result = sum(|x[i]|)
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/abssum.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:        array<f32>;
@@ -341,9 +341,9 @@ fn main(
 }
 `;
     });
-  var lt,
-    ut = V(() => {
-      lt = `// snrm2: result = sqrt(sum(x[i] * x[i])), computed via scaled accumulation
+  var mt,
+    lt = V(() => {
+      mt = `// snrm2: result = sqrt(sum(x[i] * x[i])), computed via scaled accumulation
 // (Blue's algorithm / reference BLAS's SLASSQ) rather than naive squaring \u2014
 // naive \`sum += x_i * x_i\` overflows to inf for |x_i| \u2273 1.8e19 (f32's
 // squaring range is only sqrt(f32_max)) and loses precision on tiny
@@ -450,9 +450,9 @@ fn main(
 }
 `;
     });
-  var ft,
-    mt = V(() => {
-      ft = `// scaledSum reduction: collapses 2*WGS (scale, ssq) partials from
+  var ct,
+    ft = V(() => {
+      ct = `// scaledSum reduction: collapses 2*WGS (scale, ssq) partials from
 // snrm2.wgsl into the final norm \u2014 sqrt(scale\xB2 \xB7 ssq) == scale \xB7 sqrt(ssq).
 // Mirrors reduction/sum.wgsl's shape exactly, merging via ssqMerge (see
 // snrm2.wgsl for the derivation) instead of plain \`+\`, and taking the final
@@ -519,9 +519,9 @@ fn reduce_scaled(
 }
 `;
     });
-  var pt,
-    ct = V(() => {
-      pt = `// isamax: returns index of element with largest absolute value
+  var dt,
+    pt = V(() => {
+      dt = `// isamax: returns index of element with largest absolute value
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/argmax.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:            array<f32>;
@@ -605,9 +605,9 @@ fn main(
 }
 `;
     });
-  var wt,
-    dt = V(() => {
-      wt = `// amax reduction: collapses 2*WGS (value, index) pairs into one index.
+  var gt,
+    wt = V(() => {
+      gt = `// amax reduction: collapses 2*WGS (value, index) pairs into one index.
 // dispatch: 1 workgroup of WGS threads.
 // partials_val and partials_idx must have exactly 2*WGS entries.
 
@@ -653,7 +653,7 @@ fn reduce(
 `;
     });
   var re,
-    gt = V(() => {
+    bt = V(() => {
       re = `// Double-double arithmetic via Dekker's algorithm \u2014 an alternative to
 // f64add.wgsl's bit-exact IEEE-754 emulation. Doesn't touch that path.
 //
@@ -675,7 +675,7 @@ struct DD {
 `;
     });
   var Ne,
-    bt = V(() => {
+    ht = V(() => {
       Ne = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // |a| for a double-double pair. Negation is exact (no rounding), so this is
@@ -689,7 +689,7 @@ fn ddAbs(a: DD) -> DD {
 `;
     });
   var ne,
-    ht = V(() => {
+    yt = V(() => {
       ne = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // \u2500\u2500 A real compiler bug \u2014 read before touching anything below \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -769,9 +769,9 @@ fn ddAddProtected(a: DD, b: DD, threadSlot: u32) -> DD {
 }
 `;
     });
-  var xt,
-    yt = V(() => {
-      xt = `// dasum: sum(|x[i]|), double-double (Dekker). Same ILP=4 shape as sasum.wgsl;
+  var vt,
+    xt = V(() => {
+      vt = `// dasum: sum(|x[i]|), double-double (Dekker). Same ILP=4 shape as sasum.wgsl;
 // see f64/utils/add.wgsl for ddAddProtected and why plain ddAdd isn't safe.
 // GpuVector input isn't pre-abs'd, so ddAbs() (f64/utils/abs.wgsl) applies
 // unconditionally below.
@@ -859,7 +859,7 @@ fn dasum_main(
 `;
     });
   var Me,
-    vt = V(() => {
+    _t = V(() => {
       Me = `// sum reduction (f64, double-double): collapses 2*WGS partial (hi, lo) pairs
 // into one, using ddAddProtected instead of plain f32 \`+\` (see
 // reduction/sum.wgsl for the f32 original this mirrors).
@@ -903,7 +903,7 @@ fn reduce_f64(
 `;
     });
   var he,
-    _t = V(() => {
+    Bt = V(() => {
       he = `// Requires f64/dekker.wgsl concatenated first for the DD struct, and
 // f64/utils/add.wgsl for fsub/negf (bitcast-based subtraction/negation) and,
 // for ddMulProtected at the bottom, fastTwoSumProtected.
@@ -996,9 +996,9 @@ fn ddMulProtected(a: DD, b: DD, threadSlot: u32) -> DD {
 }
 `;
     });
-  var At,
-    Bt = V(() => {
-      At = `// ddot: sum(x[i] * y[i]), double-double (Dekker). Same ILP=4 shape as
+  var Et,
+    At = V(() => {
+      Et = `// ddot: sum(x[i] * y[i]), double-double (Dekker). Same ILP=4 shape as
 // dasum.wgsl, which this mirrors closely \u2014 the only structural difference is
 // a second input vector and a product where dasum takes an absolute value.
 //
@@ -1106,9 +1106,9 @@ fn ddot_main(
 }
 `;
     });
-  var Gt,
-    Et = V(() => {
-      Gt = `// dscal: x := alpha * x, double-double (Dekker) f64 emulation of sscal.
+  var St,
+    Gt = V(() => {
+      St = `// dscal: x := alpha * x, double-double (Dekker) f64 emulation of sscal.
 // alpha and x are each an f32 (hi, lo) pair. See f64/utils/multiply.wgsl for
 // ddMulProtected and why plain ddMulRaw isn't safe without a renormalizing
 // barrier \u2014 that barrier needs a provably uniform loop trip count across
@@ -1170,9 +1170,9 @@ fn dscal_main(
 }
 `;
     });
-  var kt,
-    St = V(() => {
-      kt = `// daxpy: y := alpha * x + y, double-double (Dekker) f64 emulation of saxpy.
+  var Nt,
+    kt = V(() => {
+      Nt = `// daxpy: y := alpha * x + y, double-double (Dekker) f64 emulation of saxpy.
 // Each element costs one ddMulProtected (alpha*x[i]) then one ddAddProtected
 // (+ y[i]) \u2014 the same two-protected-op shape ddot spends per term, applied
 // straight to the output instead of folded into a reduction. See dscal.wgsl
@@ -1240,9 +1240,9 @@ fn daxpy_main(
 }
 `;
     });
-  var Mt,
-    Nt = V(() => {
-      Mt = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
+  var Dt,
+    Mt = V(() => {
+      Dt = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // a > b for double-double pairs. hi dominates (|lo| <= ulp(hi)/2 always), so
 // comparing hi alone is correct except on an exact hi tie, when lo breaks it.
@@ -1256,9 +1256,9 @@ fn ddGreater(a: DD, b: DD) -> bool {
 }
 `;
     });
-  var It,
-    Dt = V(() => {
-      It = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
+  var Rt,
+    It = V(() => {
+      Rt = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // a == b for double-double pairs \u2014 exact field equality, no rounding
 // involved, so (like ddGreater) this needs no protection.
@@ -1267,9 +1267,9 @@ fn ddEqual(a: DD, b: DD) -> bool {
 }
 `;
     });
-  var Pt,
-    Rt = V(() => {
-      Pt = `// idamax: returns index of element with largest absolute value (f64, double-double)
+  var Lt,
+    Pt = V(() => {
+      Lt = `// idamax: returns index of element with largest absolute value (f64, double-double)
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/argmaxF64.wgsl.
 // Concatenated after f64/dekker.wgsl (DD struct), f64/utils/abs.wgsl (ddAbs),
 // f64/utils/greater.wgsl (ddGreater), and f64/utils/equal.wgsl (ddEqual).
@@ -1367,9 +1367,9 @@ fn idamax_main(
 }
 `;
     });
-  var Tt,
-    Lt = V(() => {
-      Tt = `// amax reduction (f64, double-double): collapses 2*WGS (value, index) pairs
+  var Ct,
+    Tt = V(() => {
+      Ct = `// amax reduction (f64, double-double): collapses 2*WGS (value, index) pairs
 // into one index, using ddGreater/ddEqual instead of plain f32 \`>\`/\`==\` (see
 // reduction/argmax.wgsl for the f32 original this mirrors).
 // dispatch: 1 workgroup of WGS threads. partialsValHi/partialsValLo/
@@ -1421,9 +1421,9 @@ fn reduce_f64(
 }
 `;
     });
-  var jt,
-    Ct = V(() => {
-      jt = `// srot: x = c*x + s*y,  y = -s*x + c*y
+  var Ft,
+    jt = V(() => {
+      Ft = `// srot: x = c*x + s*y,  y = -s*x + c*y
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -1454,9 +1454,9 @@ fn main(
 }
 `;
     });
-  var Wt,
-    Ft = V(() => {
-      Wt = `// srotm: applies modified Givens rotation H to vectors x and y.
+  var qt,
+    Wt = V(() => {
+      qt = `// srotm: applies modified Givens rotation H to vectors x and y.
 // param[0] = flag: -1 (full H), 0 (unit diagonal), 1 (unit off-diagonal)
 // param = [ flag, h11, h21, h12, h22 ]
 // flag == -2 (identity/no-op) is handled in JS before dispatch reaches here.
@@ -1508,9 +1508,9 @@ fn main(
 }
 `;
     });
-  var Ot,
-    qt = V(() => {
-      Ot = `// sgemv_n: y = alpha * A * x + beta * y  (A is m\xD7n row-major, no-transpose)
+  var Kt,
+    Ot = V(() => {
+      Kt = `// sgemv_n: y = alpha * A * x + beta * y  (A is m\xD7n row-major, no-transpose)
 //
 // One workgroup per output row, with a grid-stride outer loop so the shader
 // still covers all rows when m exceeds maxComputeWorkgroupsPerDimension.
@@ -1589,9 +1589,9 @@ fn main(
 }
 `;
     });
-  var Vt,
-    Kt = V(() => {
-      Vt = `// sgemv_t: y = alpha * A^T * x + beta * y  (A is m\xD7n row-major, transposed)
+  var Ht,
+    Vt = V(() => {
+      Ht = `// sgemv_t: y = alpha * A^T * x + beta * y  (A is m\xD7n row-major, transposed)
 // each thread owns one column of A \u2192 one element of y (length n)
 // tiles over x (length m) using shared memory; four independent accumulators
 // let the GPU pipeline A reads across j within each tile (ILP=4)
@@ -1660,9 +1660,9 @@ fn main(
 }
 `;
     });
-  var Ut,
-    Ht = V(() => {
-      Ut = `// ssymv: y = alpha * A * x + beta * y
+  var zt,
+    Ut = V(() => {
+      zt = `// ssymv: y = alpha * A * x + beta * y
 // A is n\xD7n symmetric, lower (uplo=0) or upper (uplo=1) triangle stored.
 // The logical matrix is fully dense (symmetric), so each row's dot product
 // sums over all n columns; entries on the unstored side of the diagonal are
@@ -1735,9 +1735,9 @@ fn main(
 }
 `;
     });
-  var Yt,
-    zt = V(() => {
-      Yt = `// strmv: y = op(A) * x
+  var Xt,
+    Yt = V(() => {
+      Xt = `// strmv: y = op(A) * x
 // A is n\xD7n triangular, lower (uplo=0) or upper (uplo=1) triangle stored.
 // op(A) is A (trans=0) or A^T (trans=1).
 // diag=1 (unit) treats the diagonal as 1 without reading A's diagonal values.
@@ -1843,7 +1843,7 @@ fn main(
 `;
     });
   var De,
-    Xt = V(() => {
+    $t = V(() => {
       De = `// strsv_invert_block: computes ONE column (workgroup_id.x) of ONE block's
 // (workgroup_id.y) explicit inverse, via the same one-row-at-a-time
 // substitution as strsv_block.wgsl, but solving against a unit basis vector
@@ -1955,9 +1955,9 @@ fn strsv_invert_block_main(
 }
 `;
     });
-  var Zt,
-    $t = V(() => {
-      Zt = `// strsv_apply_inverse: given a precomputed block inverse (from
+  var Qt,
+    Zt = V(() => {
+      Qt = `// strsv_apply_inverse: given a precomputed block inverse (from
 // strsv_invert_block.wgsl), computes this block's solution as a dense
 // matrix-vector multiply against the block's current remainder in x \u2014
 // replacing what the old strsv_block.wgsl did via a genuinely sequential,
@@ -2006,9 +2006,9 @@ fn strsv_apply_inverse_main(@builtin(local_invocation_id) lid: vec3u) {
 }
 `;
     });
-  var Jt,
-    Qt = V(() => {
-      Jt = `// strsv_update: subtracts a solved block's contribution from every
+  var ro,
+    Jt = V(() => {
+      ro = `// strsv_update: subtracts a solved block's contribution from every
 // remaining row in parallel (one workgroup per row, like strmv.wgsl) \u2014
 // this is what turns strsv's O(n) sequential stages into O(n/blockSize).
 // No diag/masking needed: this region never touches the diagonal.
@@ -2085,9 +2085,9 @@ fn strsv_update_main(
 }
 `;
     });
-  var eo,
-    ro = V(() => {
-      eo = `// sger: A := alpha * x * y^T + A  (rank-1 update, A is m\xD7n general/dense)
+  var to,
+    eo = V(() => {
+      to = `// sger: A := alpha * x * y^T + A  (rank-1 update, A is m\xD7n general/dense)
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read>       y: array<f32>;
@@ -2137,9 +2137,9 @@ fn main(
 }
 `;
     });
-  var oo,
-    to = V(() => {
-      oo = `// ssyr: A := alpha * x * x^T + A  (symmetric rank-1 update)
+  var ao,
+    oo = V(() => {
+      ao = `// ssyr: A := alpha * x * x^T + A  (symmetric rank-1 update)
 // A is n\xD7n symmetric; only the triangle specified by uplo is referenced/updated,
 // the other triangle is implied by symmetry (not touched).
 
@@ -2201,9 +2201,9 @@ fn main(
 }
 `;
     });
-  var so,
-    ao = V(() => {
-      so = `// ssyr2: A := alpha * x * y^T + alpha * y * x^T + A  (symmetric rank-2 update)
+  var io,
+    so = V(() => {
+      io = `// ssyr2: A := alpha * x * y^T + alpha * y * x^T + A  (symmetric rank-2 update)
 // A is n\xD7n symmetric; only the triangle specified by uplo is referenced/updated,
 // the other triangle is implied by symmetry (not touched).
 
@@ -2269,7 +2269,7 @@ fn main(
 `;
     });
   var ue,
-    io = V(() => {
+    no = V(() => {
       ue = `// sgemm_small: C = alpha * op(A) * op(B) + beta * C \u2014 small-tile half of
 // the two-tier autotuned dispatch (see sgemm.mjs and sgemm_large.wgsl).
 // BM=BN=32, BK=8, TM=TN=2 \u2014 wins over the large tile below a 6x6=36
@@ -2485,7 +2485,7 @@ fn main(
 `;
     });
   var le,
-    no = V(() => {
+    uo = V(() => {
       le = `// sgemm_large: C = alpha * op(A) * op(B) + beta * C \u2014 large-tile half of
 // the two-tier autotuned dispatch (see sgemm.mjs and sgemm_small.wgsl).
 // BM=BN=64, BK=8, TM=8, TN=4 (128 threads/workgroup) \u2014 the kernel 9
@@ -2695,7 +2695,7 @@ fn main(
 `;
     });
   var ye,
-    uo = V(() => {
+    lo = V(() => {
       ye = `// sgemmtr_small: C := uplo(alpha * op(A) * op(B) + beta * C) \u2014 small-tile
 // half of a two-tier dispatch, identical to sgemm_small.wgsl except the
 // final output write is gated to one triangle of C by \`uplo\` \u2014 see
@@ -2812,7 +2812,7 @@ fn main(
 `;
     });
   var xe,
-    lo = V(() => {
+    mo = V(() => {
       xe = `// sgemmtr_large: C := uplo(alpha * op(A) * op(B) + beta * C) \u2014 large-tile
 // half of a two-tier dispatch, identical to sgemm_large.wgsl (see that file
 // for the BM/BN/BK/TM/TN autotuning rationale) except the final output write
@@ -2935,9 +2935,9 @@ fn main(
 }
 `;
     });
-  var fo,
-    mo = V(() => {
-      fo = `// symmetrize: Adense := full dense expansion of a symmetric matrix stored
+  var co,
+    fo = V(() => {
+      co = `// symmetrize: Adense := full dense expansion of a symmetric matrix stored
 // with only its \`uplo\` triangle meaningful (the other triangle is implied
 // by symmetry: A[i,j] = A[j,i]). A plain element-wise pass, no tiling or
 // shared memory needed \u2014 used to materialize a dense operand for routines
@@ -2970,9 +2970,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
     });
-  var po,
-    co = V(() => {
-      po = `// triangularize: Adense := dense expansion of op(A) (A or A^T per \`trans\`),
+  var wo,
+    po = V(() => {
+      wo = `// triangularize: Adense := dense expansion of op(A) (A or A^T per \`trans\`),
 // zero-filling the unstored triangle (exact for a matmul) so strmm can reuse
 // sgemm's kernel unchanged. \`diag=1\` substitutes 1.0 on the diagonal.
 
@@ -3018,9 +3018,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
     });
-  var go,
-    wo = V(() => {
-      go = `// block_transfer: gather/scatter/scatter-subtract between a tight (blockLen
+  var bo,
+    go = V(() => {
+      bo = `// block_transfer: gather/scatter/scatter-subtract between a tight (blockLen
 // x otherLen) block and a sub-range of a strided (any ld, row/col-major)
 // buffer \u2014 needed since block offsets aren't 256-byte-aligned and block
 // rows/cols aren't always one contiguous range for copyBufferToBuffer.
@@ -3064,129 +3064,129 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
     });
-  var bo = {};
-  Le(bo, { routineShaders: () => or, shaderSources: () => os });
+  var ho = {};
+  Le(ho, { routineShaders: () => or, shaderSources: () => as });
   var or,
-    os,
-    ho = V(() => {
-      Ye();
+    as,
+    yo = V(() => {
       Xe();
-      Ze();
-      Je();
-      et();
-      ot();
-      st();
+      $e();
+      Qe();
+      rt();
+      tt();
+      at();
       it();
-      ut();
-      mt();
-      ct();
-      dt();
-      gt();
+      nt();
+      lt();
+      ft();
+      pt();
+      wt();
       bt();
       ht();
       yt();
-      vt();
+      xt();
       _t();
       Bt();
-      Et();
-      St();
-      Nt();
-      Dt();
-      Rt();
-      Lt();
-      Ct();
-      Ft();
-      qt();
-      Kt();
-      Ht();
-      zt();
-      Xt();
+      At();
+      Gt();
+      kt();
+      Mt();
+      It();
+      Pt();
+      Tt();
+      jt();
+      Wt();
+      Ot();
+      Vt();
+      Ut();
+      Yt();
       $t();
-      Qt();
-      ro();
-      to();
-      ao();
-      io();
+      Zt();
+      Jt();
+      eo();
+      oo();
+      so();
       no();
       uo();
       lo();
       mo();
-      co();
-      wo();
+      fo();
+      po();
+      go();
       or = {};
       or.sscal = { sscal: Se };
-      or.cscal = { cscal: $e };
-      or.sswap = { sswap: Qe };
-      or.saxpy = { saxpy: rt };
-      or.scopy = { scopy: tt };
-      or.sdot = { sdot: at, "reduction/sum": ke };
-      or.sasum = { sasum: nt, "reduction/sum": ke };
-      or.snrm2 = { snrm2: lt, "reduction/scaledSum": ft };
-      or.isamax = { isamax: pt, "reduction/argmax": wt };
+      or.cscal = { cscal: Ze };
+      or.sswap = { sswap: Je };
+      or.saxpy = { saxpy: et };
+      or.scopy = { scopy: ot };
+      or.sdot = { sdot: st, "reduction/sum": ke };
+      or.sasum = { sasum: ut, "reduction/sum": ke };
+      or.snrm2 = { snrm2: mt, "reduction/scaledSum": ct };
+      or.isamax = { isamax: dt, "reduction/argmax": gt };
       or.dasum = {
         "f64/dekker": re,
         "f64/utils/abs": Ne,
         "f64/utils/add": ne,
-        dasum: xt,
+        dasum: vt,
         "reduction/sumF64": Me,
       };
       or.ddot = {
         "f64/dekker": re,
         "f64/utils/add": ne,
         "f64/utils/multiply": he,
-        ddot: At,
+        ddot: Et,
         "reduction/sumF64": Me,
       };
       or.dscal = {
         "f64/dekker": re,
         "f64/utils/add": ne,
         "f64/utils/multiply": he,
-        dscal: Gt,
+        dscal: St,
       };
       or.daxpy = {
         "f64/dekker": re,
         "f64/utils/add": ne,
         "f64/utils/multiply": he,
-        daxpy: kt,
+        daxpy: Nt,
       };
       or.idamax = {
         "f64/dekker": re,
         "f64/utils/abs": Ne,
-        "f64/utils/greater": Mt,
-        "f64/utils/equal": It,
-        idamax: Pt,
-        "reduction/argmaxF64": Tt,
+        "f64/utils/greater": Dt,
+        "f64/utils/equal": Rt,
+        idamax: Lt,
+        "reduction/argmaxF64": Ct,
       };
-      or.srot = { srot: jt };
-      or.srotm = { srotm: Wt };
-      or.sgemv = { sgemv_n: Ot, sgemv_t: Vt };
-      or.ssymv = { ssymv: Ut };
-      or.strmv = { strmv: Yt };
+      or.srot = { srot: Ft };
+      or.srotm = { srotm: qt };
+      or.sgemv = { sgemv_n: Kt, sgemv_t: Ht };
+      or.ssymv = { ssymv: zt };
+      or.strmv = { strmv: Xt };
       or.strsv = {
         strsv_invert_block: De,
-        strsv_apply_inverse: Zt,
-        strsv_update: Jt,
+        strsv_apply_inverse: Qt,
+        strsv_update: ro,
       };
-      or.sger = { sger: eo };
-      or.ssyr = { ssyr: oo };
-      or.ssyr2 = { ssyr2: so };
+      or.sger = { sger: to };
+      or.ssyr = { ssyr: ao };
+      or.ssyr2 = { ssyr2: io };
       or.sgemm = { sgemm_small: ue, sgemm_large: le };
       or.sgemmtr = { sgemmtr_small: ye, sgemmtr_large: xe };
       or.ssyrk = { sgemmtr_small: ye, sgemmtr_large: xe };
       or.ssyr2k = { sgemmtr_small: ye, sgemmtr_large: xe };
-      or.ssymm = { sgemm_small: ue, sgemm_large: le, symmetrize: fo };
-      or.strmm = { sgemm_small: ue, sgemm_large: le, triangularize: po };
+      or.ssymm = { sgemm_small: ue, sgemm_large: le, symmetrize: co };
+      or.strmm = { sgemm_small: ue, sgemm_large: le, triangularize: wo };
       or.strsm = {
         strsv_invert_block: De,
-        block_transfer: go,
+        block_transfer: bo,
         sscal: Se,
         sgemm_small: ue,
         sgemm_large: le,
       };
-      os = Object.assign({}, ...Object.values(or));
+      as = Object.assign({}, ...Object.values(or));
     });
-  var ns = {};
-  Le(ns, {
+  var us = {};
+  Le(us, {
     Complex32: () => qr,
     Complex32Array: () => xr,
     Complex64: () => Wr,
@@ -3194,41 +3194,41 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     GpuMatrix: () => H,
     GpuVector: () => M,
     cleanup: () => Oe,
-    cscal: () => xo,
-    dasum: () => ko,
-    daxpy: () => Ao,
-    ddot: () => No,
-    dscal: () => vo,
+    cscal: () => vo,
+    dasum: () => No,
+    daxpy: () => Eo,
+    ddot: () => Mo,
+    dscal: () => _o,
     gpuName: () => Ke,
-    idamax: () => Io,
+    idamax: () => Ro,
     init: () => qe,
-    isamax: () => Do,
-    randomFloat32Array: () => He,
-    randomFloat64Array: () => Ue,
-    randomTriangularFloat32Array: () => ze,
-    sasum: () => So,
-    saxpy: () => Bo,
-    scopy: () => Eo,
-    sdot: () => Go,
-    sgemm: () => Vo,
-    sgemmtr: () => Ho,
-    sgemv: () => Lo,
-    sger: () => qo,
-    snrm2: () => Mo,
-    srot: () => Ro,
-    srotm: () => Po,
-    sscal: () => yo,
-    sswap: () => _o,
-    ssymm: () => Yo,
-    ssymv: () => To,
-    ssyr: () => Oo,
-    ssyr2: () => Ko,
-    ssyr2k: () => zo,
-    ssyrk: () => Uo,
-    strmm: () => Xo,
-    strmv: () => Co,
-    strsm: () => $o,
-    strsv: () => Wo,
+    isamax: () => Io,
+    randomFloat32Array: () => Ue,
+    randomFloat64Array: () => ze,
+    randomTriangularFloat32Array: () => Ye,
+    sasum: () => ko,
+    saxpy: () => Ao,
+    scopy: () => Go,
+    sdot: () => So,
+    sgemm: () => Ho,
+    sgemmtr: () => Uo,
+    sgemv: () => To,
+    sger: () => Oo,
+    snrm2: () => Do,
+    srot: () => Po,
+    srotm: () => Lo,
+    sscal: () => xo,
+    sswap: () => Bo,
+    ssymm: () => Xo,
+    ssymv: () => Co,
+    ssyr: () => Ko,
+    ssyr2: () => Vo,
+    ssyr2k: () => Yo,
+    ssyrk: () => zo,
+    strmm: () => $o,
+    strmv: () => jo,
+    strsm: () => Zo,
+    strsv: () => qo,
   });
   function Ce(r, t) {
     return t
@@ -3417,7 +3417,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   }
   var Qr = 16,
     Ve = new WeakMap();
-  function ca(r) {
+  function pa(r) {
     let t = Ve.get(r);
     return (
       t ||
@@ -3436,7 +3436,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       a = t instanceof GPUBuffer ? t.size : (t.size ?? e.size - o),
       s = Math.floor(a / Qr) * Qr;
     return s < Qr
-      ? { buffer: ca(r), offset: 0, size: Qr }
+      ? { buffer: pa(r), offset: 0, size: Qr }
       : { buffer: e, offset: o, size: s };
   }
   function Ge(r, t, e, o) {
@@ -3790,17 +3790,30 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       (this._buf.destroy(), this._loBuf && this._loBuf.destroy());
     }
   };
-  function He(r, t = -1, e = 1) {
-    let o = new Float32Array(r);
-    for (let a = 0; a < r; a++) o[a] = t + Math.random() * (e - t);
-    return o;
+  function He(r) {
+    let t = r >>> 0;
+    return function () {
+      t = (t + 1831565813) | 0;
+      let e = Math.imul(t ^ (t >>> 15), 1 | t);
+      return (
+        (e = (e + Math.imul(e ^ (e >>> 7), 61 | e)) ^ e),
+        ((e ^ (e >>> 14)) >>> 0) / 4294967296
+      );
+    };
   }
-  function Ue(r, t = -1, e = 1) {
-    let o = new Float64Array(r);
-    for (let a = 0; a < r; a++) o[a] = t + Math.random() * (e - t);
-    return o;
+  function Ue(r, t = -1, e = 1, o) {
+    let a = new Float32Array(r),
+      s = o === void 0 ? Math.random : He(o);
+    for (let i = 0; i < r; i++) a[i] = t + s() * (e - t);
+    return a;
   }
-  function ze(
+  function ze(r, t = -1, e = 1, o) {
+    let a = new Float64Array(r),
+      s = o === void 0 ? Math.random : He(o);
+    for (let i = 0; i < r; i++) a[i] = t + s() * (e - t);
+    return a;
+  }
+  function Ye(
     r,
     t,
     e = "lower",
@@ -3861,7 +3874,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let m = Pr(r, a, s);
     return { commandEncoder: a, ts: m };
   }
-  var is = {},
+  var ns = {},
     Ie = new WeakMap();
   async function S(r, t, e = "main") {
     Ie.has(r) || Ie.set(r, new Map());
@@ -3869,16 +3882,16 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       a = Array.isArray(t) ? t : [t],
       s = `${a.join("+")}::${e}`;
     if (!o.has(s)) {
-      let i = ss(r, a, e).catch((m) => {
+      let i = is(r, a, e).catch((m) => {
         throw (o.delete(s), m);
       });
       o.set(s, i);
     }
     return o.get(s);
   }
-  async function as(r) {
+  async function ss(r) {
     if (typeof process > "u" || !process.versions?.node) {
-      let { shaderSources: t } = await Promise.resolve().then(() => (ho(), bo)),
+      let { shaderSources: t } = await Promise.resolve().then(() => (yo(), ho)),
         e = t[r];
       if (!e) throw new Error(`Shader "${r}" not found in browser bundle.`);
       return e;
@@ -3886,13 +3899,13 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       let { readFileSync: t } = await import("fs"),
         { fileURLToPath: e } = await import("url"),
         { dirname: o, join: a } = await import("path"),
-        s = o(e(is.url));
+        s = o(e(ns.url));
       return t(a(s, `../shaders/${r}.wgsl`), "utf8");
     }
   }
-  async function ss(r, t, e = "main") {
+  async function is(r, t, e = "main") {
     let o = t.join("+"),
-      a = await Promise.all(t.map(as)),
+      a = await Promise.all(t.map(ss)),
       s = 0,
       i = a.map((w, g) => {
         let b = w.split(`
@@ -3951,7 +3964,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
           `${t}: ${o} belongs to a different GPUDevice than the one passed in. GPU buffers cannot be shared across devices \u2014 recreate the operand on this device, or call the routine with the device that owns it.`,
         );
   }
-  async function yo(r, t, e, o, a) {
+  async function xo(r, t, e, o, a) {
     let s = o instanceof M;
     if (
       (P(r),
@@ -3996,7 +4009,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!s && m && p(m), n && p(n), l && p(l));
     }
   }
-  async function xo(r, t, e, o, a) {
+  async function vo(r, t, e, o, a) {
     let s = o instanceof M;
     if (
       (P(r),
@@ -4048,7 +4061,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!s && m && p(m), n && p(n), l && p(l));
     }
   }
-  async function vo(r, t, e, o, a) {
+  async function _o(r, t, e, o, a) {
     let s = o instanceof M;
     if ((P(r), !Number.isInteger(t) || !Number.isInteger(a)))
       throw new Error("n and incx must be integers.");
@@ -4106,7 +4119,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!s && u && p(u), !s && f && p(f), d && p(d), c && p(c), w && p(w));
     }
   }
-  async function _o(r, t, e, o, a, s) {
+  async function Bo(r, t, e, o, a, s) {
     let i = e instanceof M,
       m = a instanceof M;
     if (
@@ -4167,7 +4180,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!i && l && p(l), !m && u && p(u), f && p(f), d && p(d), c && p(c));
     }
   }
-  async function Bo(r, t, e, o, a, s, i) {
+  async function Ao(r, t, e, o, a, s, i) {
     let m = o instanceof M,
       n = s instanceof M;
     if (
@@ -4226,7 +4239,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!m && u && p(u), !n && f && p(f), d && p(d), c && p(c));
     }
   }
-  async function Ao(r, t, e, o, a, s, i) {
+  async function Eo(r, t, e, o, a, s, i) {
     let m = o instanceof M,
       n = s instanceof M;
     if (
@@ -4313,7 +4326,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         v && p(v));
     }
   }
-  async function Eo(r, t, e, o, a, s) {
+  async function Go(r, t, e, o, a, s) {
     let i = e instanceof M,
       m = a instanceof M;
     if (
@@ -4368,7 +4381,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!i && l && p(l), !m && u && p(u), f && p(f), d && p(d));
     }
   }
-  async function Go(r, t, e, o, a, s) {
+  async function So(r, t, e, o, a, s) {
     let i = e instanceof M,
       m = a instanceof M;
     if (
@@ -4438,7 +4451,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         g && p(g));
     }
   }
-  async function So(r, t, e, o) {
+  async function ko(r, t, e, o) {
     let a = e instanceof M;
     if (
       (P(r),
@@ -4489,7 +4502,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!a && m && p(m), n && p(n), l && p(l), u && p(u), f && p(f));
     }
   }
-  async function ko(r, t, e, o) {
+  async function No(r, t, e, o) {
     let a = e instanceof M;
     if (
       (P(r),
@@ -4563,7 +4576,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         b && p(b));
     }
   }
-  async function No(r, t, e, o, a, s) {
+  async function Mo(r, t, e, o, a, s) {
     let i = e instanceof M,
       m = a instanceof M;
     if (
@@ -4659,7 +4672,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         A && p(A));
     }
   }
-  async function Mo(r, t, e, o) {
+  async function Do(r, t, e, o) {
     let a = e instanceof M;
     if (
       (P(r),
@@ -4713,7 +4726,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!a && m && p(m), n && p(n), l && p(l), u && p(u), f && p(f), d && p(d));
     }
   }
-  async function Do(r, t, e, o) {
+  async function Io(r, t, e, o) {
     let a = e instanceof M;
     if (
       (P(r),
@@ -4767,7 +4780,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!a && m && p(m), n && p(n), l && p(l), u && p(u), f && p(f), d && p(d));
     }
   }
-  async function Io(r, t, e, o) {
+  async function Ro(r, t, e, o) {
     let a = e instanceof M;
     if (
       (P(r),
@@ -4843,7 +4856,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         g && p(g));
     }
   }
-  async function Ro(r, t, e, o, a, s, i, m) {
+  async function Po(r, t, e, o, a, s, i, m) {
     let n = e instanceof M,
       l = a instanceof M;
     if (
@@ -4910,7 +4923,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!n && f && p(f), !l && d && p(d), c && p(c), w && p(w), g && p(g));
     }
   }
-  async function Po(r, t, e, o, a, s, i) {
+  async function Lo(r, t, e, o, a, s, i) {
     let m = e instanceof M,
       n = a instanceof M;
     if (
@@ -4980,7 +4993,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         g && p(g));
     }
   }
-  async function Lo(r, t, e, o, a, s, i, m, n, l, u, f, d = "row-major") {
+  async function To(r, t, e, o, a, s, i, m, n, l, u, f, d = "row-major") {
     let c = s instanceof H,
       w = m instanceof M,
       g = u instanceof M;
@@ -5089,7 +5102,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!c && N && p(N), !w && B && p(B), !g && j && p(j), C && p(C));
     }
   }
-  async function To(r, t, e, o, a, s, i, m, n, l, u, f = "row-major") {
+  async function Co(r, t, e, o, a, s, i, m, n, l, u, f = "row-major") {
     let d = i instanceof M,
       c = l instanceof M,
       w = a instanceof H;
@@ -5189,7 +5202,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!w && y && p(y), !d && v && p(v), !c && _ && p(_), A && p(A));
     }
   }
-  async function Co(r, t, e, o, a, s, i, m, n, l, u, f = "row-major") {
+  async function jo(r, t, e, o, a, s, i, m, n, l, u, f = "row-major") {
     let d = m instanceof M,
       c = l instanceof M,
       w = s instanceof H,
@@ -5291,7 +5304,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!w && A && p(A), !d && N && p(N), !c && B && p(B), j && p(j));
     }
   }
-  function jo(r, t, e) {
+  function Fo(r, t, e) {
     let o = new ArrayBuffer(r * t),
       a = new DataView(o);
     for (let s = 0; s < r; s++) {
@@ -5301,7 +5314,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
     }
     return o;
   }
-  function Fo(r, t, e) {
+  function Wo(r, t, e) {
     let o = r.createBuffer({
       label: e,
       size: t.byteLength,
@@ -5309,7 +5322,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
     });
     return (r.queue.writeBuffer(o, 0, t), o);
   }
-  async function Wo(r, t, e, o, a, s, i, m, n, l = "row-major") {
+  async function qo(r, t, e, o, a, s, i, m, n, l = "row-major") {
     let u = m instanceof M,
       f = s instanceof H,
       d = o === "unit";
@@ -5372,18 +5385,18 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       ((C = f ? s._buf : x(r, s, "strsv-A", !1)),
         (T = u ? m._buf : x(r, m, "strsv-x", !0)),
         (W = tr(r, N * 64 * 64 * 4, "strsv-Ainv")));
-      let O = jo(N, j, (J) => {
+      let O = Fo(N, j, (J) => {
         let Y = J * 64,
           Q = Math.min(Y + 64, a);
         return [n, J, Y, Q];
       });
-      q = Fo(r, O, "strsv-apply-params");
-      let rr = jo(N, j, (J) => {
+      q = Wo(r, O, "strsv-apply-params");
+      let rr = Fo(N, j, (J) => {
         let Y = J * 64,
           Q = Math.min(Y + 64, a);
         return [a, n, i, b ? 0 : 1, g ? 0 : 1, Y, Q];
       });
-      U = Fo(r, rr, "strsv-update-params");
+      U = Wo(r, rr, "strsv-update-params");
       let { commandEncoder: X, querySet: $ } = Tr(r);
       z = R(
         r,
@@ -5452,7 +5465,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         z && p(z));
     }
   }
-  async function qo(r, t, e, o, a, s, i, m, n, l, u = "row-major") {
+  async function Oo(r, t, e, o, a, s, i, m, n, l, u = "row-major") {
     let f = n instanceof H;
     if (
       (P(r),
@@ -5547,7 +5560,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!c && b && p(b), !w && h && p(h), !f && y && p(y), v && p(v));
     }
   }
-  async function Oo(r, t, e, o, a, s, i, m, n = "row-major") {
+  async function Ko(r, t, e, o, a, s, i, m, n = "row-major") {
     let l = a instanceof M,
       u = i instanceof H;
     if ((P(r), L(r, "ssyr", { A: i, x: a }), t !== "lower" && t !== "upper"))
@@ -5618,7 +5631,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!l && w && p(w), !u && g && p(g), b && p(b));
     }
   }
-  async function Ko(r, t, e, o, a, s, i, m, n, l, u = "row-major") {
+  async function Vo(r, t, e, o, a, s, i, m, n, l, u = "row-major") {
     let f = a instanceof M,
       d = i instanceof M,
       c = n instanceof H;
@@ -5718,7 +5731,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!f && h && p(h), !d && y && p(y), !c && v && p(v), _ && p(_));
     }
   }
-  async function Vo(r, t, e, o, a, s, i, m, n, l, u, f, d, c, w = "row-major") {
+  async function Ho(r, t, e, o, a, s, i, m, n, l, u, f, d, c, w = "row-major") {
     let g = m instanceof H,
       b = l instanceof H,
       h = d instanceof H;
@@ -5884,7 +5897,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (g || p(ur), b || p(mr), h || p(dr), p(Y));
     }
   }
-  async function Ho(
+  async function Uo(
     r,
     t,
     e,
@@ -6058,7 +6071,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (b || p(mr), h || p(dr), y || p(ar), p(lr));
     }
   }
-  async function Uo(r, t, e, o, a, s, i, m, n, l, u, f = "row-major") {
+  async function zo(r, t, e, o, a, s, i, m, n, l, u, f = "row-major") {
     let d = i instanceof H,
       c = l instanceof H;
     if ((P(r), L(r, "ssyrk", { A: i, C: l }), t !== "lower" && t !== "upper"))
@@ -6179,7 +6192,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (d || p(W), p(U), c || p(q), p(z));
     }
   }
-  async function zo(r, t, e, o, a, s, i, m, n, l, u, f, d, c = "row-major") {
+  async function Yo(r, t, e, o, a, s, i, m, n, l, u, f, d, c = "row-major") {
     let w = i instanceof H,
       g = n instanceof H,
       b = f instanceof H;
@@ -6343,7 +6356,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (w || p(ar), g || p(lr), b || p(Z), J && p(J), Y && p(Y));
     }
   }
-  async function Yo(r, t, e, o, a, s, i, m, n, l, u, f, d, c = "row-major") {
+  async function Xo(r, t, e, o, a, s, i, m, n, l, u, f, d, c = "row-major") {
     let w = i instanceof H,
       g = n instanceof H,
       b = f instanceof H;
@@ -6515,7 +6528,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (w || p(Y), g || p(Q), b || p(er), p(fr), wr && p(wr), ir && p(ir));
     }
   }
-  async function Xo(r, t, e, o, a, s, i, m, n, l, u, f, d = "row-major") {
+  async function $o(r, t, e, o, a, s, i, m, n, l, u, f, d = "row-major") {
     let c = n instanceof H,
       w = u instanceof H,
       g = a === "unit";
@@ -6697,7 +6710,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
         er && p(er));
     }
   }
-  async function $o(r, t, e, o, a, s, i, m, n, l, u, f, d = "row-major") {
+  async function Zo(r, t, e, o, a, s, i, m, n, l, u, f, d = "row-major") {
     let c = n instanceof H,
       w = u instanceof H,
       g = a === "unit";
@@ -6942,18 +6955,18 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
                 er,
                 _e,
               ]),
-              sa = ae
+              ia = ae
                 ? { x: K(r, te, "strsm", "x"), y: K(r, oe, "strsm", "y") }
                 : {
                     x: K(r, Math.ceil(zr / 32), "strsm", "x"),
                     y: K(r, Math.ceil(Ur / 32), "strsm", "y"),
                   };
-            cr(ir, se, Be, sa);
+            cr(ir, se, Be, ia);
           }
           let fe = T ? Rr : 0,
             Re = T ? y : br,
             Pe = fe < Re,
-            Zo = ar(
+            Qo = ar(
               [
                 { value: br, type: "u32" },
                 { value: _r, type: "u32" },
@@ -6966,14 +6979,14 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
               ],
               "strsm-scatter-params",
             ),
-            Qo = E(r, z.getBindGroupLayout(0), [er, X, Zo]),
-            Jo =
+            Jo = E(r, z.getBindGroupLayout(0), [er, X, Qo]),
+            ra =
               Kr && !Pe && sr
                 ? { timestampWrites: { querySet: sr, endOfPassWriteIndex: 1 } }
                 : void 0;
-          if ((cr(ir, z, Qo, Yr(r, "strsm", _r, B), Jo), !Pe)) continue;
+          if ((cr(ir, z, Jo, Yr(r, "strsm", _r, B), ra), !Pe)) continue;
           let ee = Re - fe,
-            ra = ar(
+            ea = ar(
               [
                 { value: fe, type: "u32" },
                 { value: ee, type: "u32" },
@@ -6986,8 +6999,8 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
               ],
               "strsm-gather-A-params",
             ),
-            ea = E(r, z.getBindGroupLayout(0), [fr, rr, ra]);
-          cr(ir, z, ea, Yr(r, "strsm", ee, _r));
+            ta = E(r, z.getBindGroupLayout(0), [fr, rr, ea]);
+          cr(ir, z, ta, Yr(r, "strsm", ee, _r));
           {
             let Ur = ee,
               zr = B,
@@ -7027,7 +7040,7 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
                   };
             cr(ir, se, ce, Be);
           }
-          let ta = ar(
+          let oa = ar(
               [
                 { value: fe, type: "u32" },
                 { value: ee, type: "u32" },
@@ -7040,12 +7053,12 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
               ],
               "strsm-scatter-sub-params",
             ),
-            oa = E(r, z.getBindGroupLayout(0), [wr, X, ta]),
-            aa =
+            aa = E(r, z.getBindGroupLayout(0), [wr, X, oa]),
+            sa =
               Kr && sr
                 ? { timestampWrites: { querySet: sr, endOfPassWriteIndex: 1 } }
                 : void 0;
-          cr(ir, z, oa, Yr(r, "strsm", ee, B), aa);
+          cr(ir, z, aa, Yr(r, "strsm", ee, B), sa);
         }
       }
       let gr = Pr(r, ir, sr),
@@ -7059,5 +7072,5 @@ ${f.map((w) => `  ${m(w.lineNum)}: ${w.message}`).join(`
       (!c && rr && p(rr), !w && X && p(X), $ && p($), p(mr), p(ur));
     }
   }
-  return fa(ns);
+  return ca(us);
 })();

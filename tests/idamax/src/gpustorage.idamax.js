@@ -32,7 +32,7 @@ const validationSpecs = {
 };
 
 async function callGpuResident(dev, a) {
-  return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {
+  return withGpuResources({ x: () => GpuVector.from(a.x) }, async ({ x }) => {
     return await idamax(dev, a.n, x, a.incx);
   });
 }

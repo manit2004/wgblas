@@ -70,6 +70,21 @@ test("isamax edge cases", async (t) => {
   }
 });
 
+// n<=0 is special-cased in isamax.mjs to `return { index: 0 }` before ever
+// touching the GPU — no pipeline, no dispatch, nothing to scribble on. The
+// edge-cases block above only asserts "does not throw" for n<=0 entries, so
+// this pins the actual returned value instead.
+test("isamax zero-dimension (regression)", async () => {
+  const { index: got } = await isamax(
+    device,
+    0,
+    new Float32Array([1, 2, 3, 4]),
+    1,
+  );
+
+  assert.strictEqual(got, 0);
+});
+
 // NaN behaviour is documented in isamax.d.mts, so pin it: the search compares
 // with `>`, which is false for NaN, so NaN is skipped rather than selected.
 // JSON has no NaN literal, so these cannot live in edge-cases.json.

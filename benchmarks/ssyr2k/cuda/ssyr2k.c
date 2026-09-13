@@ -90,32 +90,12 @@ int main(void) {
         free(h_C);
     }
 
-    // write JSON results
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
-    asprintf(&base_dir,  "%s/cuda",                gpu_dir);
-    asprintf(&out_dir,   "%s/ssyr2k",              base_dir);
-    asprintf(&file_path, "%s/ssyr2k.json",         out_dir);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    if (!fp) { perror(file_path); return 1; }
-    fprintf(fp, "[\n");
-    for (int i = 0; i < num_sizes; i++) {
-        fprintf(fp,
-            "  { \"n\": %d, \"k\": %d, \"compute_ms\": %.4f, "
-            "\"compute_GFLOPs\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            sizes[i], sizes[i], med_times[i], gflops_vals[i], gbs_vals[i],
-            i < num_sizes - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    // write JSON results — n and k sweep together with `sizes`.
+    record_field fields[] = {
+        { "n", FIELD_INT, sizes },
+        { "k", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, "ssyr2k", "ssyr2k", fields, 2, med_times, gbs_vals, gflops_vals, num_sizes);
 
     cublasDestroy(handle);
     return 0;

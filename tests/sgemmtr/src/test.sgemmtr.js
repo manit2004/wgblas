@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { sgemmtr } from "wgblas/sgemmtr";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -163,6 +163,142 @@ test("sgemmtr edge cases", async (t) => {
       );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
+    });
+  }
+});
+
+// sgemmtr shares sgemm's exact large-tile selection formula
+// (ceil(n/64)*ceil(m/64) >= LARGE_TILE_WORKGROUP_THRESHOLD) and has the same
+// gap — see sgemm's own "large-tile path (regression)" test for the full
+// rationale. C must be square here (a triangle only makes sense for one),
+// and both uplo values get their own case since the triangle boundary
+// masking differs between them, not just the dense-vs-transpose load paths.
+test("sgemmtr large-tile path (regression)", async (t) => {
+  const M = 400,
+    N = 400,
+    K = 8;
+
+  for (const uplo of ["lower", "upper"]) {
+    for (const transA of ["no-transpose", "transpose"]) {
+      for (const transB of ["no-transpose", "transpose"]) {
+        await t.test(
+          `uplo=${uplo}, transA=${transA}, transB=${transB}`,
+          async () => {
+            const [aRows, aCols] = transA === "no-transpose" ? [M, K] : [K, M];
+            const lda = aCols;
+            const [bRows, bCols] = transB === "no-transpose" ? [K, N] : [N, K];
+            const ldb = bCols;
+
+            const a = {
+              uplo,
+              transA,
+              transB,
+              m: M,
+              n: N,
+              k: K,
+              alpha: 1.5,
+              A: randomFloat32Array(aRows * aCols, -1, 1, 0),
+              lda,
+              B: randomFloat32Array(bRows * bCols, -1, 1, 100),
+              ldb,
+              beta: 0.5,
+              C: randomFloat32Array(M * N, -1, 1, 200),
+              ldc: N,
+            };
+            const got = await sgemmtr(
+              device,
+              a.uplo,
+              a.transA,
+              a.transB,
+              a.m,
+              a.n,
+              a.k,
+              a.alpha,
+              a.A,
+              a.lda,
+              a.B,
+              a.ldb,
+              a.beta,
+              a.C,
+              a.ldc,
+            );
+            const expected = stdlibReference(a);
+            const factor = forwardFactor(got, expected, a);
+            assert.ok(
+              factor <= THRESHOLD,
+              `uplo=${uplo}, transA=${transA}, transB=${transB}: forward factor ${factor} > ${THRESHOLD}`,
+            );
+          },
+        );
+      }
+    }
+  }
+});
+
+// k=0 (with m,n>0) makes the matrix product term vanish entirely, so within
+// the uplo triangle C should collapse to beta*C, and the opposite triangle
+// must stay byte-identical (sgemmtr only reads/writes the named triangle).
+// runEdgeCases (see tests/helpers/validation.js) only asserts that calls
+// don't throw, so an implementation that skips applying beta within the
+// triangle when k=0, or that touches the untouched triangle, would still
+// pass every existing case — this test checks actual per-element values.
+test("sgemmtr zero-dimension (k=0) (regression)", async (t) => {
+  const M = 4,
+    N = 4,
+    K = 0;
+  const beta = 0.5;
+
+  for (const uplo of ["lower", "upper"]) {
+    await t.test(`uplo=${uplo}`, async () => {
+      // transA='no-transpose' stores A as M x K (each of its M rows has 0
+      // elements) and transB='transpose' stores B as N x K (each of its N
+      // rows has 0 elements) — both non-empty buffers (WebGPU rejects a
+      // zero-byte storage binding), per sgemmtr.mjs's own length validation,
+      // with lda/ldb at their K=0 minimum of 1.
+      const a = {
+        uplo,
+        transA: "no-transpose",
+        transB: "transpose",
+        m: M,
+        n: N,
+        k: K,
+        alpha: 1.5,
+        A: new Float32Array(3),
+        lda: 1,
+        B: new Float32Array(3),
+        ldb: 1,
+        beta,
+        C: randomFloat32Array(M * N, -5, 5, uplo === "lower" ? 300 : 301),
+        ldc: N,
+      };
+      const cBefore = Float32Array.from(a.C);
+      const got = await sgemmtr(
+        device,
+        a.uplo,
+        a.transA,
+        a.transB,
+        a.m,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.B,
+        a.ldb,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
+      for (let row = 0; row < M; row++) {
+        for (let col = 0; col < N; col++) {
+          const i = row * N + col;
+          const inTriangle = uplo === "lower" ? col <= row : col >= row;
+          const expected = inTriangle
+            ? Math.fround(beta * cBefore[i])
+            : cBefore[i];
+          assert.equal(got.C[i], expected, `row=${row}, col=${col}`);
+        }
+      }
     });
   }
 });

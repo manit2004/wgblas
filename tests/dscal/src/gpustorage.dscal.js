@@ -43,7 +43,7 @@ const fixtureSpecs = {
 };
 
 async function callGpuResident(dev, a) {
-  return withGpuResources({ x: GpuVector.from(a.x) }, async ({ x }) => {
+  return withGpuResources({ x: () => GpuVector.from(a.x) }, async ({ x }) => {
     await dscal(dev, a.n, a.alpha, x, a.incx);
     return { x: await x.read() };
   });
@@ -60,6 +60,20 @@ test("dscal fixtures (GPU-resident)", async (t) => {
     callGpuResident,
     stdlibReference,
     forwardFactor,
+  );
+});
+
+// callGpuResident always reads x back itself regardless of what dscal()
+// returned, so it can't see dscal's own n<=0 return value — this calls dscal
+// directly to check the GPU-resident early return actually is `{}` (never
+// exercised by the fixtures/edge-case tests above, which never pass n<=0).
+test("dscal returns {} for n<=0 with a GPU-resident x", async () => {
+  await withGpuResources(
+    { x: () => GpuVector.from(new Float64Array([1, 2])) },
+    async ({ x }) => {
+      const result = await dscal(device, 0, 2, x, 1);
+      assert.deepEqual(result, {});
+    },
   );
 });
 

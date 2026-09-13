@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssyrk } from "wgblas/ssyrk";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -138,6 +138,64 @@ test("ssyrk edge cases", async (t) => {
       );
       const expected = stdlibReference(a);
       assert.deepEqual(got.C, expected.C);
+    });
+  }
+});
+
+// k=0 makes the rank-k term vanish entirely, so within the uplo triangle C
+// should collapse to beta*C, and the opposite triangle must stay
+// byte-identical (ssyrk only reads/writes the named triangle). runEdgeCases
+// (see tests/helpers/validation.js) only asserts that calls don't throw, so
+// an implementation that skips applying beta within the triangle when k=0,
+// or that touches the untouched triangle, would still pass every existing
+// case — this test checks actual per-element values.
+test("ssyrk zero-dimension (k=0) (regression)", async (t) => {
+  const N = 4,
+    K = 0;
+  const beta = 0.5;
+
+  for (const uplo of ["lower", "upper"]) {
+    await t.test(`uplo=${uplo}`, async () => {
+      // trans='no-transpose' stores A as N x K (each of its N rows has 0
+      // elements) — a non-empty buffer (WebGPU rejects a zero-byte storage
+      // binding), per ssyrk.mjs's own length validation, with lda at its
+      // K=0 minimum of 1.
+      const a = {
+        uplo,
+        trans: "no-transpose",
+        n: N,
+        k: K,
+        alpha: 1.5,
+        A: new Float32Array(3),
+        lda: 1,
+        beta,
+        C: randomFloat32Array(N * N, -5, 5, uplo === "lower" ? 300 : 301),
+        ldc: N,
+      };
+      const cBefore = Float32Array.from(a.C);
+      const got = await ssyrk(
+        device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
+      for (let row = 0; row < N; row++) {
+        for (let col = 0; col < N; col++) {
+          const i = row * N + col;
+          const inTriangle = uplo === "lower" ? col <= row : col >= row;
+          const expected = inTriangle
+            ? Math.fround(beta * cBefore[i])
+            : cBefore[i];
+          assert.equal(got.C[i], expected, `row=${row}, col=${col}`);
+        }
+      }
     });
   }
 });

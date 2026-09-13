@@ -33,7 +33,7 @@ const validationSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => {
       await scopy(dev, a.n, x, a.incx, y, a.incy);
       return { y: await y.read() };
@@ -52,6 +52,23 @@ test("scopy fixtures (GPU-resident)", async (t) => {
     callGpuResident, // GPU call — wraps x and y into GpuVectors
     stdlibReference, // CPU reference
     (gpu, ref) => maxUlp(gpu.y, ref.y).max, // max ULP across all elements of y
+  );
+});
+
+// callGpuResident always reads y back itself regardless of what scopy()
+// returned, so it can't see scopy's own n<=0 return value — this calls scopy
+// directly to check the GPU-resident early return actually is `{}` (never
+// exercised by the fixtures/edge-case tests above, which never pass n<=0).
+test("scopy returns {} for n<=0 with a GPU-resident y", async () => {
+  await withGpuResources(
+    {
+      x: () => GpuVector.from(new Float32Array([1, 2])),
+      y: () => GpuVector.from(new Float32Array([3, 4])),
+    },
+    async ({ x, y }) => {
+      const result = await scopy(device, 0, x, 1, y, 1);
+      assert.deepEqual(result, {});
+    },
   );
 });
 

@@ -67,15 +67,16 @@ async function callGpuResident(dev, a) {
   const outerCount = isColMajor ? a.n : a.m; // rows for row-major, cols for column-major
   return withGpuResources(
     {
-      A: GpuMatrix.from(
-        padMatrix(a.A, outerCount, a.lda),
-        a.m,
-        a.n,
-        a.lda,
-        layout,
-      ),
-      x: GpuVector.from(a.x),
-      y: GpuVector.from(a.y),
+      A: () =>
+        GpuMatrix.from(
+          padMatrix(a.A, outerCount, a.lda),
+          a.m,
+          a.n,
+          a.lda,
+          layout,
+        ),
+      x: () => GpuVector.from(a.x),
+      y: () => GpuVector.from(a.y),
     },
     async ({ A, x, y }) => {
       await sger(dev, a.m, a.n, a.alpha, x, a.incx, y, a.incy, A, a.lda);

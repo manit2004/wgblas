@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { sger } from "wgblas/sger";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -131,6 +131,52 @@ test("sger edge cases", async (t) => {
       assert.deepEqual(got.A, expected.A);
     });
   }
+});
+
+// The TODO's zero-dimension concern: existing edge cases only assert
+// non-throwing at m=0/n=0 (see runEdgeCases in tests/helpers/validation.js),
+// so an implementation that scribbles on A before an early return would
+// still pass everything. Unlike sgemv, A's own shape ties directly to both
+// m and n, so m=0 or n=0 always makes A's accessed region empty — this case
+// is vacuous rather than value-observable. The test instead guards that the
+// routine leaves A's entire backing storage byte-for-byte untouched, using
+// a realistic lda even though only m=0 or n=0 is ever passed.
+test("sger zero-dimension (regression)", async (t) => {
+  await t.test("m=0", async () => {
+    const before = randomFloat32Array(16, -1, 1, 9101);
+    const A = Float32Array.from(before);
+    const got = await sger(
+      device,
+      0, // m=0
+      4,
+      1.5,
+      randomFloat32Array(4, -1, 1, 9102),
+      1,
+      randomFloat32Array(4, -1, 1, 9103),
+      1,
+      A,
+      4, // lda for a realistic 4x4 region even though m=0
+    );
+    assert.deepEqual(Array.from(got.A), Array.from(before));
+  });
+
+  await t.test("n=0", async () => {
+    const before = randomFloat32Array(16, -1, 1, 9104);
+    const A = Float32Array.from(before);
+    const got = await sger(
+      device,
+      4,
+      0, // n=0
+      1.5,
+      randomFloat32Array(4, -1, 1, 9105),
+      1,
+      randomFloat32Array(4, -1, 1, 9106),
+      1,
+      A,
+      4, // lda for a realistic 4x4 region even though n=0
+    );
+    assert.deepEqual(Array.from(got.A), Array.from(before));
+  });
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.

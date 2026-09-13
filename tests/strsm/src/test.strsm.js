@@ -191,6 +191,78 @@ test("strsm NaN/Inf semantics", async (t) => {
   });
 });
 
+// m=0 or n=0 ties directly to B's own shape, so B is written in place over a
+// vacuous region in both cases — the routine must return B completely
+// untouched. runEdgeCases (see tests/helpers/validation.js) only asserts
+// that calls don't throw, so an implementation that scribbles on B before or
+// instead of returning early would still pass every existing case — this
+// test checks B comes back byte-identical.
+test("strsm zero-dimension (regression)", async (t) => {
+  await t.test("m=0", async () => {
+    const a = {
+      side: "left",
+      uplo: "lower",
+      transA: "no-transpose",
+      diag: "non-unit",
+      m: 0,
+      n: 4,
+      alpha: 1.5,
+      A: new Float32Array(0),
+      lda: 1,
+      B: randomFloat32Array(16, -5, 5, 300),
+      ldb: 4,
+    };
+    const bBefore = Float32Array.from(a.B);
+    const got = await strsm(
+      device,
+      a.side,
+      a.uplo,
+      a.transA,
+      a.diag,
+      a.m,
+      a.n,
+      a.alpha,
+      a.A,
+      a.lda,
+      a.B,
+      a.ldb,
+    );
+    assert.deepEqual(got.B, bBefore);
+  });
+
+  await t.test("n=0", async () => {
+    const a = {
+      side: "left",
+      uplo: "lower",
+      transA: "no-transpose",
+      diag: "non-unit",
+      m: 4,
+      n: 0,
+      alpha: 1.5,
+      A: new Float32Array(0),
+      lda: 1,
+      B: randomFloat32Array(16, -5, 5, 301),
+      ldb: 4,
+    };
+    const bBefore = Float32Array.from(a.B);
+    const got = await strsm(
+      device,
+      a.side,
+      a.uplo,
+      a.transA,
+      a.diag,
+      a.m,
+      a.n,
+      a.alpha,
+      a.A,
+      a.lda,
+      a.B,
+      a.ldb,
+    );
+    assert.deepEqual(got.B, bBefore);
+  });
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("strsm edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { init, cleanup } from "wgblas";
+import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { sgemv } from "wgblas/sgemv";
 import { loadParam, runValidation } from "../../helpers/validation.js";
@@ -146,6 +146,61 @@ test("sgemv edge cases", async (t) => {
       assert.deepEqual(got.y, expected.y);
     });
   }
+});
+
+// The TODO's zero-dimension concern: existing edge cases only assert
+// non-throwing at m=0/n=0 (see runEdgeCases in tests/helpers/validation.js),
+// so an implementation that scribbles on y before an early return, or that
+// applies beta when it shouldn't (or vice versa), would still pass
+// everything. sgemv is checked here because the CONTRACTION dimension (n
+// for no-transpose, m for transpose — the one tied to x's length) can be 0
+// while y's own dimension stays >0, making the case value-observable rather
+// than vacuous. NOTE: verified directly against both the reference-BLAS
+// "quick return if m==0 or n==0" convention and this suite's own oracle
+// (@stdlib/blas-base-sgemv via sgemvReference) — in that situation y comes
+// back completely untouched, beta is never applied even though y is
+// nonempty. That contradicts a naive "y := beta*y" expectation, so the
+// assertion below is exact identity, not a beta-scaled value.
+test("sgemv zero-dimension (regression)", async (t) => {
+  await t.test("no-transpose, n=0 (contraction dim zero, m>0)", async () => {
+    const yBefore = randomFloat32Array(4, -1, 1, 9001);
+    const y = Float32Array.from(yBefore);
+    const got = await sgemv(
+      device,
+      "no-transpose",
+      4, // m>0
+      0, // n=0 — contraction dimension for no-transpose
+      1.5,
+      new Float32Array(0), // A: m*0 has no elements
+      1,
+      new Float32Array(0), // x: length n=0
+      1,
+      0.5, // beta != 0, != 1
+      y,
+      1,
+    );
+    assert.deepEqual(got.y, yBefore);
+  });
+
+  await t.test("transpose, m=0 (contraction dim zero, n>0)", async () => {
+    const yBefore = randomFloat32Array(4, -1, 1, 9002);
+    const y = Float32Array.from(yBefore);
+    const got = await sgemv(
+      device,
+      "transpose",
+      0, // m=0 — contraction dimension for transpose
+      4, // n>0
+      1.5,
+      new Float32Array(0), // A: 0*n has no elements
+      1,
+      new Float32Array(0), // x: length m=0
+      1,
+      0.5, // beta != 0, != 1
+      y,
+      1,
+    );
+    assert.deepEqual(got.y, yBefore);
+  });
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.

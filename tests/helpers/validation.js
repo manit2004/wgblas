@@ -44,6 +44,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import assert from "node:assert/strict";
 import { Complex32, Complex32Array } from "../../src/classes/Complex32.mjs";
+import { GpuVector } from "../../src/classes/GpuVector.mjs";
 
 const PARAMS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -80,16 +81,33 @@ export function loadParam(name) {
  * @internal
  */
 function derive64(base) {
+  const isArray = base.type !== "float";
   return {
     ...base,
-    type: base.type === "float" ? "float64" : "float64array",
-    invalid: base.invalid?.map((entry) => ({
-      ...entry,
-      error:
-        typeof entry.error === "string"
-          ? entry.error.replace("Float32Array", "Float64Array")
-          : entry.error,
-    })),
+    type: isArray ? "float64array" : "float64",
+    invalid: [
+      ...(base.invalid?.map((entry) => ({
+        ...entry,
+        error:
+          typeof entry.error === "string"
+            ? entry.error.replace("Float32Array", "Float64Array")
+            : entry.error,
+      })) ?? []),
+      // Only the f64-emulated array form has a GpuVector to mismatch — the
+      // scalar float64 derivation (e.g. alpha64) has no such case. Every
+      // f64-emulated routine (dscal/ddot/daxpy) checks .dtype, unlike plain
+      // f32 routines, which is why this lives here rather than in the base
+      // f32 spec derive64 starts from.
+      ...(isArray
+        ? [
+            {
+              scenario: "wrongDtypeGpuVector",
+              error: "must be a Float64Array-backed GpuVector",
+              label: "GpuVector backed by the wrong dtype (Float32Array)",
+            },
+          ]
+        : []),
+    ],
   };
 }
 
@@ -328,10 +346,32 @@ function resolveComplex32Scenario(scenario) {
  * @returns the concrete JS value to substitute for the param under test
  * @internal
  */
+// The dtype a GpuVector must NOT have for each array-typed param — only the
+// types whose consuming routines actually check `.dtype` (dscal/ddot/daxpy's
+// Float64Array-backed vectors, cscal's Complex32Array-backed ones). Plain f32
+// routines (saxpy, sscal, sdot, ...) never check .dtype at all, so this
+// scenario only ever appears on a float64array/complex32array spec.
+const WRONG_GPU_DTYPE = {
+  float64array: Float32Array,
+  complex32array: Float32Array,
+};
+
 export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
   if ("scenario" in entry) {
     if (paramName === "param") return resolveParam(entry.scenario);
     if (type === "complex32") return resolveComplex32Scenario(entry.scenario);
+    if (entry.scenario === "wrongDtypeGpuVector") {
+      const WrongCtor = WRONG_GPU_DTYPE[type];
+      if (!WrongCtor)
+        throw new Error(
+          `wrongDtypeGpuVector scenario not supported for type "${type}"`,
+        );
+      if (!baselines.device)
+        throw new Error(
+          "wrongDtypeGpuVector scenario requires runtimeBaselines.device",
+        );
+      return GpuVector.from(baselines.device, new WrongCtor([1, 2, 3, 4]));
+    }
     return resolveNdArray(entry.scenario, dependsOn, baselines, false, type);
   }
   if ("value" in entry) {

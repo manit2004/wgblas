@@ -70,6 +70,21 @@ test("idamax edge cases", async (t) => {
   }
 });
 
+// n<=0 is special-cased in idamax.mjs to `return { index: 0 }` before ever
+// touching the GPU — no pipeline, no dispatch, nothing to scribble on. The
+// edge-cases block above only asserts "does not throw" for n<=0 entries, so
+// this pins the actual returned value instead.
+test("idamax zero-dimension (regression)", async () => {
+  const { index: got } = await idamax(
+    device,
+    0,
+    new Float64Array([1, 2, 3, 4]),
+    1,
+  );
+
+  assert.strictEqual(got, 0);
+});
+
 // Mirrors the isamax NaN tests — same `>` comparison, same documented
 // divergence from CBLAS when x[0] is NaN. See idamax.d.mts.
 test("idamax NaN handling", async (t) => {

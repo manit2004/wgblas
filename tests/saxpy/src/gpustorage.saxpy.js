@@ -35,7 +35,7 @@ const validationSpecs = {
 
 async function callGpuResident(dev, a) {
   return withGpuResources(
-    { x: GpuVector.from(a.x), y: GpuVector.from(a.y) },
+    { x: () => GpuVector.from(a.x), y: () => GpuVector.from(a.y) },
     async ({ x, y }) => {
       await saxpy(dev, a.n, a.alpha, x, a.incx, y, a.incy);
       return { y: await y.read() };
@@ -54,6 +54,23 @@ test("saxpy fixtures (GPU-resident)", async (t) => {
     callGpuResident, // GPU call — wraps x and y into GpuVectors
     stdlibReference, // CPU reference
     forwardFactor, // |err| / (eps * |bound|) — see helpers.js
+  );
+});
+
+// callGpuResident always reads y back itself regardless of what saxpy()
+// returned, so it can't see saxpy's own n<=0 return value — this calls saxpy
+// directly to check the GPU-resident early return actually is `{}` (never
+// exercised by the fixtures/edge-case tests above, which never pass n<=0).
+test("saxpy returns {} for n<=0 with a GPU-resident y", async () => {
+  await withGpuResources(
+    {
+      x: () => GpuVector.from(new Float32Array([1, 2])),
+      y: () => GpuVector.from(new Float32Array([3, 4])),
+    },
+    async ({ x, y }) => {
+      const result = await saxpy(device, 0, 2, x, 1, y, 1);
+      assert.deepEqual(result, {});
+    },
   );
 });
 

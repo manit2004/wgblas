@@ -106,30 +106,12 @@ int main(void) {
     }
 
     // write JSON results
-    char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s",     gpu_model);
-    asprintf(&base_dir,  "%s/cuda",                   gpu_dir);
-    asprintf(&out_dir,   "%s/sgemv",                  base_dir);
-    asprintf(&file_path, "%s/stride.sgemv.json",      out_dir);
-    mkdir("benchmarks/results", 0755);
-    mkdir(gpu_dir, 0755);
-    mkdir(base_dir, 0755);
-    mkdir(out_dir, 0755);
-    FILE *fp = fopen(file_path, "w");
-    if (!fp) { perror(file_path); return 1; }
-    fprintf(fp, "[\n");
-    for (int i = 0; i < ri; i++) {
-        fprintf(fp,
-            "  { \"stride\": %d, \"m\": %d, \"n\": %d, \"compute_ms\": %.4f, \"compute_GBs\": %.4f }%s\n",
-            rec_stride[i], rec_m[i], rec_n[i], med_times[i], gbs_vals[i],
-            i < ri - 1 ? "," : "");
-    }
-    fprintf(fp, "]\n");
-    fclose(fp);
-    free(gpu_dir);
-    free(base_dir);
-    free(out_dir);
-    free(file_path);
+    record_field fields[] = {
+        { "stride", FIELD_INT, rec_stride },
+        { "m", FIELD_INT, rec_m },
+        { "n", FIELD_INT, rec_n },
+    };
+    save_results(gpu_model, "sgemv", "stride.sgemv", fields, 3, med_times, gbs_vals, NULL, ri);
     free(rec_stride);
     free(rec_m);
     free(rec_n);
