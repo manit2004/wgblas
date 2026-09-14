@@ -9,8 +9,10 @@
 // that into y's shape), so it's a standalone export rather than a factory.
 import stdlibSscal from "@stdlib/blas-base-sscal";
 import stdlibSswap from "@stdlib/blas-base-sswap";
+import stdlibDswap from "@stdlib/blas-base-dswap";
 import stdlibSaxpy from "@stdlib/blas-base-saxpy";
 import stdlibScopy from "@stdlib/blas-base-scopy";
+import stdlibDcopy from "@stdlib/blas-base-dcopy";
 import stdlibSdot from "@stdlib/blas-base-sdot";
 import stdlibSasum from "@stdlib/blas-base-sasum";
 import stdlibDasum from "@stdlib/blas-base-dasum";
@@ -19,6 +21,7 @@ import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
 import stdlibIsamax from "@stdlib/blas-base-isamax";
 import stdlibIdamax from "@stdlib/blas-base-idamax";
 import stdlibSrot from "@stdlib/blas-base-srot";
+import stdlibDrot from "@stdlib/blas-base-drot";
 import stdlibSrotm from "@stdlib/blas-base-srotm";
 import stdlibSgemv from "@stdlib/blas-base-sgemv";
 import stdlibSsymv from "@stdlib/blas-base-ssymv";
@@ -262,13 +265,19 @@ export const cscalReference = makeXReference(
 );
 
 export const sswapReference = makeXYReference(stdlibSswap);
+// dswap: same shape as sswap, just Float64Array x/y — no adapter needed.
+export const dswapReference = makeXYReference(stdlibDswap);
 export const srotReference = makeXYReference(stdlibSrot, (a) => [a.c, a.s]);
+// drot: same shape as srot, just Float64Array x/y — no adapter needed.
+export const drotReference = makeXYReference(stdlibDrot, (a) => [a.c, a.s]);
 export const srotmReference = makeXYReference(stdlibSrotm, (a) => [a.param]);
 
 export const saxpyReference = makeYReference(stdlibSaxpy, (a) => [a.alpha]);
 // daxpy: same shape as saxpy, just Float64Array x/y — no adapter needed.
 export const daxpyReference = makeYReference(stdlibDaxpy, (a) => [a.alpha]);
 export const scopyReference = makeYReference(stdlibScopy);
+// dcopy: same shape as scopy, just Float64Array x/y — no adapter needed.
+export const dcopyReference = makeYReference(stdlibDcopy);
 
 export const sdotReference = makeDotReference(stdlibSdot);
 export const ddotReference = makeDotReference(stdlibDdot);

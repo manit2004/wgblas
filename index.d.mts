@@ -14,9 +14,11 @@ export { sscal } from "./src/sscal/sscal.mjs";
 export { cscal } from "./src/cscal/cscal.mjs";
 export { dscal } from "./src/dscal/dscal.mjs";
 export { sswap } from "./src/sswap/sswap.mjs";
+export { dswap } from "./src/dswap/dswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
 export { daxpy } from "./src/daxpy/daxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";
+export { dcopy } from "./src/dcopy/dcopy.mjs";
 export { sdot } from "./src/sdot/sdot.mjs";
 export { sasum } from "./src/sasum/sasum.mjs";
 export { dasum } from "./src/dasum/dasum.mjs";
@@ -25,6 +27,7 @@ export { snrm2 } from "./src/snrm2/snrm2.mjs";
 export { isamax } from "./src/isamax/isamax.mjs";
 export { idamax } from "./src/idamax/idamax.mjs";
 export { srot } from "./src/srot/srot.mjs";
+export { drot } from "./src/drot/drot.mjs";
 export { srotm } from "./src/srotm/srotm.mjs";
 export { sgemv } from "./src/sgemv/sgemv.mjs";
 export { ssymv } from "./src/ssymv/ssymv.mjs";
@@ -111,4 +114,7 @@ export declare function cleanup(device?: GPUDevice): void;
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L81-L87)
  * @category Core
  */
-export declare function gpuName(device?: GPUDevice): { description: string; device: string };
+export declare function gpuName(device?: GPUDevice): {
+  description: string;
+  device: string;
+};

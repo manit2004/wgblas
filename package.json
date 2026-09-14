@@ -47,6 +47,10 @@
       "types": "./src/sswap/sswap.d.mts",
       "import": "./src/sswap/sswap.mjs"
     },
+    "./dswap": {
+      "types": "./src/dswap/dswap.d.mts",
+      "import": "./src/dswap/dswap.mjs"
+    },
     "./saxpy": {
       "types": "./src/saxpy/saxpy.d.mts",
       "import": "./src/saxpy/saxpy.mjs"
@@ -58,6 +62,10 @@
     "./scopy": {
       "types": "./src/scopy/scopy.d.mts",
       "import": "./src/scopy/scopy.mjs"
+    },
+    "./dcopy": {
+      "types": "./src/dcopy/dcopy.d.mts",
+      "import": "./src/dcopy/dcopy.mjs"
     },
     "./sdot": {
       "types": "./src/sdot/sdot.d.mts",
@@ -90,6 +98,10 @@
     "./srot": {
       "types": "./src/srot/srot.d.mts",
       "import": "./src/srot/srot.mjs"
+    },
+    "./drot": {
+      "types": "./src/drot/drot.d.mts",
+      "import": "./src/drot/drot.mjs"
     },
     "./srotm": {
       "types": "./src/srotm/srotm.d.mts",
@@ -208,8 +220,11 @@
     "@stdlib/blas-base-cscal": "^0.1.1",
     "@stdlib/blas-base-dasum": "^0.4.1",
     "@stdlib/blas-base-daxpy": "^0.4.1",
+    "@stdlib/blas-base-dcopy": "^0.4.1",
     "@stdlib/blas-base-ddot": "^0.4.1",
+    "@stdlib/blas-base-drot": "^0.1.1",
     "@stdlib/blas-base-dscal": "^0.4.1",
+    "@stdlib/blas-base-dswap": "^0.4.1",
     "@stdlib/blas-base-idamax": "^0.1.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
     "@stdlib/blas-base-sasum": "^0.3.1",

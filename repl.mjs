@@ -12,9 +12,11 @@ import {
   cscal,
   dscal,
   sswap,
+  dswap,
   saxpy,
   daxpy,
   scopy,
+  dcopy,
   sdot,
   ddot,
   sasum,
@@ -23,6 +25,7 @@ import {
   isamax,
   idamax,
   srot,
+  drot,
   srotm,
   sgemv,
   ssymv,
@@ -57,9 +60,11 @@ Object.assign(r.context, {
   cscal,
   dscal,
   sswap,
+  dswap,
   saxpy,
   daxpy,
   scopy,
+  dcopy,
   sdot,
   ddot,
   sasum,
@@ -68,6 +73,7 @@ Object.assign(r.context, {
   isamax,
   idamax,
   srot,
+  drot,
   srotm,
   sgemv,
   ssymv,
@@ -93,9 +99,11 @@ r.defineCommand("help", {
   cscal (device, n, alpha, x, incx)                        (alpha: Complex32, x: Complex32Array or GpuVector)
   dscal (device, n, alpha, x, incx)                        (x: Float64Array or GpuVector)
   sswap (device, n, x, incx, y, incy)
+  dswap (device, n, x, incx, y, incy)                     (x, y: Float64Array or GpuVector)
   saxpy (device, n, alpha, x, incx, y, incy)
   daxpy (device, n, alpha, x, incx, y, incy)              (x, y: Float64Array or GpuVector)
   scopy (device, n, x, incx, y, incy)
+  dcopy (device, n, x, incx, y, incy)                     (x, y: Float64Array or GpuVector)
   sdot  (device, n, x, incx, y, incy)
   sasum (device, n, x, incx)
   ddot  (device, n, x, incx, y, incy)
@@ -104,6 +112,7 @@ r.defineCommand("help", {
   isamax(device, n, x, incx)
   idamax(device, n, x, incx)
   srot  (device, n, x, incx, y, incy, c, s)
+  drot  (device, n, x, incx, y, incy, c, s)               (x, y: Float64Array or GpuVector)
   srotm (device, n, x, incx, y, incy, param)
   sgemv (device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy)
   ssymv (device, uplo, n, alpha, A, lda, x, incx, beta, y, incy)
@@ -120,7 +129,7 @@ r.defineCommand("help", {
   strsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
-  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy)
+  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy, dswap, drot)
   GpuVector.from(Complex32Array) v.read()  v.destroy()  (for cscal)
   GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()
 

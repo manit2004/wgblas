@@ -59,11 +59,17 @@ routineShaders.cscal = { cscal };
 import sswap from "./sswap.wgsl";
 routineShaders.sswap = { sswap };
 
+import dswap from "./dswap.wgsl"; // f64 sibling of sswap — pure data movement, no arithmetic, no reduction/barrier shader needed
+routineShaders.dswap = { dswap };
+
 import saxpy from "./saxpy.wgsl";
 routineShaders.saxpy = { saxpy };
 
 import scopy from "./scopy.wgsl";
 routineShaders.scopy = { scopy };
+
+import dcopy from "./dcopy.wgsl"; // f64 sibling of scopy — pure data movement, no arithmetic, no reduction/barrier shader needed
+routineShaders.dcopy = { dcopy };
 
 import sdot from "./sdot.wgsl";
 import sum from "./reduction/sum.wgsl";
@@ -136,6 +142,14 @@ routineShaders.idamax = {
 
 import srot from "./srot.wgsl";
 routineShaders.srot = { srot };
+
+import drot from "./drot.wgsl"; // f64 sibling of srot — four ddMulProtected + two ddAddProtected per element, no reduction shader needed
+routineShaders.drot = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  drot,
+};
 
 import srotm from "./srotm.wgsl";
 routineShaders.srotm = { srotm };
