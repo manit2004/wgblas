@@ -15,6 +15,7 @@ import {
   saxpy,
   daxpy,
   scopy,
+  dcopy,
   sdot,
   ddot,
   sasum,
@@ -60,6 +61,7 @@ Object.assign(r.context, {
   saxpy,
   daxpy,
   scopy,
+  dcopy,
   sdot,
   ddot,
   sasum,
@@ -96,6 +98,7 @@ r.defineCommand("help", {
   saxpy (device, n, alpha, x, incx, y, incy)
   daxpy (device, n, alpha, x, incx, y, incy)              (x, y: Float64Array or GpuVector)
   scopy (device, n, x, incx, y, incy)
+  dcopy (device, n, x, incx, y, incy)                     (x, y: Float64Array or GpuVector)
   sdot  (device, n, x, incx, y, incy)
   sasum (device, n, x, incx)
   ddot  (device, n, x, incx, y, incy)
@@ -120,7 +123,7 @@ r.defineCommand("help", {
   strsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
-  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy)
+  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy)
   GpuVector.from(Complex32Array) v.read()  v.destroy()  (for cscal)
   GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()
 

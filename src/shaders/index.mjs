@@ -65,6 +65,9 @@ routineShaders.saxpy = { saxpy };
 import scopy from "./scopy.wgsl";
 routineShaders.scopy = { scopy };
 
+import dcopy from "./dcopy.wgsl"; // f64 sibling of scopy — pure data movement, no arithmetic, no reduction/barrier shader needed
+routineShaders.dcopy = { dcopy };
+
 import sdot from "./sdot.wgsl";
 import sum from "./reduction/sum.wgsl";
 routineShaders.sdot = { sdot, "reduction/sum": sum };

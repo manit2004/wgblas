@@ -11,6 +11,7 @@ import stdlibSscal from "@stdlib/blas-base-sscal";
 import stdlibSswap from "@stdlib/blas-base-sswap";
 import stdlibSaxpy from "@stdlib/blas-base-saxpy";
 import stdlibScopy from "@stdlib/blas-base-scopy";
+import stdlibDcopy from "@stdlib/blas-base-dcopy";
 import stdlibSdot from "@stdlib/blas-base-sdot";
 import stdlibSasum from "@stdlib/blas-base-sasum";
 import stdlibDasum from "@stdlib/blas-base-dasum";
@@ -269,6 +270,8 @@ export const saxpyReference = makeYReference(stdlibSaxpy, (a) => [a.alpha]);
 // daxpy: same shape as saxpy, just Float64Array x/y — no adapter needed.
 export const daxpyReference = makeYReference(stdlibDaxpy, (a) => [a.alpha]);
 export const scopyReference = makeYReference(stdlibScopy);
+// dcopy: same shape as scopy, just Float64Array x/y — no adapter needed.
+export const dcopyReference = makeYReference(stdlibDcopy);
 
 export const sdotReference = makeDotReference(stdlibSdot);
 export const ddotReference = makeDotReference(stdlibDdot);

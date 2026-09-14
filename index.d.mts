@@ -17,6 +17,7 @@ export { sswap } from "./src/sswap/sswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
 export { daxpy } from "./src/daxpy/daxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";
+export { dcopy } from "./src/dcopy/dcopy.mjs";
 export { sdot } from "./src/sdot/sdot.mjs";
 export { sasum } from "./src/sasum/sasum.mjs";
 export { dasum } from "./src/dasum/dasum.mjs";
@@ -111,4 +112,7 @@ export declare function cleanup(device?: GPUDevice): void;
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L81-L87)
  * @category Core
  */
-export declare function gpuName(device?: GPUDevice): { description: string; device: string };
+export declare function gpuName(device?: GPUDevice): {
+  description: string;
+  device: string;
+};

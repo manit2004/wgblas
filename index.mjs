@@ -15,6 +15,7 @@ export { sswap } from "./src/sswap/sswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
 export { daxpy } from "./src/daxpy/daxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";
+export { dcopy } from "./src/dcopy/dcopy.mjs";
 export { sdot } from "./src/sdot/sdot.mjs";
 export { sasum } from "./src/sasum/sasum.mjs";
 export { dasum } from "./src/dasum/dasum.mjs";

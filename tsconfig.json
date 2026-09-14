@@ -29,6 +29,7 @@
       "wgblas/saxpy": ["./src/saxpy/saxpy.d.mts"],
       "wgblas/daxpy": ["./src/daxpy/daxpy.d.mts"],
       "wgblas/scopy": ["./src/scopy/scopy.d.mts"],
+      "wgblas/dcopy": ["./src/dcopy/dcopy.d.mts"],
       "wgblas/sdot": ["./src/sdot/sdot.d.mts"],
       "wgblas/sasum": ["./src/sasum/sasum.d.mts"],
       "wgblas/dasum": ["./src/dasum/dasum.d.mts"],
