@@ -47,6 +47,10 @@
       "types": "./src/sswap/sswap.d.mts",
       "import": "./src/sswap/sswap.mjs"
     },
+    "./dswap": {
+      "types": "./src/dswap/dswap.d.mts",
+      "import": "./src/dswap/dswap.mjs"
+    },
     "./saxpy": {
       "types": "./src/saxpy/saxpy.d.mts",
       "import": "./src/saxpy/saxpy.mjs"
@@ -215,6 +219,7 @@
     "@stdlib/blas-base-dcopy": "^0.4.1",
     "@stdlib/blas-base-ddot": "^0.4.1",
     "@stdlib/blas-base-dscal": "^0.4.1",
+    "@stdlib/blas-base-dswap": "^0.4.1",
     "@stdlib/blas-base-idamax": "^0.1.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
     "@stdlib/blas-base-sasum": "^0.3.1",

@@ -9,6 +9,7 @@
 // that into y's shape), so it's a standalone export rather than a factory.
 import stdlibSscal from "@stdlib/blas-base-sscal";
 import stdlibSswap from "@stdlib/blas-base-sswap";
+import stdlibDswap from "@stdlib/blas-base-dswap";
 import stdlibSaxpy from "@stdlib/blas-base-saxpy";
 import stdlibScopy from "@stdlib/blas-base-scopy";
 import stdlibDcopy from "@stdlib/blas-base-dcopy";
@@ -263,6 +264,8 @@ export const cscalReference = makeXReference(
 );
 
 export const sswapReference = makeXYReference(stdlibSswap);
+// dswap: same shape as sswap, just Float64Array x/y — no adapter needed.
+export const dswapReference = makeXYReference(stdlibDswap);
 export const srotReference = makeXYReference(stdlibSrot, (a) => [a.c, a.s]);
 export const srotmReference = makeXYReference(stdlibSrotm, (a) => [a.param]);
 

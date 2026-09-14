@@ -12,6 +12,7 @@ import {
   cscal,
   dscal,
   sswap,
+  dswap,
   saxpy,
   daxpy,
   scopy,
@@ -58,6 +59,7 @@ Object.assign(r.context, {
   cscal,
   dscal,
   sswap,
+  dswap,
   saxpy,
   daxpy,
   scopy,
@@ -95,6 +97,7 @@ r.defineCommand("help", {
   cscal (device, n, alpha, x, incx)                        (alpha: Complex32, x: Complex32Array or GpuVector)
   dscal (device, n, alpha, x, incx)                        (x: Float64Array or GpuVector)
   sswap (device, n, x, incx, y, incy)
+  dswap (device, n, x, incx, y, incy)                     (x, y: Float64Array or GpuVector)
   saxpy (device, n, alpha, x, incx, y, incy)
   daxpy (device, n, alpha, x, incx, y, incy)              (x, y: Float64Array or GpuVector)
   scopy (device, n, x, incx, y, incy)
@@ -123,7 +126,7 @@ r.defineCommand("help", {
   strsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
-  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy)
+  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy, dswap)
   GpuVector.from(Complex32Array) v.read()  v.destroy()  (for cscal)
   GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()
 

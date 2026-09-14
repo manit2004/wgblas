@@ -14,6 +14,7 @@ export { sscal } from "./src/sscal/sscal.mjs";
 export { cscal } from "./src/cscal/cscal.mjs";
 export { dscal } from "./src/dscal/dscal.mjs";
 export { sswap } from "./src/sswap/sswap.mjs";
+export { dswap } from "./src/dswap/dswap.mjs";
 export { saxpy } from "./src/saxpy/saxpy.mjs";
 export { daxpy } from "./src/daxpy/daxpy.mjs";
 export { scopy } from "./src/scopy/scopy.mjs";

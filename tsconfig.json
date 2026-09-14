@@ -26,6 +26,7 @@
       "wgblas/cscal": ["./src/cscal/cscal.d.mts"],
       "wgblas/dscal": ["./src/dscal/dscal.d.mts"],
       "wgblas/sswap": ["./src/sswap/sswap.d.mts"],
+      "wgblas/dswap": ["./src/dswap/dswap.d.mts"],
       "wgblas/saxpy": ["./src/saxpy/saxpy.d.mts"],
       "wgblas/daxpy": ["./src/daxpy/daxpy.d.mts"],
       "wgblas/scopy": ["./src/scopy/scopy.d.mts"],

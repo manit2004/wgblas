@@ -59,6 +59,9 @@ routineShaders.cscal = { cscal };
 import sswap from "./sswap.wgsl";
 routineShaders.sswap = { sswap };
 
+import dswap from "./dswap.wgsl"; // f64 sibling of sswap — pure data movement, no arithmetic, no reduction/barrier shader needed
+routineShaders.dswap = { dswap };
+
 import saxpy from "./saxpy.wgsl";
 routineShaders.saxpy = { saxpy };
 
