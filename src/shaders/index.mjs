@@ -143,6 +143,14 @@ routineShaders.idamax = {
 import srot from "./srot.wgsl";
 routineShaders.srot = { srot };
 
+import drot from "./drot.wgsl"; // f64 sibling of srot — four ddMulProtected + two ddAddProtected per element, no reduction shader needed
+routineShaders.drot = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  drot,
+};
+
 import srotm from "./srotm.wgsl";
 routineShaders.srotm = { srotm };
 

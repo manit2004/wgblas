@@ -99,6 +99,10 @@
       "types": "./src/srot/srot.d.mts",
       "import": "./src/srot/srot.mjs"
     },
+    "./drot": {
+      "types": "./src/drot/drot.d.mts",
+      "import": "./src/drot/drot.mjs"
+    },
     "./srotm": {
       "types": "./src/srotm/srotm.d.mts",
       "import": "./src/srotm/srotm.mjs"
@@ -218,6 +222,7 @@
     "@stdlib/blas-base-daxpy": "^0.4.1",
     "@stdlib/blas-base-dcopy": "^0.4.1",
     "@stdlib/blas-base-ddot": "^0.4.1",
+    "@stdlib/blas-base-drot": "^0.1.1",
     "@stdlib/blas-base-dscal": "^0.4.1",
     "@stdlib/blas-base-dswap": "^0.4.1",
     "@stdlib/blas-base-idamax": "^0.1.1",

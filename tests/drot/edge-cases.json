@@ -1,0 +1,52 @@
+[
+  {
+    "label": "identity rotation (c=1, s=0) — both vectors unchanged",
+    "n": 3,
+    "x": [1, 2, 3],
+    "incx": 1,
+    "y": [4, 5, 6],
+    "incy": 1,
+    "c": 1,
+    "s": 0
+  },
+  {
+    "label": "90° rotation (c=0, s=1) — x←y, y←−x",
+    "n": 3,
+    "x": [1, 2, 3],
+    "incx": 1,
+    "y": [4, 5, 6],
+    "incy": 1,
+    "c": 0,
+    "s": 1
+  },
+  {
+    "label": "n=1 — single pair",
+    "n": 1,
+    "x": [2],
+    "incx": 1,
+    "y": [3],
+    "incy": 1,
+    "c": 0,
+    "s": 1
+  },
+  {
+    "label": "incx=2, incy=1 — gap elements in x untouched",
+    "n": 2,
+    "x": [1, 99, 2],
+    "incx": 2,
+    "y": [3, 4],
+    "incy": 1,
+    "c": 0,
+    "s": 1
+  },
+  {
+    "label": "genuine double precision, not f32-exact",
+    "n": 2,
+    "x": [3.14159265358979, 2.71828182845905],
+    "incx": 1,
+    "y": [1.41421356237309, 1.73205080756888],
+    "incy": 1,
+    "c": 0.6,
+    "s": 0.8
+  }
+]

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>drot — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, drot, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        const n = 5;
+        const x = new Float64Array([1, 2, 3, 4, 5]);
+        const y = new Float64Array([10, 20, 30, 40, 50]);
+
+        // c = 0, s = 1: a clean 90-degree rotation, so x' = y and y' = -x.
+        const c = 0;
+        const s = 1;
+
+        const xBefore = Array.from(x).map(v => v.toFixed(4)).join(", ");
+        const yBefore = Array.from(y).map(v => v.toFixed(4)).join(", ");
+
+        const { x: xOut, y: yOut } = await drot(device, n, x, 1, y, 1, c, s);
+
+        document.getElementById("out").textContent =
+          "x (before): " + xBefore +
+          "\ny (before): " + yBefore +
+          "\nx (after):  " + Array.from(xOut).map(v => v.toFixed(4)).join(", ") +
+          "\ny (after):  " + Array.from(yOut).map(v => v.toFixed(4)).join(", ");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

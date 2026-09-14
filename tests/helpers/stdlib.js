@@ -21,6 +21,7 @@ import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
 import stdlibIsamax from "@stdlib/blas-base-isamax";
 import stdlibIdamax from "@stdlib/blas-base-idamax";
 import stdlibSrot from "@stdlib/blas-base-srot";
+import stdlibDrot from "@stdlib/blas-base-drot";
 import stdlibSrotm from "@stdlib/blas-base-srotm";
 import stdlibSgemv from "@stdlib/blas-base-sgemv";
 import stdlibSsymv from "@stdlib/blas-base-ssymv";
@@ -267,6 +268,8 @@ export const sswapReference = makeXYReference(stdlibSswap);
 // dswap: same shape as sswap, just Float64Array x/y — no adapter needed.
 export const dswapReference = makeXYReference(stdlibDswap);
 export const srotReference = makeXYReference(stdlibSrot, (a) => [a.c, a.s]);
+// drot: same shape as srot, just Float64Array x/y — no adapter needed.
+export const drotReference = makeXYReference(stdlibDrot, (a) => [a.c, a.s]);
 export const srotmReference = makeXYReference(stdlibSrotm, (a) => [a.param]);
 
 export const saxpyReference = makeYReference(stdlibSaxpy, (a) => [a.alpha]);

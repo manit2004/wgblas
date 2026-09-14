@@ -25,6 +25,7 @@ export { snrm2 } from "./src/snrm2/snrm2.mjs";
 export { isamax } from "./src/isamax/isamax.mjs";
 export { idamax } from "./src/idamax/idamax.mjs";
 export { srot } from "./src/srot/srot.mjs";
+export { drot } from "./src/drot/drot.mjs";
 export { srotm } from "./src/srotm/srotm.mjs";
 export { sgemv } from "./src/sgemv/sgemv.mjs";
 export { ssymv } from "./src/ssymv/ssymv.mjs";
