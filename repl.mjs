@@ -27,6 +27,7 @@ import {
   srot,
   drot,
   srotm,
+  drotm,
   sgemv,
   ssymv,
   strsv,
@@ -75,6 +76,7 @@ Object.assign(r.context, {
   srot,
   drot,
   srotm,
+  drotm,
   sgemv,
   ssymv,
   strsv,
@@ -114,6 +116,7 @@ r.defineCommand("help", {
   srot  (device, n, x, incx, y, incy, c, s)
   drot  (device, n, x, incx, y, incy, c, s)               (x, y: Float64Array or GpuVector)
   srotm (device, n, x, incx, y, incy, param)
+  drotm (device, n, x, incx, y, incy, param)              (x, y: Float64Array or GpuVector, param: Float64Array)
   sgemv (device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy)
   ssymv (device, uplo, n, alpha, A, lda, x, incx, beta, y, incy)
   strsv (device, uplo, trans, diag, n, A, lda, x, incx)
@@ -129,7 +132,7 @@ r.defineCommand("help", {
   strsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
-  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy, dswap, drot)
+  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy, dswap, drot, drotm)
   GpuVector.from(Complex32Array) v.read()  v.destroy()  (for cscal)
   GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()
 

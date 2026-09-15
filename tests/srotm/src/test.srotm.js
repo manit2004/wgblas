@@ -1,11 +1,10 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import fc from "fast-check";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { srotm } from "wgblas/srotm";
 import { loadParam, runValidation } from "../../helpers/validation.js";
-import { runFixtures, floatArb } from "../../helpers/fixtures.js";
+import { runFixtures, rotmParamArb } from "../../helpers/fixtures.js";
 // GPU may fuse multiply-add (FMA, one rounding) while CPU stdlib does two separate roundings.
 // Near cancellation raw ULP is unbounded, so we use |err| / (eps * |bound|) instead.
 // https://www.w3.org/TR/WGSL/#fma-builtin §17.5.32, 15.7.2
@@ -15,24 +14,8 @@ import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
 
-// flag must be picked before the h-coefficients since it selects which are meaningful (see forwardFactor).
 const paramSpec = loadParam("param");
-const paramArb = fc
-  .integer({ min: 0, max: paramSpec.range.flags.length - 1 }) // pick an index into range.flags
-  .chain((fi) => {
-    const flag = paramSpec.range.flags[fi]; // resolve index -> actual flag value (-1, 0, or 1)
-    const { min, max } = paramSpec.range.coeff; // coefficient bounds from param.json
-    return fc
-      .tuple(
-        floatArb(min, max),
-        floatArb(min, max),
-        floatArb(min, max),
-        floatArb(min, max),
-      )
-      .map(
-        ([h11, h21, h12, h22]) => new Float32Array([flag, h11, h21, h12, h22]),
-      ); // pack into srotm's param shape
-  });
+const paramArb = rotmParamArb(paramSpec);
 
 let device;
 before(async () => {

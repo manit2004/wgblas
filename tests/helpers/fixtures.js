@@ -129,6 +129,40 @@ function paramArb(spec) {
 }
 
 /**
+ * Arbitrary for a modified-Givens-rotation `param` array
+ * (`[flag, h11, h21, h12, h22]`) — srotm/drotm's shape. `flag` can't be
+ * generated as an arbitrary number: srotm.mjs/drotm.mjs reject anything
+ * outside `spec.range.flags` (from `param.json`), and which of h11/h21/h12/
+ * h22 are even meaningful depends on which flag comes up (see each
+ * routine's own `forwardFactor`) — so this picks a flag index first, then
+ * chains into the 4 coefficients, rather than treating all 5 slots as
+ * independent scalars the way `buildArb`'s generic per-field dispatch does.
+ *
+ * `spec.type === "float64array"` (drotm's derived `param64` — see
+ * `derive64` in validation.js) generates genuine wide doubles via
+ * `float64Arb` into a Float64Array; the default (srotm's own plain
+ * `"srotm_param"` spec) uses `floatArb` into a Float32Array.
+ *
+ * @param spec loaded `param`/`param64` spec (see `tests/validation/params/param.json`)
+ * @returns fast-check arbitrary producing a valid param array for `runFixtures`'s `extras`
+ * @public
+ */
+export function rotmParamArb(spec) {
+  const isF64 = spec.type === "float64array";
+  const arb = isF64 ? float64Arb : floatArb;
+  const Ctor = isF64 ? Float64Array : Float32Array;
+  const { min, max } = spec.range.coeff;
+  return fc
+    .integer({ min: 0, max: spec.range.flags.length - 1 }) // pick an index into range.flags
+    .chain((fi) => {
+      const flag = spec.range.flags[fi]; // resolve index -> actual flag value (-1, 0, or 1)
+      return fc
+        .tuple(arb(min, max), arb(min, max), arb(min, max), arb(min, max))
+        .map(([h11, h21, h12, h22]) => new Ctor([flag, h11, h21, h12, h22])); // pack into srotm's/drotm's param shape
+    });
+}
+
+/**
  * Arbitrary for a typed array of exactly `len` elements — works for both vectors and matrices.
  * Callers compute `len` from dimensions: `(n-1)*inc+1` for vectors, `(m-1)*lda+n` for matrices.
  * `spec.type === "float64array"` (e.g. dasum's x) builds a Float64Array; everything else

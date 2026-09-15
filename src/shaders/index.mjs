@@ -154,6 +154,14 @@ routineShaders.drot = {
 import srotm from "./srotm.wgsl";
 routineShaders.srotm = { srotm };
 
+import drotm from "./drotm.wgsl"; // f64 sibling of srotm — four ddMulProtected + two ddAddProtected per element, no reduction shader needed
+routineShaders.drotm = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  drotm,
+};
+
 import sgemv_n from "./sgemv_n.wgsl";
 import sgemv_t from "./sgemv_t.wgsl";
 routineShaders.sgemv = { sgemv_n, sgemv_t }; // one or the other, picked by trans

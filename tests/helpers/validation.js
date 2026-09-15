@@ -82,6 +82,12 @@ export function loadParam(name) {
  */
 function derive64(base) {
   const isArray = base.type !== "float";
+  // Only a plain "float32array" base (x/y-style vectors) has a GpuVector
+  // overload to mismatch — srotm/drotm's structured "srotm_param" is array-
+  // typed (isArray, so it still becomes "float64array" below) but is never
+  // accepted as a GpuVector at all, so injecting this scenario for it would
+  // assert an error message drotm never throws.
+  const hasGpuVectorOverload = base.type === "float32array";
   return {
     ...base,
     type: isArray ? "float64array" : "float64",
@@ -98,7 +104,7 @@ function derive64(base) {
       // f64-emulated routine (dscal/ddot/daxpy) checks .dtype, unlike plain
       // f32 routines, which is why this lives here rather than in the base
       // f32 spec derive64 starts from.
-      ...(isArray
+      ...(hasGpuVectorOverload
         ? [
             {
               scenario: "wrongDtypeGpuVector",
@@ -296,20 +302,23 @@ function resolveNdArray(
 }
 
 /**
- * Builds a Float32Array for a named srotm `param` scenario.
+ * Builds a typed array for a named srotm/drotm `param` scenario. `type`
+ * selects Float32Array (srotm, the default) or Float64Array (drotm, via
+ * `derive64`'s "param64" — see `typedArrayCtor`).
  * @param scenario one of `"tooShort"` (4 elements), `"tooLong"` (6 elements),
  *   `"identity"` (flag=−2), `"fullMatrix"` (flag=−1), `"diagOne"` (flag=0), `"offDiagOne"` (flag=1)
- * @returns Float32Array of length 5 with the appropriate flag and coefficients
+ * @param type `spec.type` — `"float64array"` for drotm's derived param64 spec
+ * @returns typed array of length 5 with the appropriate flag and coefficients
  * @internal
  */
-export function resolveParam(scenario) {
-  if (scenario === "tooShort") return new Float32Array(4).fill(0);
-  if (scenario === "tooLong") return new Float32Array(6).fill(0);
-  if (scenario === "identity") return new Float32Array([-2, 0, 0, 0, 0]);
-  if (scenario === "fullMatrix")
-    return new Float32Array([-1, 0.5, -0.5, 0.5, 0.5]);
-  if (scenario === "diagOne") return new Float32Array([0, 0, 0.5, -0.5, 0]);
-  if (scenario === "offDiagOne") return new Float32Array([1, 0.5, 0, 0, 0.5]);
+export function resolveParam(scenario, type) {
+  const Ctor = typedArrayCtor(type);
+  if (scenario === "tooShort") return new Ctor(4).fill(0);
+  if (scenario === "tooLong") return new Ctor(6).fill(0);
+  if (scenario === "identity") return new Ctor([-2, 0, 0, 0, 0]);
+  if (scenario === "fullMatrix") return new Ctor([-1, 0.5, -0.5, 0.5, 0.5]);
+  if (scenario === "diagOne") return new Ctor([0, 0, 0.5, -0.5, 0]);
+  if (scenario === "offDiagOne") return new Ctor([1, 0.5, 0, 0, 0.5]);
   throw new Error(`Unknown param scenario: "${scenario}"`);
 }
 
@@ -358,8 +367,10 @@ const WRONG_GPU_DTYPE = {
 
 export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
   if ("scenario" in entry) {
-    if (paramName === "param") return resolveParam(entry.scenario);
-    if (type === "complex32") return resolveComplex32Scenario(entry.scenario);
+    // Checked before the paramName === "param" branch below: derive64
+    // injects this scenario generically onto any array-typed spec it
+    // derives (including param64's structured srotm/drotm descriptor), so
+    // it must win regardless of the param's name.
     if (entry.scenario === "wrongDtypeGpuVector") {
       const WrongCtor = WRONG_GPU_DTYPE[type];
       if (!WrongCtor)
@@ -372,6 +383,8 @@ export function resolveEntry(entry, paramName, baselines, dependsOn, type) {
         );
       return GpuVector.from(baselines.device, new WrongCtor([1, 2, 3, 4]));
     }
+    if (paramName === "param") return resolveParam(entry.scenario, type);
+    if (type === "complex32") return resolveComplex32Scenario(entry.scenario);
     return resolveNdArray(entry.scenario, dependsOn, baselines, false, type);
   }
   if ("value" in entry) {
