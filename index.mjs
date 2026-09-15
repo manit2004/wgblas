@@ -22,6 +22,7 @@ export { sasum } from "./src/sasum/sasum.mjs";
 export { dasum } from "./src/dasum/dasum.mjs";
 export { ddot } from "./src/ddot/ddot.mjs";
 export { snrm2 } from "./src/snrm2/snrm2.mjs";
+export { dnrm2 } from "./src/dnrm2/dnrm2.mjs";
 export { isamax } from "./src/isamax/isamax.mjs";
 export { idamax } from "./src/idamax/idamax.mjs";
 export { srot } from "./src/srot/srot.mjs";

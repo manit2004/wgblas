@@ -22,6 +22,7 @@ import {
   sasum,
   dasum,
   snrm2,
+  dnrm2,
   isamax,
   idamax,
   srot,
@@ -71,6 +72,7 @@ Object.assign(r.context, {
   sasum,
   dasum,
   snrm2,
+  dnrm2,
   isamax,
   idamax,
   srot,
@@ -111,6 +113,7 @@ r.defineCommand("help", {
   ddot  (device, n, x, incx, y, incy)
   dasum (device, n, x, incx)
   snrm2 (device, n, x, incx)
+  dnrm2 (device, n, x, incx)                              (x: Float64Array or GpuVector)
   isamax(device, n, x, incx)
   idamax(device, n, x, incx)
   srot  (device, n, x, incx, y, incy, c, s)
@@ -132,7 +135,7 @@ r.defineCommand("help", {
   strsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)
 
   GpuVector.from(Float32Array)   v.read()  v.destroy()
-  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy, dswap, drot, drotm)
+  GpuVector.from(Float64Array)   v.read()  v.destroy()  (for ddot, dasum, dscal, daxpy, dcopy, dswap, drot, drotm, dnrm2)
   GpuVector.from(Complex32Array) v.read()  v.destroy()  (for cscal)
   GpuMatrix.from(Float32Array, rows, cols[, lda])  mat.destroy()
 

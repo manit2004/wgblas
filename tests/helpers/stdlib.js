@@ -18,6 +18,7 @@ import stdlibSasum from "@stdlib/blas-base-sasum";
 import stdlibDasum from "@stdlib/blas-base-dasum";
 import stdlibDdot from "@stdlib/blas-base-ddot";
 import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
+import stdlibDnrm2 from "@stdlib/blas-base-dnrm2";
 import stdlibIsamax from "@stdlib/blas-base-isamax";
 import stdlibIdamax from "@stdlib/blas-base-idamax";
 import stdlibSrot from "@stdlib/blas-base-srot";
@@ -287,6 +288,8 @@ export const ddotReference = makeDotReference(stdlibDdot);
 export const sasumReference = makeReducerReference(stdlibSasum);
 export const dasumReference = makeReducerReference(stdlibDasum);
 export const snrm2Reference = makeReducerReference(stdlibSnrm2);
+// dnrm2: same shape as snrm2, just Float64Array x — no adapter needed.
+export const dnrm2Reference = makeReducerReference(stdlibDnrm2);
 export const isamaxReference = makeReducerReference(stdlibIsamax);
 export const idamaxReference = makeReducerReference(stdlibIdamax);
 
