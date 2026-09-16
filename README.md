@@ -1,6 +1,8 @@
 # wgblas
 
 [![Tests](https://github.com/manit2004/wgblas/actions/workflows/test-gpu.yml/badge.svg)](https://github.com/manit2004/wgblas/actions/workflows/test-gpu.yml)
+[![NPM version](https://img.shields.io/npm/v/wgblas.svg?style=plastic)](https://www.npmjs.org/package/wgblas)
+[![NPM downloads](https://img.shields.io/npm/dm/wgblas.svg?style=plastic)](https://www.npmjs.org/package/wgblas)
 
 `wgblas` implements all the standard single-precision level 1, 2, and 3 BLAS routines on top of WebGPU. Next up: double-precision routines, and single- and double-precision complex routines.
 

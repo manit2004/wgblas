@@ -133,14 +133,10 @@ test("sger edge cases", async (t) => {
   }
 });
 
-// The TODO's zero-dimension concern: existing edge cases only assert
-// non-throwing at m=0/n=0 (see runEdgeCases in tests/helpers/validation.js),
-// so an implementation that scribbles on A before an early return would
-// still pass everything. Unlike sgemv, A's own shape ties directly to both
-// m and n, so m=0 or n=0 always makes A's accessed region empty — this case
-// is vacuous rather than value-observable. The test instead guards that the
-// routine leaves A's entire backing storage byte-for-byte untouched, using
-// a realistic lda even though only m=0 or n=0 is ever passed.
+// Zero-dimension edge case: A's shape ties directly to both m and n, so
+// m=0 or n=0 always makes A's accessed region empty (vacuous, unlike
+// sgemv). Guards that A's entire backing storage stays byte-for-byte
+// untouched.
 test("sger zero-dimension (regression)", async (t) => {
   await t.test("m=0", async () => {
     const before = randomFloat32Array(16, -1, 1, 9101);

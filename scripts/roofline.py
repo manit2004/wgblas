@@ -220,7 +220,7 @@ def _probe_max(gpu, name, key):
         return 0.0
     try:
         return max(r.get(key, 0) for r in json.loads(path.read_text()))
-    except (json.JSONDecodeError, OSError, ValueError):
+    except (OSError, ValueError):
         return 0.0
 
 

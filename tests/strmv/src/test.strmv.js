@@ -137,13 +137,9 @@ test("strmv edge cases", async (t) => {
   }
 });
 
-// The TODO's zero-dimension concern: existing edge cases only assert
-// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
-// an implementation that scribbles on y before an early return would still
-// pass everything. strmv is out-of-place (result goes into y, x stays
-// untouched as input), and n is the only dimension (it ties A's order and
-// x's/y's lengths together), so n=0 is fully vacuous — the test guards that
-// y comes back byte-for-byte untouched.
+// Zero-dimension edge case: strmv is out-of-place (result goes into y),
+// and n ties A's order and x's/y's lengths together, so n=0 is fully
+// vacuous. Guards that y comes back byte-for-byte untouched.
 test("strmv zero-dimension (regression)", async (t) => {
   await t.test("n=0", async () => {
     const yBefore = randomFloat32Array(4, -1, 1, 9501);

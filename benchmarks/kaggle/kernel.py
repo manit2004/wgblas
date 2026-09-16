@@ -9,28 +9,41 @@ Steps:
   5. Copy results to /kaggle/working/results/ for download by the CI workflow
 """
 
-import subprocess
+import subprocess  # nosec B404 -- orchestrates hardcoded, non-interpolated OS commands below
 import shutil
 import sys
 import os
 
 def run(cmd, **kwargs):
-    print(f"\n$ {cmd if isinstance(cmd, str) else ' '.join(cmd)}")
-    subprocess.run(cmd, check=True, shell=isinstance(cmd, str), **kwargs)
+    # Every call site below passes a hardcoded literal list, never
+    # externally-controlled input.
+    print(f"\n$ {' '.join(cmd)}")
+    subprocess.run(cmd, check=True, **kwargs)  # nosec B603
+
+def run_shell(cmd, **kwargs):
+    # Only for the one command below that needs shell features (a pipe).
+    # `cmd` is always a hardcoded literal, never built from external input.
+    print(f"\n$ {cmd}")
+    subprocess.run(cmd, check=True, shell=True, **kwargs)  # nosec B602
 
 # ── 1. System deps ──────────────────────────────────────────────────────────
 
-run("apt-get update -qq")
+run(["apt-get", "update", "-qq"])
 
 # Vulkan loader — NVIDIA drivers ship the ICD but not the loader
-run("apt-get install -y -qq libvulkan1 vulkan-tools")
+run(["apt-get", "install", "-y", "-qq", "libvulkan1", "vulkan-tools"])
 
 # Node.js 22 via NodeSource (matches .nvmrc)
-run("curl -fsSL https://deb.nodesource.com/setup_22.x | bash -")
-run("apt-get install -y -qq nodejs")
+run_shell("curl -fsSL https://deb.nodesource.com/setup_22.x | bash -")
+run(["apt-get", "install", "-y", "-qq", "nodejs"])
 
-print("\nNode:", subprocess.check_output(["node", "--version"]).decode().strip())
-print("npm: ", subprocess.check_output(["npm",  "--version"]).decode().strip())
+node = shutil.which("node")
+npm = shutil.which("npm")
+if not (node and npm):
+    sys.exit("node/npm not found on PATH after install")
+
+print("\nNode:", subprocess.check_output([node, "--version"]).decode().strip())  # nosec B603
+print("npm: ", subprocess.check_output([npm, "--version"]).decode().strip())  # nosec B603
 
 # ── 2. Verify Vulkan ────────────────────────────────────────────────────────
 
