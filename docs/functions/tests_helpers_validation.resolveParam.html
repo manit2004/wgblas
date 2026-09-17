@@ -17,9 +17,11 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="resolveparam"><span class="tsd-kind-call-signature">resolveParam</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">scenario</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span><a href="#resolveparam" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="resolveparam"><span class="tsd-kind-call-signature">resolveParam</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">scenario</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">Float64Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span><a href="#resolveparam" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description"><code class="tsd-tag">Internal</code>
-<div class="tsd-comment tsd-typography"><p>Builds a Float32Array for a named srotm <code>param</code> scenario.</p>
+<div class="tsd-comment tsd-typography"><p>Builds a typed array for a named srotm/drotm <code>param</code> scenario. <code>type</code>
+selects Float32Array (srotm, the default) or Float64Array (drotm, via
+<code>derive64</code>'s &quot;param64&quot; — see <code>typedArrayCtor</code>).</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -27,11 +29,14 @@
 <li><span><span class="tsd-kind-parameter">scenario</span>: <span class="tsd-signature-type">any</span></span>
 <div class="tsd-comment tsd-typography"><p>one of <code>&quot;tooShort&quot;</code> (4 elements), <code>&quot;tooLong&quot;</code> (6 elements),
 <code>&quot;identity&quot;</code> (flag=−2), <code>&quot;fullMatrix&quot;</code> (flag=−1), <code>&quot;diagOne&quot;</code> (flag=0), <code>&quot;offDiagOne&quot;</code> (flag=1)</p>
+</div></li>
+<li><span><span class="tsd-kind-parameter">type</span>: <span class="tsd-signature-type">any</span></span>
+<div class="tsd-comment tsd-typography"><p><code>spec.type</code> — <code>&quot;float64array&quot;</code> for drotm's derived param64 spec</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></h4><p>Float32Array of length 5 with the appropriate flag and coefficients</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">Float64Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">&gt;</span></h4><p>typed array of length 5 with the appropriate flag and coefficients</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/64b94b53ddeb070801b94107809ef7b7b04db6e1/tests/helpers/validation.js#L305">tests/helpers/validation.js:305</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/3feafbb9ebfa1fbf7bc0b82694e3af8c0bcfcb5e/tests/helpers/validation.js#L314">tests/helpers/validation.js:314</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
