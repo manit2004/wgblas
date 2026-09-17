@@ -140,13 +140,9 @@ test("ssymv edge cases", async (t) => {
   }
 });
 
-// The TODO's zero-dimension concern: existing edge cases only assert
-// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
-// an implementation that scribbles on y before an early return, or applies
-// beta when it shouldn't, would still pass everything. n is the only
-// dimension here (it ties A's order, x's length, and y's length together),
-// so n=0 is fully vacuous — the test guards that y comes back byte-for-byte
-// untouched.
+// Zero-dimension edge case: n ties A's order, x's length, and y's length
+// together, so n=0 is fully vacuous. Guards that y comes back
+// byte-for-byte untouched.
 test("ssymv zero-dimension (regression)", async (t) => {
   await t.test("n=0", async () => {
     const yBefore = randomFloat32Array(4, -1, 1, 9201);

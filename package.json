@@ -87,6 +87,10 @@
       "types": "./src/snrm2/snrm2.d.mts",
       "import": "./src/snrm2/snrm2.mjs"
     },
+    "./dnrm2": {
+      "types": "./src/dnrm2/dnrm2.d.mts",
+      "import": "./src/dnrm2/dnrm2.mjs"
+    },
     "./isamax": {
       "types": "./src/isamax/isamax.d.mts",
       "import": "./src/isamax/isamax.mjs"
@@ -106,6 +110,10 @@
     "./srotm": {
       "types": "./src/srotm/srotm.d.mts",
       "import": "./src/srotm/srotm.mjs"
+    },
+    "./drotm": {
+      "types": "./src/drotm/drotm.d.mts",
+      "import": "./src/drotm/drotm.mjs"
     },
     "./sgemv": {
       "types": "./src/sgemv/sgemv.d.mts",
@@ -222,7 +230,9 @@
     "@stdlib/blas-base-daxpy": "^0.4.1",
     "@stdlib/blas-base-dcopy": "^0.4.1",
     "@stdlib/blas-base-ddot": "^0.4.1",
+    "@stdlib/blas-base-dnrm2": "^0.4.1",
     "@stdlib/blas-base-drot": "^0.1.1",
+    "@stdlib/blas-base-drotm": "^0.2.1",
     "@stdlib/blas-base-dscal": "^0.4.1",
     "@stdlib/blas-base-dswap": "^0.4.1",
     "@stdlib/blas-base-idamax": "^0.1.1",

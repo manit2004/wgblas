@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dnrm2 — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dnrm2, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // 2^2 + 3^2 + 6^2 = 49 = 7^2, so the norm comes out to a clean 7.
+        const n = 3;
+        const x = new Float64Array([2, 3, 6]);
+
+        const { nrm2 } = await dnrm2(device, n, x, 1);
+
+        document.getElementById("out").textContent =
+          "x:    " + Array.from(x).map(v => v.toFixed(4)).join(", ") +
+          "\nnrm2: " + nrm2.toFixed(4);
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

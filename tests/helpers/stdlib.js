@@ -18,11 +18,13 @@ import stdlibSasum from "@stdlib/blas-base-sasum";
 import stdlibDasum from "@stdlib/blas-base-dasum";
 import stdlibDdot from "@stdlib/blas-base-ddot";
 import stdlibSnrm2 from "@stdlib/blas-base-snrm2";
+import stdlibDnrm2 from "@stdlib/blas-base-dnrm2";
 import stdlibIsamax from "@stdlib/blas-base-isamax";
 import stdlibIdamax from "@stdlib/blas-base-idamax";
 import stdlibSrot from "@stdlib/blas-base-srot";
 import stdlibDrot from "@stdlib/blas-base-drot";
 import stdlibSrotm from "@stdlib/blas-base-srotm";
+import stdlibDrotm from "@stdlib/blas-base-drotm";
 import stdlibSgemv from "@stdlib/blas-base-sgemv";
 import stdlibSsymv from "@stdlib/blas-base-ssymv";
 import stdlibStrmv from "@stdlib/blas-base-strmv";
@@ -271,6 +273,8 @@ export const srotReference = makeXYReference(stdlibSrot, (a) => [a.c, a.s]);
 // drot: same shape as srot, just Float64Array x/y — no adapter needed.
 export const drotReference = makeXYReference(stdlibDrot, (a) => [a.c, a.s]);
 export const srotmReference = makeXYReference(stdlibSrotm, (a) => [a.param]);
+// drotm: same shape as srotm, just Float64Array x/y/param — no adapter needed.
+export const drotmReference = makeXYReference(stdlibDrotm, (a) => [a.param]);
 
 export const saxpyReference = makeYReference(stdlibSaxpy, (a) => [a.alpha]);
 // daxpy: same shape as saxpy, just Float64Array x/y — no adapter needed.
@@ -284,6 +288,8 @@ export const ddotReference = makeDotReference(stdlibDdot);
 export const sasumReference = makeReducerReference(stdlibSasum);
 export const dasumReference = makeReducerReference(stdlibDasum);
 export const snrm2Reference = makeReducerReference(stdlibSnrm2);
+// dnrm2: same shape as snrm2, just Float64Array x — no adapter needed.
+export const dnrm2Reference = makeReducerReference(stdlibDnrm2);
 export const isamaxReference = makeReducerReference(stdlibIsamax);
 export const idamaxReference = makeReducerReference(stdlibIdamax);
 

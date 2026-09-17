@@ -148,19 +148,11 @@ test("sgemv edge cases", async (t) => {
   }
 });
 
-// The TODO's zero-dimension concern: existing edge cases only assert
-// non-throwing at m=0/n=0 (see runEdgeCases in tests/helpers/validation.js),
-// so an implementation that scribbles on y before an early return, or that
-// applies beta when it shouldn't (or vice versa), would still pass
-// everything. sgemv is checked here because the CONTRACTION dimension (n
-// for no-transpose, m for transpose — the one tied to x's length) can be 0
-// while y's own dimension stays >0, making the case value-observable rather
-// than vacuous. NOTE: verified directly against both the reference-BLAS
-// "quick return if m==0 or n==0" convention and this suite's own oracle
-// (@stdlib/blas-base-sgemv via sgemvReference) — in that situation y comes
-// back completely untouched, beta is never applied even though y is
-// nonempty. That contradicts a naive "y := beta*y" expectation, so the
-// assertion below is exact identity, not a beta-scaled value.
+// Zero-dimension edge case: the CONTRACTION dimension (n for no-transpose,
+// m for transpose) can be 0 while y stays nonempty, so this is
+// value-observable, not vacuous. Both reference BLAS and @stdlib's oracle
+// leave y untouched with beta never applied — assert exact identity, not
+// a beta-scaled value.
 test("sgemv zero-dimension (regression)", async (t) => {
   await t.test("no-transpose, n=0 (contraction dim zero, m>0)", async () => {
     const yBefore = randomFloat32Array(4, -1, 1, 9001);

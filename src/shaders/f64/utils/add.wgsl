@@ -75,3 +75,9 @@ fn ddAddProtected(a: DD, b: DD, threadSlot: u32) -> DD {
   let loSum = a.lo + b.lo;
   return fastTwoSumProtected(s.hi, s.lo + loSum, threadSlot);
 }
+
+// Double-double subtraction — a - b, via exact negation (a sign-bit flip,
+// no rounding) then ddAddProtected. Same protection contract.
+fn ddSubProtected(a: DD, b: DD, threadSlot: u32) -> DD {
+  return ddAddProtected(a, DD(negf(b.hi), negf(b.lo)), threadSlot);
+}

@@ -20,6 +20,7 @@ import argparse
 import json
 import math
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -42,6 +43,10 @@ SVG_LINK_PREFIX = "../../../assets/benchmarks"
 # benchmarks/strsm/wgblas/strsm.js's own COLS). Without this, every "n" in row
 # filter below silently drops all of strsm's rows and produces an empty table.
 X_KEY_OVERRIDES = {"strsm": "order"}
+
+CLOSE_DETAILS = "</details>\n"
+SEE_ALSO_HEADING = "**See also:**\n"
+TRANSPOSE_SWEEP_HEADING = "## Transpose sweep\n"
 
 
 def x_key(routine, rows=None):
@@ -91,11 +96,13 @@ def fetch_json(gpu, backend, rel_path, local_only=False):
     """rel_path is relative to benchmarks/results/<gpu>/<backend>/, without .json."""
     if not local_only:
         url = f"{BASE_URL}/{gpu}/{backend}/{rel_path}.json"
+        if urllib.parse.urlparse(url).scheme not in ("http", "https"):
+            raise ValueError(f"refusing to fetch non-http(s) URL: {url}")
         try:
-            with urllib.request.urlopen(url) as r:
+            with urllib.request.urlopen(url) as r:  # nosec B310 -- scheme validated above
                 return json.loads(r.read())
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"  (remote fetch failed for {rel_path}: {e} — falling back to local)", file=sys.stderr)
     local = RESULTS_DIR / gpu / backend / f"{rel_path}.json"
     if local.exists():
         return json.loads(local.read_text())
@@ -251,7 +258,7 @@ def group_by_trans_and_pad(rows):
     }
 
 
-def group_by_transB_and_pad(rows):
+def group_by_transb_and_pad(rows):
     """Groups a combined transB×pad ldb-sweep (currently just sgemm) by
     'transB' then by 'pad', sorting each innermost group's rows by n
     ascending. Same shape as group_by_trans_and_pad, keyed by transB
@@ -269,7 +276,7 @@ def group_by_transB_and_pad(rows):
     }
 
 
-def group_by_transA_transB(rows):
+def group_by_transa_transb(rows):
     """Groups sgemm's trans sweep by 'transA' then by 'transB', sorting each
     innermost group's rows by n ascending. A 2x2 grid of (transA, transB)
     combinations, each with its own n sweep — distinct from sgemv's
@@ -619,7 +626,7 @@ def make_pad_section(wrows, crows_all, routine, gpu, display, gh, prefix):
     """One table + chart per pad value, for a table-driven leading-dimension
     sweep (currently ldc). Same shape as make_flag_section, but the key is
     numeric so the groups sort ascending rather than alphabetically."""
-    key, label, blurb = PAD_SWEEPS[prefix]
+    _, label, blurb = PAD_SWEEPS[prefix]
     groups = group_by_pad(wrows)
     cuda_groups = group_by_pad(crows_all) if crows_all else {}
 
@@ -636,9 +643,9 @@ def make_pad_section(wrows, crows_all, routine, gpu, display, gh, prefix):
         if chart:
             parts.append(chart)
         parts.append("")
-        parts.append("</details>\n")
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [{prefix}.{routine}.js]({gh}/{scalar_script_path(routine, 'wgblas', prefix)}) "
         f"— WebGPU {label}-sweep benchmark script"
@@ -683,9 +690,9 @@ def make_flag_section(wrows, crows_all, routine, gpu, display, gh, prefix):
         if chart:
             parts.append(chart)
         parts.append("")
-        parts.append("</details>\n")
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [{prefix}.{routine}.js]({gh}/{scalar_script_path(routine, 'wgblas', prefix)}) "
         f"— WebGPU {label}-sweep benchmark script"
@@ -742,9 +749,9 @@ def make_scalar_section(wrows, crows_all, routine, gpu, display, gh, prefix):
         if chart:
             parts.append(chart)
         parts.append("")
-        parts.append("</details>\n")
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [{prefix}.{routine}.js]({gh}/{scalar_script_path(routine, 'wgblas', prefix)}) "
         f"— WebGPU {label}-sweep benchmark script"
@@ -881,14 +888,14 @@ def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
 
     parts = [
         "## Stride sweep\n",
-        f"Unless noted otherwise, every result above uses unit stride "
-        f"(`incx = incy = 1`) — the normal case, and the coalesced, "
-        f"best-case GPU access pattern. Real usage sometimes passes a "
-        f"non-unit stride (e.g. operating on a row or column of a larger "
-        f"matrix, where `incx = lda`), which breaks memory coalescing and "
-        f"costs measurably more. This section sweeps a few representative "
-        f"strides to characterize that cost separately, collapsed below by "
-        f"default — expand a stride to see its table and chart.\n",
+        "Unless noted otherwise, every result above uses unit stride "
+        "(`incx = incy = 1`) — the normal case, and the coalesced, "
+        "best-case GPU access pattern. Real usage sometimes passes a "
+        "non-unit stride (e.g. operating on a row or column of a larger "
+        "matrix, where `incx = lda`), which breaks memory coalescing and "
+        "costs measurably more. This section sweeps a few representative "
+        "strides to characterize that cost separately, collapsed below by "
+        "default — expand a stride to see its table and chart.\n",
     ]
     for stride, wrows in groups.items():
         crows = cuda_groups.get(stride, [])
@@ -902,9 +909,9 @@ def make_stride_section(wgblas_stride, cuda_stride, routine, gpu, display, gh):
         if chart:
             parts.append(chart)
         parts.append("")
-        parts.append("</details>\n")
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [stride.{routine}.js]({gh}/{stride_script_path(routine, 'wgblas')}) "
         "— WebGPU stride-sweep benchmark script"
@@ -926,7 +933,7 @@ def make_trans_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
     cuda_groups = group_by_trans_and_m(cuda_trans) if cuda_trans else {}
 
     parts = [
-        "## Transpose sweep\n",
+        TRANSPOSE_SWEEP_HEADING,
         f"Unless noted otherwise, every result above uses `trans = "
         f"\"no-transpose\"`. `trans = \"transpose\"`'s parallelism is bounded "
         f"by `n` (one workgroup per output-column tile) rather than `m`, so "
@@ -952,10 +959,10 @@ def make_trans_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
             if chart:
                 parts.append(chart)
             parts.append("")
-            parts.append("</details>\n")
-        parts.append("</details>\n")
+            parts.append(CLOSE_DETAILS)
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [trans.{routine}.js]({gh}/{trans_script_path(routine, 'wgblas')}) "
         "— WebGPU trans-sweep benchmark script"
@@ -977,12 +984,12 @@ def make_trans_simple_section(wgblas_trans, cuda_trans, routine, gpu, display, g
     cuda_groups = group_by_trans(cuda_trans) if cuda_trans else {}
 
     parts = [
-        "## Transpose sweep\n",
-        f"Unless noted otherwise, every result above uses `trans = "
-        f"\"no-transpose\"`. `trans = \"transpose\"` reads A with a "
-        f"cross-thread `lda`-strided mirror pattern instead of a coalesced "
-        f"one, and the gap grows with `n` — collapsed below by default, "
-        f"expand a `trans` value to see its table and chart.\n",
+        TRANSPOSE_SWEEP_HEADING,
+        "Unless noted otherwise, every result above uses `trans = "
+        "\"no-transpose\"`. `trans = \"transpose\"` reads A with a "
+        "cross-thread `lda`-strided mirror pattern instead of a coalesced "
+        "one, and the gap grows with `n` — collapsed below by default, "
+        "expand a `trans` value to see its table and chart.\n",
     ]
     for trans, wrows in groups.items():
         crows = cuda_groups.get(trans, [])
@@ -996,9 +1003,9 @@ def make_trans_simple_section(wgblas_trans, cuda_trans, routine, gpu, display, g
         if chart:
             parts.append(chart)
         parts.append("")
-        parts.append("</details>\n")
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [trans.{routine}.js]({gh}/{trans_script_path(routine, 'wgblas')}) "
         "— WebGPU trans-sweep benchmark script"
@@ -1019,12 +1026,12 @@ def make_transab_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
     because of a tile-dimension mismatch (B's BN=64 spans a full warp in
     the no-transpose case, A's BK=8 never does).
     """
-    groups = group_by_transA_transB(wgblas_trans)
-    cuda_groups = group_by_transA_transB(cuda_trans) if cuda_trans else {}
+    groups = group_by_transa_transb(wgblas_trans)
+    cuda_groups = group_by_transa_transb(cuda_trans) if cuda_trans else {}
 
     total = sum(len(by_tb) for by_tb in groups.values())
     parts = [
-        "## Transpose sweep\n",
+        TRANSPOSE_SWEEP_HEADING,
         f"Unless noted otherwise, every result above uses `transA = transB "
         f"= \"no-transpose\"`. Both shaders load A/B into shared memory "
         f"with a transpose-dependent index that scatters what would "
@@ -1038,25 +1045,25 @@ def make_transab_section(wgblas_trans, cuda_trans, routine, gpu, display, gh):
         f"then a `transB`, to see its table and chart ({total} "
         f"combinations total).\n",
     ]
-    for transA, by_tb in groups.items():
-        cuda_by_tb = cuda_groups.get(transA, {})
-        parts.append(f"<details>\n<summary>{display} — transA = {transA} ({len(by_tb)} transB values)</summary>\n")
-        for transB, wrows in by_tb.items():
-            crows = cuda_by_tb.get(transB, [])
-            parts.append(f"<details>\n<summary>transB = {transB}</summary>\n")
+    for trans_a, by_tb in groups.items():
+        cuda_by_tb = cuda_groups.get(trans_a, {})
+        parts.append(f"<details>\n<summary>{display} — transA = {trans_a} ({len(by_tb)} transB values)</summary>\n")
+        for trans_b, wrows in by_tb.items():
+            crows = cuda_by_tb.get(trans_b, [])
+            parts.append(f"<details>\n<summary>transB = {trans_b}</summary>\n")
             parts.append(
                 make_comparison_table(wrows, crows, routine) if crows
                 else make_wgblas_only_table(wrows, routine)
             )
             parts.append("")
-            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans-{transA}-{transB}")
+            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"trans-{trans_a}-{trans_b}")
             if chart:
                 parts.append(chart)
             parts.append("")
-            parts.append("</details>\n")
-        parts.append("</details>\n")
+            parts.append(CLOSE_DETAILS)
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [trans.{routine}.js]({gh}/{trans_script_path(routine, 'wgblas')}) "
         "— WebGPU trans-sweep benchmark script"
@@ -1075,22 +1082,22 @@ def make_ldb_section(wgblas_ldb, cuda_ldb, routine, gpu, display, gh):
     shape as make_lda_trans_section, keyed transB instead of trans and
     titled "Ldb sweep" since ldb — not lda — is the parameter that matters.
     """
-    groups = group_by_transB_and_pad(wgblas_ldb)
-    cuda_groups = group_by_transB_and_pad(cuda_ldb) if cuda_ldb else {}
+    groups = group_by_transb_and_pad(wgblas_ldb)
+    cuda_groups = group_by_transb_and_pad(cuda_ldb) if cuda_ldb else {}
 
     parts = [
         "## Ldb sweep\n",
-        f"Unless noted otherwise, every result above uses a tight `lda`/"
-        f"`ldb`/`ldc` (no padding). `lda` and `ldc` were scoped and found "
-        f"to be non-effects; padding `ldb` only matters for `transB = "
-        f"\"transpose\"` here (swept at both `transB` values below so "
-        f"that's visible in the data). Collapsed below by default — "
-        f"expand a `transB` value, then a `pad`, to see its table and "
-        f"chart.\n",
+        "Unless noted otherwise, every result above uses a tight `lda`/"
+        "`ldb`/`ldc` (no padding). `lda` and `ldc` were scoped and found "
+        "to be non-effects; padding `ldb` only matters for `transB = "
+        "\"transpose\"` here (swept at both `transB` values below so "
+        "that's visible in the data). Collapsed below by default — "
+        "expand a `transB` value, then a `pad`, to see its table and "
+        "chart.\n",
     ]
-    for transB, by_pad in groups.items():
-        cuda_by_pad = cuda_groups.get(transB, {})
-        parts.append(f"<details>\n<summary>{display} — transB = {transB} ({len(by_pad)} pads)</summary>\n")
+    for trans_b, by_pad in groups.items():
+        cuda_by_pad = cuda_groups.get(trans_b, {})
+        parts.append(f"<details>\n<summary>{display} — transB = {trans_b} ({len(by_pad)} pads)</summary>\n")
         for pad, wrows in by_pad.items():
             crows = cuda_by_pad.get(pad, [])
             parts.append(f"<details>\n<summary>pad = {pad}</summary>\n")
@@ -1099,14 +1106,14 @@ def make_ldb_section(wgblas_ldb, cuda_ldb, routine, gpu, display, gh):
                 else make_wgblas_only_table(wrows, routine)
             )
             parts.append("")
-            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"ldb-{transB}-pad{pad}")
+            chart = make_svg_chart(wrows, crows, routine, gpu, config=f"ldb-{trans_b}-pad{pad}")
             if chart:
                 parts.append(chart)
             parts.append("")
-            parts.append("</details>\n")
-        parts.append("</details>\n")
+            parts.append(CLOSE_DETAILS)
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [ldb.{routine}.js]({gh}/{ldb_script_path(routine, 'wgblas')}) "
         "— WebGPU ldb-sweep benchmark script"
@@ -1130,13 +1137,13 @@ def make_uplo_section(wgblas_uplo, cuda_uplo, routine, gpu, display, gh):
 
     parts = [
         "## Uplo sweep\n",
-        f"Unless noted otherwise, every result above uses `uplo = "
-        f"\"lower\"`. Real workgroups dispatch in increasing index order, "
-        f"so `uplo = \"upper\"` front-loads the heaviest rows first "
-        f"(worse — long-running heavy workgroups have nothing to overlap "
-        f"with) while `lower` back-loads them (better — light rows clear "
-        f"fast, the heavy tail gets full GPU to itself) — collapsed below "
-        f"by default, expand a `uplo` value to see its table and chart.\n",
+        "Unless noted otherwise, every result above uses `uplo = "
+        "\"lower\"`. Real workgroups dispatch in increasing index order, "
+        "so `uplo = \"upper\"` front-loads the heaviest rows first "
+        "(worse — long-running heavy workgroups have nothing to overlap "
+        "with) while `lower` back-loads them (better — light rows clear "
+        "fast, the heavy tail gets full GPU to itself) — collapsed below "
+        "by default, expand a `uplo` value to see its table and chart.\n",
     ]
     for uplo, wrows in groups.items():
         crows = cuda_groups.get(uplo, [])
@@ -1150,9 +1157,9 @@ def make_uplo_section(wgblas_uplo, cuda_uplo, routine, gpu, display, gh):
         if chart:
             parts.append(chart)
         parts.append("")
-        parts.append("</details>\n")
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [uplo.{routine}.js]({gh}/{uplo_script_path(routine, 'wgblas')}) "
         "— WebGPU uplo-sweep benchmark script"
@@ -1176,11 +1183,11 @@ def make_lda_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
 
     parts = [
         "## Lda sweep\n",
-        f"Unless noted otherwise, every result above uses a tight `lda` "
-        f"(no padding). Padding the row stride changes throughput here — "
-        f"the exact mechanism and shape of that effect is routine-specific "
-        f"— collapsed below by default, expand a `pad` value to see its "
-        f"table and chart.\n",
+        "Unless noted otherwise, every result above uses a tight `lda` "
+        "(no padding). Padding the row stride changes throughput here — "
+        "the exact mechanism and shape of that effect is routine-specific "
+        "— collapsed below by default, expand a `pad` value to see its "
+        "table and chart.\n",
     ]
     for pad, wrows in groups.items():
         crows = cuda_groups.get(pad, [])
@@ -1194,9 +1201,9 @@ def make_lda_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
         if chart:
             parts.append(chart)
         parts.append("")
-        parts.append("</details>\n")
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [lda.{routine}.js]({gh}/{lda_script_path(routine, 'wgblas')}) "
         "— WebGPU lda-sweep benchmark script"
@@ -1220,12 +1227,12 @@ def make_lda_trans_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
 
     parts = [
         "## Lda sweep\n",
-        f"Unless noted otherwise, every result above uses a tight `lda` "
-        f"(no padding). Padding the row stride only matters for `trans = "
-        f"\"transpose\"` here (swept at both `trans` values below so "
-        f"that's visible in the data, not just claimed). Collapsed below "
-        f"by default — expand a `trans` value, then a `pad`, to see its "
-        f"table and chart.\n",
+        "Unless noted otherwise, every result above uses a tight `lda` "
+        "(no padding). Padding the row stride only matters for `trans = "
+        "\"transpose\"` here (swept at both `trans` values below so "
+        "that's visible in the data, not just claimed). Collapsed below "
+        "by default — expand a `trans` value, then a `pad`, to see its "
+        "table and chart.\n",
     ]
     for trans, by_pad in groups.items():
         cuda_by_pad = cuda_groups.get(trans, {})
@@ -1242,10 +1249,10 @@ def make_lda_trans_section(wgblas_lda, cuda_lda, routine, gpu, display, gh):
             if chart:
                 parts.append(chart)
             parts.append("")
-            parts.append("</details>\n")
-        parts.append("</details>\n")
+            parts.append(CLOSE_DETAILS)
+        parts.append(CLOSE_DETAILS)
 
-    parts.append("**See also:**\n")
+    parts.append(SEE_ALSO_HEADING)
     parts.append(
         f"- [lda.{routine}.js]({gh}/{lda_script_path(routine, 'wgblas')}) "
         "— WebGPU lda-sweep benchmark script"
@@ -1390,7 +1397,7 @@ def main():
         if to_generate:
             index_file = out_gpu_dir / "index.mjs"
             body = (
-                f"Run `make bench` to generate wgblas results"
+                "Run `make bench` to generate wgblas results"
                 + (", or `make cuda` for cuBLAS results." if has_cuda else ".")
             )
             roofline = make_roofline_section(gpu, display, local_only=args.local)

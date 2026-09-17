@@ -105,12 +105,8 @@ test("ssyr edge cases", async (t) => {
   }
 });
 
-// The TODO's zero-dimension concern: existing edge cases only assert
-// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
-// an implementation that scribbles on A before an early return would still
-// pass everything. n is the only dimension here (it ties A's order and x's
-// length together), so n=0 is fully vacuous — the test guards that A comes
-// back byte-for-byte untouched.
+// Zero-dimension edge case: n ties A's order and x's length together, so
+// n=0 is fully vacuous. Guards that A comes back byte-for-byte untouched.
 test("ssyr zero-dimension (regression)", async (t) => {
   await t.test("n=0", async () => {
     const before = randomFloat32Array(4, -1, 1, 9301);

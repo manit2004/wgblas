@@ -137,13 +137,9 @@ test("strsv edge cases", async (t) => {
   }
 });
 
-// The TODO's zero-dimension concern: existing edge cases only assert
-// non-throwing at n=0 (see runEdgeCases in tests/helpers/validation.js), so
-// an implementation that scribbles on x before an early return would still
-// pass everything. strsv is in-place on x (no separate y, no beta), and n
-// is the only dimension (it ties A's order and x's length together), so
-// n=0 is fully vacuous — the test guards that x comes back byte-for-byte
-// untouched.
+// Zero-dimension edge case: strsv is in-place on x (no separate y, no
+// beta), and n ties A's order and x's length together, so n=0 is fully
+// vacuous. Guards that x comes back byte-for-byte untouched.
 test("strsv zero-dimension (regression)", async (t) => {
   await t.test("n=0", async () => {
     const xBefore = randomFloat32Array(4, -1, 1, 9601);

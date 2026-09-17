@@ -154,6 +154,30 @@ routineShaders.drot = {
 import srotm from "./srotm.wgsl";
 routineShaders.srotm = { srotm };
 
+import drotm from "./drotm.wgsl"; // f64 sibling of srotm — four ddMulProtected + two ddAddProtected per element, no reduction shader needed
+routineShaders.drotm = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  drotm,
+};
+
+import ddDivUtil from "./f64/utils/divide.wgsl";
+import ddSqrtUtil from "./f64/utils/sqrt.wgsl";
+import dnrm2 from "./dnrm2.wgsl"; // f64 sibling of snrm2 — scaled accumulation (Blue's algorithm) ported to double-double, branch-free (select()) since ddDivProtected/ddMulProtected/ddAddProtected's barriers need every thread to take the same path
+import scaledSumF64 from "./reduction/scaledSumF64.wgsl";
+routineShaders.dnrm2 = {
+  "f64/dekker": dekker,
+  "f64/utils/abs": ddAbs,
+  "f64/utils/greater": ddGreater,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  "f64/utils/divide": ddDivUtil,
+  "f64/utils/sqrt": ddSqrtUtil,
+  dnrm2,
+  "reduction/scaledSumF64": scaledSumF64,
+};
+
 import sgemv_n from "./sgemv_n.wgsl";
 import sgemv_t from "./sgemv_t.wgsl";
 routineShaders.sgemv = { sgemv_n, sgemv_t }; // one or the other, picked by trans
