@@ -263,6 +263,7 @@
     "fast-check": "^4.8.0",
     "globals": "^17.7.0",
     "husky": "^9.1.7",
+    "jscpd": "^5.3.0",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
     "publint": "^0.3.24",
@@ -278,7 +279,7 @@
     "docs": "npx typedoc && npm run build:browser",
     "prepublishOnly": "npm run build:browser",
     "coverage": "c8 --reporter=text --reporter=html node --test $(find tests \\( -name 'test.*.js' -o -name 'gpustorage.*.js' \\))",
-    "cpd": "jscpd src",
+    "cpd": "jscpd src -r html -o jscpd/",
     "size": "npm run build:browser && size-limit"
   },
   "lint-staged": {
