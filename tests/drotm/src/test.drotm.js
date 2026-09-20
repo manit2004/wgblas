@@ -14,15 +14,12 @@ import { drotmReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter, same shape as drot's/daxpy's (see
-// tests/drot/src/test.drot.js) — drotm does real double-double arithmetic
-// (unlike dcopy/dswap's pure data movement), so it needs the same wide,
-// per-adapter-calibrated headroom as the other arithmetic f64 routines.
-const THRESHOLDS = {
-  "high-performance": 5,
-  "low-power": 15000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Forward-error cap, pinned to the high-performance/NVIDIA-calibrated bound
+// (see tests/drot/src/test.drot.js) — drotm does real double-double
+// arithmetic (unlike dcopy/dswap's pure data movement), so like the other
+// arithmetic f64 routines this is not expected to clear on the
+// low-power/Intel backend (previously calibrated at 15000 there).
+const THRESHOLD = 5;
 
 // param64 derives a genuine float64 param spec from param.json (see
 // derive64 in validation.js).

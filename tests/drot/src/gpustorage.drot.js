@@ -14,12 +14,8 @@ import { drotReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Same per-adapter cap as test.drot.js — see the comment there.
-const THRESHOLDS = {
-  "high-performance": 5,
-  "low-power": 15000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Same cap as test.drot.js — see the comment there.
+const THRESHOLD = 5;
 
 let device;
 before(async () => {

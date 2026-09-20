@@ -84,7 +84,16 @@ fn ddMulRaw(a: DD, b: DD, threadSlot: u32) -> DD {
   return DD(p.hi, crossAndLo);
 }
 
+// A third compiler bug (Intel Mesa ANV, via NIR dump): raw.hi never gets
+// materialized as one rounded value — the driver re-fuses a.hi*b.hi with
+// ffma at every use site instead, breaking the a+b == s+e identity
+// TwoSum-style algorithms depend on. Same fix as ddMulRaw's p.lo: force it
+// through workgroup memory + a barrier. (Verified: max forward-error factor
+// over 20000 trials dropped from >1e5 to ~3-4, Intel Mesa Iris Xe + NVIDIA GTX 1650.)
 fn ddMulProtected(a: DD, b: DD, threadSlot: u32) -> DD {
   let raw = ddMulRaw(a, b, threadSlot);
-  return fastTwoSumProtected(raw.hi, raw.lo, threadSlot);
+  dekkerScratch[threadSlot] = raw.hi;
+  workgroupBarrier();
+  let rawHi = dekkerScratch[threadSlot];
+  return fastTwoSumProtected(rawHi, raw.lo, threadSlot);
 }

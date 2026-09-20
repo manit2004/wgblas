@@ -16,12 +16,8 @@ import { dnrm2Reference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Same per-adapter cap as test.dnrm2.js — see the comment there.
-const THRESHOLDS = {
-  "high-performance": 10,
-  "low-power": 8000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Same cap as test.dnrm2.js — see the comment there.
+const THRESHOLD = 10;
 
 let device;
 before(async () => {
