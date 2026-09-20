@@ -17,16 +17,10 @@ import { dcopyReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter, same shape as dscal's/daxpy's (see
-// tests/dscal/src/test.dscal.js, tests/daxpy/src/test.daxpy.js) — kept
-// separate from theirs since a pure copy has no accumulation/multiply to
-// contribute additional rounding, so the observed worst case should (and
-// empirically does) run far tighter than either.
-const THRESHOLDS = {
-  "high-performance": 2,
-  "low-power": 2,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Forward-error cap, same tight bound on both adapters — a pure copy has no
+// accumulation/multiply to contribute additional rounding, unlike
+// dscal/daxpy (see tests/dscal/src/test.dscal.js, tests/daxpy/src/test.daxpy.js).
+const THRESHOLD = 2;
 
 let device;
 before(async () => {

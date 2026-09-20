@@ -17,14 +17,10 @@ import { dswapReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter, same shape as dcopy's (see
+// Forward-error cap, same tight bound on both adapters (see
 // tests/dcopy/src/test.dcopy.js) — a pure data-movement routine, so both
 // backends land in the same tight range.
-const THRESHOLDS = {
-  "high-performance": 2,
-  "low-power": 2,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+const THRESHOLD = 2;
 
 let device;
 before(async () => {

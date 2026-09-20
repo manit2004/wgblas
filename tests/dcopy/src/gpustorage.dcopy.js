@@ -14,12 +14,8 @@ import { forwardFactor } from "../helpers.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Same per-adapter cap as test.dcopy.js — see the comment there.
-const THRESHOLDS = {
-  "high-performance": 2,
-  "low-power": 2,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Same cap as test.dcopy.js — see the comment there.
+const THRESHOLD = 2;
 
 let device;
 before(async () => {

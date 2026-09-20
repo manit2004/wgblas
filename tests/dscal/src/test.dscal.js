@@ -14,14 +14,11 @@ import { dscalReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter, same shape as ddot's (see test.ddot.js).
-// Worst over 1200 runs: 2.97 on NVIDIA, 9009 on Intel, heavy tail either way —
-// one shared cap would have to clear Intel's tail and stop testing NVIDIA.
-const THRESHOLDS = {
-  "high-performance": 5,
-  "low-power": 10000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Forward-error cap, pinned to the NVIDIA-calibrated bound (see
+// test.ddot.js). Worst over 1200 runs: 2.97 on NVIDIA, 9009 on Intel, heavy
+// tail either way — this threshold is not expected to clear on the
+// low-power/Intel backend.
+const THRESHOLD = 5;
 
 let device;
 before(async () => {

@@ -13,15 +13,12 @@ import { drotReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter, same shape as daxpy's/dscal's (see
-// tests/daxpy/src/test.daxpy.js) — drot does real double-double arithmetic
-// (unlike dcopy/dswap's pure data movement), so it needs the same wide,
-// per-adapter-calibrated headroom as the other arithmetic f64 routines.
-const THRESHOLDS = {
-  "high-performance": 5,
-  "low-power": 15000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Forward-error cap, pinned to the high-performance/NVIDIA-calibrated bound
+// (see tests/daxpy/src/test.daxpy.js) — drot does real double-double
+// arithmetic (unlike dcopy/dswap's pure data movement), so like the other
+// arithmetic f64 routines this is not expected to clear on the
+// low-power/Intel backend (previously calibrated at 15000 there).
+const THRESHOLD = 5;
 
 let device;
 before(async () => {

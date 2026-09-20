@@ -15,16 +15,8 @@ import { ddotReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter. Worst over 1200 random cases: 0.78 on the
-// NVIDIA dGPU, 2949 on the Intel iGPU, with a heavy tail (2.2-2949 run to
-// run). Not the multiply — every primitive is bit-exact on both adapters; the
-// loss only appears once they are composed in ddot.wgsl's loop. One shared cap
-// would have to clear Intel's tail and would stop testing NVIDIA at all.
-const THRESHOLDS = {
-  "high-performance": 1,
-  "low-power": 3000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Same cap as test.ddot.js — see the comment there.
+const THRESHOLD = 1;
 
 let device;
 before(async () => {

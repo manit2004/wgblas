@@ -14,13 +14,12 @@ import { daxpyReference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter, same shape as ddot's/dscal's (see
-// tests/ddot/src/test.ddot.js, tests/dscal/src/test.dscal.js).
-const THRESHOLDS = {
-  "high-performance": 5,
-  "low-power": 15000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Forward-error cap, pinned to the high-performance/NVIDIA-calibrated bound
+// (see tests/ddot/src/test.ddot.js, tests/dscal/src/test.dscal.js) rather
+// than a per-adapter value — low-power/Intel Mesa's real observed error on
+// this routine runs far above this bound (previously calibrated at 15000),
+// so this threshold is not expected to clear on that backend.
+const THRESHOLD = 5;
 
 let device;
 before(async () => {

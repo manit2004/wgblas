@@ -14,16 +14,13 @@ import { dnrm2Reference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 
 const NUM_RUNS = 100;
-// Forward-error cap per adapter, same shape as drot's/drotm's (see
-// tests/drot/src/test.drot.js) — calibrated against real hardware: observed
-// worst case across thousands of random trials (spanning normal magnitudes,
-// all-zero vectors, and magnitudes that would overflow/underflow naive f32
-// squaring) stayed under ~2 on high-performance and ~1700 on low-power.
-const THRESHOLDS = {
-  "high-performance": 10,
-  "low-power": 8000,
-};
-const THRESHOLD = THRESHOLDS[getPowerPreference()];
+// Forward-error cap, pinned to the high-performance/NVIDIA-calibrated bound
+// (see tests/drot/src/test.drot.js) — calibrated against real hardware:
+// observed worst case across thousands of random trials (spanning normal
+// magnitudes, all-zero vectors, and magnitudes that would overflow/underflow
+// naive f32 squaring) stayed under ~2 on high-performance. Not expected to
+// clear on the low-power backend (previously calibrated at ~1700-8000 there).
+const THRESHOLD = 10;
 
 let device;
 before(async () => {
