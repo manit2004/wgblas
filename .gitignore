@@ -20,3 +20,6 @@ dist/
 
 # coverage reports
 coverage/
+
+#jscpd reports
+jscpd/
