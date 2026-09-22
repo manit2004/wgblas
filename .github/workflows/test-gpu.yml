@@ -67,3 +67,13 @@ jobs:
           done
           echo "--- Test output ---"
           cat /tmp/test-output/test-output.txt || echo "(no output file found)"
+
+      # CODECOV_TOKEN is a repo secret (Settings > Secrets and variables >
+      # Actions) — never hardcode the raw token value here.
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@5975040f7f7d40edaff8d784b576fd65ae95c073 # v5.5.5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: /tmp/test-output/coverage/lcov.info
+          fail_ci_if_error: false
