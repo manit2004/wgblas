@@ -87,7 +87,7 @@ export function saveResults(routineName, gpuModel, results, options = {}) {
  * @returns Float32Array, column-major, rows×cols, densely packed (lda = rows)
  */
 export function toColumnMajor(A, rows, cols) {
-  const out = new Float32Array(rows * cols);
+  const out = new A.constructor(rows * cols);
   for (let i = 0; i < rows; i++)
     for (let j = 0; j < cols; j++) out[j * rows + i] = A[i * cols + j];
   return out;

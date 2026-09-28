@@ -200,6 +200,14 @@ routineShaders.strsv = {
 import sger from "./sger.wgsl";
 routineShaders.sger = { sger };
 
+import dger from "./dger.wgsl"; // f64 sibling of sger — one ddMulProtected + one ddMulProtected + one ddAddProtected per element, no reduction shader needed
+routineShaders.dger = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  dger,
+};
+
 import ssyr from "./ssyr.wgsl";
 routineShaders.ssyr = { ssyr };
 
