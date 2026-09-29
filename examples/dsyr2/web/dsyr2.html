@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dsyr2 — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dsyr2, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // With y all ones, entry (i,j) of x*y^T + y*x^T is simply x[i] + x[j].
+        const n = 3, lda = n;
+        const x = new Float64Array([1, 2, 3]);
+        const y = new Float64Array([1, 1, 1]);
+        const A = new Float64Array(n * lda);
+
+        const { A: result } = await dsyr2(device, "upper", n, 1, x, 1, y, 1, A, lda);
+
+        document.getElementById("out").textContent = [
+          "x = [" + [...x].join(", ") + "]",
+          "y = [" + [...y].join(", ") + "]",
+          "A = x*y^T + y*x^T (upper triangle) =",
+          "  [" + [...result.subarray(0, 3)].join(", ") + "]",
+          "  [" + [...result.subarray(3, 6)].join(", ") + "]",
+          "  [" + [...result.subarray(6, 9)].join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

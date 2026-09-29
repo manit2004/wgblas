@@ -1,7 +1,7 @@
 name: GPU Tests (Kaggle)
 
 on:
-  push:
+  pull_request:
     branches: [main]
   workflow_dispatch:
 

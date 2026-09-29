@@ -34,6 +34,7 @@ import stdlibDger from "@stdlib/blas-base-dger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
 import stdlibDsyr from "@stdlib/blas-base-dsyr";
 import stdlibSsyr2 from "@stdlib/blas-base-ssyr2";
+import stdlibDsyr2 from "@stdlib/blas-base-dsyr2";
 import stdlibSgemm from "@stdlib/blas-base-sgemm";
 import stdlibDscal from "@stdlib/blas-base-dscal";
 import stdlibDaxpy from "@stdlib/blas-base-daxpy";
@@ -350,6 +351,11 @@ export const dsyrReference = makeSymMatrixReference(stdlibDsyr, (a) => [
 ]);
 
 export const ssyr2Reference = makeSymMatrix2Reference(stdlibSsyr2, (a) => [
+  a.uplo,
+  a.n,
+]);
+
+export const dsyr2Reference = makeSymMatrix2Reference(stdlibDsyr2, (a) => [
   a.uplo,
   a.n,
 ]);

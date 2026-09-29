@@ -151,6 +151,10 @@
       "types": "./src/ssyr2/ssyr2.d.mts",
       "import": "./src/ssyr2/ssyr2.mjs"
     },
+    "./dsyr2": {
+      "types": "./src/dsyr2/dsyr2.d.mts",
+      "import": "./src/dsyr2/dsyr2.mjs"
+    },
     "./sgemm": {
       "types": "./src/sgemm/sgemm.d.mts",
       "import": "./src/sgemm/sgemm.mjs"
@@ -245,6 +249,7 @@
     "@stdlib/blas-base-dscal": "^0.4.1",
     "@stdlib/blas-base-dswap": "^0.4.1",
     "@stdlib/blas-base-dsyr": "^0.1.1",
+    "@stdlib/blas-base-dsyr2": "^0.1.1",
     "@stdlib/blas-base-idamax": "^0.1.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
     "@stdlib/blas-base-sasum": "^0.3.1",
