@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dger — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dger, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // A starts at zero, so every entry of the result is just x[i]*y[j].
+        const m = 2, n = 3, lda = n;
+        const x = new Float64Array([1, 2]);
+        const y = new Float64Array([10, 20, 30]);
+        const A = new Float64Array(m * lda);
+
+        const { A: result } = await dger(device, m, n, 1, x, 1, y, 1, A, lda);
+
+        document.getElementById("out").textContent = [
+          "x = [" + [...x].join(", ") + "]",
+          "y = [" + [...y].join(", ") + "]",
+          "A = x*y^T =",
+          "  [" + [...result.subarray(0, 3)].join(", ") + "]",
+          "  [" + [...result.subarray(3, 6)].join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

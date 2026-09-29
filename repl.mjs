@@ -33,6 +33,7 @@ import {
   ssymv,
   strsv,
   sger,
+  dger,
   ssyr,
   ssyr2,
   sgemm,
@@ -83,6 +84,7 @@ Object.assign(r.context, {
   ssymv,
   strsv,
   sger,
+  dger,
   ssyr,
   ssyr2,
   sgemm,
@@ -124,6 +126,7 @@ r.defineCommand("help", {
   ssymv (device, uplo, n, alpha, A, lda, x, incx, beta, y, incy)
   strsv (device, uplo, trans, diag, n, A, lda, x, incx)
   sger  (device, m, n, alpha, x, incx, y, incy, A, lda)
+  dger  (device, m, n, alpha, x, incx, y, incy, A, lda)             (x, y, A: Float64Array or GpuVector/GpuMatrix)
   ssyr  (device, uplo, n, alpha, x, incx, A, lda)
   ssyr2 (device, uplo, n, alpha, x, incx, y, incy, A, lda)
   sgemm (device, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)

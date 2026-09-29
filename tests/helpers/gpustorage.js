@@ -10,7 +10,7 @@
 // (outerCount-1)*lda+innerCount, which is shorter whenever lda > innerCount.
 // The padding is never read by any shader either way.
 export function padMatrix(A, outerCount, lda) {
-  const padded = new Float32Array(outerCount * lda);
+  const padded = new A.constructor(outerCount * lda);
   padded.set(A);
   return padded;
 }
@@ -30,7 +30,7 @@ export function unpadMatrix(
   const outer = isRowMajor ? rows : cols;
   const inner = isRowMajor ? cols : rows;
   if (lda === inner) return dense;
-  const out = Float32Array.from(original);
+  const out = original.constructor.from(original);
   for (let i = 0; i < outer; i++)
     out.set(dense.subarray(i * inner, i * inner + inner), i * lda);
   return out;
