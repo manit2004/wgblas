@@ -38,6 +38,7 @@ export { dger } from "./src/dger/dger.mjs";
 export { ssyr } from "./src/ssyr/ssyr.mjs";
 export { dsyr } from "./src/dsyr/dsyr.mjs";
 export { ssyr2 } from "./src/ssyr2/ssyr2.mjs";
+export { dsyr2 } from "./src/dsyr2/dsyr2.mjs";
 export { sgemm } from "./src/sgemm/sgemm.mjs";
 export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
 export { ssyrk } from "./src/ssyrk/ssyrk.mjs";

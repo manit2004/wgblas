@@ -222,6 +222,14 @@ routineShaders.dsyr = {
 import ssyr2 from "./ssyr2.wgsl";
 routineShaders.ssyr2 = { ssyr2 };
 
+import dsyr2 from "./dsyr2.wgsl"; // f64 sibling of ssyr2 — two ddMulProtected + two ddAddProtected per element, no reduction shader needed
+routineShaders.dsyr2 = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  dsyr2,
+};
+
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
 routineShaders.sgemm = { sgemm_small, sgemm_large }; // one or the other, picked by a tile-size threshold

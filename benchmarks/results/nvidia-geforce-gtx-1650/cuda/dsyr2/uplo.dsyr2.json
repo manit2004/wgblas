@@ -1,0 +1,20 @@
+[
+  { "uplo": "lower", "n": 32, "compute_ms": 0.0054, "compute_GBs": 1.6568 },
+  { "uplo": "lower", "n": 64, "compute_ms": 0.0056, "compute_GBs": 6.0909 },
+  { "uplo": "lower", "n": 128, "compute_ms": 0.0062, "compute_GBs": 21.6641 },
+  { "uplo": "lower", "n": 256, "compute_ms": 0.0094, "compute_GBs": 56.5734 },
+  { "uplo": "lower", "n": 512, "compute_ms": 0.0181, "compute_GBs": 116.4664 },
+  { "uplo": "lower", "n": 1024, "compute_ms": 0.0553, "compute_GBs": 152.1481 },
+  { "uplo": "lower", "n": 1280, "compute_ms": 0.0886, "compute_GBs": 148.3237 },
+  { "uplo": "lower", "n": 2048, "compute_ms": 0.2068, "compute_GBs": 162.4554 },
+  { "uplo": "lower", "n": 4096, "compute_ms": 0.8192, "compute_GBs": 163.9600 },
+  { "uplo": "upper", "n": 32, "compute_ms": 0.0055, "compute_GBs": 1.6185 },
+  { "uplo": "upper", "n": 64, "compute_ms": 0.0046, "compute_GBs": 7.3931 },
+  { "uplo": "upper", "n": 128, "compute_ms": 0.0059, "compute_GBs": 22.5984 },
+  { "uplo": "upper", "n": 256, "compute_ms": 0.0083, "compute_GBs": 63.6315 },
+  { "uplo": "upper", "n": 512, "compute_ms": 0.0185, "compute_GBs": 113.8515 },
+  { "uplo": "upper", "n": 1024, "compute_ms": 0.0555, "compute_GBs": 151.5780 },
+  { "uplo": "upper", "n": 1280, "compute_ms": 0.0912, "compute_GBs": 144.0309 },
+  { "uplo": "upper", "n": 2048, "compute_ms": 0.2069, "compute_GBs": 162.4177 },
+  { "uplo": "upper", "n": 4096, "compute_ms": 0.8191, "compute_GBs": 163.9792 }
+]
