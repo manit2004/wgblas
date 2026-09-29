@@ -45,5 +45,5 @@ jobs:
 
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
-          args: --no-progress --exclude-path node_modules "**/*.md" "docs/**/*.html"
+          args: --no-progress --exclude-path node_modules --exclude "^https://www\.npmjs\.com" "**/*.md" "docs/**/*.html"
           fail: true
