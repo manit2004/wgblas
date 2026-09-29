@@ -50,6 +50,7 @@
       "wgblas/sger": ["./src/sger/sger.d.mts"],
       "wgblas/dger": ["./src/dger/dger.d.mts"],
       "wgblas/ssyr": ["./src/ssyr/ssyr.d.mts"],
+      "wgblas/dsyr": ["./src/dsyr/dsyr.d.mts"],
       "wgblas/ssyr2": ["./src/ssyr2/ssyr2.d.mts"],
       "wgblas/sgemm": ["./src/sgemm/sgemm.d.mts"],
       "wgblas/sgemmtr": ["./src/sgemmtr/sgemmtr.d.mts"],

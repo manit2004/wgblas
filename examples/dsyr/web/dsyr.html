@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dsyr — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dsyr, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // Only the upper triangle is written: entry (i,j) for j >= i is x[i]*x[j].
+        const n = 3, lda = n;
+        const x = new Float64Array([1, 2, 3]);
+        const A = new Float64Array(n * lda);
+
+        const { A: result } = await dsyr(device, "upper", n, 1, x, 1, A, lda);
+
+        document.getElementById("out").textContent = [
+          "x = [" + [...x].join(", ") + "]",
+          "A = x*x^T (upper triangle) =",
+          "  [" + [...result.subarray(0, 3)].join(", ") + "]",
+          "  [" + [...result.subarray(3, 6)].join(", ") + "]",
+          "  [" + [...result.subarray(6, 9)].join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

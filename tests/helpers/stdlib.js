@@ -32,6 +32,7 @@ import stdlibStrsv from "@stdlib/blas-base-strsv";
 import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibDger from "@stdlib/blas-base-dger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
+import stdlibDsyr from "@stdlib/blas-base-dsyr";
 import stdlibSsyr2 from "@stdlib/blas-base-ssyr2";
 import stdlibSgemm from "@stdlib/blas-base-sgemm";
 import stdlibDscal from "@stdlib/blas-base-dscal";
@@ -339,6 +340,11 @@ export const sgerReference = makeMatrixReference(stdlibSger, (a) => [a.m, a.n]);
 export const dgerReference = makeMatrixReference(stdlibDger, (a) => [a.m, a.n]);
 
 export const ssyrReference = makeSymMatrixReference(stdlibSsyr, (a) => [
+  a.uplo,
+  a.n,
+]);
+
+export const dsyrReference = makeSymMatrixReference(stdlibDsyr, (a) => [
   a.uplo,
   a.n,
 ]);

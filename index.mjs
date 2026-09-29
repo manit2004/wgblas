@@ -36,6 +36,7 @@ export { strsv } from "./src/strsv/strsv.mjs";
 export { sger } from "./src/sger/sger.mjs";
 export { dger } from "./src/dger/dger.mjs";
 export { ssyr } from "./src/ssyr/ssyr.mjs";
+export { dsyr } from "./src/dsyr/dsyr.mjs";
 export { ssyr2 } from "./src/ssyr2/ssyr2.mjs";
 export { sgemm } from "./src/sgemm/sgemm.mjs";
 export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
