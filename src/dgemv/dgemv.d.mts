@@ -1,0 +1,92 @@
+import { GpuVector } from "../classes/GpuVector.mjs";
+import { GpuMatrix } from "../classes/GpuMatrix.mjs";
+
+/**
+ * Performs the matrix-vector operation $$y \leftarrow \alpha \mathrm{op}(A) x + \beta y$$
+ * in double precision (double-double emulation — WGSL has no native f64 type).
+ *
+ * - `trans='no-transpose'`: op(A) = A,   x is length n, y is length m
+ * - `trans='transpose'`:    op(A) = A^T, x is length m, y is length n
+ *
+ * A is an m×n matrix stored in row-major order. `lda` is the leading dimension
+ * (number of doubles between the start of consecutive rows — must be >= n).
+ *
+ * {@includeCode ../../examples/dgemv/dgemv.js}
+ *
+ * **Browser (standalone HTML):**
+ * {@includeCode ../../examples/dgemv/web/dgemv.html}
+ *
+ * @param device - GPUDevice from `init()`
+ * @param trans  - `'no-transpose'` for A, `'transpose'` for A^T
+ * @param m      - number of rows in A
+ * @param n      - number of columns in A
+ * @param alpha  - scalar multiplier for op(A)*x
+ * @param A      - Float64Array, row-major or column-major (see `layout`), at least
+ *   (m-1)*lda+n elements for row-major or (n-1)*lda+m elements for column-major
+ * @param lda    - leading dimension of A (>= n for row-major, >= m for column-major)
+ * @param x      - Float64Array input vector
+ * @param incx   - stride for x (must be a positive integer)
+ * @param beta   - scalar multiplier for y
+ * @param y      - Float64Array input/output vector
+ * @param incy   - stride for y (must be a positive integer)
+ * @param layout - storage layout of `A` (default: `'row-major'`); column-major
+ *   swaps the effective `m`/`n` and flips `trans` internally (op(A) stays
+ *   what you asked for either way — x/y keep their original lengths)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/dgemv/dgemv.mjs#L20">Source code: dgemv.mjs (L20)</a>
+ * @category BLAS Level 2
+ */
+export declare function dgemv(
+  device: GPUDevice,
+  trans: 'no-transpose' | 'transpose',
+  m: number,
+  n: number,
+  alpha: number,
+  A: Float64Array,
+  lda: number,
+  x: Float64Array,
+  incx: number,
+  beta: number,
+  y: Float64Array,
+  incy: number,
+  layout?: 'row-major' | 'column-major',
+): Promise<{ y: Float64Array; gpuTimeMs?: number }>;
+
+/**
+ * Performs the matrix-vector operation $$y \leftarrow \alpha \mathrm{op}(A) x + \beta y$$
+ * in double precision (double-double emulation).
+ *
+ * x and y are kept resident on the GPU. A must be a GpuMatrix (Float64Array-
+ * backed); its own `layout` (set at `GpuMatrix.from` time) determines the
+ * operation — there is no separate `layout` argument here.
+ *
+ * {@includeCode ../../examples/dgemv/gpu.dgemv.js}
+ *
+ * @param device - GPUDevice from `init()`
+ * @param trans  - `'no-transpose'` for A, `'transpose'` for A^T
+ * @param m      - number of rows in A
+ * @param n      - number of columns in A
+ * @param alpha  - scalar multiplier for op(A)*x
+ * @param A      - GpuMatrix (Float64Array-backed)
+ * @param lda    - leading dimension of A (must equal A.lda)
+ * @param x      - GpuVector input vector (Float64Array-backed, not mutated)
+ * @param incx   - stride for x (must be a positive integer)
+ * @param beta   - scalar multiplier for y
+ * @param y      - GpuVector input/output vector (Float64Array-backed, mutated in place)
+ * @param incy   - stride for y (must be a positive integer)
+ * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/dgemv/dgemv.mjs#L20">Source code: dgemv.mjs (L20)</a>
+ * @category BLAS Level 2
+ */
+export declare function dgemv(
+  device: GPUDevice,
+  trans: 'no-transpose' | 'transpose',
+  m: number,
+  n: number,
+  alpha: number,
+  A: GpuMatrix,
+  lda: number,
+  x: GpuVector,
+  incx: number,
+  beta: number,
+  y: GpuVector,
+  incy: number,
+): Promise<{ gpuTimeMs?: number }>;
