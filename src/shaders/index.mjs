@@ -230,6 +230,16 @@ routineShaders.dsyr2 = {
   dsyr2,
 };
 
+import dgemv_n from "./dgemv_n.wgsl"; // f64 sibling of sgemv_n — per-row DD dot product via a full within-workgroup tree reduction (ddot's reduction shape), not sgemv_n's 4-way ILP unroll
+import dgemv_t from "./dgemv_t.wgsl"; // f64 sibling of sgemv_t — per-thread accumulation tiled over x, with out-of-range columns computed against a clamped index (not skipped) to keep protected-op call counts uniform
+routineShaders.dgemv = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  dgemv_n,
+  dgemv_t,
+}; // one or the other, picked by trans
+
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
 routineShaders.sgemm = { sgemm_small, sgemm_large }; // one or the other, picked by a tile-size threshold

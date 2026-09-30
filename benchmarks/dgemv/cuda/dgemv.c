@@ -1,0 +1,111 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "../../utils/helpers.h"
+
+#define WARMUP_ITERS 5
+#define BENCH_ITERS  100
+
+int main(void) {
+    char gpu_model[256];
+    get_gpu_model(gpu_model, sizeof(gpu_model));
+
+    cublasHandle_t handle;
+    CUBLAS_CHECK(cublasCreate(&handle));
+
+    int sizes[] = { 32, 64, 128, 256, 512, 1024, 1280 , 2048, 4096 };
+    int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
+
+    float med_times[num_sizes];
+    float gflops_vals[num_sizes];
+    float gbs_vals[num_sizes];
+
+    printf("%-10s  %-10s  %-12s  %-14s  %-12s\n",
+           "m", "n", "compute_ms", "compute_GFLOPs", "compute_GBs");
+    printf("%-10s  %-10s  %-12s  %-14s  %-12s\n",
+           "----------", "----------", "------------", "--------------", "------------");
+
+    const double alpha = 1.0;
+    const double beta  = 0.0;
+
+    for (int si = 0; si < num_sizes; si++) {
+        int m = sizes[si];
+        int n = sizes[si];
+        int lda = m; // column-major, dense — cuBLAS's native layout
+
+        float *h_A_f32 = random_float_array(m * n, -1.0f, 1.0f);
+        float *h_x_f32 = random_float_array(n, -1.0f, 1.0f);
+        float *h_y_f32 = random_float_array(m, -1.0f, 1.0f);
+        double *h_A = malloc((size_t)m * n * sizeof(double));
+        double *h_x = malloc((size_t)n * sizeof(double));
+        double *h_y = malloc((size_t)m * sizeof(double));
+        for (int i = 0; i < m * n; i++) h_A[i] = (double)h_A_f32[i];
+        for (int i = 0; i < n; i++) h_x[i] = (double)h_x_f32[i];
+        for (int i = 0; i < m; i++) h_y[i] = (double)h_y_f32[i];
+
+        double *d_A, *d_x, *d_y;
+        CUDA_CHECK(cudaMalloc((void **)&d_A, (size_t)m * n * sizeof(double)));
+        CUDA_CHECK(cudaMalloc((void **)&d_x, n * sizeof(double)));
+        CUDA_CHECK(cudaMalloc((void **)&d_y, m * sizeof(double)));
+        CUDA_CHECK(cudaMemcpy(d_A, h_A, (size_t)m * n * sizeof(double), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(double), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(d_y, h_y, m * sizeof(double), cudaMemcpyHostToDevice));
+
+        cudaEvent_t start, stop;
+        CUDA_CHECK(cudaEventCreate(&start));
+        CUDA_CHECK(cudaEventCreate(&stop));
+
+        // warm up
+        // d_A is genuinely column-major m×n (lda=m) — cuBLAS's native layout,
+        // so a plain CUBLAS_OP_N call computes y = alpha*A*x + beta*y directly.
+        for (int i = 0; i < WARMUP_ITERS; i++) {
+            CUBLAS_CHECK(cublasDgemv(handle, CUBLAS_OP_N, m, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
+        }
+        CUDA_CHECK(cudaDeviceSynchronize());
+
+        float compute_times[BENCH_ITERS];
+        for (int i = 0; i < BENCH_ITERS; i++) {
+            CUDA_CHECK(cudaEventRecord(start, 0));
+            CUBLAS_CHECK(cublasDgemv(handle, CUBLAS_OP_N, m, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
+            CUDA_CHECK(cudaEventRecord(stop, 0));
+            CUDA_CHECK(cudaEventSynchronize(stop));
+            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
+        }
+
+        float med = median(compute_times, BENCH_ITERS);
+        // 2*m*n multiply-adds for the dot products, plus 2*m for the alpha/beta step
+        float flops = 2.0f * m * n + 2.0f * m;
+        // A read + x read + y read + y write
+        float bytes = (float)((size_t)(m * n + n + 2 * m)) * (float)sizeof(double);
+        float gflops = (flops / 1e9f) / (med / 1e3f);
+        float gbs = (bytes / 1e9f) / (med / 1e3f);
+
+        med_times[si]  = med;
+        gflops_vals[si] = gflops;
+        gbs_vals[si]   = gbs;
+
+        printf("%-10d  %-10d  %-12.4f  %-14.4f  %-12.4f\n",
+               m, n, med, gflops, gbs);
+
+        CUDA_CHECK(cudaEventDestroy(start));
+        CUDA_CHECK(cudaEventDestroy(stop));
+        cudaFree(d_A);
+        cudaFree(d_x);
+        cudaFree(d_y);
+        free(h_A);
+        free(h_x);
+        free(h_y);
+        free(h_A_f32);
+        free(h_x_f32);
+        free(h_y_f32);
+    }
+
+    // write JSON results
+    record_field fields[] = {
+        { "m", FIELD_INT, sizes },
+        { "n", FIELD_INT, sizes },
+    };
+    save_results(gpu_model, "dgemv", "dgemv", fields, 2, med_times, gbs_vals, gflops_vals, num_sizes);
+
+    cublasDestroy(handle);
+    return 0;
+}

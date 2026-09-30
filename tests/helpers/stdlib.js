@@ -26,6 +26,7 @@ import stdlibDrot from "@stdlib/blas-base-drot";
 import stdlibSrotm from "@stdlib/blas-base-srotm";
 import stdlibDrotm from "@stdlib/blas-base-drotm";
 import stdlibSgemv from "@stdlib/blas-base-sgemv";
+import stdlibDgemv from "@stdlib/blas-base-dgemv";
 import stdlibSsymv from "@stdlib/blas-base-ssymv";
 import stdlibStrmv from "@stdlib/blas-base-strmv";
 import stdlibStrsv from "@stdlib/blas-base-strsv";
@@ -297,6 +298,11 @@ export const isamaxReference = makeReducerReference(stdlibIsamax);
 export const idamaxReference = makeReducerReference(stdlibIdamax);
 
 export const sgemvReference = makeMatVecReference(stdlibSgemv, (a) => [
+  a.trans,
+  a.m,
+  a.n,
+]);
+export const dgemvReference = makeMatVecReference(stdlibDgemv, (a) => [
   a.trans,
   a.m,
   a.n,
