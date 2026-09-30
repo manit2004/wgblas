@@ -1,5 +1,5 @@
-<svg id="bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
-<style>#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-sgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
+<svg id="bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img" aria-label="GB/s vs n">
+<style>#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .bg{fill:#fcfcfb}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .gr{stroke:#e1e0d9;stroke-width:1;fill:none}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ax{stroke:#c3c2b7;stroke-width:1;fill:none}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .at{fill:#898781;font:11px/1 system-ui,sans-serif}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .lt{fill:#52514e;font:11px/1 system-ui,sans-serif}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#2a78d6;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk1{fill:#2a78d6;stroke:#fcfcfb;stroke-width:2}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300;fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#fcfcfb;stroke-width:2}@media(prefers-color-scheme:dark){#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .at{fill:#898781}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln2{stroke:#008300}#bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk2{fill:#008300;stroke:#1a1a19}}:root[data-theme=dark] #bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .bg{fill:#1a1a19}:root[data-theme=dark] #bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .gr{stroke:#2c2c2a}:root[data-theme=dark] #bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ax{stroke:#383835}:root[data-theme=dark] #bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .lt{fill:#c3c2b7}:root[data-theme=dark] #bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .ln1{stroke:#3987e5}:root[data-theme=dark] #bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk1{fill:#3987e5;stroke:#1a1a19}:root[data-theme=dark] #bc-dgemv-trans-transpose-m2048-nvidia_geforce_gtx_1650-gbs .mk2{stroke:#1a1a19}</style>
 <rect class="bg" width="600" height="260"/>
 <line class="gr" x1="58" y1="220.0" x2="584" y2="220.0"/>
 <line class="gr" x1="58" y1="170.0" x2="584" y2="170.0"/>
@@ -23,26 +23,26 @@
 <text class="at" x="457.9" y="236" text-anchor="middle">1.3K</text>
 <text class="at" x="508.9" y="236" text-anchor="middle">2.0K</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">4.1K</text>
-<polyline class="ln1" points="58.0,218.6 133.1,217.3 208.3,215.9 283.4,213.1 358.6,206.1 433.7,193.1 457.9,187.5 508.9,168.8 584.0,123.6"/>
-<polyline class="ln2" points="58.0,187.4 133.1,168.7 208.3,124.2 283.4,116.9 358.6,73.4 433.7,61.3 457.9,54.5 508.9,53.0 584.0,39.0"/>
-<circle class="mk1" cx="58.0" cy="218.6" r="4"/>
-<circle class="mk1" cx="133.1" cy="217.3" r="4"/>
-<circle class="mk1" cx="208.3" cy="215.9" r="4"/>
-<circle class="mk1" cx="283.4" cy="213.1" r="4"/>
-<circle class="mk1" cx="358.6" cy="206.1" r="4"/>
-<circle class="mk1" cx="433.7" cy="193.1" r="4"/>
-<circle class="mk1" cx="457.9" cy="187.5" r="4"/>
-<circle class="mk1" cx="508.9" cy="168.8" r="4"/>
-<circle class="mk1" cx="584.0" cy="123.6" r="4"/>
-<circle class="mk2" cx="58.0" cy="187.4" r="4"/>
-<circle class="mk2" cx="133.1" cy="168.7" r="4"/>
-<circle class="mk2" cx="208.3" cy="124.2" r="4"/>
-<circle class="mk2" cx="283.4" cy="116.9" r="4"/>
-<circle class="mk2" cx="358.6" cy="73.4" r="4"/>
-<circle class="mk2" cx="433.7" cy="61.3" r="4"/>
-<circle class="mk2" cx="457.9" cy="54.5" r="4"/>
-<circle class="mk2" cx="508.9" cy="53.0" r="4"/>
-<circle class="mk2" cx="584.0" cy="39.0" r="4"/>
+<polyline class="ln1" points="58.0,219.0 133.1,218.7 208.3,217.6 283.4,215.2 358.6,210.4 433.7,201.3 457.9,197.0 508.9,183.0 584.0,149.8"/>
+<polyline class="ln2" points="58.0,180.9 133.1,154.9 208.3,125.8 283.4,93.7 358.6,72.8 433.7,57.5 457.9,52.6 508.9,46.7 584.0,40.6"/>
+<circle class="mk1" cx="58.0" cy="219.0" r="4"/>
+<circle class="mk1" cx="133.1" cy="218.7" r="4"/>
+<circle class="mk1" cx="208.3" cy="217.6" r="4"/>
+<circle class="mk1" cx="283.4" cy="215.2" r="4"/>
+<circle class="mk1" cx="358.6" cy="210.4" r="4"/>
+<circle class="mk1" cx="433.7" cy="201.3" r="4"/>
+<circle class="mk1" cx="457.9" cy="197.0" r="4"/>
+<circle class="mk1" cx="508.9" cy="183.0" r="4"/>
+<circle class="mk1" cx="584.0" cy="149.8" r="4"/>
+<circle class="mk2" cx="58.0" cy="180.9" r="4"/>
+<circle class="mk2" cx="133.1" cy="154.9" r="4"/>
+<circle class="mk2" cx="208.3" cy="125.8" r="4"/>
+<circle class="mk2" cx="283.4" cy="93.7" r="4"/>
+<circle class="mk2" cx="358.6" cy="72.8" r="4"/>
+<circle class="mk2" cx="433.7" cy="57.5" r="4"/>
+<circle class="mk2" cx="457.9" cy="52.6" r="4"/>
+<circle class="mk2" cx="508.9" cy="46.7" r="4"/>
+<circle class="mk2" cx="584.0" cy="40.6" r="4"/>
 <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
 <circle class="mk1" cx="66" cy="252" r="4"/>
 <text class="lt" x="80" y="256">wgblas</text>

@@ -296,7 +296,7 @@
   "scripts": {
     "prepare": "husky",
     "build:browser": "node scripts/build-browser.mjs",
-    "docs": "npx typedoc && npm run build:browser",
+    "docs": "npx typedoc && node scripts/gen-sitemap.mjs && npm run build:browser",
     "prepublishOnly": "npm run build:browser",
     "coverage": "c8 --reporter=text --reporter=html --reporter=lcov node --test $(find tests \\( -name 'test.*.js' -o -name 'gpustorage.*.js' \\))",
     "cpd": "jscpd src -r html -o jscpd/",
