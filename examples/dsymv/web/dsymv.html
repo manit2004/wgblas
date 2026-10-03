@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dsymv — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dsymv, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // Only the upper triangle is read; the zeros below stand for the mirrored 1s.
+        const n = 3, lda = n;
+        const A = new Float64Array([2, 1, 0,
+                                    0, 2, 1,
+                                    0, 0, 2]);
+        const x = new Float64Array([1, 1, 1]);
+        const y = new Float64Array([0, 0, 0]);
+
+        const { y: result } = await dsymv(device, "upper", n, 1, A, lda, x, 1, 0, y, 1);
+
+        document.getElementById("out").textContent = [
+          "A (upper triangle stored) =",
+          "  [" + [...A.subarray(0, 3)].join(", ") + "]",
+          "  [" + [...A.subarray(3, 6)].join(", ") + "]",
+          "  [" + [...A.subarray(6, 9)].join(", ") + "]",
+          "x = [" + [...x].join(", ") + "]",
+          "y = A*x = [" + [...result].join(", ") + "]   // implied A = [[2,1,0],[1,2,1],[0,1,2]]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>
