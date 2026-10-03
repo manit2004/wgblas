@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dtrsv — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dtrsv, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // Solves A*x = b in place: x holds b going in, the solution coming out.
+        const n = 3, lda = n;
+        const A = new Float64Array([2, 0, 0,
+                                    3, 4, 0,
+                                    5, 6, 8]);
+        const x = new Float64Array([2, 7, 19]);   // b
+
+        const { x: result } = await dtrsv(device, "lower", "no-transpose", "non-unit", n, A, lda, x, 1);
+
+        document.getElementById("out").textContent = [
+          "A (lower triangular) =",
+          "  [" + [...A.subarray(0, 3)].join(", ") + "]",
+          "  [" + [...A.subarray(3, 6)].join(", ") + "]",
+          "  [" + [...A.subarray(6, 9)].join(", ") + "]",
+          "b = [2, 7, 19]",
+          "x (solves A*x = b) = [" + [...result].join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

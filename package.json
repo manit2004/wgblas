@@ -167,6 +167,10 @@
       "types": "./src/dtrmv/dtrmv.d.mts",
       "import": "./src/dtrmv/dtrmv.mjs"
     },
+    "./dtrsv": {
+      "types": "./src/dtrsv/dtrsv.d.mts",
+      "import": "./src/dtrsv/dtrsv.mjs"
+    },
     "./sgemm": {
       "types": "./src/sgemm/sgemm.d.mts",
       "import": "./src/sgemm/sgemm.mjs"
@@ -265,6 +269,7 @@
     "@stdlib/blas-base-dsyr": "^0.1.1",
     "@stdlib/blas-base-dsyr2": "^0.1.1",
     "@stdlib/blas-base-dtrmv": "^0.1.1",
+    "@stdlib/blas-base-dtrsv": "^0.1.1",
     "@stdlib/blas-base-idamax": "^0.1.1",
     "@stdlib/blas-base-isamax": "^0.1.1",
     "@stdlib/blas-base-sasum": "^0.3.1",

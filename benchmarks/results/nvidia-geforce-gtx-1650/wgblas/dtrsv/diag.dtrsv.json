@@ -1,0 +1,110 @@
+[
+  {
+    "diag": "non-unit",
+    "n": 32,
+    "compute_ms": 0.10728,
+    "compute_GBs": 0.044146159582401194
+  },
+  {
+    "diag": "non-unit",
+    "n": 64,
+    "compute_ms": 0.213856,
+    "compute_GBs": 0.08259763579230885
+  },
+  {
+    "diag": "non-unit",
+    "n": 128,
+    "compute_ms": 0.278704,
+    "compute_GBs": 0.24433090303691374
+  },
+  {
+    "diag": "non-unit",
+    "n": 256,
+    "compute_ms": 0.488208,
+    "compute_GBs": 0.5474387965785076
+  },
+  {
+    "diag": "non-unit",
+    "n": 512,
+    "compute_ms": 0.994928,
+    "compute_GBs": 1.064213691845038
+  },
+  {
+    "diag": "non-unit",
+    "n": 1024,
+    "compute_ms": 1.884112,
+    "compute_GBs": 2.237013510874088
+  },
+  {
+    "diag": "non-unit",
+    "n": 1280,
+    "compute_ms": 1.99728,
+    "compute_GBs": 3.294079948730273
+  },
+  {
+    "diag": "non-unit",
+    "n": 2048,
+    "compute_ms": 3.411856,
+    "compute_GBs": 4.929333477145577
+  },
+  {
+    "diag": "non-unit",
+    "n": 4096,
+    "compute_ms": 8.159583999999999,
+    "compute_GBs": 8.234584508229833
+  },
+  {
+    "diag": "unit",
+    "n": 32,
+    "compute_ms": 0.07344,
+    "compute_GBs": 0.0644880174291939
+  },
+  {
+    "diag": "unit",
+    "n": 64,
+    "compute_ms": 0.145088,
+    "compute_GBs": 0.12174680194089103
+  },
+  {
+    "diag": "unit",
+    "n": 128,
+    "compute_ms": 0.191024,
+    "compute_GBs": 0.35647876706591847
+  },
+  {
+    "diag": "unit",
+    "n": 256,
+    "compute_ms": 0.337168,
+    "compute_GBs": 0.7926730887865989
+  },
+  {
+    "diag": "unit",
+    "n": 512,
+    "compute_ms": 0.694016,
+    "compute_GBs": 1.5256362965695316
+  },
+  {
+    "diag": "unit",
+    "n": 1024,
+    "compute_ms": 1.41736,
+    "compute_GBs": 2.9736862900039513
+  },
+  {
+    "diag": "unit",
+    "n": 1280,
+    "compute_ms": 1.8102559999999999,
+    "compute_GBs": 3.6344030899497093
+  },
+  {
+    "diag": "unit",
+    "n": 2048,
+    "compute_ms": 3.115328,
+    "compute_GBs": 5.398524970725394
+  },
+  {
+    "diag": "unit",
+    "n": 4096,
+    "compute_ms": 7.5748,
+    "compute_GBs": 8.870304694513388
+  }
+]

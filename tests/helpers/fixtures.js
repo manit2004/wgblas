@@ -199,7 +199,9 @@ export function ndArrayArb(spec, len) {
  * bounded away from 0 — a near-singular fixture would make even a bug-free
  * GPU/CPU pair disagree wildly, since large relative error there is expected
  * ill-conditioning, not incorrectness.
- * @param arrArb base Float32Array arbitrary (from `ndArrayArb`)
+ * @param arrArb base Float32Array or Float64Array arbitrary (from `ndArrayArb`) — the
+ *   output preserves whichever constructor the generated array actually has, so an f64
+ *   routine's `triangular: true` spec (e.g. dtrsv) doesn't get silently downcast to f32
  * @param n matrix order — number of diagonal entries
  * @param lda leading dimension — diagonal entries sit at `i*lda+i`
  * @param diagLow lower bound for `|diagonal entry|` (default: 5)
@@ -223,7 +225,7 @@ export function triangularDiagonalArb(
     maxLength: n,
   });
   return fc.tuple(arrArb, magArb, signArb).map(([A, mags, signs]) => {
-    const out = Float32Array.from(A);
+    const out = A.constructor.from(A);
     for (let i = 0; i < n; i++) out[i * lda + i] = signs[i] * mags[i];
     return out;
   });

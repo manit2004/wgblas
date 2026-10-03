@@ -1,0 +1,50 @@
+[
+  {
+    "label": "lower no-transpose",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 99, 3, 4], "lda": 2,
+    "x": [4, 11], "incx": 1
+  },
+  {
+    "label": "upper no-transpose",
+    "uplo": "upper", "trans": "no-transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 3, 99, 4], "lda": 2,
+    "x": [10, 8], "incx": 1
+  },
+  {
+    "label": "lower transpose",
+    "uplo": "lower", "trans": "transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 99, 3, 4], "lda": 2,
+    "x": [10, 8], "incx": 1
+  },
+  {
+    "label": "upper transpose",
+    "uplo": "upper", "trans": "transpose", "diag": "non-unit",
+    "n": 2, "A": [2, 3, 99, 4], "lda": 2,
+    "x": [4, 14], "incx": 1
+  },
+  {
+    "label": "n=1 lower",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 1, "A": [5], "lda": 1,
+    "x": [10], "incx": 1
+  },
+  {
+    "label": "incx=2 lower no-transpose",
+    "uplo": "lower", "trans": "no-transpose", "diag": "non-unit",
+    "n": 3, "A": [1, 99, 99, 2, 1, 99, 3, 4, 1], "lda": 3,
+    "x": [2, 99, 7, 99, 22], "incx": 2
+  },
+  {
+    "label": "unit diag lower no-transpose",
+    "uplo": "lower", "trans": "no-transpose", "diag": "unit",
+    "n": 2, "A": [99, 99, 3, 99], "lda": 2,
+    "x": [2, 11], "incx": 1
+  },
+  {
+    "label": "unit diag upper transpose",
+    "uplo": "upper", "trans": "transpose", "diag": "unit",
+    "n": 2, "A": [99, 3, 99, 99], "lda": 2,
+    "x": [2, 13], "incx": 1
+  }
+]

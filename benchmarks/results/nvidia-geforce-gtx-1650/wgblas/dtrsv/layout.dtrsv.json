@@ -1,0 +1,110 @@
+[
+  {
+    "layout": "row-major",
+    "n": 32,
+    "compute_ms": 0.083968,
+    "compute_GBs": 0.05640243902439024
+  },
+  {
+    "layout": "row-major",
+    "n": 64,
+    "compute_ms": 0.166528,
+    "compute_GBs": 0.10607225211375863
+  },
+  {
+    "layout": "row-major",
+    "n": 128,
+    "compute_ms": 0.21732800000000002,
+    "compute_GBs": 0.3133328425237429
+  },
+  {
+    "layout": "row-major",
+    "n": 256,
+    "compute_ms": 0.380496,
+    "compute_GBs": 0.7024094865649048
+  },
+  {
+    "layout": "row-major",
+    "n": 512,
+    "compute_ms": 0.779952,
+    "compute_GBs": 1.3575399511764827
+  },
+  {
+    "layout": "row-major",
+    "n": 1024,
+    "compute_ms": 1.568368,
+    "compute_GBs": 2.687369290880712
+  },
+  {
+    "layout": "row-major",
+    "n": 1280,
+    "compute_ms": 1.999008,
+    "compute_GBs": 3.291232451295843
+  },
+  {
+    "layout": "row-major",
+    "n": 2048,
+    "compute_ms": 3.412032,
+    "compute_GBs": 4.929079211449365
+  },
+  {
+    "layout": "row-major",
+    "n": 4096,
+    "compute_ms": 8.156672,
+    "compute_GBs": 8.237524323645722
+  },
+  {
+    "layout": "column-major",
+    "n": 32,
+    "compute_ms": 0.085328,
+    "compute_GBs": 0.055503468966810424
+  },
+  {
+    "layout": "column-major",
+    "n": 64,
+    "compute_ms": 0.17408,
+    "compute_GBs": 0.1014705882352941
+  },
+  {
+    "layout": "column-major",
+    "n": 128,
+    "compute_ms": 0.233136,
+    "compute_GBs": 0.2920870221673187
+  },
+  {
+    "layout": "column-major",
+    "n": 256,
+    "compute_ms": 0.413696,
+    "compute_GBs": 0.6460396039603961
+  },
+  {
+    "layout": "column-major",
+    "n": 512,
+    "compute_ms": 0.8628480000000001,
+    "compute_GBs": 1.2271176383325915
+  },
+  {
+    "layout": "column-major",
+    "n": 1024,
+    "compute_ms": 1.76544,
+    "compute_GBs": 2.387384448069603
+  },
+  {
+    "layout": "column-major",
+    "n": 1280,
+    "compute_ms": 2.285328,
+    "compute_GBs": 2.8788865318238788
+  },
+  {
+    "layout": "column-major",
+    "n": 2048,
+    "compute_ms": 3.957936,
+    "compute_GBs": 4.249228891017944
+  },
+  {
+    "layout": "column-major",
+    "n": 4096,
+    "compute_ms": 9.910432,
+    "compute_GBs": 6.77980374619391
+  }
+]
