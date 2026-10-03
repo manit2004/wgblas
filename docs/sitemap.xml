@@ -55,8 +55,11 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.drotm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dscal.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dswap.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsymv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyr2.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dtrmv.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dtrsv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.gpuName.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.idamax.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.init.html</loc></url>
@@ -164,8 +167,11 @@
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_drotm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dscal.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dswap.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dsymv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dsyr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dsyr2.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dtrmv.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dtrsv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_idamax.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_isamax.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sasum.html</loc></url>
@@ -242,8 +248,11 @@
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.drotm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dscal.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dswap.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsymv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyr2.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dtrmv.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dtrsv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.idamax.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.isamax.html</loc></url>
