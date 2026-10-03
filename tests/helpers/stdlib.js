@@ -30,6 +30,7 @@ import stdlibDgemv from "@stdlib/blas-base-dgemv";
 import stdlibSsymv from "@stdlib/blas-base-ssymv";
 import stdlibDsymv from "@stdlib/blas-base-dsymv";
 import stdlibStrmv from "@stdlib/blas-base-strmv";
+import stdlibDtrmv from "@stdlib/blas-base-dtrmv";
 import stdlibStrsv from "@stdlib/blas-base-strsv";
 import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibDger from "@stdlib/blas-base-dger";
@@ -336,6 +337,26 @@ export function strmvReference(a) {
     a.incx,
   );
   const out = new Float32Array(a.y);
+  for (let i = 0; i < a.n; i++) out[i * a.incy] = xCopy[i * a.incx];
+  return { y: out };
+}
+
+// Same in-place-to-separate-y remap strmvReference uses, at f64 — stdlib's
+// dtrmv also solves in place on x (no separate y, no incy).
+export function dtrmvReference(a) {
+  const xCopy = a.x.slice();
+  stdlibDtrmv(
+    a.layout ?? "row-major",
+    a.uplo,
+    a.trans,
+    a.diag,
+    a.n,
+    a.A.slice(),
+    a.lda,
+    xCopy,
+    a.incx,
+  );
+  const out = new Float64Array(a.y);
   for (let i = 0; i < a.n; i++) out[i * a.incy] = xCopy[i * a.incx];
   return { y: out };
 }
