@@ -28,6 +28,7 @@ import stdlibDrotm from "@stdlib/blas-base-drotm";
 import stdlibSgemv from "@stdlib/blas-base-sgemv";
 import stdlibDgemv from "@stdlib/blas-base-dgemv";
 import stdlibSsymv from "@stdlib/blas-base-ssymv";
+import stdlibDsymv from "@stdlib/blas-base-dsymv";
 import stdlibStrmv from "@stdlib/blas-base-strmv";
 import stdlibStrsv from "@stdlib/blas-base-strsv";
 import stdlibSger from "@stdlib/blas-base-sger";
@@ -308,6 +309,10 @@ export const dgemvReference = makeMatVecReference(stdlibDgemv, (a) => [
   a.n,
 ]);
 export const ssymvReference = makeMatVecReference(stdlibSsymv, (a) => [
+  a.uplo,
+  a.n,
+]);
+export const dsymvReference = makeMatVecReference(stdlibDsymv, (a) => [
   a.uplo,
   a.n,
 ]);

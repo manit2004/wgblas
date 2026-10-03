@@ -240,6 +240,14 @@ routineShaders.dgemv = {
   dgemv_t,
 }; // one or the other, picked by trans
 
+import dsymv from "./dsymv.wgsl"; // f64 sibling of ssymv — same per-row DD tree reduction as dgemv_n, with a uplo-mirror address lookup (symIdx) replacing dgemv_n's plain row-major fetch
+routineShaders.dsymv = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  dsymv,
+};
+
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
 routineShaders.sgemm = { sgemm_small, sgemm_large }; // one or the other, picked by a tile-size threshold
