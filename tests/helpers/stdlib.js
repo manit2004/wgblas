@@ -32,6 +32,7 @@ import stdlibDsymv from "@stdlib/blas-base-dsymv";
 import stdlibStrmv from "@stdlib/blas-base-strmv";
 import stdlibDtrmv from "@stdlib/blas-base-dtrmv";
 import stdlibStrsv from "@stdlib/blas-base-strsv";
+import stdlibDtrsv from "@stdlib/blas-base-dtrsv";
 import stdlibSger from "@stdlib/blas-base-sger";
 import stdlibDger from "@stdlib/blas-base-dger";
 import stdlibSsyr from "@stdlib/blas-base-ssyr";
@@ -362,6 +363,13 @@ export function dtrmvReference(a) {
 }
 
 export const strsvReference = makeMatXReference(stdlibStrsv, (a) => [
+  a.uplo,
+  a.trans,
+  a.diag,
+  a.n,
+]);
+
+export const dtrsvReference = makeMatXReference(stdlibDtrsv, (a) => [
   a.uplo,
   a.trans,
   a.diag,

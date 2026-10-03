@@ -256,6 +256,19 @@ routineShaders.dtrmv = {
   dtrmv,
 };
 
+import dtrsv_invert_block from "./dtrsv_invert_block.wgsl"; // f64 sibling of strsv_invert_block — same per-column substitution, but the non-unit-diagonal division is the first real ddDivProtected use in this port order (deliberately last per TODO.md)
+import dtrsv_apply_inverse from "./dtrsv_apply_inverse.wgsl"; // f64 sibling of strsv_apply_inverse — per-thread dense matvec against the block inverse, every thread runs the same blockLen-iteration loop (no early return) to keep protected-op call counts uniform
+import dtrsv_update from "./dtrsv_update.wgsl"; // f64 sibling of strsv_update — per-row DD tree reduction (dsymv's shape) over the fixed-width block column range (dger's shape, not per-row-varying)
+routineShaders.dtrsv = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  "f64/utils/divide": ddDivUtil,
+  dtrsv_invert_block,
+  dtrsv_apply_inverse,
+  dtrsv_update,
+};
+
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
 routineShaders.sgemm = { sgemm_small, sgemm_large }; // one or the other, picked by a tile-size threshold

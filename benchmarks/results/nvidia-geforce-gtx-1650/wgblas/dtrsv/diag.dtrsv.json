@@ -1,0 +1,110 @@
+[
+  {
+    "diag": "non-unit",
+    "n": 32,
+    "compute_ms": 0.10704,
+    "compute_GBs": 0.04424514200298954
+  },
+  {
+    "diag": "non-unit",
+    "n": 64,
+    "compute_ms": 0.212992,
+    "compute_GBs": 0.0829326923076923
+  },
+  {
+    "diag": "non-unit",
+    "n": 128,
+    "compute_ms": 0.27648,
+    "compute_GBs": 0.24629629629629632
+  },
+  {
+    "diag": "non-unit",
+    "n": 256,
+    "compute_ms": 0.485552,
+    "compute_GBs": 0.5504333212508651
+  },
+  {
+    "diag": "non-unit",
+    "n": 512,
+    "compute_ms": 0.992912,
+    "compute_GBs": 1.0663744621879883
+  },
+  {
+    "diag": "non-unit",
+    "n": 1024,
+    "compute_ms": 1.984832,
+    "compute_GBs": 2.123496598200755
+  },
+  {
+    "diag": "non-unit",
+    "n": 1280,
+    "compute_ms": 2.01736,
+    "compute_GBs": 3.2612919855652933
+  },
+  {
+    "diag": "non-unit",
+    "n": 2048,
+    "compute_ms": 3.410032,
+    "compute_GBs": 4.931970139869655
+  },
+  {
+    "diag": "non-unit",
+    "n": 4096,
+    "compute_ms": 8.155168,
+    "compute_GBs": 8.239043512040464
+  },
+  {
+    "diag": "unit",
+    "n": 32,
+    "compute_ms": 0.073696,
+    "compute_GBs": 0.06426400347372993
+  },
+  {
+    "diag": "unit",
+    "n": 64,
+    "compute_ms": 0.14411200000000002,
+    "compute_GBs": 0.12257133340734983
+  },
+  {
+    "diag": "unit",
+    "n": 128,
+    "compute_ms": 0.190464,
+    "compute_GBs": 0.3575268817204301
+  },
+  {
+    "diag": "unit",
+    "n": 256,
+    "compute_ms": 0.336912,
+    "compute_GBs": 0.7932753953554639
+  },
+  {
+    "diag": "unit",
+    "n": 512,
+    "compute_ms": 0.6961919999999999,
+    "compute_GBs": 1.5208678065820924
+  },
+  {
+    "diag": "unit",
+    "n": 1024,
+    "compute_ms": 1.4145759999999998,
+    "compute_GBs": 2.979538745178768
+  },
+  {
+    "diag": "unit",
+    "n": 1280,
+    "compute_ms": 1.80808,
+    "compute_GBs": 3.6387770452634842
+  },
+  {
+    "diag": "unit",
+    "n": 2048,
+    "compute_ms": 3.115008,
+    "compute_GBs": 5.399079552925707
+  },
+  {
+    "diag": "unit",
+    "n": 4096,
+    "compute_ms": 7.574176,
+    "compute_GBs": 8.871035476334324
+  }
+]

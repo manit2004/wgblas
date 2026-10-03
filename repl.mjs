@@ -41,6 +41,7 @@ import {
   dgemv,
   dsymv,
   dtrmv,
+  dtrsv,
   sgemm,
   sgemmtr,
   ssyrk,
@@ -97,6 +98,7 @@ Object.assign(r.context, {
   dgemv,
   dsymv,
   dtrmv,
+  dtrsv,
   sgemm,
   sgemmtr,
   ssyrk,
@@ -144,6 +146,7 @@ r.defineCommand("help", {
   dgemv (device, trans, m, n, alpha, A, lda, x, incx, beta, y, incy)  (A, x, y: Float64Array or GpuMatrix/GpuVector)
   dsymv (device, uplo, n, alpha, A, lda, x, incx, beta, y, incy)      (A, x, y: Float64Array or GpuMatrix/GpuVector)
   dtrmv (device, uplo, trans, diag, n, A, lda, x, incx, y, incy)      (A, x, y: Float64Array or GpuMatrix/GpuVector)
+  dtrsv (device, uplo, trans, diag, n, A, lda, x, incx)               (A, x: Float64Array or GpuMatrix/GpuVector)
   sgemm (device, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
   sgemmtr(device, uplo, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
   ssyrk (device, uplo, trans, n, k, alpha, A, lda, beta, C, ldc)

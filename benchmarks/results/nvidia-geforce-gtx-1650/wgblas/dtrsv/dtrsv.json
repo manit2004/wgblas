@@ -1,0 +1,58 @@
+[
+  {
+    "n": 32,
+    "numBlocks": 1,
+    "compute_ms": 0.083968,
+    "ms_per_block": 0.083968,
+    "compute_GBs": 0.05640243902439024
+  },
+  {
+    "n": 64,
+    "numBlocks": 1,
+    "compute_ms": 0.166656,
+    "ms_per_block": 0.166656,
+    "compute_GBs": 0.10599078341013825
+  },
+  {
+    "n": 128,
+    "numBlocks": 2,
+    "compute_ms": 0.217088,
+    "ms_per_block": 0.108544,
+    "compute_GBs": 0.31367924528301894
+  },
+  {
+    "n": 256,
+    "numBlocks": 4,
+    "compute_ms": 0.38039999999999996,
+    "ms_per_block": 0.09509999999999999,
+    "compute_GBs": 0.7025867507886436
+  },
+  {
+    "n": 512,
+    "numBlocks": 8,
+    "compute_ms": 0.776976,
+    "ms_per_block": 0.097122,
+    "compute_GBs": 1.362739647041865
+  },
+  {
+    "n": 1024,
+    "numBlocks": 16,
+    "compute_ms": 1.594064,
+    "ms_per_block": 0.099629,
+    "compute_GBs": 2.644049423360668
+  },
+  {
+    "n": 2048,
+    "numBlocks": 32,
+    "compute_ms": 3.424608,
+    "ms_per_block": 0.107019,
+    "compute_GBs": 4.9109784243919306
+  },
+  {
+    "n": 4096,
+    "numBlocks": 64,
+    "compute_ms": 8.158912,
+    "ms_per_block": 0.127483,
+    "compute_GBs": 8.235262740914475
+  }
+]
