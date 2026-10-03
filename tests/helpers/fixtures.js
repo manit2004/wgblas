@@ -50,11 +50,12 @@ export { ulpDiff, maxUlp };
  * it — leaves every other position exactly as it started, so a uniform
  * sentinel fill makes "the right positions changed" and "the gap positions
  * were left alone" both observable, without hand-typing a buffer sized to
- * match n/inc.
+ * match n/inc. `dtype` defaults to Float32Array; pass Float64Array for an f64
+ * routine's edge cases (e.g. dtrmv).
  * @public
  */
-export function makeVec(n, inc, sentinel = 99) {
-  return new Float32Array((n - 1) * inc + 1).fill(sentinel);
+export function makeVec(n, inc, sentinel = 99, dtype = Float32Array) {
+  return new dtype((n - 1) * inc + 1).fill(sentinel);
 }
 
 // WGSL may flush subnormals to zero (FTZ): "To flush to zero is to replace a subnormal value

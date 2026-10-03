@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dtrmv — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dtrmv, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // Lower triangular; entries above the diagonal are ignored.
+        const n = 3, lda = n;
+        const A = new Float64Array([2, 0, 0,
+                                    3, 4, 0,
+                                    5, 6, 8]);
+        const x = new Float64Array([1, 1, 1]);
+        const y = new Float64Array([0, 0, 0]);
+
+        const { y: result } = await dtrmv(device, "lower", "no-transpose", "non-unit", n, A, lda, x, 1, y, 1);
+
+        document.getElementById("out").textContent = [
+          "A (lower triangular) =",
+          "  [" + [...A.subarray(0, 3)].join(", ") + "]",
+          "  [" + [...A.subarray(3, 6)].join(", ") + "]",
+          "  [" + [...A.subarray(6, 9)].join(", ") + "]",
+          "x = [" + [...x].join(", ") + "]",
+          "y = A*x = [" + [...result].join(", ") + "]   // 2, 3+4, 5+6+8",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

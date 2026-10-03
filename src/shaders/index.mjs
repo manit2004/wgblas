@@ -248,6 +248,14 @@ routineShaders.dsymv = {
   dsymv,
 };
 
+import dtrmv from "./dtrmv.wgsl"; // f64 sibling of strmv — per-row DD tree reduction (dsymv's shape) over a triangular, per-row-varying column range (dsyr's shape), not a mirrored or full-n one; wgblas's trmv already writes to a separate y rather than aliasing x in place, so there's no read/write-ordering concern to port
+routineShaders.dtrmv = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  dtrmv,
+};
+
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
 routineShaders.sgemm = { sgemm_small, sgemm_large }; // one or the other, picked by a tile-size threshold
