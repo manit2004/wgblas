@@ -42,7 +42,7 @@ function wgslWorkgroupSize(src) {
 }
 
 test("gemm block tiles match their shaders", () => {
-  for (const name of ["sgemm_small", "sgemmtr_small"]) {
+  for (const name of ["sgemm_small", "sgemmtr_small", "dgemm_small"]) {
     const src = source(name);
     assert.equal(
       wgslConst(src, "BM"),
@@ -55,7 +55,7 @@ test("gemm block tiles match their shaders", () => {
       `${name}.wgsl BN !== BN_SMALL`,
     );
   }
-  for (const name of ["sgemm_large", "sgemmtr_large"]) {
+  for (const name of ["sgemm_large", "sgemmtr_large", "dgemm_large"]) {
     const src = source(name);
     assert.equal(
       wgslConst(src, "BM"),

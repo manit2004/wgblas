@@ -50,7 +50,8 @@ fn ddAdd(a: DD, b: DD) -> DD {
 //   - Every thread in the workgroup must call this the same number of times
 //     — including ones whose result gets discarded. Compute unconditionally;
 //     only the write-back should be conditional.
-var<workgroup> dekkerScratch: array<f32, 64>;
+// Sized for the largest DD workgroup (dgemm_small, 256 threads).
+var<workgroup> dekkerScratch: array<f32, 256>;
 
 fn twoSumProtected(a: f32, b: f32, threadSlot: u32) -> DD {
   dekkerScratch[threadSlot] = a + b;

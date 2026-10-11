@@ -45,6 +45,7 @@ export { dgemv } from "./src/dgemv/dgemv.mjs";
 export { dsymv } from "./src/dsymv/dsymv.mjs";
 export { dtrmv } from "./src/dtrmv/dtrmv.mjs";
 export { dtrsv } from "./src/dtrsv/dtrsv.mjs";
+export { dgemm } from "./src/dgemm/dgemm.mjs";
 export { sgemm } from "./src/sgemm/sgemm.mjs";
 export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
 export { ssyrk } from "./src/ssyrk/ssyrk.mjs";

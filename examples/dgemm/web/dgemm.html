@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dgemm — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dgemm, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // C = A*B with A 2x3 and B 3x2, so C is 2x2.
+        const m = 2, n = 2, k = 3;
+        const A = new Float64Array([1, 2, 3,
+                                    4, 5, 6]);
+        const B = new Float64Array([1, 0,
+                                    0, 1,
+                                    1, 1]);
+        const C = new Float64Array(m * n);
+
+        const { C: result } = await dgemm(device, "no-transpose", "no-transpose", m, n, k, 1, A, 3, B, 2, 0, C, 2);
+
+        document.getElementById("out").textContent = [
+          "A =",
+          "  [" + A.slice(0, 3).join(", ") + "]",
+          "  [" + A.slice(3, 6).join(", ") + "]",
+          "B =",
+          "  [" + B.slice(0, 2).join(", ") + "]",
+          "  [" + B.slice(2, 4).join(", ") + "]",
+          "  [" + B.slice(4, 6).join(", ") + "]",
+          "C = A*B =",
+          "  [" + result.slice(0, 2).join(", ") + "]",
+          "  [" + result.slice(2, 4).join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

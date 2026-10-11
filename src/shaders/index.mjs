@@ -269,6 +269,16 @@ routineShaders.dtrsv = {
   dtrsv_update,
 };
 
+import dgemm_small from "./dgemm_small.wgsl"; // f64 sibling of sgemm_small — same tile config; vec4 on Hi halves only (Lo too would exceed 8 storage buffers)
+import dgemm_large from "./dgemm_large.wgsl"; // f64 sibling of sgemm_large — same tile config and caveats as dgemm_small
+routineShaders.dgemm = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  dgemm_small,
+  dgemm_large,
+}; // one or the other, picked by the same tile-size threshold as sgemm
+
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
 routineShaders.sgemm = { sgemm_small, sgemm_large }; // one or the other, picked by a tile-size threshold

@@ -171,6 +171,10 @@
       "types": "./src/dtrsv/dtrsv.d.mts",
       "import": "./src/dtrsv/dtrsv.mjs"
     },
+    "./dgemm": {
+      "types": "./src/dgemm/dgemm.d.mts",
+      "import": "./src/dgemm/dgemm.mjs"
+    },
     "./sgemm": {
       "types": "./src/sgemm/sgemm.d.mts",
       "import": "./src/sgemm/sgemm.mjs"
@@ -258,6 +262,7 @@
     "@stdlib/blas-base-daxpy": "^0.4.1",
     "@stdlib/blas-base-dcopy": "^0.4.1",
     "@stdlib/blas-base-ddot": "^0.4.1",
+    "@stdlib/blas-base-dgemm": "^0.1.1",
     "@stdlib/blas-base-dgemv": "^0.1.1",
     "@stdlib/blas-base-dger": "^0.1.1",
     "@stdlib/blas-base-dnrm2": "^0.4.1",
