@@ -16,6 +16,13 @@ struct Params {
 @group(0) @binding(3) var<uniform> params: Params;
 
 const WGS: u32 = 64u;
+// Aligned row walk — see ssyr.wgsl for why. Here it's lda padding that
+// knocks row starts off the 128-byte boundary.
+const ALIGN_MASK: u32 = ~31u;
+
+fn update(idx: u32, xi: f32, col: u32) {
+  A[idx] = xi * y[col * params.incy] + A[idx];
+}
 
 @compute @workgroup_size(64)
 fn main(
@@ -27,22 +34,21 @@ fn main(
     let xi = params.alpha * x[row * params.incx];
     let row_base = row * params.lda;
 
-    // 4-unrolled loop: each iteration issues 4 independent A/y accesses.
-    let n4_floor = (params.n / (4u * WGS)) * (4u * WGS);
-    for (var col: u32 = lid.x; col < n4_floor; col += 4u * WGS) {
-      let idx0 = row_base + col;
-      let idx1 = row_base + col + WGS;
-      let idx2 = row_base + col + 2u * WGS;
-      let idx3 = row_base + col + 3u * WGS;
-      A[idx0] = xi * y[ col            * params.incy] + A[idx0];
-      A[idx1] = xi * y[(col +     WGS) * params.incy] + A[idx1];
-      A[idx2] = xi * y[(col + 2u * WGS) * params.incy] + A[idx2];
-      A[idx3] = xi * y[(col + 3u * WGS) * params.incy] + A[idx3];
+    // 4-unrolled loop: each iteration issues 4 independent A/y accesses,
+    // in aligned absolute indices.
+    let first = row_base;
+    let last = row_base + params.n;
+    let aligned = first & ALIGN_MASK;
+    let floor4 = aligned + ((last - aligned) / (4u * WGS)) * (4u * WGS);
+    for (var base = aligned; base < floor4; base += 4u * WGS) {
+      for (var k = 0u; k < 4u; k++) {
+        let idx = base + k * WGS + lid.x;
+        if (idx >= first) { update(idx, xi, idx - row_base); }
+      }
     }
     // Scalar tail: at most 3*WGS elements left after the unrolled block.
-    for (var col: u32 = n4_floor + lid.x; col < params.n; col += WGS) {
-      let idx = row_base + col;
-      A[idx] = xi * y[col * params.incy] + A[idx];
+    for (var idx = floor4 + lid.x; idx < last; idx += WGS) {
+      if (idx >= first) { update(idx, xi, idx - row_base); }
     }
   }
 }

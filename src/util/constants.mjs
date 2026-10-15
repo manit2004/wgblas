@@ -42,6 +42,17 @@ export const LARGE_TILE_WORKGROUP_THRESHOLD = 36;
  */
 export const WGS = 64;
 
+/**
+ * Rows per split-K chunk for the column-per-thread Level 2 kernels
+ * (strmv_t.wgsl, sgemv_t.wgsl). JS-only: passed to the shader as a param.
+ * Small enough that n=4096 gives 16 chunks (~65K threads in flight), large
+ * enough that the reduce pass stays cheap.
+ */
+export const SPLITK_CHUNK_ROWS = 256;
+
+/** `TILE` in ssymv.wgsl — side of the square tiles the stored triangle is cut into. */
+export const SSYMV_TILE = 32;
+
 // --- 2D helper kernels -----------------------------------------------------
 
 /**
@@ -55,3 +66,6 @@ export const TILE_WG_2D = 8;
 
 /** `BLOCK_SIZE` in strsv_invert_block.wgsl — the diagonal block order. */
 export const BLOCK_SIZE = 64;
+
+/** `TILE_ROWS` in strsv_step.wgsl — remaining rows each workgroup updates. */
+export const STRSV_TILE_ROWS = 64;

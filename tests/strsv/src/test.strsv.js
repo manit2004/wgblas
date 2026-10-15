@@ -160,6 +160,60 @@ test("strsv zero-dimension (regression)", async (t) => {
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
+// Fixtures cap n at 50 — one 64-row block — so the multi-block path never
+// runs there: the fused per-block step (strsv_step.wgsl), its cross-
+// workgroup handoff through `sol`, and the final copy into a strided x.
+// n=600 is 10 blocks, the last 24 rows. Off-diagonals are kept to ±1/n so
+// unit-diagonal systems stay well conditioned at this size.
+test("strsv multi-block path (regression)", async (t) => {
+  const N = 600;
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const trans of ["no-transpose", "transpose"])
+        for (const diag of ["non-unit", "unit"])
+          for (const inc of [1, 3]) {
+            await t.test(
+              `${layout} ${uplo} ${trans} ${diag} inc=${inc}`,
+              async () => {
+                const A = randomFloat32Array(N * N, -1 / N, 1 / N, 41);
+                for (let i = 0; i < N; i++) A[i * N + i] = 2;
+                const a = {
+                  uplo,
+                  trans,
+                  diag,
+                  n: N,
+                  A,
+                  lda: N,
+                  x: randomFloat32Array((N - 1) * inc + 1, -1, 1, 42),
+                  incx: inc,
+                  layout,
+                };
+                const got = await strsv(
+                  device,
+                  a.uplo,
+                  a.trans,
+                  a.diag,
+                  a.n,
+                  a.A,
+                  a.lda,
+                  a.x,
+                  a.incx,
+                  a.layout,
+                );
+                const factor = backwardResidualFactor(got, null, a);
+                assert.ok(
+                  factor <= THRESHOLD,
+                  `backward residual factor ${factor} > ${THRESHOLD}`,
+                );
+                // Stride gaps must come back untouched.
+                for (let i = 0; i < a.x.length; i++)
+                  if (i % inc !== 0)
+                    assert.equal(got.x[i], a.x[i], `gap element ${i}`);
+              },
+            );
+          }
+});
+
 test("strsv edge cases (column-major)", async (t) => {
   for (const c of edgeCasesColumnMajor) {
     await t.test(c.label, async () => {

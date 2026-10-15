@@ -1,15 +1,17 @@
 import {
   uploadBuffer,
   createParamsBuffer,
+  createStorageBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
-import { requireWorkgroups } from "../util/workgroup.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { WGS, SPLITK_CHUNK_ROWS } from "../util/constants.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
@@ -111,50 +113,120 @@ export async function sgemv(
 
   const shaderName = isNoTrans ? "sgemv_n" : "sgemv_t";
   const pipeline = await getPipeline(device, shaderName);
+  // Transpose: rows split into chunks for memory parallelism (sgemv_t.wgsl).
+  const numChunks = isNoTrans ? 1 : Math.ceil(m / SPLITK_CHUNK_ROWS);
+  const reducePipeline =
+    numChunks > 1 ? await getPipeline(device, "reduce_partials") : null;
 
   let ABuffer = null;
   let xBuffer = null;
   let yBuffer = null;
   let paramsBuffer = null;
+  let partialBuffer = null;
+  let reduceParams = null;
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sgemv-A", false);
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sgemv-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sgemv-y", true);
-    paramsBuffer = createParamsBuffer(
-      device,
-      [
-        { value: m, type: "u32" },
-        { value: n, type: "u32" },
-        { value: alpha, type: "f32" },
-        { value: beta, type: "f32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
-        { value: lda, type: "u32" },
-      ],
-      "sgemv-params",
-    );
-
-    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      ABuffer,
-      xBuffer,
-      yBuffer,
-      paramsBuffer,
-    ]);
-
-    // NoTrans: one workgroup per row — sgemv_n.wgsl is a grid-stride loop, so
-    // clamping here only costs parallelism. Trans: one thread per output
-    // column, and sgemv_t.wgsl indexes straight off global_invocation_id with
-    // no fallback, so an over-limit dispatch must be refused, not truncated.
-    const wgCount = isNoTrans
-      ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
-      : requireWorkgroups(device, "sgemv", yLen);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    let passes;
+    if (isNoTrans) {
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: m, type: "u32" },
+          { value: n, type: "u32" },
+          { value: alpha, type: "f32" },
+          { value: beta, type: "f32" },
+          { value: incx, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: lda, type: "u32" },
+        ],
+        "sgemv-params",
+      );
+      // One workgroup per row — sgemv_n.wgsl is a grid-stride loop, so
+      // clamping here only costs parallelism.
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            ABuffer,
+            xBuffer,
+            yBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: Math.min(
+            m,
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        },
+      ];
+    } else {
+      if (numChunks > 1) {
+        partialBuffer = createStorageBuffer(
+          device,
+          numChunks * n * 4,
+          "sgemv-partials",
+        );
+        reduceParams = createParamsBuffer(
+          device,
+          [
+            { value: n, type: "u32" },
+            { value: numChunks, type: "u32" },
+            { value: incy, type: "u32" },
+            { value: alpha, type: "f32" },
+            { value: beta, type: "f32" },
+          ],
+          "sgemv-reduce-params",
+        );
+      }
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: m, type: "u32" },
+          { value: n, type: "u32" },
+          { value: alpha, type: "f32" },
+          { value: beta, type: "f32" },
+          { value: incx, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: SPLITK_CHUNK_ROWS, type: "u32" },
+          { value: numChunks > 1 ? 0 : 1, type: "u32" },
+        ],
+        "sgemv-t-params",
+      );
+      // One thread per output column, no grid-stride fallback — an
+      // over-limit dispatch must be refused, not truncated.
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            ABuffer,
+            xBuffer,
+            partialBuffer ?? yBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: {
+            x: requireWorkgroupCount(device, Math.ceil(n / WGS), "sgemv", "x"),
+            y: requireWorkgroupCount(device, numChunks, "sgemv", "y"),
+          },
+        },
+      ];
+      if (numChunks > 1)
+        passes.push({
+          pipeline: reducePipeline,
+          bindGroup: createBindGroup(
+            device,
+            reducePipeline.getBindGroupLayout(0),
+            [partialBuffer, yBuffer, reduceParams],
+          ),
+          workgroups: Math.min(
+            Math.ceil(n / WGS),
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        });
+    }
+    const { commandEncoder, ts } = runComputePasses(device, passes);
     const readBuffer = yIsGpu
       ? null
       : stageReadback(device, commandEncoder, yBuffer);
@@ -176,5 +248,7 @@ export async function sgemv(
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (partialBuffer) destroyBuffers(partialBuffer);
+    if (reduceParams) destroyBuffers(reduceParams);
   }
 }

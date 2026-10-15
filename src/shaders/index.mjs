@@ -178,27 +178,30 @@ routineShaders.dnrm2 = {
   "reduction/scaledSumF64": scaledSumF64,
 };
 
+import reduce_partials from "./reduce_partials.wgsl"; // second pass for the split-K Level 2 kernels
 import sgemv_n from "./sgemv_n.wgsl";
 import sgemv_t from "./sgemv_t.wgsl";
-routineShaders.sgemv = { sgemv_n, sgemv_t }; // one or the other, picked by trans
+routineShaders.sgemv = { sgemv_n, sgemv_t, reduce_partials }; // sgemv_n or sgemv_t by trans; transpose may add reduce_partials
 
+import gather_strided from "./gather_strided.wgsl"; // packs a strided vector once before an O(n²) Level 2 kernel (util/strided.mjs)
 import ssymv from "./ssymv.wgsl";
-routineShaders.ssymv = { ssymv };
+routineShaders.ssymv = { ssymv, reduce_partials, gather_strided };
 
 import strmv from "./strmv.wgsl";
-routineShaders.strmv = { strmv };
+import strmv_t from "./strmv_t.wgsl"; // transpose path: one thread per output column (coalesced), split-K over rows
+routineShaders.strmv = { strmv, strmv_t, reduce_partials, gather_strided };
 
 import strsv_invert_block from "./strsv_invert_block.wgsl";
-import strsv_apply_inverse from "./strsv_apply_inverse.wgsl";
-import strsv_update from "./strsv_update.wgsl";
+import strsv_step from "./strsv_step.wgsl"; // one fused solve-and-update dispatch per block
+import scatter_strided from "./scatter_strided.wgsl"; // copies the contiguous solution back into a strided x
 routineShaders.strsv = {
   strsv_invert_block,
-  strsv_apply_inverse,
-  strsv_update,
+  strsv_step,
+  scatter_strided,
 };
 
 import sger from "./sger.wgsl";
-routineShaders.sger = { sger };
+routineShaders.sger = { sger, gather_strided };
 
 import dger from "./dger.wgsl"; // f64 sibling of sger — one ddMulProtected + one ddMulProtected + one ddAddProtected per element, no reduction shader needed
 routineShaders.dger = {
@@ -209,7 +212,7 @@ routineShaders.dger = {
 };
 
 import ssyr from "./ssyr.wgsl";
-routineShaders.ssyr = { ssyr };
+routineShaders.ssyr = { ssyr, gather_strided };
 
 import dsyr from "./dsyr.wgsl"; // f64 sibling of ssyr — two ddMulProtected + one ddAddProtected per element, no reduction shader needed
 routineShaders.dsyr = {
@@ -220,7 +223,7 @@ routineShaders.dsyr = {
 };
 
 import ssyr2 from "./ssyr2.wgsl";
-routineShaders.ssyr2 = { ssyr2 };
+routineShaders.ssyr2 = { ssyr2, gather_strided };
 
 import dsyr2 from "./dsyr2.wgsl"; // f64 sibling of ssyr2 — two ddMulProtected + two ddAddProtected per element, no reduction shader needed
 routineShaders.dsyr2 = {

@@ -1,6 +1,5 @@
-// strmv: y = op(A) * x
+// strmv: y = A * x — strmv's no-transpose path (transpose runs strmv_t.wgsl).
 // A is n×n triangular, lower (uplo=0) or upper (uplo=1) triangle stored.
-// op(A) is A (trans=0) or A^T (trans=1).
 // diag=1 (unit) treats the diagonal as 1 without reading A's diagonal values.
 // One workgroup per row, grid-stride outer loop.
 
@@ -13,7 +12,7 @@ struct Params {
   incx:  u32,
   incy:  u32,
   lda:   u32,
-  trans: u32,  // 0 = no-transpose, 1 = transpose
+  trans: u32,  // unused — always 0 here; kept so the Params layout is unchanged
   uplo:  u32,  // 0 = lower, 1 = upper
   diag:  u32,  // 0 = non-unit, 1 = unit
 }
@@ -22,6 +21,7 @@ struct Params {
 
 const WGS: u32 = 64u;
 var<workgroup> scratch: array<f32, 64>;
+const ALIGN_MASK: u32 = ~31u;
 
 @compute @workgroup_size(64)
 fn main(
@@ -32,59 +32,17 @@ fn main(
   for (var i = wgid.x; i < params.n; i += nwg.x) {
     var acc = 0.0f;
 
-    if params.trans == 0u {
-      // No-transpose: y[i] = Σ_j A[i,j] * x[j]
-      if params.uplo == 0u {
-        // Lower: A[i,j] stored at A[i*lda+j] for j ≤ i
-        for (var j = lid.x; j <= i; j += WGS) {
-          var aVal: f32;
-          // unit diagonal: use 1 instead of A's actual diagonal value
-          if params.diag == 1u && j == i {
-            aVal = 1.0;
-          } else if ( j <= i ) {
-            aVal = A[i * params.lda + j];
-          }
-          acc += aVal * x[j * params.incx];
-        }
-      } else {
-        // Upper: A[i,j] stored at A[i*lda+j] for j ≥ i
-        for (var j = i + lid.x; j < params.n; j += WGS) {
-          var aVal: f32;
-          // unit diagonal: use 1 instead of A's actual diagonal value
-          if params.diag == 1u && j == i {
-            aVal = 1.0;
-          } else if ( j >= i ) {
-            aVal = A[i * params.lda + j];
-          }
-          acc += aVal * x[j * params.incx];
-        }
-      }
-    } else {
-      // Transpose: y[i] = Σ_j A[j,i] * x[j]
-      if params.uplo == 0u {
-        // Lower: A[j,i] stored at A[j*lda+i] for j ≥ i
-        for (var j = i + lid.x; j < params.n; j += WGS) {
-          var aVal: f32;
-          // unit diagonal: use 1 instead of A's actual diagonal value
-          if params.diag == 1u && j == i {
-            aVal = 1.0;
-          } else if ( j >= i ) {
-            aVal = A[j * params.lda + i];
-          }
-          acc += aVal * x[j * params.incx];
-        }
-      } else {
-        // Upper: A[j,i] stored at A[j*lda+i] for j ≤ i
-        for (var j = lid.x; j <= i; j += WGS) {
-          var aVal: f32;
-          // unit diagonal: use 1 instead of A's actual diagonal value
-          if params.diag == 1u && j == i {
-            aVal = 1.0;
-          } else if ( j <= i ) {
-            aVal = A[j * params.lda + i];
-          }
-          acc += aVal * x[j * params.incx];
-        }
+    // y[i] = Σ_j A[i,j] * x[j] over the stored range: lower j <= i, upper j >= i.
+    // Walked in aligned absolute indices — see ssyr.wgsl for why.
+    let row_base = i * params.lda;
+    let first = row_base + select(i, 0u, params.uplo == 0u);
+    let last = row_base + select(params.n, i + 1u, params.uplo == 0u);
+    for (var idx = (first & ALIGN_MASK) + lid.x; idx < last; idx += WGS) {
+      if (idx >= first) {
+        let j = idx - row_base;
+        // unit diagonal: use 1 instead of A's actual diagonal value
+        let aVal = select(A[idx], 1.0, params.diag == 1u && j == i);
+        acc += aVal * x[j * params.incx];
       }
     }
 
