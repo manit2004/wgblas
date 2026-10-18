@@ -159,15 +159,17 @@ test("strsv zero-dimension (regression)", async (t) => {
   });
 });
 
-// Up to 8 blocks, each diagonal block is solved by substitution
-// (strsm_small.wgsl, in place on x) and a presolved strsv_step does only the
-// trailing update; one block is a single dispatch. Fixtures stop at n=50 and
-// the multi-block test above takes the inverse path (10 blocks). This pins
-// one block at the cap (64), a ragged last 4-row chunk (37), n=1, and 3 and 5
-// blocks (150, 300 — ragged last blocks), every uplo/trans/diag/layout, with
-// strided x whose gaps must survive.
+// Up to 2 blocks (strsv.mjs's SUBSTITUTION_MAX_BLOCKS), each diagonal block
+// is solved by substitution (strsm_small.wgsl, in place on x) and a
+// presolved strsv_step does only the trailing update; one block is a single
+// dispatch. Fixtures stop at n=50, so this pins the substitution cases — one
+// block at its cap (64), a ragged last 4-row chunk (37), n=1, and two blocks
+// with a ragged last block (100) and at the block cap (128) — next to 3 and 5
+// blocks (150, 300), which take the inverse path, so both sides of the switch
+// run with ragged last blocks. Every uplo/trans/diag/layout, with strided x
+// whose gaps must survive.
 test("strsv few-block substitution path (regression)", async (t) => {
-  for (const N of [64, 37, 1, 150, 300])
+  for (const N of [64, 37, 1, 100, 128, 150, 300])
     for (const layout of ["row-major", "column-major"])
       for (const uplo of ["lower", "upper"])
         for (const trans of ["no-transpose", "transpose"])

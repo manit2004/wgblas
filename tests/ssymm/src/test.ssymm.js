@@ -231,8 +231,9 @@ test("ssymm zero-dimension (regression)", async (t) => {
 // Fixtures cap m/n at 20 (one tile), so ssymm's vec4 loads and multi-tile
 // grid only run here: aOrder=150 spans several small tiles with ld % 4 != 0
 // (scalar loads); 400 runs the large kernel with 4-aligned strides (vec4).
+// OTHER is a multiple of 4 so every N=400 side/layout pairing keeps ld aligned.
 test("ssymm multi-tile path (regression)", async (t) => {
-  const OTHER = 70;
+  const OTHER = 72;
   for (const [N, pad] of [
     [150, 1],
     [400, 4],

@@ -225,8 +225,9 @@ test("strmm zero-dimension (regression)", async (t) => {
 // small tiles with ldb % 4 != 0 (scalar loads); 400 runs the large kernel
 // with a 4-aligned ldb (vec4 loads). Every side/uplo/trans/layout pairing,
 // since each lands the triangle on a different gemm operand and orientation.
+// OTHER is a multiple of 4 so every N=400 side/layout pairing keeps ldb aligned.
 test("strmm multi-tile path (regression)", async (t) => {
-  const OTHER = 70;
+  const OTHER = 72;
   for (const [N, pad] of [
     [150, 1],
     [400, 4],
