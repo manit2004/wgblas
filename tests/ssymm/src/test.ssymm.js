@@ -228,6 +228,72 @@ test("ssymm zero-dimension (regression)", async (t) => {
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
+// Fixtures cap m/n at 20 (one tile), so ssymm's vec4 loads and multi-tile
+// grid only run here: aOrder=150 spans several small tiles with ld % 4 != 0
+// (scalar loads); 400 runs the large kernel with 4-aligned strides (vec4).
+test("ssymm multi-tile path (regression)", async (t) => {
+  const OTHER = 70;
+  for (const [N, pad] of [
+    [150, 1],
+    [400, 4],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const side of ["left", "right"])
+        for (const uplo of ["lower", "upper"]) {
+          await t.test(`${layout} N=${N} ${side} ${uplo}`, async () => {
+            const m = side === "left" ? N : OTHER;
+            const n = side === "left" ? OTHER : N;
+            const cm = layout === "column-major";
+            const LD = (cm ? m : n) + pad;
+            const OUTER = cm ? n : m;
+            const a = {
+              side,
+              uplo,
+              m,
+              n,
+              alpha: 1.5,
+              A: randomFloat32Array(N * N, -1, 1, 91),
+              lda: N,
+              B: randomFloat32Array(OUTER * LD, -1, 1, 92),
+              ldb: LD,
+              beta: 0.5,
+              C: randomFloat32Array(OUTER * LD, -1, 1, 93),
+              ldc: LD,
+              layout,
+            };
+            const got = await ssymm(
+              device,
+              a.side,
+              a.uplo,
+              a.m,
+              a.n,
+              a.alpha,
+              a.A,
+              a.lda,
+              a.B,
+              a.ldb,
+              a.beta,
+              a.C,
+              a.ldc,
+              a.layout,
+            );
+            const factor = forwardFactor(got, stdlibReference(a), a);
+            assert.ok(
+              factor <= THRESHOLD,
+              `forward factor ${factor} > ${THRESHOLD}`,
+            );
+            // Stride padding is never part of the matrix — it must come back as-is.
+            for (let o = 0; o < OUTER; o++)
+              for (let p = LD - pad; p < LD; p++)
+                assert.equal(
+                  got.C[o * LD + p],
+                  a.C[o * LD + p],
+                  `padding element ${o * LD + p} changed`,
+                );
+          });
+        }
+});
+
 test("ssymm edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {
     await t.test(tc.label, async () => {

@@ -44,6 +44,11 @@ struct Params {
   transB: u32,
   useVecA: u32, // 1 = A's vec4 view covers every in-bounds element (see vec4Usable)
   useVecB: u32, // 1 = B's vec4 view covers every in-bounds element
+  uplo:    u32, // 0 = full C; gemmtr masks: 1 = lower (col <= row), 2 = upper (col >= row)
+  offA:    u32, // element offsets into A/B/C — strsm addresses sub-blocks in place
+  offB:    u32, // (vec4 paths need offset % 4 == 0, checked host-side)
+  offC:    u32,
+  kTri:    u32, // strmm: 0 = dense; 1/2 = op(A) lower/upper, 3/4 = op(B) lower/upper
 }
 
 @group(0) @binding(5) var<uniform> params: Params;
@@ -59,6 +64,12 @@ fn main(
 ) {
   let blockRow = wid.y * BM;
   let blockCol = wid.x * BN;
+  // gemmtr (sgemmtr/ssyrk/ssyr2k): a tile entirely outside the requested
+  // triangle writes nothing, so skip it outright — about half the grid. The
+  // test depends only on the workgroup id and a uniform, so the early exit
+  // is uniform and comes before any barrier.
+  if (params.uplo == 1u && blockCol > blockRow + BM - 1u) { return; }
+  if (params.uplo == 2u && blockCol + BN - 1u < blockRow) { return; }
   let threadCol = lid.x;
   let threadRow = lid.y;
 
@@ -74,8 +85,18 @@ fn main(
   var regM: array<f32, TM>;
   var regN: array<f32, TN>;
 
-  let numTiles = (params.k + BK - 1u) / BK;
-  for (var t = 0u; t < numTiles; t++) {
+  // strmm: one operand is triangular (its other half zero-filled), so only
+  // a band of k reaches this tile — the rest multiplies zeros. Lower op(A)
+  // rows stop at k <= row, upper start at k >= row; op(B) likewise by
+  // column. Uniform (workgroup id + params), so the barriers stay legal.
+  var kLo = 0u;
+  var kHi = params.k;
+  if (params.kTri == 1u) { kHi = min(kHi, blockRow + BM); }
+  if (params.kTri == 2u) { kLo = blockRow; }
+  if (params.kTri == 3u) { kLo = blockCol; }
+  if (params.kTri == 4u) { kHi = min(kHi, blockCol + BN); }
+  let tEnd = (kHi + BK - 1u) / BK;
+  for (var t = kLo / BK; t < tEnd; t++) {
     // ── Load the BM×BK A tile into As (vectorized along op(A)'s fast dim
     // when lda allows; every branch here is dispatch-uniform) ──
     if (params.useVecA == 1u && params.transA == 0u) {
@@ -86,7 +107,7 @@ fn main(
       if (r4 < BM) {
         let gRow = blockRow + r4;
         let gCol = t * BK + c4 * 4u;
-        var v = A4[(gRow * params.lda + gCol) / 4u];
+        var v = A4[(params.offA + gRow * params.lda + gCol) / 4u];
         let rowOK = gRow < params.m;
         v.x = select(0.0, v.x, rowOK &&  gCol            < params.k);
         v.y = select(0.0, v.y, rowOK && (gCol + 1u) < params.k);
@@ -99,30 +120,40 @@ fn main(
       }
     } else if (params.useVecA == 1u && params.transA != 0u) {
       // Transpose: rows contiguous within a column. NUM_THREADS over-spans
-      // the BK-column tile — guard the store.
+      // the BK-column tile — guard the store. Stored k-major, so a warp's
+      // stores land on consecutive words.
       let r4 = tid % (BM / 4u);
       let c  = tid / (BM / 4u);
       if (c < BK) {
         let gRow = blockRow + r4 * 4u;
         let gCol = t * BK + c;
-        var v = A4[(gCol * params.lda + gRow) / 4u];
+        var v = A4[(params.offA + gCol * params.lda + gRow) / 4u];
         let colOK = gCol < params.k;
         v.x = select(0.0, v.x, colOK &&  gRow            < params.m);
         v.y = select(0.0, v.y, colOK && (gRow + 1u) < params.m);
         v.z = select(0.0, v.z, colOK && (gRow + 2u) < params.m);
         v.w = select(0.0, v.w, colOK && (gRow + 3u) < params.m);
-        As[(r4 * 4u) * BK + c]      = v.x;
-        As[(r4 * 4u + 1u) * BK + c] = v.y;
-        As[(r4 * 4u + 2u) * BK + c] = v.z;
-        As[(r4 * 4u + 3u) * BK + c] = v.w;
+        As[c * BM + r4 * 4u] = v.x;
+        As[c * BM + r4 * 4u + 1u] = v.y;
+        As[c * BM + r4 * 4u + 2u] = v.z;
+        As[c * BM + r4 * 4u + 3u] = v.w;
       }
-    } else {
-      // Scalar fallback: odd stride or unhandled orientation.
+    } else if (params.transA == 0u) {
+      // Scalar fallback, no-transpose: odd stride.
       for (var loadOffset = 0u; loadOffset < BM; loadOffset += STRIDE_A) {
         let gRowA = blockRow + innerRowA + loadOffset;
         let gColA = t * BK + innerColA;
-        let aIdx = select(gRowA * params.lda + gColA, gColA * params.lda + gRowA, params.transA != 0u);
-        As[(innerRowA + loadOffset) * BK + innerColA] = select(0.0, A[aIdx], gRowA < params.m && gColA < params.k);
+        As[(innerRowA + loadOffset) * BK + innerColA] = select(0.0, A[params.offA + gRowA * params.lda + gColA], gRowA < params.m && gColA < params.k);
+      }
+    } else {
+      // Scalar fallback, transpose: one m per thread, so a warp reads a
+      // contiguous run of a stored row and writes As k-major without conflicts.
+      for (var kOff = 0u; kOff < BK; kOff += NUM_THREADS / BM) {
+        let mA = tid % BM;
+        let kA = tid / BM + kOff;
+        let gRowA = blockRow + mA;
+        let gColA = t * BK + kA;
+        As[kA * BM + mA] = select(0.0, A[params.offA + gColA * params.lda + gRowA], gRowA < params.m && gColA < params.k);
       }
     }
 
@@ -135,7 +166,7 @@ fn main(
       if (r < BK) {
         let gRow = t * BK + r;
         let gCol = blockCol + c4 * 4u;
-        var v = B4[(gRow * params.ldb + gCol) / 4u];
+        var v = B4[(params.offB + gRow * params.ldb + gCol) / 4u];
         let rowOK = gRow < params.k;
         v.x = select(0.0, v.x, rowOK &&  gCol            < params.n);
         v.y = select(0.0, v.y, rowOK && (gCol + 1u) < params.n);
@@ -154,7 +185,7 @@ fn main(
       if (c < BN) {
         let gRow = t * BK + r4 * 4u;
         let gCol = blockCol + c;
-        var v = B4[(gCol * params.ldb + gRow) / 4u];
+        var v = B4[(params.offB + gCol * params.ldb + gRow) / 4u];
         let colOK = gCol < params.n;
         v.x = select(0.0, v.x, colOK &&  gRow            < params.k);
         v.y = select(0.0, v.y, colOK && (gRow + 1u) < params.k);
@@ -171,22 +202,41 @@ fn main(
         let gRowB = t * BK + innerRowB + loadOffset;
         let gColB = blockCol + innerColB;
         let bIdx = select(gRowB * params.ldb + gColB, gColB * params.ldb + gRowB, params.transB != 0u);
-        Bs[(innerRowB + loadOffset) * BN + innerColB] = select(0.0, B[bIdx], gRowB < params.k && gColB < params.n);
+        Bs[(innerRowB + loadOffset) * BN + innerColB] = select(0.0, B[params.offB + bIdx], gRowB < params.k && gColB < params.n);
       }
     }
 
     workgroupBarrier();
 
-    for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
-      for (var i = 0u; i < TM; i++) {
-        regM[i] = As[(threadRow * TM + i) * BK + dotIdx];
+    // As is m-major ([BM][BK]) for no-transpose A, k-major ([BK][BM]) for
+    // transposed A — see the tile loads. The uniform branch sits outside the
+    // dot loop: inside it, it kept the compiler from unrolling the hot path.
+    if (params.transA == 0u) {
+      for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
+        for (var i = 0u; i < TM; i++) {
+          regM[i] = As[(threadRow * TM + i) * BK + dotIdx];
+        }
+        for (var i = 0u; i < TN; i++) {
+          regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
+        }
+        for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
+          for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
+            threadResults[resIdxM * TN + resIdxN] += regM[resIdxM] * regN[resIdxN];
+          }
+        }
       }
-      for (var i = 0u; i < TN; i++) {
-        regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
-      }
-      for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
-        for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
-          threadResults[resIdxM * TN + resIdxN] += regM[resIdxM] * regN[resIdxN];
+    } else {
+      for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
+        for (var i = 0u; i < TM; i++) {
+          regM[i] = As[dotIdx * BM + threadRow * TM + i];
+        }
+        for (var i = 0u; i < TN; i++) {
+          regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
+        }
+        for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
+          for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
+            threadResults[resIdxM * TN + resIdxN] += regM[resIdxM] * regN[resIdxN];
+          }
         }
       }
     }
@@ -199,8 +249,12 @@ fn main(
     if (row < params.m) {
       for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
         let col = blockCol + threadCol * TN + resIdxN;
-        if (col < params.n) {
-          let cIdx = row * params.ldc + col;
+        // gemmtr: tiles straddling the diagonal write only their triangle.
+        let inTriangle = params.uplo == 0u
+          || (params.uplo == 1u && col <= row)
+          || (params.uplo == 2u && col >= row);
+        if (col < params.n && inTriangle) {
+          let cIdx = params.offC + row * params.ldc + col;
           // BLAS beta==0 semantics: C is written, not accumulated — must not
           // read C (stale NaN/Inf bits would survive 0 * C as NaN).
           let acc = params.alpha * threadResults[resIdxM * TN + resIdxN];

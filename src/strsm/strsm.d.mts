@@ -11,9 +11,12 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * - `side='left'`:  `A` is m×m — solves `op(A)*X = alpha*B`
  * - `side='right'`: `A` is n×n — solves `X*op(A) = alpha*B`
  *
- * Blocked substitution (strsv's own technique, generalized to a matrix
- * RHS): strsv_invert_block + sgemm, both unmodified. A near-zero diagonal
- * entry amplifies error, same as any triangular solve.
+ * Blocked over 64-row diagonal blocks, all in one compute pass: up to 8
+ * blocks, each block is solved by substitution in place on `B` and a gemm
+ * applies the trailing update; beyond that, every block's inverse is
+ * computed up front (one parallel dispatch) and applied by gemm. A single
+ * block (order <= 64) is one dispatch. A near-zero diagonal entry amplifies
+ * error, same as any triangular solve.
  *
  * {@includeCode ../../examples/strsm/strsm.js}
  *

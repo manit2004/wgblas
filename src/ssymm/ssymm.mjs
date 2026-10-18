@@ -5,6 +5,7 @@ import {
   stageReadback,
   destroyBuffers,
   vec4ViewBinding,
+  vec4Usable,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -225,6 +226,11 @@ export async function ssymm(
     const ldX = swapXY ? ldb : ldDense;
     const YBuffer = swapXY ? AdenseBuffer : BBuffer;
     const ldY = swapXY ? ldDense : ldb;
+    // Vectorized-load enablement — same rules as sgemm.mjs.
+    const xNot = transX === "no-transpose";
+    const yNot = transY === "no-transpose";
+    const useVecA = vec4Usable(XBuffer, ldX, xNot ? mg : kg, xNot ? kg : mg);
+    const useVecB = vec4Usable(YBuffer, ldY, yNot ? kg : ng, yNot ? ng : kg);
 
     gemmParams = createParamsBuffer(
       device,
@@ -239,6 +245,13 @@ export async function ssymm(
         { value: ldc, type: "u32" },
         { value: transX === "transpose" ? 1 : 0, type: "u32" },
         { value: transY === "transpose" ? 1 : 0, type: "u32" },
+        { value: useVecA ? 1 : 0, type: "u32" },
+        { value: useVecB ? 1 : 0, type: "u32" },
+        { value: 0, type: "u32" }, // uplo: full C
+        { value: 0, type: "u32" }, // offA/offB/offC: whole buffers
+        { value: 0, type: "u32" },
+        { value: 0, type: "u32" },
+        { value: 0, type: "u32" }, // kTri: Adense is fully dense
       ],
       "ssymm-gemm-params",
     );

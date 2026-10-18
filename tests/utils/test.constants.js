@@ -20,6 +20,7 @@ import {
   BLOCK_SIZE,
   SSYMV_TILE,
   STRSV_TILE_ROWS,
+  STRSM_SMALL_RHS_PER_WG,
 } from "../../src/util/constants.mjs";
 
 const SHADER_DIR = join(
@@ -44,7 +45,7 @@ function wgslWorkgroupSize(src) {
 }
 
 test("gemm block tiles match their shaders", () => {
-  for (const name of ["sgemm_small", "sgemmtr_small", "dgemm_small"]) {
+  for (const name of ["sgemm_small", "dgemm_small"]) {
     const src = source(name);
     assert.equal(
       wgslConst(src, "BM"),
@@ -57,7 +58,7 @@ test("gemm block tiles match their shaders", () => {
       `${name}.wgsl BN !== BN_SMALL`,
     );
   }
-  for (const name of ["sgemm_large", "sgemmtr_large", "dgemm_large"]) {
+  for (const name of ["sgemm_large", "dgemm_large"]) {
     const src = source(name);
     assert.equal(
       wgslConst(src, "BM"),
@@ -114,6 +115,19 @@ test("strsv step tile matches its shader", () => {
     wgslConst(source("strsv_step"), "BLOCK_SIZE"),
     BLOCK_SIZE,
     "strsv_step.wgsl BLOCK_SIZE !== BLOCK_SIZE",
+  );
+});
+
+test("strsm_small block order and RHS grouping match its shader", () => {
+  assert.equal(
+    wgslConst(source("strsm_small"), "BLOCK_SIZE"),
+    BLOCK_SIZE,
+    "strsm_small.wgsl BLOCK_SIZE !== BLOCK_SIZE",
+  );
+  assert.equal(
+    wgslConst(source("strsm_small"), "RHS_PER_WG"),
+    STRSM_SMALL_RHS_PER_WG,
+    "strsm_small.wgsl RHS_PER_WG !== STRSM_SMALL_RHS_PER_WG",
   );
 });
 

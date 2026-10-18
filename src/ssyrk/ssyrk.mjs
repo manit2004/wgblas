@@ -4,6 +4,8 @@ import {
   createParamsBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
+  vec4Usable,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -128,14 +130,15 @@ export async function ssyrk(
     uploEff = uploEff === "lower" ? "upper" : "lower";
   }
 
-  // Shape-based auto-select — see sgemmtr_small.wgsl/sgemmtr_large.wgsl. m=n=n here (square C).
+  // Runs on sgemm's kernels with their triangle mask, like sgemmtr: tiles
+  // outside the triangle are skipped and A/B get vec4 loads. m=n=n here (square C).
   const largeWgX = Math.ceil(n / BN_LARGE);
   const largeWgY = Math.ceil(n / BM_LARGE);
   const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
 
   const pipeline = await getPipeline(
     device,
-    useLargeTile ? "sgemmtr_large" : "sgemmtr_small",
+    useLargeTile ? "sgemm_large" : "sgemm_small",
   );
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssyrk-A", false);
@@ -150,6 +153,11 @@ export async function ssyrk(
         GPUBufferUsage.COPY_DST,
       )
     : uploadBuffer(device, A, "ssyrk-B", false);
+  // Vectorized-load enablement — same rules as sgemm.mjs, gemm frame m=n=n.
+  const aNot = transA === "no-transpose";
+  const bNot = transB === "no-transpose";
+  const useVecA = vec4Usable(ABuffer, lda, aNot ? n : k, aNot ? k : n);
+  const useVecB = vec4Usable(BBuffer, lda, bNot ? k : n, bNot ? n : k);
   const paramsBuffer = createParamsBuffer(
     device,
     [
@@ -163,7 +171,13 @@ export async function ssyrk(
       { value: ldc, type: "u32" },
       { value: transA === "transpose" ? 1 : 0, type: "u32" },
       { value: transB === "transpose" ? 1 : 0, type: "u32" },
-      { value: uploEff === "upper" ? 1 : 0, type: "u32" },
+      { value: useVecA ? 1 : 0, type: "u32" },
+      { value: useVecB ? 1 : 0, type: "u32" },
+      { value: uploEff === "lower" ? 1 : 2, type: "u32" }, // sgemm's mask: 1 = lower, 2 = upper
+      { value: 0, type: "u32" }, // offA/offB/offC: whole buffers
+      { value: 0, type: "u32" },
+      { value: 0, type: "u32" },
+      { value: 0, type: "u32" }, // kTri: dense operands
     ],
     "ssyrk-params",
   );
@@ -171,7 +185,9 @@ export async function ssyrk(
   try {
     const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
+      vec4ViewBinding(device, ABuffer),
       BBuffer,
+      vec4ViewBinding(device, BBuffer),
       CBuffer,
       paramsBuffer,
     ]);

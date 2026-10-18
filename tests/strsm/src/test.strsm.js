@@ -263,6 +263,155 @@ test("strsm zero-dimension (regression)", async (t) => {
   });
 });
 
+// aOrder <= BLOCK_SIZE runs the single-dispatch substitution kernel
+// (strsm_small.wgsl): RHS_PER_WG right-hand sides per workgroup, a reversed
+// system for the effectively-upper cases, rows in chunks of 4. Orders 64
+// (the cap), 37 (a ragged last chunk) and 1, with otherLen 7 and 70 — not
+// multiples of 4, so the last workgroup is partly empty — every side, uplo,
+// trans and layout, padded ldb, alpha=1.5 applied on read-in.
+test("strsm single-block substitution path (regression)", async (t) => {
+  for (const [N, OTHER] of [
+    [64, 70],
+    [37, 7],
+    [1, 7],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const side of ["left", "right"])
+        for (const uplo of ["lower", "upper"])
+          for (const transA of ["no-transpose", "transpose"]) {
+            const diag = uplo === "upper" ? "unit" : "non-unit";
+            await t.test(
+              `${layout} N=${N} ${side} ${uplo} ${transA} ${diag}`,
+              async () => {
+                const m = side === "left" ? N : OTHER;
+                const n = side === "left" ? OTHER : N;
+                const cm = layout === "column-major";
+                const pad = 3;
+                const LD = (cm ? m : n) + pad;
+                const OUTER = cm ? n : m;
+                const A = randomFloat32Array(N * N, -1 / N, 1 / N, 121);
+                for (let i = 0; i < N; i++) A[i * N + i] = 2;
+                const a = {
+                  side,
+                  uplo,
+                  transA,
+                  diag,
+                  m,
+                  n,
+                  alpha: 1.5,
+                  A,
+                  lda: N,
+                  B: randomFloat32Array(OUTER * LD, -1, 1, 122),
+                  ldb: LD,
+                  layout,
+                };
+                const got = await strsm(
+                  device,
+                  a.side,
+                  a.uplo,
+                  a.transA,
+                  a.diag,
+                  a.m,
+                  a.n,
+                  a.alpha,
+                  a.A,
+                  a.lda,
+                  a.B,
+                  a.ldb,
+                  a.layout,
+                );
+                const factor = backwardResidualFactor(got, null, a);
+                assert.ok(
+                  factor <= THRESHOLD,
+                  `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+                );
+                for (let o = 0; o < OUTER; o++)
+                  for (let p = LD - pad; p < LD; p++)
+                    assert.equal(
+                      got.B[o * LD + p],
+                      a.B[o * LD + p],
+                      `padding element ${o * LD + p} changed`,
+                    );
+              },
+            );
+          }
+});
+
+// The test above runs two blocks, row-major, no-transpose only. strsm's
+// gemms read and write B and A in place through element offsets (no
+// gather/scatter of the operands), so every addressing combination needs a
+// many-block run: aOrder=150 is 3 blocks (the last 22 wide, odd offsets,
+// scalar loads); 600 is 10 blocks with otherLen=200, wide enough for the
+// update gemms to take the large tile, and 4-aligned strides (vec4 loads at
+// block offsets). Off-diagonals of ±1/N keep unit-diagonal systems well
+// conditioned; alpha=1.5 also runs the pre-scale. Padding must stay as-is.
+test("strsm many-block in-place paths (regression)", async (t) => {
+  for (const [N, OTHER, pad] of [
+    [150, 70, 1],
+    [600, 200, 4],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const side of ["left", "right"])
+        for (const uplo of ["lower", "upper"])
+          for (const transA of ["no-transpose", "transpose"]) {
+            const diag = transA === "transpose" ? "unit" : "non-unit";
+            await t.test(
+              `${layout} N=${N} ${side} ${uplo} ${transA} ${diag}`,
+              async () => {
+                const m = side === "left" ? N : OTHER;
+                const n = side === "left" ? OTHER : N;
+                const cm = layout === "column-major";
+                const LD = (cm ? m : n) + pad;
+                const OUTER = cm ? n : m;
+                const A = randomFloat32Array(N * N, -1 / N, 1 / N, 101);
+                for (let i = 0; i < N; i++) A[i * N + i] = 2;
+                const a = {
+                  side,
+                  uplo,
+                  transA,
+                  diag,
+                  m,
+                  n,
+                  alpha: 1.5,
+                  A,
+                  lda: N,
+                  B: randomFloat32Array(OUTER * LD, -1, 1, 102),
+                  ldb: LD,
+                  layout,
+                };
+                const got = await strsm(
+                  device,
+                  a.side,
+                  a.uplo,
+                  a.transA,
+                  a.diag,
+                  a.m,
+                  a.n,
+                  a.alpha,
+                  a.A,
+                  a.lda,
+                  a.B,
+                  a.ldb,
+                  a.layout,
+                );
+                const factor = backwardResidualFactor(got, null, a);
+                assert.ok(
+                  factor <= THRESHOLD,
+                  `backward residual factor ${factor} exceeds threshold ${THRESHOLD}`,
+                );
+                // Stride padding is never part of the matrix — it must come back as-is.
+                for (let o = 0; o < OUTER; o++)
+                  for (let p = LD - pad; p < LD; p++)
+                    assert.equal(
+                      got.B[o * LD + p],
+                      a.B[o * LD + p],
+                      `padding element ${o * LD + p} changed`,
+                    );
+              },
+            );
+          }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("strsm edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

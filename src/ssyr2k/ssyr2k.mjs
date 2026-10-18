@@ -3,6 +3,8 @@ import {
   createParamsBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
+  vec4Usable,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -170,13 +172,14 @@ export async function ssyr2k(
     };
   }
 
-  // Shape-based auto-select — see sgemmtr_small.wgsl/sgemmtr_large.wgsl. m=n=n here (square C).
+  // Runs on sgemm's kernels with their triangle mask, like sgemmtr: tiles
+  // outside the triangle are skipped and operands get vec4 loads. m=n=n here (square C).
   const largeWgX = Math.ceil(n / BN_LARGE);
   const largeWgY = Math.ceil(n / BM_LARGE);
   const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
   const pipeline = await getPipeline(
     device,
-    useLargeTile ? "sgemmtr_large" : "sgemmtr_small",
+    useLargeTile ? "sgemm_large" : "sgemm_small",
   );
   const wgCount = useLargeTile
     ? {
@@ -208,6 +211,15 @@ export async function ssyr2k(
     const pass1 = passShape(effTransA, ABuffer, lda, effTransB, BBuffer, ldb);
     const pass2 = passShape(effTransB, BBuffer, ldb, effTransA, ABuffer, lda);
 
+    // Vectorized-load enablement per pass — same rules as sgemm.mjs, gemm frame m=n=n.
+    const vecFlags = (p) => {
+      const xNot = p.transX === "no-transpose";
+      const yNot = p.transY === "no-transpose";
+      return [
+        vec4Usable(p.X, p.ldX, xNot ? n : k, xNot ? k : n),
+        vec4Usable(p.Y, p.ldY, yNot ? k : n, yNot ? n : k),
+      ];
+    };
     const makeParams = (p, betaVal) =>
       createParamsBuffer(
         device,
@@ -222,7 +234,13 @@ export async function ssyr2k(
           { value: ldc, type: "u32" },
           { value: p.transX === "transpose" ? 1 : 0, type: "u32" },
           { value: p.transY === "transpose" ? 1 : 0, type: "u32" },
-          { value: uploEff === "upper" ? 1 : 0, type: "u32" },
+          { value: vecFlags(p)[0] ? 1 : 0, type: "u32" },
+          { value: vecFlags(p)[1] ? 1 : 0, type: "u32" },
+          { value: uploEff === "lower" ? 1 : 2, type: "u32" }, // sgemm's mask: 1 = lower, 2 = upper
+          { value: 0, type: "u32" }, // offA/offB/offC: whole buffers
+          { value: 0, type: "u32" },
+          { value: 0, type: "u32" },
+          { value: 0, type: "u32" }, // kTri: dense operands
         ],
         "ssyr2k-params",
       );
@@ -231,13 +249,17 @@ export async function ssyr2k(
 
     const bindGroup1 = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       pass1.X,
+      vec4ViewBinding(device, pass1.X),
       pass1.Y,
+      vec4ViewBinding(device, pass1.Y),
       CBuffer,
       paramsBuffer1,
     ]);
     const bindGroup2 = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       pass2.X,
+      vec4ViewBinding(device, pass2.X),
       pass2.Y,
+      vec4ViewBinding(device, pass2.Y),
       CBuffer,
       paramsBuffer2,
     ]);

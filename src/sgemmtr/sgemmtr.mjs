@@ -3,6 +3,8 @@ import {
   createParamsBuffer,
   stageReadback,
   destroyBuffers,
+  vec4ViewBinding,
+  vec4Usable,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { runComputePass, submit } from "../util/compute.mjs";
@@ -172,19 +174,26 @@ export async function sgemmtr(
     uplo = uplo === "lower" ? "upper" : "lower";
   }
 
-  // Shape-based auto-select — see sgemmtr_small.wgsl/sgemmtr_large.wgsl.
+  // Runs on sgemm's own kernels with their triangle mask (uplo param):
+  // tiles wholly outside the triangle are skipped, and A/B get sgemm's vec4
+  // loads. Same shape-based small/large selection as sgemm.
   const largeWgX = Math.ceil(n / BN_LARGE);
   const largeWgY = Math.ceil(m / BM_LARGE);
   const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
 
   const pipeline = await getPipeline(
     device,
-    useLargeTile ? "sgemmtr_large" : "sgemmtr_small",
+    useLargeTile ? "sgemm_large" : "sgemm_small",
   );
 
   const ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sgemmtr-A", false);
   const BBuffer = BIsGpu ? B._buf : uploadBuffer(device, B, "sgemmtr-B", false);
   const CBuffer = CIsGpu ? C._buf : uploadBuffer(device, C, "sgemmtr-C", true);
+  // Vectorized-load enablement — same rules as sgemm.mjs.
+  const aNot = transA === "no-transpose";
+  const bNot = transB === "no-transpose";
+  const useVecA = vec4Usable(ABuffer, lda, aNot ? m : k, aNot ? k : m);
+  const useVecB = vec4Usable(BBuffer, ldb, bNot ? k : n, bNot ? n : k);
   const paramsBuffer = createParamsBuffer(
     device,
     [
@@ -198,7 +207,13 @@ export async function sgemmtr(
       { value: ldc, type: "u32" },
       { value: transA === "transpose" ? 1 : 0, type: "u32" },
       { value: transB === "transpose" ? 1 : 0, type: "u32" },
-      { value: uplo === "upper" ? 1 : 0, type: "u32" },
+      { value: useVecA ? 1 : 0, type: "u32" },
+      { value: useVecB ? 1 : 0, type: "u32" },
+      { value: uplo === "lower" ? 1 : 2, type: "u32" }, // sgemm's mask: 1 = lower, 2 = upper
+      { value: 0, type: "u32" }, // offA/offB/offC: whole buffers
+      { value: 0, type: "u32" },
+      { value: 0, type: "u32" },
+      { value: 0, type: "u32" }, // kTri: dense operands
     ],
     "sgemmtr-params",
   );
@@ -206,7 +221,9 @@ export async function sgemmtr(
   try {
     const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       ABuffer,
+      vec4ViewBinding(device, ABuffer),
       BBuffer,
+      vec4ViewBinding(device, BBuffer),
       CBuffer,
       paramsBuffer,
     ]);

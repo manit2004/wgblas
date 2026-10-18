@@ -12,9 +12,10 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  *
  * No dedicated fused kernel — a `triangularize` pass materializes a dense
  * copy of `op(A)` (zero-filling the unstored triangle, substituting the
- * implicit diagonal when `diag='unit'`), then a plain `sgemm` pass
- * (`sgemm_small.wgsl`/`sgemm_large.wgsl`, unmodified) does the actual
- * multiply, both on one command encoder.
+ * implicit diagonal when `diag='unit'`), then an `sgemm` pass
+ * (`sgemm_small.wgsl`/`sgemm_large.wgsl`) does the multiply, each tile
+ * walking only the k band where that triangle is nonzero (about half the
+ * work of a dense product). Both passes share one command encoder.
  *
  * {@includeCode ../../examples/strmm/strmm.js}
  *

@@ -12,7 +12,7 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  *
  * No dedicated fused kernel — a `symmetrize` pass materializes a dense
  * copy of `A` (mirroring the unstored triangle), then a plain `sgemm`
- * pass (`sgemm_small.wgsl`/`sgemm_large.wgsl`, unmodified) does the
+ * pass (`sgemm_small.wgsl`/`sgemm_large.wgsl`) does the
  * actual multiply, both on one command encoder.
  *
  * {@includeCode ../../examples/ssymm/ssymm.js}

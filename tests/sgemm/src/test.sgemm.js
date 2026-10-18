@@ -170,7 +170,7 @@ test("sgemm edge cases", async (t) => {
 // being 400 rather than an exact multiple of 64, also exercises the large
 // kernel's own edge-tile OOB masking, not just full tiles. One case per
 // transA/transB combo, since each takes a genuinely different load path
-// (e.g. transposed-A vec4 loads are disabled — see sgemm.mjs's own comment).
+// (transposed A is staged k-major in workgroup memory, for instance).
 test("sgemm large-tile path (regression)", async (t) => {
   const M = 400,
     N = 400,
@@ -226,6 +226,72 @@ test("sgemm large-tile path (regression)", async (t) => {
       });
     }
   }
+});
+
+// Transposed A (and column-major no-transpose A, which runs as transposed
+// in the row-major kernel frame) reads op(A) along m with vec4 loads and
+// stages it k-major. Masking those vec4s along m only matters when m isn't a
+// multiple of 4 — 400 above is. m=150 (small kernel, several tiles) and
+// m=398 (large kernel) with lda rounded up to a multiple of 4 keep the vec4
+// path on while the last vec4 of every column straddles the m edge; k=13
+// also leaves a partial k tile.
+test("sgemm vec4 transposed-A path, ragged m (regression)", async (t) => {
+  const K = 13;
+  const up4 = (v) => Math.ceil(v / 4) * 4;
+  for (const [M, N] of [
+    [150, 70],
+    [398, 390],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const transA of ["no-transpose", "transpose"])
+        for (const transB of ["no-transpose", "transpose"]) {
+          await t.test(`${layout} m=${M} ${transA} ${transB}`, async () => {
+            const cm = layout === "column-major";
+            const [aR, aC] = transA === "no-transpose" ? [M, K] : [K, M];
+            const [bR, bC] = transB === "no-transpose" ? [K, N] : [N, K];
+            const lda = up4(cm ? aR : aC);
+            const ldb = up4(cm ? bR : bC);
+            const ldc = cm ? M : N;
+            const a = {
+              transA,
+              transB,
+              m: M,
+              n: N,
+              k: K,
+              alpha: 1.5,
+              A: randomFloat32Array((cm ? aC : aR) * lda, -1, 1, 111),
+              lda,
+              B: randomFloat32Array((cm ? bC : bR) * ldb, -1, 1, 112),
+              ldb,
+              beta: 0.5,
+              C: randomFloat32Array(M * N, -1, 1, 113),
+              ldc,
+              layout,
+            };
+            const got = await sgemm(
+              device,
+              a.transA,
+              a.transB,
+              a.m,
+              a.n,
+              a.k,
+              a.alpha,
+              a.A,
+              a.lda,
+              a.B,
+              a.ldb,
+              a.beta,
+              a.C,
+              a.ldc,
+              a.layout,
+            );
+            const factor = forwardFactor(got, stdlibReference(a), a);
+            assert.ok(
+              factor <= THRESHOLD,
+              `forward factor ${factor} > ${THRESHOLD}`,
+            );
+          });
+        }
 });
 
 // k=0 (with m,n>0) makes the matrix product term vanish entirely, so the

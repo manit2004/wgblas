@@ -12,6 +12,13 @@
 //
 // Workgroup 0 writes `sol`; when no rows remain (the last block) a single
 // workgroup runs just the solve.
+//
+// Four threads per row (256 per workgroup, TILE_ROWS rows): each covers 16
+// of the block's 64 columns in both the solve and the update, and the four
+// partial sums meet in workgroup memory. Every phase is one round of
+// independent loads plus one barrier — with one thread per row, a thread
+// walked all 64 columns and the no-transpose update needed four staged
+// rounds, and the step's dependency chain set the pace of the whole solve.
 
 @group(0) @binding(0) var<storage, read>       A: array<f32>;
 @group(0) @binding(1) var<storage, read>       Ainv: array<f32>;
@@ -27,101 +34,119 @@ struct Params {
   blockEnd:   u32,  // exclusive
   rangeStart: u32,  // first remaining row this block updates
   rowCount:   u32,  // number of remaining rows (0 for the last block)
+  presolved:  u32,  // 1 = block already solved into sol (strsm_small.wgsl): update only
 }
 
 @group(0) @binding(4) var<uniform> params: Params;
 
 const BLOCK_SIZE: u32 = 64u;
-const TILE_ROWS: u32 = 64u;   // remaining rows per workgroup (one per thread)
-const COLS: u32 = 16u;        // no-transpose A tile is staged 16 columns at a time
-const TILE_PITCH: u32 = 17u;  // COLS + 1: per-row reads stay bank-conflict-free
+const TILE_ROWS: u32 = 64u;  // remaining rows per workgroup
+const SPLIT: u32 = 4u;       // threads per row
+const SPAN: u32 = BLOCK_SIZE / SPLIT; // columns per thread
 
-var<workgroup> xr: array<f32, 64>;     // this block's unsolved x
-var<workgroup> xs: array<f32, 64>;     // this block's solution
-var<workgroup> tileA: array<f32, 1088>; // TILE_ROWS × TILE_PITCH
+var<workgroup> xr: array<f32, 64>;          // this block's unsolved x
+var<workgroup> xs: array<f32, 64>;          // this block's solution
+var<workgroup> part: array<f32, 256>;       // partial sums, [quarter][row]
 
-@compute @workgroup_size(64)
+@compute @workgroup_size(256)
 fn main(
-  @builtin(workgroup_id)        wid: vec3u,
-  @builtin(local_invocation_id) lid: vec3u,
+  @builtin(workgroup_id)           wid: vec3u,
+  @builtin(local_invocation_index) tid: u32,
 ) {
-  let t = lid.x;
   let blockLen = params.blockEnd - params.blockStart;
 
-  xr[t] = select(0.0, x[min(params.blockStart + t, params.blockEnd - 1u) * params.incx], t < blockLen);
-  workgroupBarrier();
-
-  // Solve the block: xs = Ainv · xr. Ainv is staged 16 columns at a time
-  // (coalesced, 16 independent loads per thread) rather than each thread
-  // walking its own row — that was 64 serially dependent L2 round trips.
-  // Rows/cols past blockLen are zero in Ainv (written so by
-  // strsv_invert_block.wgsl) and in xr, so no masking is needed.
-  let ainvBase = params.blockIndex * BLOCK_SIZE * BLOCK_SIZE;
-  var s = 0.0f;
-  for (var cc = 0u; cc < BLOCK_SIZE; cc += COLS) {
-    for (var e = 0u; e < COLS; e++) {
-      let idx = e * TILE_ROWS + t;
-      let r = idx / COLS;
-      let c = idx % COLS;
-      tileA[r * TILE_PITCH + c] = Ainv[ainvBase + r * BLOCK_SIZE + cc + c];
+  if (params.presolved == 1u) {
+    // Few-block strsv solves each block by substitution first (in place on
+    // x, packed copy in sol); only the update below is left. Uniform branch.
+    if (tid < BLOCK_SIZE) {
+      xs[tid] = select(0.0, sol[min(params.blockStart + tid, params.blockEnd - 1u)], tid < blockLen);
     }
     workgroupBarrier();
-    for (var c = 0u; c < COLS; c++) {
-      s += tileA[t * TILE_PITCH + c] * xr[cc + c];
+  } else {
+    if (tid < BLOCK_SIZE) {
+      xr[tid] = select(0.0, x[min(params.blockStart + tid, params.blockEnd - 1u) * params.incx], tid < blockLen);
+    }
+    workgroupBarrier();
+
+    // Solve the block: xs = Ainv · xr. Thread (r, q) sums columns
+    // [q·16, q·16+16) of row r. Ainv is column-major, so at each column the
+    // lanes (consecutive r) read consecutive floats. Rows/cols past blockLen
+    // are zero in Ainv (never written; buffers start zeroed) and in xr.
+    let r = tid % BLOCK_SIZE;
+    let q = tid / BLOCK_SIZE;
+    let ainvBase = params.blockIndex * BLOCK_SIZE * BLOCK_SIZE;
+    var a0 = 0.0f;
+    var a1 = 0.0f;
+    var a2 = 0.0f;
+    var a3 = 0.0f;
+    for (var u = 0u; u < SPAN; u += 4u) {
+      let c = q * SPAN + u;
+      a0 += Ainv[ainvBase + c * BLOCK_SIZE + r]        * xr[c];
+      a1 += Ainv[ainvBase + (c + 1u) * BLOCK_SIZE + r] * xr[c + 1u];
+      a2 += Ainv[ainvBase + (c + 2u) * BLOCK_SIZE + r] * xr[c + 2u];
+      a3 += Ainv[ainvBase + (c + 3u) * BLOCK_SIZE + r] * xr[c + 3u];
+    }
+    part[q * BLOCK_SIZE + r] = (a0 + a1) + (a2 + a3);
+    workgroupBarrier();
+    if (tid < BLOCK_SIZE) {
+      let v = (part[tid] + part[BLOCK_SIZE + tid])
+        + (part[2u * BLOCK_SIZE + tid] + part[3u * BLOCK_SIZE + tid]);
+      xs[tid] = v;
+      if (wid.x == 0u && tid < blockLen) { sol[params.blockStart + tid] = v; }
     }
     workgroupBarrier();
   }
-  xs[t] = s;
-  if (wid.x == 0u && t < blockLen) { sol[params.blockStart + t] = s; }
-  workgroupBarrier();
 
   // Update this workgroup's tile of remaining rows: x[i] -= op(A)[i, block] · xs.
-  // rowCount is dispatch-uniform, so the barriers inside stay uniform.
+  // rowCount is dispatch-uniform, so the barrier below stays uniform.
   if (params.rowCount == 0u) { return; }
   let lastRow = params.rowCount - 1u;
-  let local = wid.x * TILE_ROWS + t;
-  let rowOK = local < params.rowCount;
-  let i = params.rangeStart + min(local, lastRow);
-  var acc = 0.0f;
+  var a0 = 0.0f;
+  var a1 = 0.0f;
+  var a2 = 0.0f;
+  var a3 = 0.0f;
   if (params.trans != 0u) {
-    // A[j,i]: at each j the 64 lanes read 64 consecutive i — coalesced.
-    // Eight independent accumulators so a thread has 8 loads in flight
-    // instead of waiting out 64 global-memory latencies back to back.
-    var a = array<f32, 8>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    // A[j,i]: rows fastest across lanes, so at each j consecutive lanes read
+    // consecutive i — coalesced.
+    let r = tid % TILE_ROWS;
+    let q = tid / TILE_ROWS;
+    let i = params.rangeStart + min(wid.x * TILE_ROWS + r, lastRow);
     let col = params.blockStart * params.lda + i;
-    var j = 0u;
-    while (j + 7u < blockLen) {
-      for (var u = 0u; u < 8u; u++) {
-        a[u] += A[col + (j + u) * params.lda] * xs[j + u];
-      }
-      j += 8u;
+    for (var u = 0u; u < SPAN; u += 4u) {
+      let j = q * SPAN + u;
+      a0 += select(0.0, A[col + min(j,      blockLen - 1u) * params.lda], j      < blockLen) * xs[j];
+      a1 += select(0.0, A[col + min(j + 1u, blockLen - 1u) * params.lda], j + 1u < blockLen) * xs[j + 1u];
+      a2 += select(0.0, A[col + min(j + 2u, blockLen - 1u) * params.lda], j + 2u < blockLen) * xs[j + 2u];
+      a3 += select(0.0, A[col + min(j + 3u, blockLen - 1u) * params.lda], j + 3u < blockLen) * xs[j + 3u];
     }
-    while (j < blockLen) {
-      a[0] += A[col + j * params.lda] * xs[j];
-      j += 1u;
-    }
-    acc = ((a[0] + a[1]) + (a[2] + a[3])) + ((a[4] + a[5]) + (a[6] + a[7]));
+    part[q * TILE_ROWS + r] = (a0 + a1) + (a2 + a3);
   } else {
-    // A[i,j]: a lane's row is contiguous but lanes are lda apart, so stage
-    // the tile through workgroup memory 16 columns at a time — each load
-    // instruction then covers 4 rows × 16 contiguous columns.
-    for (var cc = 0u; cc < BLOCK_SIZE; cc += COLS) {
-      for (var e = 0u; e < COLS; e++) {
-        let idx = e * TILE_ROWS + t;
-        let r = idx / COLS;
-        let c = idx % COLS;
-        let tileLocal = wid.x * TILE_ROWS + r;
-        let ok = tileLocal < params.rowCount && cc + c < blockLen;
-        let gi = params.rangeStart + min(tileLocal, lastRow);
-        let gj = params.blockStart + min(cc + c, blockLen - 1u);
-        tileA[r * TILE_PITCH + c] = select(0.0, A[gi * params.lda + gj], ok);
-      }
-      workgroupBarrier();
-      for (var c = 0u; c < COLS; c++) {
-        acc += tileA[t * TILE_PITCH + c] * xs[cc + c];
-      }
-      workgroupBarrier();
+    // A[i,j]: quarters fastest across lanes, interleaved — lane q takes
+    // columns q, q+4, q+8, … — so at each step a row's four lanes read 16
+    // contiguous bytes.
+    let r = tid / SPLIT;
+    let q = tid % SPLIT;
+    let i = params.rangeStart + min(wid.x * TILE_ROWS + r, lastRow);
+    let rowBase = i * params.lda + params.blockStart;
+    for (var u = 0u; u < SPAN; u += 4u) {
+      let j0 = q + u * SPLIT;
+      let j1 = j0 + SPLIT;
+      let j2 = j1 + SPLIT;
+      let j3 = j2 + SPLIT;
+      a0 += select(0.0, A[rowBase + min(j0, blockLen - 1u)], j0 < blockLen) * xs[j0];
+      a1 += select(0.0, A[rowBase + min(j1, blockLen - 1u)], j1 < blockLen) * xs[j1];
+      a2 += select(0.0, A[rowBase + min(j2, blockLen - 1u)], j2 < blockLen) * xs[j2];
+      a3 += select(0.0, A[rowBase + min(j3, blockLen - 1u)], j3 < blockLen) * xs[j3];
+    }
+    part[q * TILE_ROWS + r] = (a0 + a1) + (a2 + a3);
+  }
+  workgroupBarrier();
+  if (tid < TILE_ROWS) {
+    let local = wid.x * TILE_ROWS + tid;
+    if (local < params.rowCount) {
+      let acc = (part[tid] + part[TILE_ROWS + tid])
+        + (part[2u * TILE_ROWS + tid] + part[3u * TILE_ROWS + tid]);
+      x[(params.rangeStart + local) * params.incx] -= acc;
     }
   }
-  if (rowOK) { x[i * params.incx] -= acc; }
 }

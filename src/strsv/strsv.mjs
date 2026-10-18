@@ -16,7 +16,7 @@ import { BLOCK_SIZE, STRSV_TILE_ROWS, WGS } from "../util/constants.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
-// Blocked triangular solve via explicit block inversion instead of barrier-per-row substitution: one invert pre-pass, then one fused solve-and-update dispatch per block (strsv_step.wgsl), then a copy of the solution into x.
+// Blocked triangular solve over 64-row diagonal blocks. Up to SUBSTITUTION_MAX_BLOCKS blocks: each block solved by substitution in place on x (strsm_small.wgsl), then an update-only strsv_step — one block is a single dispatch. More blocks: explicit block inversion instead (one parallel invert pre-pass), then one fused solve-and-update dispatch per block (strsv_step.wgsl), then a copy of the solution into x.
 
 // One shared buffer holds all blocks' params (offset blockIndex*stride) instead of one buffer per block — avoids the O(numBlocks) createBuffer/writeBuffer calls that dominated CPU time.
 function packBlockParams(numBlocks, stride, fieldsPerBlock) {
@@ -29,6 +29,16 @@ function packBlockParams(numBlocks, stride, fieldsPerBlock) {
   }
   return data;
 }
+
+// strsv_step's Params: nine u32 fields, padded to a 16-byte multiple.
+const STEP_PARAMS_BYTES = 48;
+
+// Up to this many blocks, solving each block by substitution on the critical
+// path beats inverting every block up front (one parallel dispatch, but a
+// fixed ~25 µs) and applying the inverses. Measured on a GTX 1650: ahead at
+// 2 blocks (n=128), behind by 4 (n=256). strsm.mjs has the same split, with
+// a later crossover (its inverse path pays an extra scatter per block).
+const SUBSTITUTION_MAX_BLOCKS = 2;
 
 function createSharedParamsBuffer(device, data, label) {
   const buffer = device.createBuffer({
@@ -114,33 +124,13 @@ export async function strsv(
   const numBlocks = blockStarts.length;
 
   const stride = device.limits.minUniformBufferOffsetAlignment;
+  const useSubstitution = numBlocks <= SUBSTITUTION_MAX_BLOCKS;
 
-  let ABuffer = null;
-  let xBuffer = null;
-  let AinvBuffer = null;
-  let solBuffer = null;
-  let stepParamsBuffer = null;
-  let invertParams = null;
-  let scatterParams = null;
-
-  try {
-    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strsv-A", false);
-    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strsv-x", true);
-    // One BLOCK_SIZE x BLOCK_SIZE dense region per block (row-major), even
-    // though only a triangular half is ever nonzero — see strsv_invert_block.wgsl.
-    AinvBuffer = createStorageBuffer(
-      device,
-      numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4,
-      "strsv-Ainv",
-    );
-    // Contiguous solution, written block by block and copied into x at the
-    // end — see strsv_step.wgsl for why it can't go straight into x.
-    solBuffer = createStorageBuffer(device, n * 4, "strsv-sol");
-
-    // Every block's params are fixed by its natural index regardless of
-    // traversal direction, so the packed buffer is indexed by blockIndex
-    // (0..numBlocks-1), not by loop position.
-    const stepData = packBlockParams(numBlocks, stride, (blockIndex) => {
+  // Every block's step params are fixed by its natural index regardless of
+  // traversal direction, so the packed buffer is indexed by blockIndex
+  // (0..numBlocks-1), not by loop position.
+  const stepParamsData = (presolved) =>
+    packBlockParams(numBlocks, stride, (blockIndex) => {
       const blockStart = blockIndex * BLOCK_SIZE;
       const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
       // forward: remaining rows are [blockEnd, n); backward: [0, blockStart).
@@ -155,34 +145,22 @@ export async function strsv(
         blockEnd,
         rangeStart,
         rowCount,
+        presolved,
       ];
     });
-    stepParamsBuffer = createSharedParamsBuffer(
-      device,
-      stepData,
-      "strsv-step-params",
-    );
 
-    invertParams = createParamsBuffer(
-      device,
-      [
-        { value: n, type: "u32" },
-        { value: lda, type: "u32" },
-        { value: isNoTrans ? 0 : 1, type: "u32" },
-        { value: isLower ? 0 : 1, type: "u32" },
-        { value: isUnit ? 1 : 0, type: "u32" },
-      ],
-      "strsv-invert-params",
-    );
-    scatterParams = createParamsBuffer(
-      device,
-      [
-        { value: n, type: "u32" },
-        { value: incx, type: "u32" },
-      ],
-      "strsv-scatter-params",
-    );
+  let ABuffer = null;
+  let xBuffer = null;
+  let AinvBuffer = null;
+  let solBuffer = null;
+  let stepParamsBuffer = null;
+  let invertParams = null;
+  let scatterParams = null;
+  const solveParamsList = [];
 
+  try {
+    ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strsv-A", false);
+    xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strsv-x", true);
     // Every dispatch goes in ONE compute pass: each dispatch is still its own
     // synchronization scope (WebGPU orders them and makes each one's storage
     // writes visible to the next), but the solve is a long chain of small
@@ -192,59 +170,179 @@ export async function strsv(
       beginTimedEncoder(device);
     const pass = commandEncoder.beginComputePass(passDescriptor);
 
-    // Every block's inverse, fully parallel, one workgroup per block.
-    pass.setPipeline(invertPipeline);
-    pass.setBindGroup(
-      0,
-      createBindGroup(device, invertPipeline.getBindGroupLayout(0), [
-        ABuffer,
-        AinvBuffer,
-        invertParams,
-      ]),
-    );
-    pass.dispatchWorkgroups(numBlocks);
+    if (useSubstitution) {
+      // Few blocks: solve each diagonal block by substitution, in place on x
+      // (strsm_small.wgsl, which also leaves a packed copy in sol), then a
+      // presolved strsv_step does just the trailing update. No inverse, no
+      // final scatter; one block is a single dispatch.
+      const smallPipeline = await getPipeline(device, "strsm_small");
+      solBuffer = createStorageBuffer(device, n * 4, "strsv-sol");
+      if (numBlocks > 1) {
+        stepParamsBuffer = createSharedParamsBuffer(
+          device,
+          stepParamsData(1),
+          "strsv-step-params",
+        );
+      }
+      const aRs = isNoTrans ? lda : 1;
+      const aCs = isNoTrans ? 1 : lda;
+      for (const blockStart of blockStarts) {
+        const blockIndex = blockStart / BLOCK_SIZE;
+        const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
+        const blockLen = blockEnd - blockStart;
+        const rowCount = forward ? n - blockEnd : blockStart;
+        const solveParams = createParamsBuffer(
+          device,
+          [
+            { value: blockLen, type: "u32" },
+            { value: 1, type: "u32" }, // nrhs
+            { value: blockStart * (aRs + aCs), type: "u32" }, // A view
+            { value: aRs, type: "u32" },
+            { value: aCs, type: "u32" },
+            { value: blockStart * incx, type: "u32" }, // x view
+            { value: incx, type: "u32" },
+            { value: 0, type: "u32" },
+            { value: forward ? 0 : 1, type: "u32" },
+            { value: isUnit ? 1 : 0, type: "u32" },
+            { value: 1.0, type: "f32" }, // alpha
+            { value: rowCount > 0 ? 1 : 0, type: "u32" }, // xLd: packed copy for the update
+          ],
+          "strsv-solve-params",
+        );
+        solveParamsList.push(solveParams);
+        pass.setPipeline(smallPipeline);
+        pass.setBindGroup(
+          0,
+          createBindGroup(device, smallPipeline.getBindGroupLayout(0), [
+            ABuffer,
+            xBuffer,
+            solveParams,
+            // Block starts are multiples of 64 floats, so the offset meets
+            // the 256-byte storage-binding alignment.
+            { buffer: solBuffer, offset: blockStart * 4, size: blockLen * 4 },
+          ]),
+        );
+        pass.dispatchWorkgroups(1);
+        if (rowCount === 0) continue;
+        pass.setPipeline(stepPipeline);
+        pass.setBindGroup(
+          0,
+          createBindGroup(device, stepPipeline.getBindGroupLayout(0), [
+            ABuffer,
+            ABuffer, // Ainv slot, unread when presolved
+            xBuffer,
+            solBuffer,
+            {
+              buffer: stepParamsBuffer,
+              offset: blockIndex * stride,
+              size: STEP_PARAMS_BYTES,
+            },
+          ]),
+        );
+        pass.dispatchWorkgroups(
+          requireWorkgroupCount(
+            device,
+            Math.ceil(rowCount / STRSV_TILE_ROWS),
+            "strsv",
+          ),
+        );
+      }
+    } else {
+      // One BLOCK_SIZE x BLOCK_SIZE dense region per block (row-major), even
+      // though only a triangular half is ever nonzero — see strsv_invert_block.wgsl.
+      AinvBuffer = createStorageBuffer(
+        device,
+        numBlocks * BLOCK_SIZE * BLOCK_SIZE * 4,
+        "strsv-Ainv",
+      );
+      // Contiguous solution, written block by block and copied into x at the
+      // end — see strsv_step.wgsl for why it can't go straight into x.
+      solBuffer = createStorageBuffer(device, n * 4, "strsv-sol");
 
-    // One fused solve-and-update dispatch per block, in dependency order.
-    pass.setPipeline(stepPipeline);
-    for (const blockStart of blockStarts) {
-      const blockIndex = blockStart / BLOCK_SIZE;
-      const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
-      const rowCount = forward ? n - blockEnd : blockStart;
+      stepParamsBuffer = createSharedParamsBuffer(
+        device,
+        stepParamsData(0),
+        "strsv-step-params",
+      );
+
+      invertParams = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: isNoTrans ? 0 : 1, type: "u32" },
+          { value: isLower ? 0 : 1, type: "u32" },
+          { value: isUnit ? 1 : 0, type: "u32" },
+        ],
+        "strsv-invert-params",
+      );
+      scatterParams = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: incx, type: "u32" },
+        ],
+        "strsv-scatter-params",
+      );
+
+      // Every block's inverse, fully parallel, one workgroup per block.
+      pass.setPipeline(invertPipeline);
       pass.setBindGroup(
         0,
-        createBindGroup(device, stepPipeline.getBindGroupLayout(0), [
+        createBindGroup(device, invertPipeline.getBindGroupLayout(0), [
           ABuffer,
           AinvBuffer,
-          xBuffer,
+          invertParams,
+        ]),
+      );
+      pass.dispatchWorkgroups(numBlocks);
+
+      // One fused solve-and-update dispatch per block, in dependency order.
+      pass.setPipeline(stepPipeline);
+      for (const blockStart of blockStarts) {
+        const blockIndex = blockStart / BLOCK_SIZE;
+        const blockEnd = Math.min(blockStart + BLOCK_SIZE, n);
+        const rowCount = forward ? n - blockEnd : blockStart;
+        pass.setBindGroup(
+          0,
+          createBindGroup(device, stepPipeline.getBindGroupLayout(0), [
+            ABuffer,
+            AinvBuffer,
+            xBuffer,
+            solBuffer,
+            {
+              buffer: stepParamsBuffer,
+              offset: blockIndex * stride,
+              size: STEP_PARAMS_BYTES,
+            },
+          ]),
+        );
+        pass.dispatchWorkgroups(
+          requireWorkgroupCount(
+            device,
+            Math.max(1, Math.ceil(rowCount / STRSV_TILE_ROWS)),
+            "strsv",
+          ),
+        );
+      }
+
+      // Copy the solution into x (leaving any stride gaps untouched).
+      pass.setPipeline(scatterPipeline);
+      pass.setBindGroup(
+        0,
+        createBindGroup(device, scatterPipeline.getBindGroupLayout(0), [
           solBuffer,
-          { buffer: stepParamsBuffer, offset: blockIndex * stride, size: 32 },
+          xBuffer,
+          scatterParams,
         ]),
       );
       pass.dispatchWorkgroups(
-        requireWorkgroupCount(
-          device,
-          Math.max(1, Math.ceil(rowCount / STRSV_TILE_ROWS)),
-          "strsv",
+        Math.min(
+          Math.ceil(n / WGS),
+          device.limits.maxComputeWorkgroupsPerDimension,
         ),
       );
     }
-
-    // Copy the solution into x (leaving any stride gaps untouched).
-    pass.setPipeline(scatterPipeline);
-    pass.setBindGroup(
-      0,
-      createBindGroup(device, scatterPipeline.getBindGroupLayout(0), [
-        solBuffer,
-        xBuffer,
-        scatterParams,
-      ]),
-    );
-    pass.dispatchWorkgroups(
-      Math.min(
-        Math.ceil(n / WGS),
-        device.limits.maxComputeWorkgroupsPerDimension,
-      ),
-    );
     pass.end();
 
     const ts = resolveTimestamp(device, commandEncoder, querySet);
@@ -272,5 +370,6 @@ export async function strsv(
     if (stepParamsBuffer) destroyBuffers(stepParamsBuffer);
     if (invertParams) destroyBuffers(invertParams);
     if (scatterParams) destroyBuffers(scatterParams);
+    destroyBuffers(solveParamsList);
   }
 }

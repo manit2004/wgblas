@@ -159,6 +159,61 @@ test("strsv zero-dimension (regression)", async (t) => {
   });
 });
 
+// Up to 8 blocks, each diagonal block is solved by substitution
+// (strsm_small.wgsl, in place on x) and a presolved strsv_step does only the
+// trailing update; one block is a single dispatch. Fixtures stop at n=50 and
+// the multi-block test above takes the inverse path (10 blocks). This pins
+// one block at the cap (64), a ragged last 4-row chunk (37), n=1, and 3 and 5
+// blocks (150, 300 — ragged last blocks), every uplo/trans/diag/layout, with
+// strided x whose gaps must survive.
+test("strsv few-block substitution path (regression)", async (t) => {
+  for (const N of [64, 37, 1, 150, 300])
+    for (const layout of ["row-major", "column-major"])
+      for (const uplo of ["lower", "upper"])
+        for (const trans of ["no-transpose", "transpose"])
+          for (const diag of ["non-unit", "unit"])
+            for (const inc of [1, 3]) {
+              await t.test(
+                `${layout} N=${N} ${uplo} ${trans} ${diag} inc=${inc}`,
+                async () => {
+                  const A = randomFloat32Array(N * N, -1 / N, 1 / N, 131);
+                  for (let i = 0; i < N; i++) A[i * N + i] = 2;
+                  const a = {
+                    uplo,
+                    trans,
+                    diag,
+                    n: N,
+                    A,
+                    lda: N,
+                    x: randomFloat32Array((N - 1) * inc + 1, -1, 1, 132),
+                    incx: inc,
+                    layout,
+                  };
+                  const got = await strsv(
+                    device,
+                    a.uplo,
+                    a.trans,
+                    a.diag,
+                    a.n,
+                    a.A,
+                    a.lda,
+                    a.x,
+                    a.incx,
+                    a.layout,
+                  );
+                  const factor = backwardResidualFactor(got, null, a);
+                  assert.ok(
+                    factor <= THRESHOLD,
+                    `backward residual factor ${factor} > ${THRESHOLD}`,
+                  );
+                  for (let i = 0; i < a.x.length; i++)
+                    if (i % inc !== 0)
+                      assert.equal(got.x[i], a.x[i], `gap element ${i}`);
+                },
+              );
+            }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 // Fixtures cap n at 50 — one 64-row block — so the multi-block path never
 // runs there: the fused per-block step (strsv_step.wgsl), its cross-

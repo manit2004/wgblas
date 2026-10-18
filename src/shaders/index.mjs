@@ -38,9 +38,9 @@
  * one of several conditionally (e.g. sgemv's `sgemv_n`/`sgemv_t`, by `trans`), and some have no
  * dedicated shader at all:
  *
- * - `sgemmtr`/`ssyrk`/`ssyr2k` all dispatch through `sgemmtr_small`/`sgemmtr_large`.
- * - `strsm` reuses `strsv_invert_block` and `sscal`, plus its own `block_transfer` and the
- *   shared `sgemm_small`/`sgemm_large`.
+ * - `sgemmtr`/`ssyrk`/`ssyr2k` all dispatch through `sgemm_small`/`sgemm_large` (`uplo` param).
+ * - `strsm` shares `strsm_small` and `strsv_invert_block` with strsv, plus its own
+ *   `block_transfer` and the shared `sgemm_small`/`sgemm_large`.
  * - `dasum`/`idamax` concatenate several f64 utility shaders with their own — see
  *   `getPipeline`'s `shaderName: string[]` behaviour.
  * - `random` has no entry — CPU-only, no `getPipeline()` call.
@@ -194,10 +194,12 @@ routineShaders.strmv = { strmv, strmv_t, reduce_partials, gather_strided };
 import strsv_invert_block from "./strsv_invert_block.wgsl";
 import strsv_step from "./strsv_step.wgsl"; // one fused solve-and-update dispatch per block
 import scatter_strided from "./scatter_strided.wgsl"; // copies the contiguous solution back into a strided x
+import strsm_small from "./strsm_small.wgsl"; // n <= 64: the whole solve in one substitution dispatch (strsv and strsm)
 routineShaders.strsv = {
   strsv_invert_block,
   strsv_step,
   scatter_strided,
+  strsm_small,
 };
 
 import sger from "./sger.wgsl";
@@ -259,7 +261,7 @@ routineShaders.dtrmv = {
   dtrmv,
 };
 
-import dtrsv_invert_block from "./dtrsv_invert_block.wgsl"; // f64 sibling of strsv_invert_block — same per-column substitution, but the non-unit-diagonal division is the first real ddDivProtected use in this port order (deliberately last per TODO.md)
+import dtrsv_invert_block from "./dtrsv_invert_block.wgsl"; // f64 sibling of strsv_invert_block's original per-column substitution — but the non-unit-diagonal division is the first real ddDivProtected use in this port order (deliberately last per TODO.md)
 import dtrsv_apply_inverse from "./dtrsv_apply_inverse.wgsl"; // f64 sibling of strsv_apply_inverse — per-thread dense matvec against the block inverse, every thread runs the same blockLen-iteration loop (no early return) to keep protected-op call counts uniform
 import dtrsv_update from "./dtrsv_update.wgsl"; // f64 sibling of strsv_update — per-row DD tree reduction (dsymv's shape) over the fixed-width block column range (dger's shape, not per-row-varying)
 routineShaders.dtrsv = {
@@ -286,12 +288,9 @@ import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
 routineShaders.sgemm = { sgemm_small, sgemm_large }; // one or the other, picked by a tile-size threshold
 
-import sgemmtr_small from "./sgemmtr_small.wgsl";
-import sgemmtr_large from "./sgemmtr_large.wgsl";
-routineShaders.sgemmtr = { sgemmtr_small, sgemmtr_large };
-
-routineShaders.ssyrk = { sgemmtr_small, sgemmtr_large }; // no shader of its own — rides on sgemmtr's
-routineShaders.ssyr2k = { sgemmtr_small, sgemmtr_large }; // no shader of its own — rides on sgemmtr's
+routineShaders.sgemmtr = { sgemm_small, sgemm_large }; // sgemm's kernels with a triangle mask (uplo)
+routineShaders.ssyrk = { sgemm_small, sgemm_large }; // no shader of its own — rides on sgemm's
+routineShaders.ssyr2k = { sgemm_small, sgemm_large }; // no shader of its own — rides on sgemm's
 
 import symmetrize from "./symmetrize.wgsl";
 routineShaders.ssymm = { sgemm_small, sgemm_large, symmetrize };
@@ -302,8 +301,8 @@ routineShaders.strmm = { sgemm_small, sgemm_large, triangularize };
 import blockTransfer from "./block_transfer.wgsl";
 routineShaders.strsm = {
   strsv_invert_block,
+  strsm_small,
   block_transfer: blockTransfer,
-  sscal,
   sgemm_small,
   sgemm_large,
 };

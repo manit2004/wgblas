@@ -242,6 +242,85 @@ test("sgemmtr large-tile path (regression)", async (t) => {
 // don't throw, so an implementation that skips applying beta within the
 // triangle when k=0, or that touches the untouched triangle, would still
 // pass every existing case — this test checks actual per-element values.
+// sgemmtr runs on sgemm's kernels and skips tiles wholly outside the
+// triangle. The large-tile test above covers that for the 64-tile kernel;
+// fixtures (n <= 20) never span more than one 32-tile, so this covers the
+// small kernel's skipping, plus non-square C (the triangle of an m×n grid),
+// in both layouts (column-major flips uplo internally). forwardFactor only
+// checks the requested triangle, so the other one is also asserted to come
+// back byte-identical — that's where a wrong skip or mask would write.
+test("sgemmtr small-tile skipping and non-square C (regression)", async (t) => {
+  const K = 9;
+  for (const layout of ["row-major", "column-major"])
+    for (const [M, N] of [
+      [100, 100],
+      [150, 70],
+      [70, 150],
+    ])
+      for (const uplo of ["lower", "upper"])
+        for (const transA of ["no-transpose", "transpose"])
+          for (const transB of ["no-transpose", "transpose"]) {
+            const label = `${layout} ${M}x${N} uplo=${uplo} transA=${transA} transB=${transB}`;
+            await t.test(label, async () => {
+              const cm = layout === "column-major";
+              // Stored shapes: op(A) is M×K, op(B) is K×N; column-major swaps rows/cols.
+              const [aR, aC] = transA === "no-transpose" ? [M, K] : [K, M];
+              const [bR, bC] = transB === "no-transpose" ? [K, N] : [N, K];
+              const a = {
+                layout,
+                uplo,
+                transA,
+                transB,
+                m: M,
+                n: N,
+                k: K,
+                alpha: 1.5,
+                A: randomFloat32Array(aR * aC, -1, 1, 51),
+                lda: cm ? aR : aC,
+                B: randomFloat32Array(bR * bC, -1, 1, 52),
+                ldb: cm ? bR : bC,
+                beta: 0.5,
+                C: randomFloat32Array(M * N, -1, 1, 53),
+                ldc: cm ? M : N,
+              };
+              const got = await sgemmtr(
+                device,
+                a.uplo,
+                a.transA,
+                a.transB,
+                a.m,
+                a.n,
+                a.k,
+                a.alpha,
+                a.A,
+                a.lda,
+                a.B,
+                a.ldb,
+                a.beta,
+                a.C,
+                a.ldc,
+                a.layout,
+              );
+              const factor = forwardFactor(got, stdlibReference(a), a);
+              assert.ok(
+                factor <= THRESHOLD,
+                `forward factor ${factor} > ${THRESHOLD}`,
+              );
+              for (let i = 0; i < M; i++)
+                for (let j = 0; j < N; j++) {
+                  const inTri = uplo === "lower" ? j <= i : j >= i;
+                  if (inTri) continue;
+                  const idx = cm ? j * a.ldc + i : i * a.ldc + j;
+                  assert.equal(
+                    got.C[idx],
+                    a.C[idx],
+                    `C(${i},${j}) outside the triangle changed`,
+                  );
+                }
+            });
+          }
+});
+
 test("sgemmtr zero-dimension (k=0) (regression)", async (t) => {
   const M = 4,
     N = 4,
