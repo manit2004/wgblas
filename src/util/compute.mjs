@@ -73,6 +73,32 @@ export function encodePass(
  * @returns {{ commandEncoder: GPUCommandEncoder, ts: any }} encoded commands and timestamp handle
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
  */
+/**
+ * Encodes several dependent passes on one command encoder (guaranteed to run
+ * in order) and times them as one span: the first pass writes the begin
+ * timestamp, the last pass the end one.
+ * @param {GPUDevice} device
+ * @param {{ pipeline: GPUComputePipeline, bindGroup: GPUBindGroup, workgroups: number|{x:number,y:number,z?:number} }[]} passes
+ * @returns {{ commandEncoder: GPUCommandEncoder, ts: object|null }}
+ */
+export function runComputePasses(device, passes) {
+  if (passes.length === 1) {
+    const [p] = passes;
+    return runComputePass(device, p.pipeline, p.bindGroup, p.workgroups);
+  }
+  const { commandEncoder, querySet } = beginTimedEncoder(device);
+  passes.forEach((p, i) => {
+    let desc;
+    if (querySet && i === 0)
+      desc = { timestampWrites: { querySet, beginningOfPassWriteIndex: 0 } };
+    else if (querySet && i === passes.length - 1)
+      desc = { timestampWrites: { querySet, endOfPassWriteIndex: 1 } };
+    encodePass(commandEncoder, p.pipeline, p.bindGroup, p.workgroups, desc);
+  });
+  const ts = resolveTimestamp(device, commandEncoder, querySet);
+  return { commandEncoder, ts };
+}
+
 export function runComputePass(device, pipeline, bindGroup, workgroups) {
   const { commandEncoder, querySet, passDescriptor } =
     beginTimedEncoder(device);

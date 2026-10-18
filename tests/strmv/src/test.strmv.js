@@ -161,6 +161,58 @@ test("strmv zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures cap n at 50 and edge cases are tiny, so neither reaches the
+// transpose kernel's multi-chunk path (strmv_t + reduce_partials, n > 256)
+// or a partially-filled last column tile. n=600 gives 3 row chunks and a
+// 24-wide last tile. Every uplo/trans/diag combo, both layouts, plus
+// non-unit strides.
+test("strmv large-n paths (regression)", async (t) => {
+  const N = 600;
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const trans of ["no-transpose", "transpose"])
+        for (const diag of ["non-unit", "unit"])
+          for (const inc of [1, 3]) {
+            await t.test(
+              `${layout} ${uplo} ${trans} ${diag} inc=${inc}`,
+              async () => {
+                const a = {
+                  uplo,
+                  trans,
+                  diag,
+                  n: N,
+                  A: randomFloat32Array(N * N, -1, 1, 11),
+                  lda: N,
+                  x: randomFloat32Array((N - 1) * inc + 1, -1, 1, 12),
+                  incx: inc,
+                  y: makeVec(N, inc),
+                  incy: inc,
+                  layout,
+                };
+                const got = await strmv(
+                  device,
+                  a.uplo,
+                  a.trans,
+                  a.diag,
+                  a.n,
+                  a.A,
+                  a.lda,
+                  a.x,
+                  a.incx,
+                  a.y,
+                  a.incy,
+                  a.layout,
+                );
+                const factor = forwardFactor(got, stdlibReference(a), a);
+                assert.ok(
+                  factor <= THRESHOLD,
+                  `forward factor ${factor} > ${THRESHOLD}`,
+                );
+              },
+            );
+          }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("strmv edge cases (column-major)", async (t) => {
   for (const c of edgeCasesColumnMajor) {

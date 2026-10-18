@@ -1,11 +1,15 @@
 import {
   uploadBuffer,
   createParamsBuffer,
+  createStorageBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { gatherStridedPass } from "../util/strided.mjs";
+import { WGS, SPLITK_CHUNK_ROWS } from "../util/constants.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -98,45 +102,135 @@ export async function strmv(
     ? trans === "transpose"
     : trans === "no-transpose";
 
-  const pipeline = await getPipeline(device, "strmv");
+  // Transpose path: one thread per output column (coalesced A reads), with
+  // rows split into chunks for memory parallelism — see strmv_t.wgsl.
+  const useColumnKernel = !isNoTrans;
+  const numChunks = useColumnKernel ? Math.ceil(n / SPLITK_CHUNK_ROWS) : 1;
+  const pipeline = await getPipeline(
+    device,
+    useColumnKernel ? "strmv_t" : "strmv",
+  );
+  const reducePipeline =
+    numChunks > 1 ? await getPipeline(device, "reduce_partials") : null;
 
   let ABuffer = null;
   let xBuffer = null;
   let yBuffer = null;
   let paramsBuffer = null;
+  let partialBuffer = null;
+  let reduceParams = null;
+  let xPacked = null;
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "strmv-A", false);
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "strmv-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "strmv-y", true);
-    paramsBuffer = createParamsBuffer(
-      device,
-      [
-        { value: n, type: "u32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
-        { value: lda, type: "u32" },
-        { value: isNoTrans ? 0 : 1, type: "u32" },
-        { value: isLower ? 0 : 1, type: "u32" },
-        { value: isUnit ? 1 : 0, type: "u32" },
-      ],
-      "strmv-params",
-    );
+    // x is re-read for every output — pack a strided x once (see util/strided.mjs).
+    if (incx > 1)
+      xPacked = await gatherStridedPass(
+        device,
+        xBuffer,
+        n,
+        incx,
+        "strmv-x-packed",
+      );
+    const xSrc = xPacked ? xPacked.buffer : xBuffer;
+    const xInc = xPacked ? 1 : incx;
+    let passes;
+    if (useColumnKernel) {
+      if (numChunks > 1) {
+        partialBuffer = createStorageBuffer(
+          device,
+          numChunks * n * 4,
+          "strmv-partials",
+        );
+        reduceParams = createParamsBuffer(
+          device,
+          [
+            { value: n, type: "u32" },
+            { value: numChunks, type: "u32" },
+            { value: incy, type: "u32" },
+            { value: 1, type: "f32" },
+            { value: 0, type: "f32" },
+          ],
+          "strmv-reduce-params",
+        );
+      }
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: xInc, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: isLower ? 0 : 1, type: "u32" },
+          { value: isUnit ? 1 : 0, type: "u32" },
+          { value: SPLITK_CHUNK_ROWS, type: "u32" },
+          { value: numChunks > 1 ? 0 : 1, type: "u32" },
+        ],
+        "strmv-t-params",
+      );
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            ABuffer,
+            xSrc,
+            partialBuffer ?? yBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: {
+            x: requireWorkgroupCount(device, Math.ceil(n / WGS), "strmv", "x"),
+            y: requireWorkgroupCount(device, numChunks, "strmv", "y"),
+          },
+        },
+      ];
+      if (numChunks > 1)
+        passes.push({
+          pipeline: reducePipeline,
+          bindGroup: createBindGroup(
+            device,
+            reducePipeline.getBindGroupLayout(0),
+            [partialBuffer, yBuffer, reduceParams],
+          ),
+          workgroups: Math.min(
+            Math.ceil(n / WGS),
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        });
+    } else {
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: xInc, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: 0, type: "u32" },
+          { value: isLower ? 0 : 1, type: "u32" },
+          { value: isUnit ? 1 : 0, type: "u32" },
+        ],
+        "strmv-params",
+      );
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            ABuffer,
+            xSrc,
+            yBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: Math.min(
+            n,
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        },
+      ];
+    }
 
-    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      ABuffer,
-      xBuffer,
-      yBuffer,
-      paramsBuffer,
-    ]);
-
-    const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    if (xPacked) passes.unshift(xPacked.pass);
+    const { commandEncoder, ts } = runComputePasses(device, passes);
     const readBuffer = yIsGpu
       ? null
       : stageReadback(device, commandEncoder, yBuffer);
@@ -158,5 +252,8 @@ export async function strmv(
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (partialBuffer) destroyBuffers(partialBuffer);
+    if (reduceParams) destroyBuffers(reduceParams);
+    if (xPacked) destroyBuffers(xPacked.buffer, xPacked.params);
   }
 }

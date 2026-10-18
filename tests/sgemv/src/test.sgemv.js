@@ -195,6 +195,64 @@ test("sgemv zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures cap m/n at 50, so the transpose kernel's multi-chunk path
+// (sgemv_t + reduce_partials, more than 256 rows) never runs there. 600×300
+// gives 3 row chunks and a partly-filled last column tile; column-major
+// no-transpose lands on the same kernel. beta=0 and beta≠0 (the reduce pass
+// applies alpha/beta), plus non-unit strides.
+test("sgemv split-K transpose path (regression)", async (t) => {
+  const M = 600,
+    N = 300;
+  for (const [layout, trans] of [
+    ["row-major", "transpose"],
+    ["column-major", "no-transpose"],
+  ])
+    for (const beta of [0, 0.75])
+      for (const inc of [1, 3]) {
+        await t.test(`${layout} ${trans} beta=${beta} inc=${inc}`, async () => {
+          // Kernel frame after the column-major swap is always A^T over 600 rows.
+          const [m, n] = layout === "row-major" ? [M, N] : [N, M];
+          const isNoTrans = trans === "no-transpose";
+          const xLen = isNoTrans ? n : m;
+          const yLen = isNoTrans ? m : n;
+          const a = {
+            trans,
+            m,
+            n,
+            alpha: 1.5,
+            A: randomFloat32Array(m * n, -1, 1, 21),
+            lda: layout === "row-major" ? n : m,
+            x: randomFloat32Array((xLen - 1) * inc + 1, -1, 1, 22),
+            incx: inc,
+            beta,
+            y: randomFloat32Array((yLen - 1) * inc + 1, -1, 1, 23),
+            incy: inc,
+            layout,
+          };
+          const got = await sgemv(
+            device,
+            a.trans,
+            a.m,
+            a.n,
+            a.alpha,
+            a.A,
+            a.lda,
+            a.x,
+            a.incx,
+            a.beta,
+            a.y,
+            a.incy,
+            a.layout,
+          );
+          const factor = forwardFactor(got, stdlibReference(a), a);
+          assert.ok(
+            factor <= THRESHOLD,
+            `forward factor ${factor} > ${THRESHOLD}`,
+          );
+        });
+      }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("sgemv edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

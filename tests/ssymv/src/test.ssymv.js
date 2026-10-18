@@ -165,6 +165,56 @@ test("ssymv zero-dimension (regression)", async (t) => {
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
+// Fixtures cap n at 50 (two 32-wide tiles at most), so the tiled kernel's
+// many-tile slot bookkeeping and the partial last tile only run here: n=600
+// is 19 blocks, the last 24 wide. Both triangles and layouts, beta=0 and
+// beta≠0 (applied by the reduce pass), plus non-unit strides.
+test("ssymv many-tile path (regression)", async (t) => {
+  const N = 600;
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const beta of [0, 0.75])
+        for (const inc of [1, 3]) {
+          await t.test(
+            `${layout} ${uplo} beta=${beta} inc=${inc}`,
+            async () => {
+              const a = {
+                uplo,
+                n: N,
+                alpha: 1.5,
+                A: randomFloat32Array(N * N, -1, 1, 31),
+                lda: N,
+                x: randomFloat32Array((N - 1) * inc + 1, -1, 1, 32),
+                incx: inc,
+                beta,
+                y: randomFloat32Array((N - 1) * inc + 1, -1, 1, 33),
+                incy: inc,
+                layout,
+              };
+              const got = await ssymv(
+                device,
+                a.uplo,
+                a.n,
+                a.alpha,
+                a.A,
+                a.lda,
+                a.x,
+                a.incx,
+                a.beta,
+                a.y,
+                a.incy,
+                a.layout,
+              );
+              const factor = forwardFactor(got, stdlibReference(a), a);
+              assert.ok(
+                factor <= THRESHOLD,
+                `forward factor ${factor} > ${THRESHOLD}`,
+              );
+            },
+          );
+        }
+});
+
 test("ssymv edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {
     await t.test(tc.label, async () => {

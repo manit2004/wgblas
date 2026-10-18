@@ -318,7 +318,7 @@ export async function strsm(
         commandEncoder,
         invertPipeline,
         invertBindGroup,
-        { x: BLOCK_SIZE, y: numBlocks },
+        numBlocks, // one workgroup per diagonal block — see strsv_invert_block.wgsl
         invertDesc,
       );
 

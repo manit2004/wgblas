@@ -1,11 +1,15 @@
 import {
   uploadBuffer,
   createParamsBuffer,
+  createStorageBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { gatherStridedPass } from "../util/strided.mjs";
+import { WGS, SSYMV_TILE } from "../util/constants.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -94,45 +98,96 @@ export async function ssymv(
   const isLower =
     effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
 
+  // Two passes: tiled partial sums over the stored triangle, then a reduce
+  // that applies alpha/beta — see ssymv.wgsl.
   const pipeline = await getPipeline(device, "ssymv");
+  const reducePipeline = await getPipeline(device, "reduce_partials");
+  const numBlocks = Math.ceil(n / SSYMV_TILE);
 
   let ABuffer = null;
   let xBuffer = null;
   let yBuffer = null;
   let paramsBuffer = null;
+  let partialBuffer = null;
+  let reduceParams = null;
+  let xPacked = null;
 
   try {
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssymv-A", false);
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "ssymv-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "ssymv-y", true);
+    // The tile kernel reads x at unit stride — pack a strided x first.
+    if (incx > 1)
+      xPacked = await gatherStridedPass(
+        device,
+        xBuffer,
+        n,
+        incx,
+        "ssymv-x-packed",
+      );
+    partialBuffer = createStorageBuffer(
+      device,
+      numBlocks * n * 4,
+      "ssymv-partials",
+    );
     paramsBuffer = createParamsBuffer(
       device,
       [
         { value: n, type: "u32" },
-        { value: alpha, type: "f32" },
-        { value: beta, type: "f32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
         { value: lda, type: "u32" },
         { value: isLower ? 0 : 1, type: "u32" },
+        { value: numBlocks, type: "u32" },
       ],
       "ssymv-params",
     );
-
-    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      ABuffer,
-      xBuffer,
-      yBuffer,
-      paramsBuffer,
-    ]);
-
-    const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
+    reduceParams = createParamsBuffer(
       device,
-      pipeline,
-      bindGroup,
-      wgCount,
+      [
+        { value: n, type: "u32" },
+        { value: numBlocks, type: "u32" },
+        { value: incy, type: "u32" },
+        { value: alpha, type: "f32" },
+        { value: beta, type: "f32" },
+      ],
+      "ssymv-reduce-params",
     );
+
+    // One workgroup per stored-triangle tile, linear index spread over 2D.
+    const numTiles = (numBlocks * (numBlocks + 1)) / 2;
+    const maxWg = device.limits.maxComputeWorkgroupsPerDimension;
+    const tilesX = Math.min(numTiles, maxWg);
+    const tilesY = requireWorkgroupCount(
+      device,
+      Math.ceil(numTiles / tilesX),
+      "ssymv",
+      "y",
+    );
+    const passes = [
+      ...(xPacked ? [xPacked.pass] : []),
+      {
+        pipeline,
+        bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+          ABuffer,
+          xPacked ? xPacked.buffer : xBuffer,
+          partialBuffer,
+          paramsBuffer,
+        ]),
+        workgroups: { x: tilesX, y: tilesY },
+      },
+      {
+        pipeline: reducePipeline,
+        bindGroup: createBindGroup(
+          device,
+          reducePipeline.getBindGroupLayout(0),
+          [partialBuffer, yBuffer, reduceParams],
+        ),
+        workgroups: Math.min(
+          Math.ceil(n / WGS),
+          device.limits.maxComputeWorkgroupsPerDimension,
+        ),
+      },
+    ];
+    const { commandEncoder, ts } = runComputePasses(device, passes);
     const readBuffer = yIsGpu
       ? null
       : stageReadback(device, commandEncoder, yBuffer);
@@ -154,5 +209,8 @@ export async function ssymv(
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (partialBuffer) destroyBuffers(partialBuffer);
+    if (reduceParams) destroyBuffers(reduceParams);
+    if (xPacked) destroyBuffers(xPacked.buffer, xPacked.params);
   }
 }

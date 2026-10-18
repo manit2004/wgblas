@@ -5,7 +5,8 @@ import {
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { gatherStridedPass } from "../util/strided.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -103,11 +104,21 @@ export async function sger(
   let yBuffer = null;
   let ABuffer = null;
   let paramsBuffer = null;
+  let yPacked = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "sger-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "sger-y", false);
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "sger-A", true);
+    // y is re-read for every row — pack a strided y once (see util/strided.mjs).
+    if (incy > 1)
+      yPacked = await gatherStridedPass(
+        device,
+        yBuffer,
+        n,
+        incy,
+        "sger-y-packed",
+      );
     paramsBuffer = createParamsBuffer(
       device,
       [
@@ -115,7 +126,7 @@ export async function sger(
         { value: n, type: "u32" },
         { value: alpha, type: "f32" },
         { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
+        { value: yPacked ? 1 : incy, type: "u32" },
         { value: lda, type: "u32" },
       ],
       "sger-params",
@@ -123,7 +134,7 @@ export async function sger(
 
     const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       xBuffer,
-      yBuffer,
+      yPacked ? yPacked.buffer : yBuffer,
       ABuffer,
       paramsBuffer,
     ]);
@@ -131,12 +142,10 @@ export async function sger(
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when m > dispatch count.
     const wgCount = Math.min(m, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    const { commandEncoder, ts } = runComputePasses(device, [
+      ...(yPacked ? [yPacked.pass] : []),
+      { pipeline, bindGroup, workgroups: wgCount },
+    ]);
     const readBuffer = AIsGpu
       ? null
       : stageReadback(device, commandEncoder, ABuffer);
@@ -158,5 +167,6 @@ export async function sger(
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (yPacked) destroyBuffers(yPacked.buffer, yPacked.params);
   }
 }

@@ -18,6 +18,8 @@ import {
   WGS,
   TILE_WG_2D,
   BLOCK_SIZE,
+  SSYMV_TILE,
+  STRSV_TILE_ROWS,
 } from "../../src/util/constants.mjs";
 
 const SHADER_DIR = join(
@@ -99,6 +101,27 @@ test("strsv diagonal block order matches its shader", () => {
     wgslConst(source("strsv_invert_block"), "BLOCK_SIZE"),
     BLOCK_SIZE,
     "strsv_invert_block.wgsl BLOCK_SIZE !== BLOCK_SIZE",
+  );
+});
+
+test("strsv step tile matches its shader", () => {
+  assert.equal(
+    wgslConst(source("strsv_step"), "TILE_ROWS"),
+    STRSV_TILE_ROWS,
+    "strsv_step.wgsl TILE_ROWS !== STRSV_TILE_ROWS",
+  );
+  assert.equal(
+    wgslConst(source("strsv_step"), "BLOCK_SIZE"),
+    BLOCK_SIZE,
+    "strsv_step.wgsl BLOCK_SIZE !== BLOCK_SIZE",
+  );
+});
+
+test("ssymv tile size matches its shader", () => {
+  assert.equal(
+    wgslConst(source("ssymv"), "TILE"),
+    SSYMV_TILE,
+    "ssymv.wgsl TILE !== SSYMV_TILE",
   );
 });
 

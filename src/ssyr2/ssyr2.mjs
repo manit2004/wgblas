@@ -5,7 +5,8 @@ import {
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { gatherStridedPass } from "../util/strided.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -100,18 +101,37 @@ export async function ssyr2(
   let yBuffer = null;
   let ABuffer = null;
   let paramsBuffer = null;
+  let xPacked = null;
+  let yPacked = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "ssyr2-x", false);
     yBuffer = yIsGpu ? y._buf : uploadBuffer(device, y, "ssyr2-y", false);
     ABuffer = AIsGpu ? A._buf : uploadBuffer(device, A, "ssyr2-A", true);
+    // x and y are re-read for every row — pack strided ones once (see util/strided.mjs).
+    if (incx > 1)
+      xPacked = await gatherStridedPass(
+        device,
+        xBuffer,
+        n,
+        incx,
+        "ssyr2-x-packed",
+      );
+    if (incy > 1)
+      yPacked = await gatherStridedPass(
+        device,
+        yBuffer,
+        n,
+        incy,
+        "ssyr2-y-packed",
+      );
     paramsBuffer = createParamsBuffer(
       device,
       [
         { value: n, type: "u32" },
         { value: alpha, type: "f32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
+        { value: xPacked ? 1 : incx, type: "u32" },
+        { value: yPacked ? 1 : incy, type: "u32" },
         { value: lda, type: "u32" },
         { value: isLower ? 0 : 1, type: "u32" },
       ],
@@ -119,8 +139,8 @@ export async function ssyr2(
     );
 
     const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      xBuffer,
-      yBuffer,
+      xPacked ? xPacked.buffer : xBuffer,
+      yPacked ? yPacked.buffer : yBuffer,
       ABuffer,
       paramsBuffer,
     ]);
@@ -128,12 +148,11 @@ export async function ssyr2(
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when n > dispatch count.
     const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    const { commandEncoder, ts } = runComputePasses(device, [
+      ...(xPacked ? [xPacked.pass] : []),
+      ...(yPacked ? [yPacked.pass] : []),
+      { pipeline, bindGroup, workgroups: wgCount },
+    ]);
     const readBuffer = AIsGpu
       ? null
       : stageReadback(device, commandEncoder, ABuffer);
@@ -155,5 +174,7 @@ export async function ssyr2(
     if (!yIsGpu && yBuffer) destroyBuffers(yBuffer);
     if (!AIsGpu && ABuffer) destroyBuffers(ABuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (xPacked) destroyBuffers(xPacked.buffer, xPacked.params);
+    if (yPacked) destroyBuffers(yPacked.buffer, yPacked.params);
   }
 }
