@@ -35,11 +35,16 @@ function requireStorageSize(device, byteSize, label) {
 }
 
 /**
- * Creates a GPU storage buffer and uploads `data` into it via mapped-at-creation.
- * The mapped view is constructed from `data`'s own typed-array constructor, so
- * bits are copied as-is regardless of element type (e.g. a Uint32Array's raw
- * bit patterns are preserved — critical for dasum's aux half, which must
- * never pass through a Float32Array view and risk NaN-bit-pattern canonicalization).
+ * Creates a GPU storage buffer and uploads `data` into it with
+ * `queue.writeBuffer` — a byte copy, so bits are preserved as-is regardless
+ * of element type (e.g. a Uint32Array's raw bit patterns — critical for
+ * dasum's aux half, which must never pass through a Float32Array view and
+ * risk NaN-bit-pattern canonicalization).
+ *
+ * Not `mappedAtCreation`: creating a CPU-mappable buffer costs ~230 µs on
+ * Dawn/Vulkan (GTX 1650) against ~12 µs for a plain one, which dominated
+ * small calls. writeBuffer is ordered on the queue, so the data is in place
+ * before any later submit reads it.
  * @param {GPUDevice} device
  * @param {Float32Array|Uint32Array|Int32Array} data
  * @param {string} [label] - debug label visible in browser DevTools GPU inspection
@@ -47,8 +52,7 @@ function requireStorageSize(device, byteSize, label) {
  * @throws {Error} if `data.byteLength` exceeds the device's `maxStorageBufferBindingSize`
  * @returns {GPUBuffer}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createBuffer GPUDevice.createBuffer()}
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer/getMappedRange GPUBuffer.getMappedRange()}
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUBuffer/unmap GPUBuffer.unmap()}
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUQueue/writeBuffer GPUQueue.writeBuffer()}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits GPUSupportedLimits} (`maxStorageBufferBindingSize`)
  */
 export function uploadBuffer(
@@ -60,21 +64,14 @@ export function uploadBuffer(
   const byteSize = data.byteLength;
   requireStorageSize(device, byteSize, label);
 
+  // COPY_DST: writeBuffer's destination. COPY_SRC (readback only): lets the
+  // result be copied out to a MAP_READ buffer.
   const usage = readback
-    ? GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
-    : GPUBufferUsage.STORAGE;
+    ? GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+    : GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST;
 
-  const buffer = device.createBuffer({
-    label,
-    size: byteSize,
-    usage,
-    mappedAtCreation: true,
-  });
-
-  const ViewCtor = data.constructor;
-  const mappedArray = new ViewCtor(buffer.getMappedRange());
-  mappedArray.set(data);
-  buffer.unmap();
+  const buffer = device.createBuffer({ label, size: byteSize, usage });
+  device.queue.writeBuffer(buffer, 0, data);
 
   return buffer;
 }
@@ -124,33 +121,108 @@ export function createResultBuffer(device, size, label = "blas-result") {
   });
 }
 
+// --- Readback buffer pool --------------------------------------------------
+//
+// Creating a MAP_READ buffer costs ~210 µs on Dawn/Vulkan (GTX 1650), and a
+// small readback into a fresh one ~450 µs end to end against ~55 µs into a
+// reused one — the dominant host cost of a small call that returns data.
+// stageReadback takes buffers from a per-device pool keyed by exact size (so
+// a binding never sees a larger buffer than it asked for); extractResult
+// (result.mjs) hands each back via releaseReadback once it has been mapped,
+// read and unmapped — never while a map is pending, so a pooled buffer is
+// never in two calls' hands at once. Error paths destroy instead.
+const READBACK_POOL_MAX_PER_SIZE = 4;
+const READBACK_POOL_MAX_BUFFER_BYTES = 4 * 1024 * 1024; // bigger readbacks: transfer dominates, not pooled
+const READBACK_POOL_MAX_TOTAL_BYTES = 32 * 1024 * 1024;
+const _readbackPools = new Map(); // GPUDevice → { bySize: Map<number, GPUBuffer[]>, bytes: number }
+const _readbackOwner = new WeakMap(); // readback GPUBuffer → the GPUDevice whose pool it may return to
+
+function readbackPool(device) {
+  let pool = _readbackPools.get(device);
+  if (!pool) {
+    pool = { bySize: new Map(), bytes: 0 };
+    _readbackPools.set(device, pool);
+  }
+  return pool;
+}
+
 /**
- * Appends a `copyBufferToBuffer` command to `commandEncoder` that copies
- * `sourceBuffer` into a new `MAP_READ` buffer. Returns that readback buffer;
- * call `readBuffer.mapAsync(GPUMapMode.READ)` after submitting the encoder.
+ * Encodes a copy of `sourceBuffer` into a `MAP_READ` buffer — reused from
+ * this device's readback pool when one of the exact size is free, otherwise
+ * newly created. Returns that readback buffer; pass it to `extractResult`
+ * after submitting the encoder, which maps it, reads it, and returns it to
+ * the pool.
  * @param {GPUDevice} device
  * @param {GPUCommandEncoder} commandEncoder
- * @param {GPUBuffer} sourceBuffer
- * @returns {GPUBuffer}
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUCommandEncoder/copyBufferToBuffer GPUCommandEncoder.copyBufferToBuffer()}
+ * @param {GPUBuffer} sourceBuffer - must have `COPY_SRC` usage
+ * @returns {GPUBuffer} the readback buffer
  */
 export function stageReadback(device, commandEncoder, sourceBuffer) {
-  // COPY_DST: receives the copyBufferToBuffer transfer; MAP_READ: lets the CPU map and read it back.
-  const readBuffer = device.createBuffer({
-    label: "blas-readback",
-    size: sourceBuffer.size,
-    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-  });
+  const size = sourceBuffer.size;
+  const pool = readbackPool(device);
+  let readBuffer = pool.bySize.get(size)?.pop();
+  if (readBuffer) {
+    pool.bytes -= size;
+  } else {
+    // COPY_DST: receives the copyBufferToBuffer transfer; MAP_READ: lets the CPU map and read it back.
+    readBuffer = device.createBuffer({
+      label: "blas-readback",
+      size,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+    _readbackOwner.set(readBuffer, device);
+  }
 
   commandEncoder.copyBufferToBuffer(
     sourceBuffer,
     0, // src, srcOffset
     readBuffer,
     0, // dst, dstOffset
-    sourceBuffer.size, // full copy, no partial reads
+    size, // full copy, no partial reads
   );
 
   return readBuffer;
+}
+
+/**
+ * Returns a readback buffer from `stageReadback` to its device's pool — call
+ * only once it has been mapped, read and unmapped (extractResult does).
+ * Destroys it instead when it's too large to pool, its size class or the
+ * pool is full, or it wasn't created by `stageReadback`.
+ * @param {GPUBuffer} readBuffer
+ */
+export function releaseReadback(readBuffer) {
+  const device = _readbackOwner.get(readBuffer);
+  const pool = device && _readbackPools.get(device);
+  const size = readBuffer.size;
+  const list = pool?.bySize.get(size) ?? [];
+  if (
+    !pool ||
+    size > READBACK_POOL_MAX_BUFFER_BYTES ||
+    list.length >= READBACK_POOL_MAX_PER_SIZE ||
+    pool.bytes + size > READBACK_POOL_MAX_TOTAL_BYTES
+  ) {
+    readBuffer.destroy();
+    return;
+  }
+  list.push(readBuffer);
+  pool.bySize.set(size, list);
+  pool.bytes += size;
+}
+
+/**
+ * Destroys every pooled readback buffer of `device` (all devices if omitted)
+ * — called from `cleanup()` before a device is destroyed.
+ * @param {GPUDevice} [device]
+ */
+export function clearReadbackPool(device) {
+  const devices = device === undefined ? [..._readbackPools.keys()] : [device];
+  for (const d of devices) {
+    const pool = _readbackPools.get(d);
+    if (!pool) continue;
+    for (const list of pool.bySize.values()) list.forEach((b) => b.destroy());
+    _readbackPools.delete(d);
+  }
 }
 
 // Minimum bindable size for an array<vec4<f32>> view: one 16-byte element.

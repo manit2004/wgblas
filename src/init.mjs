@@ -1,4 +1,5 @@
 import { benchmarkMode } from "./util/benchmark.mjs";
+import { clearReadbackPool } from "./util/buffer.mjs";
 
 // One WebGPU instance for the whole process, never released. A GPUAdapter
 // yields at most one working device, so a second device needs a second
@@ -105,6 +106,7 @@ export async function init({
 
 export function cleanup(device) {
   if (device === undefined) {
+    clearReadbackPool();
     for (const d of _devices.values()) d.destroy();
     _devices.clear();
     _primary = null;
@@ -117,6 +119,7 @@ export function cleanup(device) {
   if (!meta) return;
   _devices.delete(optionsKey(meta.options));
   _meta.delete(device);
+  clearReadbackPool(device);
   device.destroy();
 
   // getDevice() must keep answering while any device is left, so promote a
