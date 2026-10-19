@@ -149,6 +149,71 @@ test("ssyrk edge cases", async (t) => {
 // an implementation that skips applying beta within the triangle when k=0,
 // or that touches the untouched triangle, would still pass every existing
 // case — this test checks actual per-element values.
+// Fixtures cap n at 20 (one tile), so ssyrk's multi-tile path — sgemm's
+// kernels with whole-tile triangle skipping — only runs here: n=150 uses the
+// small kernel across several tiles, n=400 the large one.
+test("ssyrk multi-tile path (regression)", async (t) => {
+  const K = 9;
+  for (const layout of ["row-major", "column-major"])
+    for (const N of [150, 400])
+      for (const uplo of ["lower", "upper"])
+        for (const trans of ["no-transpose", "transpose"]) {
+          await t.test(
+            `${layout} n=${N} uplo=${uplo} trans=${trans}`,
+            async () => {
+              const cm = layout === "column-major";
+              // op(A) is N×K; A is stored N×K (no-transpose) or K×N (transpose).
+              const [aR, aC] = trans === "no-transpose" ? [N, K] : [K, N];
+              const ld = cm ? aR : aC;
+              const a = {
+                layout,
+                uplo,
+                trans,
+                n: N,
+                k: K,
+                alpha: 1.5,
+                A: randomFloat32Array(aR * aC, -1, 1, 61),
+                lda: ld,
+                beta: 0.5,
+                C: randomFloat32Array(N * N, -1, 1, 62),
+                ldc: N,
+              };
+              const got = await ssyrk(
+                device,
+                a.uplo,
+                a.trans,
+                a.n,
+                a.k,
+                a.alpha,
+                a.A,
+                a.lda,
+                a.beta,
+                a.C,
+                a.ldc,
+                a.layout,
+              );
+              const factor = forwardFactor(got, stdlibReference(a), a);
+              assert.ok(
+                factor <= THRESHOLD,
+                `forward factor ${factor} > ${THRESHOLD}`,
+              );
+              // The metric only covers the requested triangle — the other one
+              // must come back byte-identical (where a wrong skip/mask would write).
+              for (let i = 0; i < N; i++)
+                for (let j = 0; j < N; j++) {
+                  if (uplo === "lower" ? j <= i : j >= i) continue;
+                  const idx = cm ? j * N + i : i * N + j;
+                  assert.equal(
+                    got.C[idx],
+                    a.C[idx],
+                    `C(${i},${j}) outside the triangle changed`,
+                  );
+                }
+            },
+          );
+        }
+});
+
 test("ssyrk zero-dimension (k=0) (regression)", async (t) => {
   const N = 4,
     K = 0;

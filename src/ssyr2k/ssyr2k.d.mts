@@ -10,8 +10,8 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * - `trans='no-transpose'`: op(A) = A, op(B) = B (both n×k)
  * - `trans='transpose'`:    op(A) = A^T, op(B) = B^T (A, B stored k×n)
  *
- * No dedicated kernel — two passes of `sgemmtr`'s kernel
- * (`sgemmtr_small.wgsl`/`sgemmtr_large.wgsl`) on one command encoder, the
+ * No dedicated kernel — two passes of `sgemm`'s kernels in triangle mode
+ * (`sgemm_small.wgsl`/`sgemm_large.wgsl`) on one command encoder, the
  * second accumulating with `beta=1` so C never leaves the GPU between them.
  *
  * {@includeCode ../../examples/ssyr2k/ssyr2k.js}

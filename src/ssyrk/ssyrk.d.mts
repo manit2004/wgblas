@@ -10,7 +10,7 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * - `trans='transpose'`:    op(A) = A^T (A stored k×n), computes alpha*A^T*A + beta*C
  *
  * No dedicated kernel — this is `sgemmtr`'s exact kernel
- * (`sgemmtr_small.wgsl`/`sgemmtr_large.wgsl`) with `A` aliased into both
+ * (`sgemm_small.wgsl`/`sgemm_large.wgsl` in triangle mode) with `A` aliased into both
  * operand slots (`B := A`).
  *
  * {@includeCode ../../examples/ssyrk/ssyrk.js}

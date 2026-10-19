@@ -183,7 +183,7 @@ export async function sgemm(
   // op(A) is m×k (no-trans) or k×m (trans); op(B) is k×n or n×k.
   const aNot = transA === "no-transpose";
   const bNot = transB === "no-transpose";
-  const useVecA = aNot && vec4Usable(ABuffer, lda, m, k); // transposed-A vec stores bank-conflict smem — measured slower than scalar
+  const useVecA = vec4Usable(ABuffer, lda, aNot ? m : k, aNot ? k : m);
   const useVecB = vec4Usable(BBuffer, ldb, bNot ? k : n, bNot ? n : k);
   const paramsBuffer = createParamsBuffer(
     device,
@@ -200,6 +200,11 @@ export async function sgemm(
       { value: transB === "transpose" ? 1 : 0, type: "u32" },
       { value: useVecA ? 1 : 0, type: "u32" },
       { value: useVecB ? 1 : 0, type: "u32" },
+      { value: 0, type: "u32" }, // uplo: full C (gemmtr masks are for sgemmtr/ssyrk/ssyr2k)
+      { value: 0, type: "u32" }, // offA/offB/offC: whole buffers
+      { value: 0, type: "u32" },
+      { value: 0, type: "u32" },
+      { value: 0, type: "u32" }, // kTri: dense operands
     ],
     "sgemm-params",
   );

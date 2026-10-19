@@ -218,10 +218,17 @@ export function vec4ViewBinding(device, entry) {
  * @param {number} stride - the operand's leading dimension as seen by the kernel
  * @param {number} outerCount - extent of the stride-multiplied dimension
  * @param {number} innerCount - extent of the contiguous dimension
+ * @param {number} [elemOffset=0] - element offset the kernel adds to every index (sgemm's offA/offB)
  * @returns {boolean}
  */
-export function vec4Usable(entry, stride, outerCount, innerCount) {
-  if (stride % 4 !== 0) return false;
+export function vec4Usable(
+  entry,
+  stride,
+  outerCount,
+  innerCount,
+  elemOffset = 0,
+) {
+  if (stride % 4 !== 0 || elemOffset % 4 !== 0) return false;
   const buffer = entry instanceof GPUBuffer ? entry : entry.buffer;
   const offset = entry instanceof GPUBuffer ? 0 : (entry.offset ?? 0);
   const avail =
@@ -233,7 +240,9 @@ export function vec4Usable(entry, stride, outerCount, innerCount) {
   // Highest flat index any masked-in component can touch; usable iff its
   // containing vec4 ends within the view.
   const maxFlat =
-    (Math.max(outerCount, 1) - 1) * stride + (Math.max(innerCount, 1) - 1);
+    elemOffset +
+    (Math.max(outerCount, 1) - 1) * stride +
+    (Math.max(innerCount, 1) - 1);
   return Math.floor(maxFlat / 4) * 4 + 4 <= viewFloats;
 }
 

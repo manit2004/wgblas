@@ -7,8 +7,9 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * written (`'lower'`: `col <= row`, `'upper'`: `col >= row`; C need not be
  * square — the test applies over the full m×n grid).
  *
- * Same kernels as `sgemm` (`sgemmtr_small.wgsl`/`sgemmtr_large.wgsl`,
- * identical tiling), with the final output write masked to one triangle.
+ * Same kernels as `sgemm` (`sgemm_small.wgsl`/`sgemm_large.wgsl`, `uplo`
+ * param), with the final output write masked to one triangle and tiles wholly
+ * outside it skipped.
  *
  * {@includeCode ../../examples/sgemmtr/sgemmtr.js}
  *

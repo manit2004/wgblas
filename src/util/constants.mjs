@@ -18,13 +18,13 @@
 
 // --- gemm block tiles ------------------------------------------------------
 
-/** `BM` in sgemm_small.wgsl / sgemmtr_small.wgsl. */
+/** `BM` in sgemm_small.wgsl. */
 export const BM_SMALL = 32;
-/** `BN` in sgemm_small.wgsl / sgemmtr_small.wgsl. */
+/** `BN` in sgemm_small.wgsl. */
 export const BN_SMALL = 32;
-/** `BM` in sgemm_large.wgsl / sgemmtr_large.wgsl. */
+/** `BM` in sgemm_large.wgsl. */
 export const BM_LARGE = 64;
-/** `BN` in sgemm_large.wgsl / sgemmtr_large.wgsl. */
+/** `BN` in sgemm_large.wgsl. */
 export const BN_LARGE = 64;
 
 /**
@@ -69,3 +69,5 @@ export const BLOCK_SIZE = 64;
 
 /** `TILE_ROWS` in strsv_step.wgsl — remaining rows each workgroup updates. */
 export const STRSV_TILE_ROWS = 64;
+/** `RHS_PER_WG` in strsm_small.wgsl — right-hand sides solved per workgroup. */
+export const STRSM_SMALL_RHS_PER_WG = 4;

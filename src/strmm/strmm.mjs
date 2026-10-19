@@ -5,6 +5,7 @@ import {
   stageReadback,
   destroyBuffers,
   vec4ViewBinding,
+  vec4Usable,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, encodePass, submit } from "../util/compute.mjs";
@@ -228,6 +229,17 @@ export async function strmm(
     const ldX = swapXY ? ldb : ldDense;
     const YBuffer = swapXY ? AdenseBuffer : BBuffer;
     const ldY = swapXY ? ldDense : ldb;
+    // Vectorized-load enablement — same rules as sgemm.mjs.
+    const xNot = transX === "no-transpose";
+    const yNot = transY === "no-transpose";
+    const useVecA = vec4Usable(XBuffer, ldX, xNot ? mg : kg, xNot ? kg : mg);
+    const useVecB = vec4Usable(YBuffer, ldY, yNot ? kg : ng, yNot ? ng : kg);
+    // Adense holds op(A), zero outside its triangle; read transposed by the
+    // gemm it flips. Tell the kernel which k band each tile actually needs.
+    const opLower = (transEffA === "no-transpose") === (uploEffA === "lower");
+    const denseIsX = !swapXY;
+    const denseLower = opLower !== (denseIsX ? !xNot : !yNot);
+    const kTri = denseIsX ? (denseLower ? 1 : 2) : denseLower ? 3 : 4;
 
     gemmParams = createParamsBuffer(
       device,
@@ -242,6 +254,13 @@ export async function strmm(
         { value: ldb, type: "u32" },
         { value: transX === "transpose" ? 1 : 0, type: "u32" },
         { value: transY === "transpose" ? 1 : 0, type: "u32" },
+        { value: useVecA ? 1 : 0, type: "u32" },
+        { value: useVecB ? 1 : 0, type: "u32" },
+        { value: 0, type: "u32" }, // uplo: full C
+        { value: 0, type: "u32" }, // offA/offB/offC: whole buffers
+        { value: 0, type: "u32" },
+        { value: 0, type: "u32" },
+        { value: kTri, type: "u32" }, // k band of the triangular operand
       ],
       "strmm-gemm-params",
     );

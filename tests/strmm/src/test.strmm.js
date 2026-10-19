@@ -219,6 +219,79 @@ test("strmm zero-dimension (regression)", async (t) => {
 });
 
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
+// Fixtures cap m/n at 20 (one tile), so the multi-tile paths only run here:
+// the k-band skip (each tile walks only the nonzero band of the triangular
+// operand's k range — sgemm's kTri) and vec4 loads. aOrder=150 spans several
+// small tiles with ldb % 4 != 0 (scalar loads); 400 runs the large kernel
+// with a 4-aligned ldb (vec4 loads). Every side/uplo/trans/layout pairing,
+// since each lands the triangle on a different gemm operand and orientation.
+// OTHER is a multiple of 4 so every N=400 side/layout pairing keeps ldb aligned.
+test("strmm multi-tile path (regression)", async (t) => {
+  const OTHER = 72;
+  for (const [N, pad] of [
+    [150, 1],
+    [400, 4],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const side of ["left", "right"])
+        for (const uplo of ["lower", "upper"])
+          for (const transA of ["no-transpose", "transpose"]) {
+            const diag = transA === "transpose" ? "unit" : "non-unit";
+            await t.test(
+              `${layout} N=${N} ${side} ${uplo} ${transA} ${diag}`,
+              async () => {
+                const m = side === "left" ? N : OTHER;
+                const n = side === "left" ? OTHER : N;
+                const cm = layout === "column-major";
+                const LD = (cm ? m : n) + pad;
+                const OUTER = cm ? n : m;
+                const a = {
+                  side,
+                  uplo,
+                  transA,
+                  diag,
+                  m,
+                  n,
+                  alpha: 1.5,
+                  A: randomFloat32Array(N * N, -1, 1, 81),
+                  lda: N,
+                  B: randomFloat32Array(OUTER * LD, -1, 1, 82),
+                  ldb: LD,
+                  layout,
+                };
+                const got = await strmm(
+                  device,
+                  a.side,
+                  a.uplo,
+                  a.transA,
+                  a.diag,
+                  a.m,
+                  a.n,
+                  a.alpha,
+                  a.A,
+                  a.lda,
+                  a.B,
+                  a.ldb,
+                  a.layout,
+                );
+                const factor = forwardFactor(got, stdlibReference(a), a);
+                assert.ok(
+                  factor <= THRESHOLD,
+                  `forward factor ${factor} > ${THRESHOLD}`,
+                );
+                // Stride padding is never part of the matrix — it must come back as-is.
+                for (let o = 0; o < OUTER; o++)
+                  for (let p = LD - pad; p < LD; p++)
+                    assert.equal(
+                      got.B[o * LD + p],
+                      a.B[o * LD + p],
+                      `padding element ${o * LD + p} changed`,
+                    );
+              },
+            );
+          }
+});
+
 test("strmm edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {
     await t.test(tc.label, async () => {

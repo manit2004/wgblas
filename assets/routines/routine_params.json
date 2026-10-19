@@ -243,7 +243,7 @@
   },
   "sgemmtr": {
     "level": 3,
-    "note": "no dedicated shader of its own -- rides on sgemmtr_small/sgemmtr_large, same tile-threshold crossover as sgemm",
+    "note": "no dedicated shader of its own -- rides on sgemm_small/sgemm_large (uplo mask), same tile-threshold crossover as sgemm",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "transA", "role": "flag", "values": ["no-transpose", "transpose"] },
@@ -264,7 +264,7 @@
   },
   "ssyrk": {
     "level": 3,
-    "note": "no shader of its own -- rides on sgemmtr_small/sgemmtr_large",
+    "note": "no shader of its own -- rides on sgemm_small/sgemm_large (uplo mask)",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
@@ -281,7 +281,7 @@
   },
   "ssyr2k": {
     "level": 3,
-    "note": "no shader of its own -- rides on sgemmtr_small/sgemmtr_large",
+    "note": "no shader of its own -- rides on sgemm_small/sgemm_large (uplo mask)",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
