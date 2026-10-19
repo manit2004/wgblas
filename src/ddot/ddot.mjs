@@ -7,7 +7,7 @@ import {
   uploadBuffer,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -125,47 +125,37 @@ export async function ddot(device, n, x, incx, y, incy) {
       partialsLoBuffer,
       paramsBuffer,
     ]);
-    const { commandEncoder: enc1, ts: ts1 } = runComputePass(
-      device,
-      pipelineMain,
-      bgMain,
-      2 * WGS,
-    ); // dispatch 2*WGS workgroups — one partial per workgroup
-
-    submit(device, enc1);
-
     const bgReduce = createBindGroup(
       device,
       pipelineReduce.getBindGroupLayout(0),
       [partialsHiBuffer, partialsLoBuffer, resultHiBuffer, resultLoBuffer],
     );
-    const { commandEncoder: enc2, ts: ts2 } = runComputePass(
-      device,
-      pipelineReduce,
-      bgReduce,
-      1,
-    ); // dispatch 1 workgroup to reduce the partial sums to a single result
-    readHiBuffer = stageReadback(device, enc2, resultHiBuffer);
-    readLoBuffer = stageReadback(device, enc2, resultLoBuffer);
+    // Both passes on one command buffer and one submit, timed as one span:
+    // a second submission costs another full dispatch floor (~5 µs of GPU
+    // time and ~100 µs of host time at small n).
+    const { commandEncoder: encoder, ts } = runComputePasses(device, [
+      { pipeline: pipelineMain, bindGroup: bgMain, workgroups: 2 * WGS },
+      { pipeline: pipelineReduce, bindGroup: bgReduce, workgroups: 1 },
+    ]);
+    readHiBuffer = stageReadback(device, encoder, resultHiBuffer);
+    readLoBuffer = stageReadback(device, encoder, resultLoBuffer);
 
-    submit(device, enc2);
+    submit(device, encoder);
 
     const hiPromise = extractResult(readHiBuffer, Float32Array);
     const loPromise = extractResult(readLoBuffer, Float32Array);
     readHiBuffer = null; // ownership transferred — extractResult's own finally destroys it
     readLoBuffer = null;
 
-    const [gpuTime1, gpuTime2, hiArr, loArr] = await Promise.all([
-      extractTimestamp(ts1),
-      extractTimestamp(ts2),
+    const [gpuTimeMs, hiArr, loArr] = await Promise.all([
+      extractTimestamp(ts),
       hiPromise,
       loPromise,
     ]);
 
     // dot is always a scalar readback — both paths return { dot }
     const dot = mergeDoubleDouble(hiArr, loArr)[0];
-    if (gpuTime1 !== undefined && gpuTime2 !== undefined)
-      return { dot, gpuTimeMs: gpuTime1 + gpuTime2 };
+    if (gpuTimeMs !== undefined) return { dot, gpuTimeMs };
     return { dot };
   } finally {
     if (!xIsGpu && xHiBuffer) destroyBuffers(xHiBuffer);
@@ -177,7 +167,7 @@ export async function ddot(device, n, x, incx, y, incy) {
     if (resultHiBuffer) destroyBuffers(resultHiBuffer);
     if (resultLoBuffer) destroyBuffers(resultLoBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
-    // Only reached if submit(device, enc2) threw before ownership was transferred above.
+    // Only reached if submit(device, encoder) threw before ownership was transferred above.
     if (readHiBuffer) destroyBuffers(readHiBuffer);
     if (readLoBuffer) destroyBuffers(readLoBuffer);
   }
