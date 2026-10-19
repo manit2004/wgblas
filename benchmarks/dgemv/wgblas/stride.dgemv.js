@@ -19,6 +19,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -68,6 +69,8 @@ for (const stride of STRIDES) {
     );
     const xGpu = GpuVector.from(randomFloat64Array(n * stride));
     const yGpu = GpuVector.from(new Float64Array(m * stride));
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await dgemv(

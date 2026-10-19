@@ -26,6 +26,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WORKGROUP_SIZE = 256;
@@ -104,6 +105,8 @@ async function runOnce() {
 }
 
 printHeader(COLS);
+
+await warmClocks(device); // full clocks first — see helpers.mjs
 
 for (let i = 0; i < WARMUP_ITERS; i++) await runOnce();
 

@@ -50,6 +50,8 @@ int main(void) {
         CUDA_CHECK(cudaEventCreate(&start));
         CUDA_CHECK(cudaEventCreate(&stop));
 
+        warm_clocks(handle); /* full clocks first — see helpers.h */
+
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUBLAS_CHECK(cublasSsymm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, &alpha, d_A, lda, d_B, ldb, &beta, d_C, ldc));
         }

@@ -10,6 +10,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -47,6 +48,7 @@ for (const size of SIZES) {
   const yGpu = GpuVector.from(new Float32Array(n));
 
   // warm up
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await ssymv(device, "lower", n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1);
   }

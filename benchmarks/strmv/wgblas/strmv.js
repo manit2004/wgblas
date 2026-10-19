@@ -10,6 +10,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -47,6 +48,7 @@ for (const size of SIZES) {
   // See trans.strmv.js (dominant effect, grows with n) and lda.strmv.js
   // (real, but only for transpose). uplo and diag were scoped and found
   // to be non-effects — not swept separately.
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await strmv(
       device,

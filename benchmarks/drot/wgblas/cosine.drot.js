@@ -20,6 +20,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const STRIDE = 1; // unit stride — see stride.drot.js for the incx/incy sweep
@@ -46,6 +47,8 @@ for (const c of COSINES) {
   for (const n of SIZES) {
     const xGpu = GpuVector.from(randomFloat64Array(n));
     const yGpu = GpuVector.from(randomFloat64Array(n));
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await drot(device, n, xGpu, STRIDE, yGpu, STRIDE, c, s);

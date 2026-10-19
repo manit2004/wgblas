@@ -13,6 +13,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -53,6 +54,8 @@ for (const trans of TRANS) {
         "row-major",
       );
       const C = GpuMatrix.from(new Float32Array(n * n), n, n, n, "row-major");
+
+      await warmClocks(device); // full clocks first — see helpers.mjs
 
       for (let i = 0; i < WARMUP_ITERS; i++) {
         await ssyrk(device, "lower", trans, n, k, 1.0, A, lda, 0.0, C, n);

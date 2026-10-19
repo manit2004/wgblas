@@ -13,6 +13,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -76,6 +77,7 @@ for (const size of SIZES) {
   };
 
   // warm up
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     resetX();
     await strsv(

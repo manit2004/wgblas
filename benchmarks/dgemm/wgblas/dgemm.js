@@ -9,6 +9,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 // O(n^3) compute vs sgemv's O(n^2), so far fewer/smaller sizes and
@@ -71,6 +72,7 @@ for (const size of SIZES) {
   );
 
   // warm up
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await dgemm(
       device,

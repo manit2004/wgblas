@@ -8,6 +8,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const STRIDE = 1; // unit stride — coalesced, best case. See stride.dnrm2.js for incx > 1.
@@ -33,6 +34,7 @@ for (const n of SIZES) {
   const xGpu = GpuVector.from(randomFloat64Array(n));
 
   // warm up
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await dnrm2(device, n, xGpu, STRIDE);
   }

@@ -40,6 +40,7 @@ int main(void) {
 
         // warm up
         float dot_result;
+        warm_clocks(handle); /* full clocks first — see helpers.h */
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUBLAS_CHECK(cublasSdot(handle, n, d_x, STRIDE, d_y, STRIDE, &dot_result));
         }

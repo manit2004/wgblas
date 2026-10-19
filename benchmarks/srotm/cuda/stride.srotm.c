@@ -88,6 +88,7 @@ int main(void) {
             CUDA_CHECK(cudaEventCreate(&stop));
 
             // warm up
+            warm_clocks(handle); /* full clocks first — see helpers.h */
             for (int i = 0; i < WARMUP_ITERS; i++) {
                 CUBLAS_CHECK(cublasSrotm(handle, n, d_x, stride, d_y, stride, param));
             }

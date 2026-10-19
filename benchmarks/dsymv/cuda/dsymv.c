@@ -53,6 +53,7 @@ int main(void) {
         // warm up
         // d_A is genuinely column-major — cuBLAS's native layout, so
         // FILL_MODE_LOWER reads the same triangle wgblas's "lower" reads.
+        warm_clocks(handle); /* full clocks first — see helpers.h */
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUBLAS_CHECK(cublasDsymv(handle, CUBLAS_FILL_MODE_LOWER, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
         }

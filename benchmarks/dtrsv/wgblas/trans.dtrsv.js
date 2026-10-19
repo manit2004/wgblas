@@ -19,6 +19,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 // Diagonally dominant so the triangular solve stays well conditioned across sizes.
@@ -62,6 +63,8 @@ for (const trans of TRANS) {
 
     const xGpu = GpuVector.from(randomFloat64Array(n));
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await dtrsv(

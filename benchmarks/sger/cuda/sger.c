@@ -46,6 +46,7 @@ int main(void) {
 
         // d_A is genuinely column-major m×n (lda=m) — cuBLAS's native layout,
         // so a plain call computes A += alpha*x*y^T directly, no swap needed.
+        warm_clocks(handle); /* full clocks first — see helpers.h */
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUBLAS_CHECK(cublasSger(handle, m, n, &alpha, d_x, 1, d_y, 1, d_A, lda));
         }

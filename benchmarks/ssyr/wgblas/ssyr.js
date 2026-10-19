@@ -10,6 +10,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -45,6 +46,7 @@ for (const size of SIZES) {
 
   // warm up — uplo="lower", lda tight; see uplo.ssyr.js and lda.ssyr.js for
   // the two independent real effects found on those axes.
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await ssyr(device, "lower", n, alpha, xGpu, 1, AGpu, lda);
   }

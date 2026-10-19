@@ -50,6 +50,7 @@ int main(void) {
         // output). d_A is column-major — cuBLAS's native layout, so
         // FILL_MODE_LOWER + OP_N read the same op(A) wgblas's
         // "lower"/"no-transpose" reads.
+        warm_clocks(handle); /* full clocks first — see helpers.h */
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUDA_CHECK(cudaMemcpy(d_B, h_B, (size_t)order * n * sizeof(float), cudaMemcpyHostToDevice));
             CUBLAS_CHECK(cublasStrsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,

@@ -10,6 +10,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -46,6 +47,7 @@ for (const size of SIZES) {
 
   // warm up — lda tight; see lda.dger.js for the alignment effect. dger has
   // no uplo (general dense rank-1 update).
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await dger(device, m, n, alpha, xGpu, 1, yGpu, 1, AGpu, lda);
   }

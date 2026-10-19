@@ -14,6 +14,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -49,6 +50,8 @@ for (const layout of LAYOUTS) {
 
     const AGpu = GpuMatrix.from(randomFloat32Array(n * lda), n, n, lda, layout);
     const CGpu = GpuMatrix.from(new Float32Array(n * ldc), n, n, ldc, layout);
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await ssyrk(

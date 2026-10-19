@@ -21,6 +21,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -65,6 +66,8 @@ for (const stride of STRIDES) {
 
     const xGpu = GpuVector.from(randomFloat32Array(n * stride));
     const yGpu = GpuVector.from(randomFloat32Array(n * stride));
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await srotm(device, n, xGpu, stride, yGpu, stride, param);

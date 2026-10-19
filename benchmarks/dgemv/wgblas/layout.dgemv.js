@@ -20,6 +20,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -57,6 +58,8 @@ for (const layout of LAYOUTS) {
     const xGpu = GpuVector.from(randomFloat64Array(n));
     const yGpu = GpuVector.from(randomFloat64Array(n));
     const AGpu = GpuMatrix.from(randomFloat64Array(n * lda), n, n, lda, layout);
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await dgemv(

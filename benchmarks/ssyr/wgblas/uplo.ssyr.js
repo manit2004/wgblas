@@ -17,6 +17,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -49,6 +50,8 @@ for (const uplo of UPLOS) {
       lda,
       "row-major",
     );
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await ssyr(device, uplo, n, alpha, xGpu, 1, AGpu, lda);

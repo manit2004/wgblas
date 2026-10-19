@@ -20,6 +20,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -63,6 +64,8 @@ for (const pad of PADS) {
     const AGpu = GpuMatrix.from(buf, n, n, lda, "row-major");
     const xGpu = GpuVector.from(randomFloat64Array(n));
     const yGpu = GpuVector.from(new Float64Array(n));
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await dsymv(device, "lower", n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1);

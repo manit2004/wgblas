@@ -13,6 +13,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 // Diagonally dominant so the triangular solve stays well conditioned at every size.
@@ -61,6 +62,8 @@ for (const pad of PADS) {
       ldb,
       "row-major",
     );
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await strsm(
