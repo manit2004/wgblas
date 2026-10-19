@@ -17,6 +17,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const STRIDE = 1; // unit stride — see stride.srot.js for the incx/incy sweep
@@ -43,6 +44,8 @@ for (const s of SINES) {
   for (const n of SIZES) {
     const xGpu = GpuVector.from(randomFloat32Array(n));
     const yGpu = GpuVector.from(randomFloat32Array(n));
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await srot(device, n, xGpu, STRIDE, yGpu, STRIDE, c, s);

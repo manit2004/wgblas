@@ -9,6 +9,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 // Two-pass pipeline: triangularize (zero-fill op(A)) then an unmodified
@@ -53,6 +54,8 @@ for (const size of SIZES) {
     ldb,
     "column-major",
   );
+
+  await warmClocks(device); // full clocks first — see helpers.mjs
 
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await strmm(

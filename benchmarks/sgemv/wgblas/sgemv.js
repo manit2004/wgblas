@@ -10,6 +10,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const STRIDE = 1; // unit stride — coalesced, best case. See stride.sgemv.js for incx/incy > 1.
@@ -49,6 +50,7 @@ for (const size of SIZES) {
 
   // warm up — trans="no-transpose" only; see trans.sgemv.js for
   // trans="transpose" and its much stronger aspect-ratio sensitivity.
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await sgemv(
       device,

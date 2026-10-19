@@ -10,6 +10,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -45,6 +46,7 @@ for (const size of SIZES) {
   // warm up — trans="no-transpose", uplo="lower", diag="non-unit", lda tight.
   // See trans.dtrmv.js and lda.dtrmv.js for the two axes strmv found real
   // effects on.
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await dtrmv(
       device,

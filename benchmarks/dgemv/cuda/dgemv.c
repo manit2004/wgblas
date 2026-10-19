@@ -57,6 +57,7 @@ int main(void) {
         // warm up
         // d_A is genuinely column-major m×n (lda=m) — cuBLAS's native layout,
         // so a plain CUBLAS_OP_N call computes y = alpha*A*x + beta*y directly.
+        warm_clocks(handle); /* full clocks first — see helpers.h */
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUBLAS_CHECK(cublasDgemv(handle, CUBLAS_OP_N, m, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
         }

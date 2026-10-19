@@ -21,6 +21,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const WARMUP_ITERS = 5;
@@ -56,6 +57,8 @@ const fmt = (z) => `${g(z.re)}${z.im < 0 ? "" : "+"}${g(z.im)}i`;
 for (const alpha of ALPHAS) {
   for (const n of SIZES) {
     const xGpu = GpuVector.from(new Complex32Array(randomFloat32Array(2 * n)));
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await cscal(device, n, alpha, xGpu, 1);

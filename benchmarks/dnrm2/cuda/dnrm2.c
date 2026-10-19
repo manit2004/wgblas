@@ -38,6 +38,7 @@ int main(void) {
 
         // warm up
         double nrm2_result;
+        warm_clocks(handle); /* full clocks first — see helpers.h */
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, STRIDE, &nrm2_result));
         }

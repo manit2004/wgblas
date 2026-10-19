@@ -14,6 +14,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 // Diagonally dominant so the triangular solve stays well conditioned at every size.
@@ -56,6 +57,8 @@ for (const layout of LAYOUTS) {
 
     const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, layout);
     const BGpu = GpuMatrix.from(randomFloat32Array(n * ldb), n, n, ldb, layout);
+
+    await warmClocks(device); // full clocks first — see helpers.mjs
 
     for (let i = 0; i < WARMUP_ITERS; i++) {
       await strsm(

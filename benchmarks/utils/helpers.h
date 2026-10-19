@@ -281,3 +281,63 @@ static float median(float *arr, int n) {
     free(tmp);
     return m;
 }
+
+/**
+ * Brings the GPU to its full-performance power state before a measurement —
+ * the counterpart of warmClocks() in helpers.mjs (see there for the full
+ * story). The timed loops synchronize after every call, so the GPU idles
+ * between launches and the driver can drop to a low-power state mid-sweep;
+ * measured on a GTX 1650 against locked clocks, these benchmarks ran 10%
+ * slow at the median and up to 1.7x on individual cells.
+ *
+ * Runs a memory-bound burst — cublasSscal over a zeroed 64 MB buffer, since
+ * these .c files can't define kernels (zeros stay zero, but every call still
+ * reads and writes the whole buffer) — in event-timed batches until two
+ * batches in a row are within 10% of the fastest batch seen so far, i.e. the
+ * memory clock is back at its peak. The first call runs at least 300 ms to
+ * establish that reference; later calls return in ~10 ms when the GPU is
+ * already at full clocks. Gives up after 1 s. Call it right before each
+ * configuration's warmup loop.
+ *
+ * @param handle the benchmark's cuBLAS handle (default stream, host pointer mode)
+ */
+static void warm_clocks(cublasHandle_t handle) {
+    static float *buf = NULL;
+    static float best_ms = 1e30f;
+    static int calls = 0;
+    const int n = 16 * 1024 * 1024;
+    const float two = 2.0f;
+    if (!buf) {
+        CUDA_CHECK(cudaMalloc((void **)&buf, (size_t)n * sizeof(float)));
+        CUDA_CHECK(cudaMemset(buf, 0, (size_t)n * sizeof(float)));
+    }
+    const double min_ms = calls++ == 0 ? 300.0 : 0.0;
+    const double max_ms = 1000.0;
+    cudaEvent_t a, b;
+    CUDA_CHECK(cudaEventCreate(&a));
+    CUDA_CHECK(cudaEventCreate(&b));
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    int streak = 0;
+    for (;;) {
+        CUDA_CHECK(cudaEventRecord(a, 0));
+        for (int k = 0; k < 8; k++)
+            CUBLAS_CHECK(cublasSscal(handle, n, &two, buf, 1));
+        CUDA_CHECK(cudaEventRecord(b, 0));
+        CUDA_CHECK(cudaEventSynchronize(b));
+        float batch_ms;
+        CUDA_CHECK(cudaEventElapsedTime(&batch_ms, a, b));
+        if (batch_ms < best_ms) best_ms = batch_ms;
+        clock_gettime(CLOCK_MONOTONIC, &t1);
+        double elapsed = (t1.tv_sec - t0.tv_sec) * 1e3 + (t1.tv_nsec - t0.tv_nsec) / 1e6;
+        if (elapsed >= min_ms && batch_ms <= best_ms * 1.1f) {
+            if (++streak >= 2) break;
+        } else {
+            streak = 0;
+        }
+        if (elapsed >= max_ms) break;
+    }
+    CUDA_CHECK(cudaEventDestroy(a));
+    CUDA_CHECK(cudaEventDestroy(b));
+}
+

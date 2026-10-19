@@ -5,7 +5,8 @@
  * ## JS — `helpers.mjs`
  *
  * Used by every `benchmarks/<routine>/benchmark.<routine>.js` for timing,
- * result persistence, and table formatting.
+ * result persistence, table formatting, and GPU clock warm-up
+ * ({@link warmClocks}, called before every measured configuration).
  *
  * ## C — `helpers.h`
  *
@@ -18,6 +19,7 @@
  * | `random_float_array` | `(int n, float low, float high) → float*` | Heap-allocates `n` random floats in `[low, high]`; caller must `free()` |
  * | `median` | `(float *arr, int n) → float` | Returns the median of `arr`; copies before sorting so original is unchanged |
  * | `save_results` | `(const char *routine, const char *gpu_model, int *sizes, float *med_times, float *gbs_vals, int n) → void` | Writes JSON to `benchmarks/results/<gpu>/cuda/<routine>.json` in the same schema as `saveResults()` |
+ * | `warm_clocks` | `(cublasHandle_t handle) → void` | Brings the GPU to full clocks before a measurement — the counterpart of `warmClocks()` |
  *
  * @module benchmarks/utils
  */
@@ -139,4 +141,94 @@ export function printRow(labels, values) {
       })
       .join("  "),
   );
+}
+
+// --- GPU clock warm-up -------------------------------------------------------
+
+// Lazily built per device: a memory-bound kernel over a 64 MB buffer, and the
+// fastest batch time seen so far (the full-clock reference).
+const WARM_FLOATS = 16 * 1024 * 1024;
+const WARM_BATCH = 8; // dispatches per timed batch (~6 ms of work at full clocks)
+const warmState = new WeakMap();
+
+function warmKernel(device) {
+  let st = warmState.get(device);
+  if (st) return st;
+  const buffer = device.createBuffer({
+    label: "bench-warm",
+    size: WARM_FLOATS * 4,
+    usage: GPUBufferUsage.STORAGE,
+  });
+  const pipeline = device.createComputePipeline({
+    layout: "auto",
+    compute: {
+      module: device.createShaderModule({
+        label: "bench-warm",
+        code: `
+@group(0) @binding(0) var<storage, read_write> b: array<f32>;
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) g: vec3u) {
+  let i = g.y * 32768u * 256u + g.x;
+  if (i < arrayLength(&b)) { b[i] = b[i] * 0.5 + 1.0; }
+}`,
+      }),
+      entryPoint: "main",
+    },
+  });
+  const bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [{ binding: 0, resource: { buffer } }],
+  });
+  st = { pipeline, bindGroup, bestBatchMs: Infinity, calls: 0 };
+  warmState.set(device, st);
+  return st;
+}
+
+/**
+ * Brings the GPU to its full-performance power state before a measurement.
+ *
+ * The benchmarks await every call, so with short kernels the GPU idles most
+ * of the time and the driver drops to a low-power state — on a GTX 1650, P5
+ * (memory clock 810 MHz) or P8 (405 MHz) instead of P0 (6000 MHz). Memory-
+ * bound kernels then run up to ~16× slower at whichever configurations a
+ * sweep happens to reach while downclocked (e.g. sgemv 1024×2048 transposed:
+ * 0.975 ms at P8, 0.060 ms at P0). Locking clocks fixes it but needs root.
+ *
+ * This runs a memory-bound burst in timed batches until a batch is within
+ * 10% of the fastest batch seen so far, twice in a row — i.e. the memory
+ * clock is back at its peak. Promotion from idle takes up to ~200 ms, and
+ * the driver demotes again within about a second of light load, so it's
+ * called right before each configuration's warmup; once the GPU is already
+ * at full clocks it returns in ~12 ms. The first call per device runs at
+ * least 300 ms to establish the full-clock reference.
+ * @param {GPUDevice} device
+ * @param {{ maxMs?: number }} [options] - give up after this long (default 1000 ms)
+ */
+export async function warmClocks(device, { maxMs = 1000 } = {}) {
+  const st = warmKernel(device);
+  const minMs = st.calls++ === 0 ? 300 : 0;
+  const t0 = performance.now();
+  let streak = 0;
+  for (;;) {
+    const b0 = performance.now();
+    for (let k = 0; k < WARM_BATCH; k++) {
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginComputePass();
+      pass.setPipeline(st.pipeline);
+      pass.setBindGroup(0, st.bindGroup);
+      pass.dispatchWorkgroups(32768, WARM_FLOATS / 256 / 32768);
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+    }
+    await device.queue.onSubmittedWorkDone();
+    const batchMs = performance.now() - b0;
+    st.bestBatchMs = Math.min(st.bestBatchMs, batchMs);
+    const elapsed = performance.now() - t0;
+    if (elapsed >= minMs && batchMs <= st.bestBatchMs * 1.1) {
+      if (++streak >= 2) return;
+    } else {
+      streak = 0;
+    }
+    if (elapsed >= maxMs) return;
+  }
 }

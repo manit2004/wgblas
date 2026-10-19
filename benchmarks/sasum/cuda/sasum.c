@@ -36,6 +36,7 @@ int main(void) {
 
         // warm up
         float asum_result;
+        warm_clocks(handle); /* full clocks first — see helpers.h */
         for (int i = 0; i < WARMUP_ITERS; i++) {
             CUBLAS_CHECK(cublasSasum(handle, n, d_x, STRIDE, &asum_result));
         }

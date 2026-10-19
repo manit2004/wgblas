@@ -9,6 +9,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 // Two sgemmtr passes per call (see ssyr2k.mjs). uplo is a confirmed
@@ -63,6 +64,8 @@ for (const size of SIZES) {
     ldc,
     "column-major",
   );
+
+  await warmClocks(device); // full clocks first — see helpers.mjs
 
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await ssyr2k(

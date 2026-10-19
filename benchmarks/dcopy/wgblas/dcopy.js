@@ -8,6 +8,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const STRIDE = 1; // unit stride — coalesced, best case. See stride.dcopy.js for incx/incy > 1.
@@ -34,6 +35,7 @@ for (const n of SIZES) {
   const yGpu = GpuVector.from(randomFloat64Array(n));
 
   // warm up
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await dcopy(device, n, xGpu, STRIDE, yGpu, STRIDE);
   }

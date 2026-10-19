@@ -9,6 +9,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 const STRIDE = 1; // unit stride — coalesced, best case. See stride.cscal.js for incx > 1.
@@ -36,6 +37,7 @@ for (const n of SIZES) {
   const xGpu = GpuVector.from(new Complex32Array(randomFloat32Array(2 * n)));
 
   // warm up
+  await warmClocks(device); // full clocks first — see helpers.mjs
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await cscal(device, n, alpha, xGpu, STRIDE);
   }

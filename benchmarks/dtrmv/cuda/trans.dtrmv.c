@@ -60,6 +60,7 @@ int main(void) {
 
             // cublasDtrmv computes x := op(A)*x in place, so re-seed d_x before
             // every call (matches the pattern dtrmv.c already uses).
+            warm_clocks(handle); /* full clocks first — see helpers.h */
             for (int i = 0; i < WARMUP_ITERS; i++) {
                 CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(double), cudaMemcpyHostToDevice));
                 CUBLAS_CHECK(cublasDtrmv(handle, CUBLAS_FILL_MODE_LOWER, trans, CUBLAS_DIAG_NON_UNIT, n, d_A, lda, d_x, 1));

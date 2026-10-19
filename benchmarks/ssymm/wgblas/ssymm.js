@@ -9,6 +9,7 @@ import {
   getGpuModel,
   saveResults,
   toColumnMajor,
+  warmClocks,
 } from "../../utils/helpers.mjs";
 
 // Two-pass pipeline: symmetrize (dense-expand A) then an unmodified sgemm
@@ -61,6 +62,8 @@ for (const size of SIZES) {
     ldc,
     "column-major",
   );
+
+  await warmClocks(device); // full clocks first — see helpers.mjs
 
   for (let i = 0; i < WARMUP_ITERS; i++) {
     await ssymm(
