@@ -35,24 +35,18 @@ export async function snrm2(device, n, x, incx) {
   const pipelineReduce = await getPipeline(device, "reduction/scaledSum");
 
   let xBuffer = null;
-  let partialsScaleBuffer = null;
-  let partialsSsqBuffer = null;
+  let partialsBuffer = null;
   let resultBuffer = null;
   let paramsBuffer = null;
   let readBuffer = null;
 
   try {
     xBuffer = xIsGpu ? x._buf : uploadBuffer(device, x, "snrm2-x", false);
-    // 2*WGS partial (scale, ssq) pairs — see snrm2.wgsl for what they represent.
-    partialsScaleBuffer = createStorageBuffer(
+    // 2*WGS partial (big, medium, small) triples — see snrm2.wgsl.
+    partialsBuffer = createStorageBuffer(
       device,
-      2 * WGS * 4,
-      "snrm2-partials-scale",
-    );
-    partialsSsqBuffer = createStorageBuffer(
-      device,
-      2 * WGS * 4,
-      "snrm2-partials-ssq",
+      2 * WGS * 3 * 4,
+      "snrm2-partials",
     );
     resultBuffer = createResultBuffer(device, 4, "snrm2-result"); // final f32 scalar
     paramsBuffer = createParamsBuffer(
@@ -66,8 +60,7 @@ export async function snrm2(device, n, x, incx) {
 
     const bgMain = createBindGroup(device, pipelineMain.getBindGroupLayout(0), [
       xBuffer,
-      partialsScaleBuffer,
-      partialsSsqBuffer,
+      partialsBuffer,
       paramsBuffer,
     ]);
     const { commandEncoder: enc1, ts: ts1 } = runComputePass(
@@ -82,7 +75,7 @@ export async function snrm2(device, n, x, incx) {
     const bgReduce = createBindGroup(
       device,
       pipelineReduce.getBindGroupLayout(0),
-      [partialsScaleBuffer, partialsSsqBuffer, resultBuffer],
+      [partialsBuffer, resultBuffer],
     );
     const { commandEncoder: enc2, ts: ts2 } = runComputePass(
       device,
@@ -103,8 +96,8 @@ export async function snrm2(device, n, x, incx) {
       resultPromise,
     ]);
 
-    // reduction/scaledSum.wgsl already computes scale·sqrt(ssq) on the GPU —
-    // unlike the old naive-sum version, there's no separate sqrt step here.
+    // reduction/scaledSum.wgsl already combines the three sums into the
+    // norm on the GPU — there's no separate sqrt step here.
     const nrm2 = resultArr[0];
 
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
@@ -112,8 +105,7 @@ export async function snrm2(device, n, x, incx) {
     return { nrm2 };
   } finally {
     if (!xIsGpu && xBuffer) destroyBuffers(xBuffer);
-    if (partialsScaleBuffer) destroyBuffers(partialsScaleBuffer);
-    if (partialsSsqBuffer) destroyBuffers(partialsSsqBuffer);
+    if (partialsBuffer) destroyBuffers(partialsBuffer);
     if (resultBuffer) destroyBuffers(resultBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
     // Only reached if submit(device, enc2) threw before ownership was transferred above.

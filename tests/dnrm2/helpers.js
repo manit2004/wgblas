@@ -1,13 +1,9 @@
 // Double-double gives ~48 mantissa bits, not f64's 53, so the working epsilon
 // for a dnrm2 result is 2^-48 rather than 2^-52 — see shaders/f64/dekker.wgsl.
 // Raw ULP64 (dasum's own convention, tests/dasum/helpers.js) is the wrong
-// tool here: dasum is a plain sum (ddAddProtected only), while dnrm2's
-// scaled accumulation also needs ddDivProtected per element — division
-// amplifies double-double's own representable-precision loss more than a
-// sum does (see f64/utils/divide.wgsl's own header), so nrm2's error is
-// meaningfully larger than a same-sized sum's. A plain relative-error
-// factor against eps, same shape as drot's/drotm's own bound, is the right
-// tool instead.
+// tool here: a norm's result is a square root of a sum of squares, so a
+// relative-error factor against eps — same shape as drot's/drotm's own
+// bound — is the natural measure.
 const eps = 2 ** -48;
 
 export function forwardFactor(gpu, ref) {
