@@ -81,3 +81,72 @@ test("snrm2 zero-dimension (regression)", async () => {
 
   assert.strictEqual(got, 0);
 });
+
+// Edge cases are 1-3 elements and fixtures are random [-1,1] data, so the
+// three-accumulator path (big / medium / small sums with fixed power-of-two
+// scales — see snrm2.wgsl) only meets its interesting inputs here: vectors
+// spread over many workgroups mixing magnitudes across the 2^-63 and 2^50
+// thresholds, a medium sum large enough to stress f32, strided x, and
+// Inf/NaN propagation. Reference: the exact norm in float64 (nothing here
+// overflows or underflows f64 squaring), within the fixtures' 50-ULP budget.
+test("snrm2 scaled accumulation across magnitudes (regression)", async (t) => {
+  const norm64 = (x, n, inc) => {
+    let s = 0;
+    for (let i = 0; i < n; i++) s += x[i * inc] * x[i * inc];
+    return Math.sqrt(s);
+  };
+  const N = 1 << 20;
+  const cases = [
+    ["medium only, large n", (i) => Math.sin(i) * 3],
+    [
+      "big + medium (1e30 every 4096th)",
+      (i) => (i % 4096 === 7 ? 1e30 : Math.cos(i)),
+    ],
+    ["near f32 max (1e37 every 65536th)", (i) => (i % 65536 === 3 ? 1e37 : 1)],
+    [
+      "small + medium (1e-25 mostly, 1e-5 every 1024th)",
+      (i) => (i % 1024 === 0 ? 1e-5 : 1e-25 * (1 + (i % 7))),
+    ],
+    ["small only (1e-30)", (i) => 1e-30 * (1 + (i % 5))],
+    [
+      "values straddling 2^50 and 2^-63",
+      (i) =>
+        [2 ** 50 * 1.5, 2 ** 50 * 0.75, 2 ** -63 * 1.5, 2 ** -63 * 0.75, 1][
+          i % 5
+        ],
+    ],
+  ];
+  for (const inc of [1, 3])
+    for (const [label, gen] of cases) {
+      await t.test(`${label}, incx=${inc}`, async () => {
+        const x = new Float32Array((N - 1) * inc + 1);
+        for (let i = 0; i < N; i++) x[i * inc] = gen(i);
+        const { nrm2: got } = await snrm2(device, N, x, inc);
+        const want = Math.fround(norm64(x, N, inc));
+        assert.ok(Number.isFinite(got), `got ${got}`);
+        const ulps = ulpDiff(got, want);
+        assert.ok(ulps <= 50, `got ${got}, want ${want} (${ulps} ULP)`);
+      });
+    }
+
+  await t.test("Inf element → Infinity", async () => {
+    const x = randomFloat32Array(N, -1, 1, 7);
+    x[12345] = Infinity;
+    const { nrm2: got } = await snrm2(device, N, x, 1);
+    assert.strictEqual(got, Infinity);
+  });
+  await t.test("NaN element → NaN", async () => {
+    const x = randomFloat32Array(N, -1, 1, 8);
+    x[54321] = NaN;
+    const { nrm2: got } = await snrm2(device, N, x, 1);
+    assert.ok(Number.isNaN(got), `got ${got}`);
+  });
+  await t.test("NaN with big and small elements present → NaN", async () => {
+    const x = randomFloat32Array(N, -1, 1, 9);
+    x[1] = 1e30;
+    x[2] = 1e-30;
+    x[999] = NaN;
+    const { nrm2: got } = await snrm2(device, N, x, 1);
+    assert.ok(Number.isNaN(got), `got ${got}`);
+  });
+});

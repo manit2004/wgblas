@@ -13,14 +13,13 @@ import { extractResult } from "../util/result.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
-import { WGS } from "../util/constants.mjs";
+import { WGS, DNRM2_PARTIAL_LEN as PARTIAL_LEN } from "../util/constants.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dnrm2: sqrt(sum(x[i]*x[i])), double-double (Dekker) f64 emulation of
-// snrm2 — same scaled accumulation (Blue's algorithm) snrm2 uses to avoid
-// overflow, with (scale, ssq) as double-double pairs instead of plain f32.
-// See dnrm2.wgsl for why the per-element branch that algorithm needs had to
-// become branch-free (select()-based) here.
+// snrm2 — the same fixed-scale Blue's algorithm (three magnitude-binned
+// sums, no per-element division), with double-double accumulators and
+// thresholds adjusted for double-double precision. See dnrm2.wgsl.
 export async function dnrm2(device, n, x, incx) {
   const xIsGpu = x instanceof GpuVector;
 
@@ -41,9 +40,10 @@ export async function dnrm2(device, n, x, incx) {
 
   // Concatenated with f64/dekker.wgsl (DD struct), f64/utils/abs.wgsl
   // (ddAbs), f64/utils/greater.wgsl (ddGreater), f64/utils/add.wgsl
-  // (ddAddProtected), f64/utils/multiply.wgsl (ddMulProtected),
-  // f64/utils/divide.wgsl (ddDivProtected), and f64/utils/sqrt.wgsl
-  // (ddSqrtProtected) — WGSL has no #include.
+  // (ddAddProtected), f64/utils/multiply.wgsl (ddMulProtected), and — for
+  // the reduction's final combine only — f64/utils/divide.wgsl
+  // (ddDivProtected) and f64/utils/sqrt.wgsl (ddSqrtProtected). WGSL has no
+  // #include.
   const f64Deps = [
     "f64/dekker",
     "f64/utils/abs",
@@ -61,10 +61,7 @@ export async function dnrm2(device, n, x, incx) {
 
   let xHiBuffer = null;
   let xLoBuffer = null;
-  let partialsScaleHiBuffer = null;
-  let partialsScaleLoBuffer = null;
-  let partialsSsqHiBuffer = null;
-  let partialsSsqLoBuffer = null;
+  let partialsBuffer = null;
   let resultHiBuffer = null;
   let resultLoBuffer = null;
   let paramsBuffer = null;
@@ -80,26 +77,12 @@ export async function dnrm2(device, n, x, incx) {
       xHiBuffer = uploadBuffer(device, hi, "dnrm2-xHi", false);
       xLoBuffer = uploadBuffer(device, lo, "dnrm2-xLo", false);
     }
-    // 2*WGS partial (scale, ssq) DD pairs — see dnrm2.wgsl for what they represent.
-    partialsScaleHiBuffer = createStorageBuffer(
+    // 2*WGS partials of PARTIAL_LEN floats: (big, medium, small) DD sums and
+    // an Inf/NaN flag — see dnrm2.wgsl.
+    partialsBuffer = createStorageBuffer(
       device,
-      2 * WGS * 4,
-      "dnrm2-partials-scaleHi",
-    );
-    partialsScaleLoBuffer = createStorageBuffer(
-      device,
-      2 * WGS * 4,
-      "dnrm2-partials-scaleLo",
-    );
-    partialsSsqHiBuffer = createStorageBuffer(
-      device,
-      2 * WGS * 4,
-      "dnrm2-partials-ssqHi",
-    );
-    partialsSsqLoBuffer = createStorageBuffer(
-      device,
-      2 * WGS * 4,
-      "dnrm2-partials-ssqLo",
+      2 * WGS * PARTIAL_LEN * 4,
+      "dnrm2-partials",
     );
     resultHiBuffer = createResultBuffer(device, 4, "dnrm2-result-hi");
     resultLoBuffer = createResultBuffer(device, 4, "dnrm2-result-lo");
@@ -115,10 +98,7 @@ export async function dnrm2(device, n, x, incx) {
     const bgMain = createBindGroup(device, pipelineMain.getBindGroupLayout(0), [
       xHiBuffer,
       xLoBuffer,
-      partialsScaleHiBuffer,
-      partialsScaleLoBuffer,
-      partialsSsqHiBuffer,
-      partialsSsqLoBuffer,
+      partialsBuffer,
       paramsBuffer,
     ]);
     const { commandEncoder: enc1, ts: ts1 } = runComputePass(
@@ -133,14 +113,7 @@ export async function dnrm2(device, n, x, incx) {
     const bgReduce = createBindGroup(
       device,
       pipelineReduce.getBindGroupLayout(0),
-      [
-        partialsScaleHiBuffer,
-        partialsScaleLoBuffer,
-        partialsSsqHiBuffer,
-        partialsSsqLoBuffer,
-        resultHiBuffer,
-        resultLoBuffer,
-      ],
+      [partialsBuffer, resultHiBuffer, resultLoBuffer],
     );
     const { commandEncoder: enc2, ts: ts2 } = runComputePass(
       device,
@@ -165,8 +138,8 @@ export async function dnrm2(device, n, x, incx) {
       loPromise,
     ]);
 
-    // reduction/scaledSumF64.wgsl already computes scale·sqrt(ssq) on the
-    // GPU — no separate sqrt step here.
+    // reduction/scaledSumF64.wgsl already combines the three sums into the
+    // norm on the GPU — no separate sqrt step here.
     const nrm2 = mergeDoubleDouble(hiArr, loArr)[0];
 
     if (gpuTime1 !== undefined && gpuTime2 !== undefined)
@@ -175,10 +148,7 @@ export async function dnrm2(device, n, x, incx) {
   } finally {
     if (!xIsGpu && xHiBuffer) destroyBuffers(xHiBuffer);
     if (!xIsGpu && xLoBuffer) destroyBuffers(xLoBuffer);
-    if (partialsScaleHiBuffer) destroyBuffers(partialsScaleHiBuffer);
-    if (partialsScaleLoBuffer) destroyBuffers(partialsScaleLoBuffer);
-    if (partialsSsqHiBuffer) destroyBuffers(partialsSsqHiBuffer);
-    if (partialsSsqLoBuffer) destroyBuffers(partialsSsqLoBuffer);
+    if (partialsBuffer) destroyBuffers(partialsBuffer);
     if (resultHiBuffer) destroyBuffers(resultHiBuffer);
     if (resultLoBuffer) destroyBuffers(resultLoBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);

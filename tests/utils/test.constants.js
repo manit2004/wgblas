@@ -21,6 +21,7 @@ import {
   SSYMV_TILE,
   STRSV_TILE_ROWS,
   STRSM_SMALL_RHS_PER_WG,
+  DNRM2_PARTIAL_LEN,
 } from "../../src/util/constants.mjs";
 
 const SHADER_DIR = join(
@@ -129,6 +130,16 @@ test("strsm_small block order and RHS grouping match its shader", () => {
     STRSM_SMALL_RHS_PER_WG,
     "strsm_small.wgsl RHS_PER_WG !== STRSM_SMALL_RHS_PER_WG",
   );
+});
+
+test("dnrm2 partial layout matches both of its shaders", () => {
+  for (const name of ["dnrm2", "reduction/scaledSumF64"]) {
+    assert.equal(
+      wgslConst(source(name), "PARTIAL_LEN"),
+      DNRM2_PARTIAL_LEN,
+      `${name}.wgsl PARTIAL_LEN !== DNRM2_PARTIAL_LEN`,
+    );
+  }
 });
 
 test("ssymv tile size matches its shader", () => {

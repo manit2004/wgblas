@@ -164,7 +164,7 @@ routineShaders.drotm = {
 
 import ddDivUtil from "./f64/utils/divide.wgsl";
 import ddSqrtUtil from "./f64/utils/sqrt.wgsl";
-import dnrm2 from "./dnrm2.wgsl"; // f64 sibling of snrm2 — scaled accumulation (Blue's algorithm) ported to double-double, branch-free (select()) since ddDivProtected/ddMulProtected/ddAddProtected's barriers need every thread to take the same path
+import dnrm2 from "./dnrm2.wgsl"; // f64 sibling of snrm2 — fixed-scale Blue's algorithm with double-double accumulators; accumulator chosen per element by select() since ddMulProtected/ddAddProtected's barriers need every thread at the same call site
 import scaledSumF64 from "./reduction/scaledSumF64.wgsl";
 routineShaders.dnrm2 = {
   "f64/dekker": dekker,

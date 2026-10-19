@@ -5,10 +5,8 @@ import { getPowerPreference } from "../../helpers/device.js";
 import { dnrm2 } from "wgblas/dnrm2";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
-// Raw ULP64 (dasum's own convention) is the wrong tool here — dnrm2's
-// scaled accumulation needs ddDivProtected per element, which amplifies
-// double-double's own representable-precision loss more than a plain sum
-// does. Fixtures use a relative-error forward factor instead — see helpers.js.
+// Fixtures use a relative-error forward factor against double-double's own
+// epsilon rather than raw ULP64 — see helpers.js.
 import { forwardFactor } from "../helpers.js";
 import { dnrm2Reference as stdlibReference } from "../../helpers/stdlib.js";
 import edgeCases from "../edge-cases.json" with { type: "json" };
@@ -103,4 +101,100 @@ test("dnrm2 edge cases", async (t) => {
 test("dnrm2 zero-dimension (regression)", async () => {
   const got = await dnrm2(device, 0, new Float64Array([1, 2, 3]), 1);
   assert.equal(got.nrm2, 0);
+});
+
+// Edge cases are 1-3 elements and fixtures cap n at 50, so the three-
+// accumulator path (big / medium / small DD sums at fixed power-of-two
+// scales, Inf/NaN tracked by flag — see dnrm2.wgsl) only meets its
+// interesting inputs here: vectors spread over many workgroups mixing
+// magnitudes across the 2^-38 and 2^50 thresholds, strided x, and Inf/NaN
+// (worst observed forward factor ~3, inside the fixtures' cap).
+// The reference is the exact norm in float64 with compensated (Neumaier)
+// summation — a plain float64 sum of 2^18 squares carries ~sqrt(n)·2^-53 of
+// its own error, the same order as the double-double budget being checked.
+test("dnrm2 scaled accumulation across magnitudes (regression)", async (t) => {
+  const norm64 = (x, n, inc) => {
+    let s = 0;
+    let c = 0;
+    for (let i = 0; i < n; i++) {
+      const v = x[i * inc] * x[i * inc];
+      const u = s + v;
+      c += Math.abs(s) >= Math.abs(v) ? s - u + v : v - u + s;
+      s = u;
+    }
+    return Math.sqrt(s + c);
+  };
+  const N = 1 << 18;
+  const cases = [
+    ["medium only", (i) => Math.sin(i) * 3],
+    [
+      "big + medium (1e30 every 4096th)",
+      (i) => (i % 4096 === 7 ? 1e30 * (1 + Math.sin(i) / 3) : Math.cos(i)),
+    ],
+    [
+      "near f32 max (1e37 every 65536th)",
+      (i) => (i % 65536 === 3 ? 1e37 : 1 + Math.sin(i) / 7),
+    ],
+    [
+      "small + medium",
+      (i) =>
+        i % 1024 === 0
+          ? 1e-5 * (1 + Math.sin(i) / 5)
+          : 1e-25 * (1 + (i % 7) / 3),
+    ],
+    // Not 1e-30: below ~2^-102 an input's own DD lo half is a denormal,
+    // which the GPU flushes on load — a representation floor, not dnrm2.
+    ["small only (1e-25)", (i) => 1e-25 * (1 + Math.sin(i) / 4)],
+    [
+      "values straddling 2^50 and 2^-38",
+      (i) =>
+        [
+          2 ** 50 * 1.5,
+          2 ** 50 * 0.75,
+          2 ** -38 * 1.5,
+          2 ** -38 * 0.75,
+          Math.PI,
+        ][i % 5],
+    ],
+  ];
+  for (const inc of [1, 3])
+    for (const [label, gen] of cases) {
+      await t.test(`${label}, incx=${inc}`, async () => {
+        const x = new Float64Array((N - 1) * inc + 1);
+        for (let i = 0; i < N; i++) x[i * inc] = gen(i);
+        const got = await dnrm2(device, N, x, inc);
+        const factor = forwardFactor(got, norm64(x, N, inc));
+        assert.ok(
+          factor <= THRESHOLD,
+          `got ${got.nrm2}, forward factor ${factor}`,
+        );
+      });
+    }
+
+  const base = (seed) => {
+    const x = new Float64Array(N);
+    for (let i = 0; i < N; i++) x[i] = Math.sin(i * seed);
+    return x;
+  };
+  await t.test("Inf element → Infinity", async () => {
+    const x = base(1);
+    x[12345] = Infinity;
+    assert.strictEqual((await dnrm2(device, N, x, 1)).nrm2, Infinity);
+  });
+  await t.test("NaN element → NaN", async () => {
+    const x = base(2);
+    x[54321] = NaN;
+    assert.ok(Number.isNaN((await dnrm2(device, N, x, 1)).nrm2));
+  });
+  await t.test(
+    "NaN with Inf, big and small elements present → NaN",
+    async () => {
+      const x = base(3);
+      x[1] = 1e30;
+      x[2] = 1e-30;
+      x[3] = -Infinity;
+      x[999] = NaN;
+      assert.ok(Number.isNaN((await dnrm2(device, N, x, 1)).nrm2));
+    },
+  );
 });

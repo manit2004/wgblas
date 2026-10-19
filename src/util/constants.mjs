@@ -71,3 +71,5 @@ export const BLOCK_SIZE = 64;
 export const STRSV_TILE_ROWS = 64;
 /** `RHS_PER_WG` in strsm_small.wgsl — right-hand sides solved per workgroup. */
 export const STRSM_SMALL_RHS_PER_WG = 4;
+/** `PARTIAL_LEN` in dnrm2.wgsl and reduction/scaledSumF64.wgsl — floats per workgroup partial (three DD sums + Inf/NaN flag). */
+export const DNRM2_PARTIAL_LEN = 7;
