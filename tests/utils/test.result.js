@@ -1,15 +1,20 @@
 // Readback extraction.
 //
 // extractResult maps a MAP_READ buffer, copies the bytes out, unmaps, and
-// destroys the buffer in a finally. The .slice() before unmap is load-bearing:
+// hands the buffer back to the readback pool (see stageReadback) — or, if the
+// map failed, destroys it. The .slice() before unmap is load-bearing:
 // getMappedRange() returns a view into mapped GPU memory that goes invalid the
 // moment unmap() runs, so returning it directly would hand back a detached
-// buffer. The destroy-in-finally is what stops every routine's readback buffer
-// leaking when a map fails.
+// buffer. Destroying on failure is what stops a broken buffer from leaking or
+// being handed to the next call.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
-import { uploadBuffer, stageReadback } from "../../src/util/buffer.mjs";
+import {
+  uploadBuffer,
+  stageReadback,
+  clearReadbackPool,
+} from "../../src/util/buffer.mjs";
 import { extractResult } from "../../src/util/result.mjs";
 import { getPowerPreference } from "../helpers/device.js";
 
@@ -71,22 +76,86 @@ test("the returned array survives the unmap", async () => {
   );
 });
 
-test("destroys the readback buffer on success", async () => {
-  const src = uploadBuffer(
-    device,
-    new Float32Array([1, 2]),
-    "result-test-src",
-    true,
-  );
+/** Stages a readback of `src` (one submit) and returns the readback buffer. */
+function stage(src) {
   const enc = device.createCommandEncoder();
   const readBuffer = stageReadback(device, enc, src);
   device.queue.submit([enc.finish()]);
-  await extractResult(readBuffer);
-  // A destroyed buffer cannot be mapped again; if it were still alive this
-  // would resolve instead of rejecting.
-  await assert.rejects(
-    () => readBuffer.mapAsync(GPUMapMode.READ),
-    "buffer should have been destroyed",
+  return readBuffer;
+}
+
+test("returns the readback buffer to the pool, and reuses it with fresh data", async () => {
+  clearReadbackPool(device);
+  const a = uploadBuffer(device, new Float32Array([1, 2, 3]), "a", true);
+  const b = uploadBuffer(device, new Float32Array([7, 8, 9]), "b", true);
+  const first = stage(a);
+  assert.deepEqual(await extractResult(first), new Float32Array([1, 2, 3]));
+  const second = stage(b); // same size: must come from the pool
+  assert.strictEqual(
+    second,
+    first,
+    "same-size readback should reuse the pooled buffer",
+  );
+  assert.deepEqual(await extractResult(second), new Float32Array([7, 8, 9]));
+  a.destroy();
+  b.destroy();
+});
+
+test("only reuses an exact size", async () => {
+  clearReadbackPool(device);
+  const a = uploadBuffer(device, new Float32Array(4), "a", true);
+  const b = uploadBuffer(device, new Float32Array(8), "b", true);
+  const first = stage(a);
+  await extractResult(first);
+  const other = stage(b);
+  assert.notStrictEqual(
+    other,
+    first,
+    "a different size must not reuse the buffer",
+  );
+  await extractResult(other);
+  a.destroy();
+  b.destroy();
+});
+
+test("keeps at most 4 buffers per size; the rest are destroyed", async () => {
+  clearReadbackPool(device);
+  const src = uploadBuffer(device, new Float32Array(16), "src", true);
+  const six = Array.from({ length: 6 }, () => stage(src));
+  await Promise.all(six.map((rb) => extractResult(rb)));
+  const next = Array.from({ length: 6 }, () => stage(src));
+  const reused = next.filter((rb) => six.includes(rb)).length;
+  assert.equal(reused, 4, "four pooled buffers should be reused");
+  await Promise.all(next.map((rb) => extractResult(rb)));
+  src.destroy();
+});
+
+test("doesn't pool readbacks larger than 4 MB", async () => {
+  clearReadbackPool(device);
+  const src = uploadBuffer(
+    device,
+    new Float32Array(1024 * 1024 + 4),
+    "big",
+    true,
+  );
+  const rb = stage(src);
+  await extractResult(rb);
+  // Destroyed rather than pooled: a destroyed buffer can't be mapped again.
+  await assert.rejects(() => rb.mapAsync(GPUMapMode.READ));
+  src.destroy();
+});
+
+test("clearReadbackPool destroys pooled buffers", async () => {
+  clearReadbackPool(device);
+  const src = uploadBuffer(device, new Float32Array([1, 2]), "src", true);
+  const rb = stage(src);
+  await extractResult(rb);
+  clearReadbackPool(device);
+  await assert.rejects(() => rb.mapAsync(GPUMapMode.READ));
+  assert.notStrictEqual(
+    stage(src),
+    rb,
+    "a cleared pool must not hand the buffer out again",
   );
   src.destroy();
 });
@@ -110,6 +179,10 @@ test("destroys the readback buffer even when mapping fails", async () => {
   );
   // Still destroyed, and destroying twice must not throw.
   assert.doesNotThrow(() => readBuffer.destroy());
+  // A buffer whose map failed must never be pooled and handed out again.
+  const next = stage(src);
+  assert.notStrictEqual(next, readBuffer, "a failed buffer must not be reused");
+  await extractResult(next);
   src.destroy();
 });
 
