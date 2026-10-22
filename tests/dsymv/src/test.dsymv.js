@@ -169,6 +169,69 @@ test("dsymv zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures stay below TILE_KERNEL_MIN_N (256), so the tiled kernel and its
+// reduce_partials_f64 pass never run there. n=257 leaves a one-element last
+// block, n=600 a ragged one (600 = 18·32 + 24) across 171 tiles; strided x
+// and y are read in place. A is random off the stored triangle too, so
+// reading outside it would show. beta=0 must ignore y's prior value (NaN).
+test("dsymv tiled kernel (regression)", async (t) => {
+  for (const [N, inc, beta] of [
+    [256, 1, 0.75],
+    [257, 1, 0.75],
+    [600, 3, 0.75],
+    [600, 1, 0],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const uplo of ["lower", "upper"]) {
+        await t.test(
+          `${layout} ${uplo} n=${N} inc=${inc} beta=${beta}`,
+          async () => {
+            const lda = N + 3;
+            const y = randomFloat64Array((N - 1) * inc + 1, -1, 1, 507);
+            if (beta === 0) for (let i = 0; i < N; i++) y[i * inc] = NaN;
+            const a = {
+              uplo,
+              n: N,
+              alpha: 1.5,
+              A: randomFloat64Array(N * lda, -1, 1, 501),
+              lda,
+              x: randomFloat64Array((N - 1) * inc + 1, -1, 1, 503),
+              incx: inc,
+              beta,
+              y,
+              incy: inc,
+              layout,
+            };
+            const got = await dsymv(
+              device,
+              a.uplo,
+              a.n,
+              a.alpha,
+              a.A,
+              a.lda,
+              a.x,
+              a.incx,
+              a.beta,
+              a.y,
+              a.incy,
+              a.layout,
+            );
+            // The reference and bound see y = 0 where beta = 0 discards NaN.
+            const aRef =
+              beta === 0 ? { ...a, y: new Float64Array(y.length) } : a;
+            const factor = forwardFactor(got, stdlibReference(aRef), aRef);
+            assert.ok(
+              factor <= THRESHOLD,
+              `forward factor ${factor} > ${THRESHOLD}`,
+            );
+            for (let i = 0; i < y.length; i++)
+              if (i % inc !== 0)
+                assert.equal(got.y[i], y[i], `y gap element ${i} changed`);
+          },
+        );
+      }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("dsymv edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

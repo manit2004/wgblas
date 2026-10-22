@@ -166,6 +166,67 @@ test("dtrmv zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures stay below COLUMN_KERNEL_MIN_N (512) and worthPackingDD's
+// threshold, so the column kernel's split-K path (row-major transpose,
+// column-major no-transpose) and packed x never run there. n=600 gives ten
+// SPLITK_CHUNK_ROWS_DD (64) chunks with a remainder-only last one, n=577 a
+// one-row last chunk; n=1100 at stride 8 packs x first (both kernels). A is random off
+// the stored triangle too, so reading outside it would show.
+test("dtrmv split-K and packed x (regression)", async (t) => {
+  for (const [N, inc] of [
+    [600, 1],
+    [600, 3],
+    [577, 1],
+    [1100, 8],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const trans of ["no-transpose", "transpose"])
+        for (const uplo of ["lower", "upper"]) {
+          const diag = (N + inc) % 2 === 0 ? "non-unit" : "unit";
+          await t.test(
+            `${layout} ${trans} ${uplo} ${diag} n=${N} inc=${inc}`,
+            async () => {
+              const lda = N + 3;
+              const a = {
+                uplo,
+                trans,
+                diag,
+                n: N,
+                A: randomFloat64Array(N * lda, -1, 1, 401),
+                lda,
+                x: randomFloat64Array((N - 1) * inc + 1, -1, 1, 403),
+                incx: inc,
+                y: makeVec(N, inc, 99, Float64Array),
+                incy: inc,
+                layout,
+              };
+              const got = await dtrmv(
+                device,
+                a.uplo,
+                a.trans,
+                a.diag,
+                a.n,
+                a.A,
+                a.lda,
+                a.x,
+                a.incx,
+                a.y,
+                a.incy,
+                a.layout,
+              );
+              const factor = forwardFactor(got, stdlibReference(a), a);
+              assert.ok(
+                factor <= THRESHOLD,
+                `forward factor ${factor} > ${THRESHOLD}`,
+              );
+              for (let i = 0; i < a.y.length; i++)
+                if (i % inc !== 0)
+                  assert.equal(got.y[i], a.y[i], `y gap element ${i} changed`);
+            },
+          );
+        }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("dtrmv edge cases (column-major)", async (t) => {
   for (const c of edgeCasesColumnMajor) {

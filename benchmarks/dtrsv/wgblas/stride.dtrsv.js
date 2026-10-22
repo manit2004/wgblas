@@ -52,7 +52,7 @@ for (const stride of STRIDES) {
   for (const n of SIZES) {
     const lda = n;
 
-    // 8 bytes/element (double-double), not 4 — see dtrsv_invert_block.wgsl.
+    // 8 bytes/element (double-double), not 4 — see dtrsv.mjs.
     const bytesA = n * lda * 8;
     const bytesVec = n * stride * 8;
     if (

@@ -1,15 +1,17 @@
 import {
   uploadBuffer,
   createParamsBuffer,
+  createStorageBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
-import { requireWorkgroups } from "../util/workgroup.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { WGS, SPLITK_CHUNK_ROWS_DD } from "../util/constants.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
@@ -127,6 +129,16 @@ export async function dgemv(
     [...f64Deps, shaderName],
     entryPoint,
   );
+  // Transpose: rows split into chunks for parallelism (dgemv_t.wgsl).
+  const numChunks = isNoTrans ? 1 : Math.ceil(m / SPLITK_CHUNK_ROWS_DD);
+  const reducePipeline =
+    numChunks > 1
+      ? await getPipeline(
+          device,
+          [...f64Deps, "reduce_partials_f64"],
+          "reduce_partials_f64",
+        )
+      : null;
 
   const { hi: alphaHi, lo: alphaLo } = splitDoubleDouble(
     new Float64Array([alpha]),
@@ -142,6 +154,9 @@ export async function dgemv(
   let yHiBuffer = null;
   let yLoBuffer = null;
   let paramsBuffer = null;
+  let partialHiBuffer = null;
+  let partialLoBuffer = null;
+  let reduceParams = null;
   let readHiBuffer = null;
   let readLoBuffer = null;
 
@@ -170,46 +185,117 @@ export async function dgemv(
       yHiBuffer = uploadBuffer(device, ySplit.hi, "dgemv-yHi", true);
       yLoBuffer = uploadBuffer(device, ySplit.lo, "dgemv-yLo", true);
     }
-    paramsBuffer = createParamsBuffer(
-      device,
-      [
-        { value: m, type: "u32" },
-        { value: n, type: "u32" },
-        { value: alphaHi[0], type: "f32" },
-        { value: alphaLo[0], type: "f32" },
-        { value: betaHi[0], type: "f32" },
-        { value: betaLo[0], type: "f32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
-        { value: lda, type: "u32" },
-      ],
-      "dgemv-params",
-    );
-
-    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      AHiBuffer,
-      ALoBuffer,
-      xHiBuffer,
-      xLoBuffer,
-      yHiBuffer,
-      yLoBuffer,
-      paramsBuffer,
-    ]);
-
-    // NoTrans: one workgroup per row — dgemv_n.wgsl is a grid-stride loop, so
-    // clamping here only costs parallelism. Trans: one thread per output
-    // column, and dgemv_t.wgsl indexes straight off global_invocation_id
-    // (masked, not skipped, for out-of-range columns), so an over-limit
-    // dispatch must be refused, not truncated.
-    const wgCount = isNoTrans
-      ? Math.min(m, device.limits.maxComputeWorkgroupsPerDimension)
-      : requireWorkgroups(device, "dgemv", yLen);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    const commonParams = [
+      { value: m, type: "u32" },
+      { value: n, type: "u32" },
+      { value: alphaHi[0], type: "f32" },
+      { value: alphaLo[0], type: "f32" },
+      { value: betaHi[0], type: "f32" },
+      { value: betaLo[0], type: "f32" },
+      { value: incx, type: "u32" },
+      { value: incy, type: "u32" },
+      { value: lda, type: "u32" },
+    ];
+    let passes;
+    if (isNoTrans) {
+      paramsBuffer = createParamsBuffer(device, commonParams, "dgemv-params");
+      // One workgroup per row — dgemv_n.wgsl is a grid-stride loop, so
+      // clamping here only costs parallelism.
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            AHiBuffer,
+            ALoBuffer,
+            xHiBuffer,
+            xLoBuffer,
+            yHiBuffer,
+            yLoBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: Math.min(
+            m,
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        },
+      ];
+    } else {
+      if (numChunks > 1) {
+        partialHiBuffer = createStorageBuffer(
+          device,
+          numChunks * n * 4,
+          "dgemv-partialsHi",
+        );
+        partialLoBuffer = createStorageBuffer(
+          device,
+          numChunks * n * 4,
+          "dgemv-partialsLo",
+        );
+        reduceParams = createParamsBuffer(
+          device,
+          [
+            { value: n, type: "u32" },
+            { value: numChunks, type: "u32" },
+            { value: incy, type: "u32" },
+            { value: alphaHi[0], type: "f32" },
+            { value: alphaLo[0], type: "f32" },
+            { value: betaHi[0], type: "f32" },
+            { value: betaLo[0], type: "f32" },
+          ],
+          "dgemv-reduce-params",
+        );
+      }
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          ...commonParams,
+          { value: SPLITK_CHUNK_ROWS_DD, type: "u32" },
+          { value: numChunks > 1 ? 0 : 1, type: "u32" },
+        ],
+        "dgemv-t-params",
+      );
+      // One thread per output column, no grid-stride fallback — dgemv_t.wgsl
+      // masks (not skips) out-of-range columns, so an over-limit dispatch
+      // must be refused, not truncated.
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            AHiBuffer,
+            ALoBuffer,
+            xHiBuffer,
+            xLoBuffer,
+            partialHiBuffer ?? yHiBuffer,
+            partialLoBuffer ?? yLoBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: {
+            x: requireWorkgroupCount(device, Math.ceil(n / WGS), "dgemv", "x"),
+            y: requireWorkgroupCount(device, numChunks, "dgemv", "y"),
+          },
+        },
+      ];
+      if (numChunks > 1)
+        passes.push({
+          pipeline: reducePipeline,
+          bindGroup: createBindGroup(
+            device,
+            reducePipeline.getBindGroupLayout(0),
+            [
+              partialHiBuffer,
+              partialLoBuffer,
+              yHiBuffer,
+              yLoBuffer,
+              reduceParams,
+            ],
+          ),
+          workgroups: Math.min(
+            Math.ceil(n / WGS),
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        });
+    }
+    const { commandEncoder, ts } = runComputePasses(device, passes);
     readHiBuffer = yIsGpu
       ? null
       : stageReadback(device, commandEncoder, yHiBuffer);
@@ -241,6 +327,9 @@ export async function dgemv(
     if (!yIsGpu && yHiBuffer) destroyBuffers(yHiBuffer);
     if (!yIsGpu && yLoBuffer) destroyBuffers(yLoBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (partialHiBuffer) destroyBuffers(partialHiBuffer);
+    if (partialLoBuffer) destroyBuffers(partialLoBuffer);
+    if (reduceParams) destroyBuffers(reduceParams);
     if (readHiBuffer) destroyBuffers(readHiBuffer);
     if (readLoBuffer) destroyBuffers(readLoBuffer);
   }

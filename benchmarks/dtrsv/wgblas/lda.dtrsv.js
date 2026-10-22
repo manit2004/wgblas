@@ -48,7 +48,7 @@ for (const pad of PADS) {
   for (const n of SIZES) {
     const lda = n + pad;
 
-    // 8 bytes/element (double-double), not 4 — see dtrsv_invert_block.wgsl.
+    // 8 bytes/element (double-double), not 4 — see dtrsv.mjs.
     const bytesA = n * lda * 8;
     const bytesVec = n * 8;
     if (

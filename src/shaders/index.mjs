@@ -211,6 +211,7 @@ routineShaders.dger = {
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   dger,
+  gather_strided, // packs a strided y once (both DD halves), as sger does
 };
 
 import ssyr from "./ssyr.wgsl";
@@ -222,6 +223,7 @@ routineShaders.dsyr = {
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   dsyr,
+  gather_strided, // packs strided vectors once (both DD halves), as ssyr does
 };
 
 import ssyr2 from "./ssyr2.wgsl";
@@ -233,45 +235,54 @@ routineShaders.dsyr2 = {
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   dsyr2,
+  gather_strided, // packs strided vectors once (both DD halves), as ssyr2 does
 };
 
 import dgemv_n from "./dgemv_n.wgsl"; // f64 sibling of sgemv_n — per-row DD dot product via a full within-workgroup tree reduction (ddot's reduction shape), not sgemv_n's 4-way ILP unroll
-import dgemv_t from "./dgemv_t.wgsl"; // f64 sibling of sgemv_t — per-thread accumulation tiled over x, with out-of-range columns computed against a clamped index (not skipped) to keep protected-op call counts uniform
+import dgemv_t from "./dgemv_t.wgsl"; // f64 sibling of sgemv_t — per-thread accumulation tiled over x with sgemv_t's split-K row chunks, out-of-range columns computed against a clamped index (not skipped) to keep protected-op call counts uniform
+import reduce_partials_f64 from "./reduce_partials_f64.wgsl"; // DD second pass for the split-K f64 Level 2 kernels
 routineShaders.dgemv = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   dgemv_n,
   dgemv_t,
-}; // one or the other, picked by trans
+  reduce_partials_f64,
+}; // dgemv_n or dgemv_t by trans; transpose may add reduce_partials_f64
 
 import dsymv from "./dsymv.wgsl"; // f64 sibling of ssymv — same per-row DD tree reduction as dgemv_n, with a uplo-mirror address lookup (symIdx) replacing dgemv_n's plain row-major fetch
+import dsymv_tile from "./dsymv_tile.wgsl"; // f64 sibling of ssymv's tiled kernel — TILE×TILE tiles of the stored triangle, row and mirrored-column sums to partial slots for reduce_partials_f64
 routineShaders.dsymv = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   dsymv,
+  dsymv_tile,
+  reduce_partials_f64,
 };
 
 import dtrmv from "./dtrmv.wgsl"; // f64 sibling of strmv — per-row DD tree reduction (dsymv's shape) over a triangular, per-row-varying column range (dsyr's shape), not a mirrored or full-n one; wgblas's trmv already writes to a separate y rather than aliasing x in place, so there's no read/write-ordering concern to port
+import dtrmv_t from "./dtrmv_t.wgsl"; // f64 sibling of strmv_t — column per thread with split-K row chunks, masked (not skipped) lanes outside the stored range
 routineShaders.dtrmv = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   dtrmv,
-};
+  dtrmv_t,
+  reduce_partials_f64,
+  gather_strided,
+}; // dtrmv or dtrmv_t by trans; transpose may add reduce_partials_f64
 
-import dtrsv_invert_block from "./dtrsv_invert_block.wgsl"; // f64 sibling of strsv_invert_block's original per-column substitution — but the non-unit-diagonal division is the first real ddDivProtected use in this port order (deliberately last per TODO.md)
-import dtrsv_apply_inverse from "./dtrsv_apply_inverse.wgsl"; // f64 sibling of strsv_apply_inverse — per-thread dense matvec against the block inverse, every thread runs the same blockLen-iteration loop (no early return) to keep protected-op call counts uniform
-import dtrsv_update from "./dtrsv_update.wgsl"; // f64 sibling of strsv_update — per-row DD tree reduction (dsymv's shape) over the fixed-width block column range (dger's shape, not per-row-varying)
+import dtrsv_small from "./dtrsv_small.wgsl"; // f64 counterpart of strsm_small as strsv uses it — DD substitution over one block (few-block solve) or, in invert mode, every block's column-major inverse
+import dtrsv_step from "./dtrsv_step.wgsl"; // f64 sibling of strsv_step — one fused solve-and-update dispatch per block, four threads per row
 routineShaders.dtrsv = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   "f64/utils/divide": ddDivUtil,
-  dtrsv_invert_block,
-  dtrsv_apply_inverse,
-  dtrsv_update,
+  dtrsv_small,
+  dtrsv_step,
+  scatter_strided, // copies the contiguous solution back into a strided x, once per DD half
 };
 
 import dgemm_small from "./dgemm_small.wgsl"; // f64 sibling of sgemm_small — same tile config; vec4 on Hi halves only (Lo too would exceed 8 storage buffers)

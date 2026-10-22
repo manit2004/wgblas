@@ -73,3 +73,12 @@ export const STRSV_TILE_ROWS = 64;
 export const STRSM_SMALL_RHS_PER_WG = 4;
 /** `PARTIAL_LEN` in dnrm2.wgsl and reduction/scaledSumF64.wgsl — floats per workgroup partial (three DD sums + Inf/NaN flag). */
 export const DNRM2_PARTIAL_LEN = 7;
+
+/**
+ * SPLITK_CHUNK_ROWS for the double-double kernels (dgemv_t.wgsl). JS-only.
+ * A DD row costs far more than an f32 one (five barriers per term in the
+ * protected ops), so smaller chunks pay: more workgroups to hide barrier
+ * latency, against a reduce pass that's still cheap next to the main one.
+ * Must be a multiple of WGS (the kernels tile x by WGS rows).
+ */
+export const SPLITK_CHUNK_ROWS_DD = 64;

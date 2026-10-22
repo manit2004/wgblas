@@ -179,6 +179,67 @@ test("dger zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures cap the sizes well below one 64-lane chunk per row, so rows
+// spanning several chunks never run there, nor does packing strided vectors
+// at size (worthPackingDD only packs from 1024+ rows). These cover multi-
+// chunk rows with an lda that leaves every row misaligned, y read
+// strided in place, and the packed path (1100 rows at stride 8); both
+// layouts. Padding must come back untouched.
+test("dger multi-chunk rows and packed y (regression)", async (t) => {
+  // [M, N, inc]: 70 rows don't reach worthPackingDD's threshold (y read
+  // strided in place); 1100 rows at stride 8 do (y packed first).
+  for (const [M, N, inc] of [
+    [70, 600, 1],
+    [70, 600, 3],
+    [1100, 150, 8],
+  ])
+    for (const layout of ["row-major", "column-major"]) {
+      await t.test(`${layout} ${M}x${N} incy=${inc}`, async () => {
+        const cm = layout === "column-major";
+        const inner = cm ? M : N;
+        const outer = cm ? N : M;
+        const lda = inner + 3;
+        const a = {
+          m: M,
+          n: N,
+          alpha: 1.5,
+          x: randomFloat64Array((M - 1) * inc + 1, -1, 1, 201),
+          incx: inc,
+          y: randomFloat64Array((N - 1) * inc + 1, -1, 1, 202),
+          incy: inc,
+          A: randomFloat64Array(outer * lda, -1, 1, 203),
+          lda,
+          layout,
+        };
+        const got = await dger(
+          device,
+          a.m,
+          a.n,
+          a.alpha,
+          a.x,
+          a.incx,
+          a.y,
+          a.incy,
+          a.A,
+          a.lda,
+          a.layout,
+        );
+        const factor = forwardFactor(got, stdlibReference(a), a);
+        assert.ok(
+          factor <= THRESHOLD,
+          `forward factor ${factor} > ${THRESHOLD}`,
+        );
+        for (let o = 0; o < outer; o++)
+          for (let p = inner; p < lda; p++)
+            assert.equal(
+              got.A[o * lda + p],
+              a.A[o * lda + p],
+              `padding element ${o * lda + p} changed`,
+            );
+      });
+    }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("dger edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

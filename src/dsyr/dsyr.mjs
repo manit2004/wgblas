@@ -5,7 +5,8 @@ import {
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { gatherStridedPass, worthPackingDD } from "../util/strided.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -89,6 +90,8 @@ export async function dsyr(
   let AHiBuffer = null;
   let ALoBuffer = null;
   let paramsBuffer = null;
+  let xHiPacked = null;
+  let xLoPacked = null;
   let readHiBuffer = null;
   let readLoBuffer = null;
 
@@ -106,13 +109,31 @@ export async function dsyr(
       AHiBuffer = uploadBuffer(device, ASplit.hi, "dsyr-AHi", true);
       ALoBuffer = uploadBuffer(device, ASplit.lo, "dsyr-ALo", true);
     }
+    // x is re-read for every row — pack a strided x (both DD halves) once
+    // when it pays (worthPackingDD), as ssyr does (see util/strided.mjs).
+    if (worthPackingDD(incx, n)) {
+      xHiPacked = await gatherStridedPass(
+        device,
+        xHiBuffer,
+        n,
+        incx,
+        "dsyr-xHi-packed",
+      );
+      xLoPacked = await gatherStridedPass(
+        device,
+        xLoBuffer,
+        n,
+        incx,
+        "dsyr-xLo-packed",
+      );
+    }
     paramsBuffer = createParamsBuffer(
       device,
       [
         { value: n, type: "u32" },
         { value: alphaHi[0], type: "f32" },
         { value: alphaLo[0], type: "f32" },
-        { value: incx, type: "u32" },
+        { value: xHiPacked ? 1 : incx, type: "u32" },
         { value: lda, type: "u32" },
         { value: isLower ? 0 : 1, type: "u32" },
       ],
@@ -120,8 +141,8 @@ export async function dsyr(
     );
 
     const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      xHiBuffer,
-      xLoBuffer,
+      xHiPacked ? xHiPacked.buffer : xHiBuffer,
+      xLoPacked ? xLoPacked.buffer : xLoBuffer,
       AHiBuffer,
       ALoBuffer,
       paramsBuffer,
@@ -130,12 +151,10 @@ export async function dsyr(
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when n > dispatch count.
     const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    const { commandEncoder, ts } = runComputePasses(device, [
+      ...[xHiPacked, xLoPacked].filter(Boolean).map((p) => p.pass),
+      { pipeline, bindGroup, workgroups: wgCount },
+    ]);
     readHiBuffer = AIsGpu
       ? null
       : stageReadback(device, commandEncoder, AHiBuffer);
@@ -160,6 +179,8 @@ export async function dsyr(
     if (gpuTimeMs !== undefined) return { A: result, gpuTimeMs };
     return { A: result };
   } finally {
+    for (const p of [xHiPacked, xLoPacked])
+      if (p) destroyBuffers(p.buffer, p.params);
     if (!xIsGpu && xHiBuffer) destroyBuffers(xHiBuffer);
     if (!xIsGpu && xLoBuffer) destroyBuffers(xLoBuffer);
     if (!AIsGpu && AHiBuffer) destroyBuffers(AHiBuffer);

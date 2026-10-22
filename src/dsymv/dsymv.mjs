@@ -1,11 +1,14 @@
 import {
   uploadBuffer,
   createParamsBuffer,
+  createStorageBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { WGS, SSYMV_TILE } from "../util/constants.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -13,6 +16,8 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
+
+const TILE_KERNEL_MIN_N = 256;
 
 // dsymv: y := alpha * A * x + beta * y, double-double (Dekker) f64 emulation
 // of ssymv — A, x, y, alpha, and beta are each split into an f32 (hi, lo)
@@ -107,11 +112,25 @@ export async function dsymv(
     effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
-  const pipeline = await getPipeline(
-    device,
-    [...f64Deps, "dsymv"],
-    "dsymv_main",
-  );
+  // From TILE_KERNEL_MIN_N up, two passes: tiled partial sums over the
+  // stored triangle, then a reduce that applies alpha/beta — see
+  // dsymv_tile.wgsl. Below it the per-row kernel (dsymv.wgsl) wins: n
+  // workgroups each with an n/64-term chain plus a tree reduction, against
+  // the tile kernel's fixed ~50 protected-op barriers per tile and a second
+  // pass (measured on a GTX 1650: n=128 0.0107 vs 0.013 ms; n=256 0.033 vs
+  // 0.026 ms).
+  const useTiles = n >= TILE_KERNEL_MIN_N;
+  const pipeline = useTiles
+    ? await getPipeline(device, [...f64Deps, "dsymv_tile"], "dsymv_tile_main")
+    : await getPipeline(device, [...f64Deps, "dsymv"], "dsymv_main");
+  const reducePipeline = useTiles
+    ? await getPipeline(
+        device,
+        [...f64Deps, "reduce_partials_f64"],
+        "reduce_partials_f64",
+      )
+    : null;
+  const numBlocks = Math.ceil(n / SSYMV_TILE);
 
   const { hi: alphaHi, lo: alphaLo } = splitDoubleDouble(
     new Float64Array([alpha]),
@@ -127,6 +146,9 @@ export async function dsymv(
   let yHiBuffer = null;
   let yLoBuffer = null;
   let paramsBuffer = null;
+  let partialHiBuffer = null;
+  let partialLoBuffer = null;
+  let reduceParams = null;
   let readHiBuffer = null;
   let readLoBuffer = null;
 
@@ -155,41 +177,117 @@ export async function dsymv(
       yHiBuffer = uploadBuffer(device, ySplit.hi, "dsymv-yHi", true);
       yLoBuffer = uploadBuffer(device, ySplit.lo, "dsymv-yLo", true);
     }
-    paramsBuffer = createParamsBuffer(
-      device,
-      [
-        { value: n, type: "u32" },
-        { value: alphaHi[0], type: "f32" },
-        { value: alphaLo[0], type: "f32" },
-        { value: betaHi[0], type: "f32" },
-        { value: betaLo[0], type: "f32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
-        { value: lda, type: "u32" },
-        { value: isLower ? 0 : 1, type: "u32" },
-      ],
-      "dsymv-params",
-    );
+    let passes;
+    if (!useTiles) {
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: alphaHi[0], type: "f32" },
+          { value: alphaLo[0], type: "f32" },
+          { value: betaHi[0], type: "f32" },
+          { value: betaLo[0], type: "f32" },
+          { value: incx, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: isLower ? 0 : 1, type: "u32" },
+        ],
+        "dsymv-params",
+      );
+      // One workgroup per row of A (n is small here, well under the limit).
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            AHiBuffer,
+            ALoBuffer,
+            xHiBuffer,
+            xLoBuffer,
+            yHiBuffer,
+            yLoBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: n,
+        },
+      ];
+    } else {
+      partialHiBuffer = createStorageBuffer(
+        device,
+        numBlocks * n * 4,
+        "dsymv-partialsHi",
+      );
+      partialLoBuffer = createStorageBuffer(
+        device,
+        numBlocks * n * 4,
+        "dsymv-partialsLo",
+      );
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: isLower ? 0 : 1, type: "u32" },
+          { value: numBlocks, type: "u32" },
+          { value: incx, type: "u32" },
+        ],
+        "dsymv-tile-params",
+      );
+      reduceParams = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: numBlocks, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: alphaHi[0], type: "f32" },
+          { value: alphaLo[0], type: "f32" },
+          { value: betaHi[0], type: "f32" },
+          { value: betaLo[0], type: "f32" },
+        ],
+        "dsymv-reduce-params",
+      );
 
-    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      AHiBuffer,
-      ALoBuffer,
-      xHiBuffer,
-      xLoBuffer,
-      yHiBuffer,
-      yLoBuffer,
-      paramsBuffer,
-    ]);
-
-    // One workgroup per row of A; clamped to device limit — the shader's
-    // grid-stride loop handles remaining rows when n > dispatch count.
-    const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+      // One workgroup per stored-triangle tile, linear index spread over 2D.
+      const numTiles = (numBlocks * (numBlocks + 1)) / 2;
+      const maxWg = device.limits.maxComputeWorkgroupsPerDimension;
+      const tilesX = Math.min(numTiles, maxWg);
+      const tilesY = requireWorkgroupCount(
+        device,
+        Math.ceil(numTiles / tilesX),
+        "dsymv",
+        "y",
+      );
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            AHiBuffer,
+            ALoBuffer,
+            xHiBuffer,
+            xLoBuffer,
+            partialHiBuffer,
+            partialLoBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: { x: tilesX, y: tilesY },
+        },
+        {
+          pipeline: reducePipeline,
+          bindGroup: createBindGroup(
+            device,
+            reducePipeline.getBindGroupLayout(0),
+            [
+              partialHiBuffer,
+              partialLoBuffer,
+              yHiBuffer,
+              yLoBuffer,
+              reduceParams,
+            ],
+          ),
+          workgroups: Math.min(Math.ceil(n / WGS), maxWg),
+        },
+      ];
+    }
+    const { commandEncoder, ts } = runComputePasses(device, passes);
     readHiBuffer = yIsGpu
       ? null
       : stageReadback(device, commandEncoder, yHiBuffer);
@@ -221,6 +319,9 @@ export async function dsymv(
     if (!yIsGpu && yHiBuffer) destroyBuffers(yHiBuffer);
     if (!yIsGpu && yLoBuffer) destroyBuffers(yLoBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (partialHiBuffer) destroyBuffers(partialHiBuffer);
+    if (partialLoBuffer) destroyBuffers(partialLoBuffer);
+    if (reduceParams) destroyBuffers(reduceParams);
     if (readHiBuffer) destroyBuffers(readHiBuffer);
     if (readLoBuffer) destroyBuffers(readLoBuffer);
   }
