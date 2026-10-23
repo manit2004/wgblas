@@ -173,6 +173,66 @@ test("dtrsv zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures stay within one 64-row block, so neither the few-block
+// substitution path past one block nor the inverse path ever runs there. Up
+// to 2 blocks (dtrsv.mjs's SUBSTITUTION_MAX_BLOCKS), each diagonal block is
+// solved by substitution (dtrsv_small.wgsl, in place on x) and a presolved
+// dtrsv_step does only the trailing update: one block at its cap (64), a
+// ragged one (37), n=1, two blocks ragged (100) and full (128). 3, 5 and 10
+// blocks (150, 300, 600) take the inverse path (dtrsv_small's invert mode,
+// one dtrsv_step per block, the final copy into x), ragged last blocks
+// included. Every uplo/trans/diag/layout, with strided x whose gaps must
+// survive. A is random off the stored triangle too, so reading outside it
+// would show; off-diagonals are kept to ±1/n so unit-diagonal systems stay
+// well conditioned.
+test("dtrsv substitution and inverse paths (regression)", async (t) => {
+  for (const N of [64, 37, 1, 100, 128, 150, 300, 600])
+    for (const layout of ["row-major", "column-major"])
+      for (const uplo of ["lower", "upper"])
+        for (const trans of ["no-transpose", "transpose"])
+          for (const diag of ["non-unit", "unit"])
+            for (const inc of [1, 3]) {
+              await t.test(
+                `${layout} N=${N} ${uplo} ${trans} ${diag} inc=${inc}`,
+                async () => {
+                  const A = randomFloat64Array(N * N, -1 / N, 1 / N, 131);
+                  for (let i = 0; i < N; i++) A[i * N + i] = 2;
+                  const a = {
+                    uplo,
+                    trans,
+                    diag,
+                    n: N,
+                    A,
+                    lda: N,
+                    x: randomFloat64Array((N - 1) * inc + 1, -1, 1, 132),
+                    incx: inc,
+                    layout,
+                  };
+                  const got = await dtrsv(
+                    device,
+                    a.uplo,
+                    a.trans,
+                    a.diag,
+                    a.n,
+                    a.A,
+                    a.lda,
+                    a.x,
+                    a.incx,
+                    a.layout,
+                  );
+                  const factor = backwardResidualFactor(got, null, a);
+                  assert.ok(
+                    factor <= THRESHOLD,
+                    `backward residual factor ${factor} > ${THRESHOLD}`,
+                  );
+                  for (let i = 0; i < a.x.length; i++)
+                    if (i % inc !== 0)
+                      assert.equal(got.x[i], a.x[i], `gap element ${i}`);
+                },
+              );
+            }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("dtrsv edge cases (column-major)", async (t) => {
   for (const c of edgeCasesColumnMajor) {

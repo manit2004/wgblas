@@ -5,7 +5,8 @@ import {
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { gatherStridedPass, worthPackingDD } from "../util/strided.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -121,6 +122,8 @@ export async function dger(
   let AHiBuffer = null;
   let ALoBuffer = null;
   let paramsBuffer = null;
+  let yHiPacked = null;
+  let yLoPacked = null;
   let readHiBuffer = null;
   let readLoBuffer = null;
 
@@ -143,6 +146,24 @@ export async function dger(
       AHiBuffer = uploadBuffer(device, ASplit.hi, "dger-AHi", true);
       ALoBuffer = uploadBuffer(device, ASplit.lo, "dger-ALo", true);
     }
+    // y is re-read for every row — pack a strided y (both DD halves) once
+    // when it pays (worthPackingDD), as sger does (see util/strided.mjs).
+    if (worthPackingDD(incy, m)) {
+      yHiPacked = await gatherStridedPass(
+        device,
+        yHiBuffer,
+        n,
+        incy,
+        "dger-yHi-packed",
+      );
+      yLoPacked = await gatherStridedPass(
+        device,
+        yLoBuffer,
+        n,
+        incy,
+        "dger-yLo-packed",
+      );
+    }
     paramsBuffer = createParamsBuffer(
       device,
       [
@@ -151,7 +172,7 @@ export async function dger(
         { value: alphaHi[0], type: "f32" },
         { value: alphaLo[0], type: "f32" },
         { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
+        { value: yHiPacked ? 1 : incy, type: "u32" },
         { value: lda, type: "u32" },
       ],
       "dger-params",
@@ -160,8 +181,8 @@ export async function dger(
     const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
       xHiBuffer,
       xLoBuffer,
-      yHiBuffer,
-      yLoBuffer,
+      yHiPacked ? yHiPacked.buffer : yHiBuffer,
+      yLoPacked ? yLoPacked.buffer : yLoBuffer,
       AHiBuffer,
       ALoBuffer,
       paramsBuffer,
@@ -170,12 +191,10 @@ export async function dger(
     // One workgroup per row of A; clamped to device limit — the shader's
     // grid-stride loop handles remaining rows when m > dispatch count.
     const wgCount = Math.min(m, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    const { commandEncoder, ts } = runComputePasses(device, [
+      ...(yHiPacked ? [yHiPacked.pass, yLoPacked.pass] : []),
+      { pipeline, bindGroup, workgroups: wgCount },
+    ]);
     readHiBuffer = AIsGpu
       ? null
       : stageReadback(device, commandEncoder, AHiBuffer);
@@ -200,6 +219,8 @@ export async function dger(
     if (gpuTimeMs !== undefined) return { A: result, gpuTimeMs };
     return { A: result };
   } finally {
+    if (yHiPacked) destroyBuffers(yHiPacked.buffer, yHiPacked.params);
+    if (yLoPacked) destroyBuffers(yLoPacked.buffer, yLoPacked.params);
     if (!xIsGpu && xHiBuffer) destroyBuffers(xHiBuffer);
     if (!xIsGpu && xLoBuffer) destroyBuffers(xLoBuffer);
     if (!yIsGpu && yHiBuffer) destroyBuffers(yHiBuffer);

@@ -1,11 +1,15 @@
 import {
   uploadBuffer,
   createParamsBuffer,
+  createStorageBuffer,
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
-import { runComputePass, submit } from "../util/compute.mjs";
+import { runComputePasses, submit } from "../util/compute.mjs";
+import { requireWorkgroupCount } from "../util/workgroup.mjs";
+import { WGS, SPLITK_CHUNK_ROWS_DD } from "../util/constants.mjs";
+import { gatherStridedPass, worthPackingDD } from "../util/strided.mjs";
 import { extractResult } from "../util/result.mjs";
 import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
@@ -13,6 +17,8 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
+
+const COLUMN_KERNEL_MIN_N = 512;
 
 // dtrmv: y := op(A) * x, double-double (Dekker) f64 emulation of strmv — A,
 // x, and y are each split into an f32 (hi, lo) pair; WGSL has no f64 type.
@@ -108,11 +114,27 @@ export async function dtrmv(
     : trans === "no-transpose";
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
+  // Transpose path: one thread per output column (coalesced A reads), with
+  // rows split into chunks for parallelism — see dtrmv_t.wgsl. Below
+  // COLUMN_KERNEL_MIN_N the row kernel wins: its n workgroups each run only
+  // n/64 terms plus a tree reduction, where a column thread runs a serial
+  // chain of up to SPLITK_CHUNK_ROWS_DD protected terms (measured on a GTX
+  // 1650: n=64 0.008 vs 0.028 ms, even at n=512, 0.31× at n=1024).
+  const useColumnKernel = !isNoTrans && n >= COLUMN_KERNEL_MIN_N;
+  const numChunks = useColumnKernel ? Math.ceil(n / SPLITK_CHUNK_ROWS_DD) : 1;
   const pipeline = await getPipeline(
     device,
-    [...f64Deps, "dtrmv"],
-    "dtrmv_main",
+    [...f64Deps, useColumnKernel ? "dtrmv_t" : "dtrmv"],
+    useColumnKernel ? "dtrmv_t_main" : "dtrmv_main",
   );
+  const reducePipeline =
+    numChunks > 1
+      ? await getPipeline(
+          device,
+          [...f64Deps, "reduce_partials_f64"],
+          "reduce_partials_f64",
+        )
+      : null;
 
   let AHiBuffer = null;
   let ALoBuffer = null;
@@ -121,6 +143,11 @@ export async function dtrmv(
   let yHiBuffer = null;
   let yLoBuffer = null;
   let paramsBuffer = null;
+  let partialHiBuffer = null;
+  let partialLoBuffer = null;
+  let reduceParams = null;
+  let xHiPacked = null;
+  let xLoPacked = null;
   let readHiBuffer = null;
   let readLoBuffer = null;
 
@@ -149,39 +176,143 @@ export async function dtrmv(
       yHiBuffer = uploadBuffer(device, ySplit.hi, "dtrmv-yHi", true);
       yLoBuffer = uploadBuffer(device, ySplit.lo, "dtrmv-yLo", true);
     }
-    paramsBuffer = createParamsBuffer(
-      device,
-      [
-        { value: n, type: "u32" },
-        { value: incx, type: "u32" },
-        { value: incy, type: "u32" },
-        { value: lda, type: "u32" },
-        { value: isNoTrans ? 0 : 1, type: "u32" },
-        { value: isLower ? 0 : 1, type: "u32" },
-        { value: isUnit ? 1 : 0, type: "u32" },
-      ],
-      "dtrmv-params",
-    );
+    // x is re-read for every output — pack a strided x (both DD halves) once
+    // when it pays (worthPackingDD), as strmv does (see util/strided.mjs).
+    if (worthPackingDD(incx, n)) {
+      xHiPacked = await gatherStridedPass(
+        device,
+        xHiBuffer,
+        n,
+        incx,
+        "dtrmv-xHi-packed",
+      );
+      xLoPacked = await gatherStridedPass(
+        device,
+        xLoBuffer,
+        n,
+        incx,
+        "dtrmv-xLo-packed",
+      );
+    }
+    const xHiSrc = xHiPacked ? xHiPacked.buffer : xHiBuffer;
+    const xLoSrc = xLoPacked ? xLoPacked.buffer : xLoBuffer;
+    const xInc = xHiPacked ? 1 : incx;
+    let passes;
+    if (useColumnKernel) {
+      if (numChunks > 1) {
+        partialHiBuffer = createStorageBuffer(
+          device,
+          numChunks * n * 4,
+          "dtrmv-partialsHi",
+        );
+        partialLoBuffer = createStorageBuffer(
+          device,
+          numChunks * n * 4,
+          "dtrmv-partialsLo",
+        );
+        reduceParams = createParamsBuffer(
+          device,
+          [
+            { value: n, type: "u32" },
+            { value: numChunks, type: "u32" },
+            { value: incy, type: "u32" },
+            { value: 1, type: "f32" },
+            { value: 0, type: "f32" },
+            { value: 0, type: "f32" },
+            { value: 0, type: "f32" },
+          ],
+          "dtrmv-reduce-params",
+        );
+      }
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: xInc, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: isLower ? 0 : 1, type: "u32" },
+          { value: isUnit ? 1 : 0, type: "u32" },
+          { value: SPLITK_CHUNK_ROWS_DD, type: "u32" },
+          { value: numChunks > 1 ? 0 : 1, type: "u32" },
+        ],
+        "dtrmv-t-params",
+      );
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            AHiBuffer,
+            ALoBuffer,
+            xHiSrc,
+            xLoSrc,
+            partialHiBuffer ?? yHiBuffer,
+            partialLoBuffer ?? yLoBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: {
+            x: requireWorkgroupCount(device, Math.ceil(n / WGS), "dtrmv", "x"),
+            y: requireWorkgroupCount(device, numChunks, "dtrmv", "y"),
+          },
+        },
+      ];
+      if (numChunks > 1)
+        passes.push({
+          pipeline: reducePipeline,
+          bindGroup: createBindGroup(
+            device,
+            reducePipeline.getBindGroupLayout(0),
+            [
+              partialHiBuffer,
+              partialLoBuffer,
+              yHiBuffer,
+              yLoBuffer,
+              reduceParams,
+            ],
+          ),
+          workgroups: Math.min(
+            Math.ceil(n / WGS),
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        });
+    } else {
+      paramsBuffer = createParamsBuffer(
+        device,
+        [
+          { value: n, type: "u32" },
+          { value: xInc, type: "u32" },
+          { value: incy, type: "u32" },
+          { value: lda, type: "u32" },
+          { value: isNoTrans ? 0 : 1, type: "u32" },
+          { value: isLower ? 0 : 1, type: "u32" },
+          { value: isUnit ? 1 : 0, type: "u32" },
+        ],
+        "dtrmv-params",
+      );
+      // One workgroup per row of A; clamped to device limit — the shader's
+      // grid-stride loop handles remaining rows when n > dispatch count.
+      passes = [
+        {
+          pipeline,
+          bindGroup: createBindGroup(device, pipeline.getBindGroupLayout(0), [
+            AHiBuffer,
+            ALoBuffer,
+            xHiSrc,
+            xLoSrc,
+            yHiBuffer,
+            yLoBuffer,
+            paramsBuffer,
+          ]),
+          workgroups: Math.min(
+            n,
+            device.limits.maxComputeWorkgroupsPerDimension,
+          ),
+        },
+      ];
+    }
 
-    const bindGroup = createBindGroup(device, pipeline.getBindGroupLayout(0), [
-      AHiBuffer,
-      ALoBuffer,
-      xHiBuffer,
-      xLoBuffer,
-      yHiBuffer,
-      yLoBuffer,
-      paramsBuffer,
-    ]);
-
-    // One workgroup per row of A; clamped to device limit — the shader's
-    // grid-stride loop handles remaining rows when n > dispatch count.
-    const wgCount = Math.min(n, device.limits.maxComputeWorkgroupsPerDimension);
-    const { commandEncoder, ts } = runComputePass(
-      device,
-      pipeline,
-      bindGroup,
-      wgCount,
-    );
+    if (xHiPacked) passes.unshift(xHiPacked.pass, xLoPacked.pass);
+    const { commandEncoder, ts } = runComputePasses(device, passes);
     readHiBuffer = yIsGpu
       ? null
       : stageReadback(device, commandEncoder, yHiBuffer);
@@ -213,6 +344,11 @@ export async function dtrmv(
     if (!yIsGpu && yHiBuffer) destroyBuffers(yHiBuffer);
     if (!yIsGpu && yLoBuffer) destroyBuffers(yLoBuffer);
     if (paramsBuffer) destroyBuffers(paramsBuffer);
+    if (partialHiBuffer) destroyBuffers(partialHiBuffer);
+    if (partialLoBuffer) destroyBuffers(partialLoBuffer);
+    if (reduceParams) destroyBuffers(reduceParams);
+    for (const p of [xHiPacked, xLoPacked])
+      if (p) destroyBuffers(p.buffer, p.params);
     if (readHiBuffer) destroyBuffers(readHiBuffer);
     if (readLoBuffer) destroyBuffers(readLoBuffer);
   }

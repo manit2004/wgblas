@@ -3,13 +3,21 @@ wgblas GPU test kernel — runs the full test suite on Kaggle's free GPU via Web
 
 Steps:
   1. Install Node.js 22 and Vulkan loader
-  2. Verify Vulkan can see the GPU
-  3. Clone the wgblas repo and install npm deps
-  4. Run the test suite under c8, producing an lcov report — exits non-zero if
+  2. Install the NVIDIA Vulkan driver libraries and verify Vulkan sees the GPU
+     (not just llvmpipe, Mesa's CPU fallback)
+  3. Clone the wgblas repo and install npm deps — outside /kaggle/working
+  4. Check Dawn's own adapter pick is the GPU too
+  5. Run the test suite under c8, producing an lcov report — exits non-zero if
      any test fails (Kaggle marks kernel as error)
-  5. Save test output and the lcov report to /kaggle/working/ for download
+  6. Save test output and the lcov report to /kaggle/working/ for download
+
+Only those two files go in /kaggle/working: Kaggle saves everything there as
+the run's output, and a clone plus node_modules (~20k files, ~340 MB) there
+made the run end in error after the tests had passed.
 """
 
+import json
+import os
 import subprocess  # nosec B404 -- orchestrates hardcoded, non-interpolated OS commands below
 import shutil
 import sys
@@ -30,7 +38,9 @@ def run_shell(cmd, **kwargs):
 # ── 1. System deps ──────────────────────────────────────────────────────────
 
 run(["apt-get", "update", "-qq"])
-run(["apt-get", "install", "-y", "-qq", "libvulkan1", "vulkan-tools"])
+# libx11-6/libxext6: libGLX_nvidia (the NVIDIA Vulkan ICD) links against them
+# even headless.
+run(["apt-get", "install", "-y", "-qq", "libvulkan1", "vulkan-tools", "libx11-6", "libxext6"])
 run_shell("curl -fsSL https://deb.nodesource.com/setup_22.x | bash -")
 run(["apt-get", "install", "-y", "-qq", "nodejs"])
 
@@ -42,23 +52,112 @@ if not (node and npm):
 print("\nNode:", subprocess.check_output([node, "--version"]).decode().strip())  # nosec B603
 print("npm: ", subprocess.check_output([npm, "--version"]).decode().strip())  # nosec B603
 
-# ── 2. Verify Vulkan ────────────────────────────────────────────────────────
+# ── 2. NVIDIA Vulkan driver ─────────────────────────────────────────────────
+# Kaggle's container gets the NVIDIA driver's compute libraries (CUDA) but not
+# its graphics ones, so the Vulkan loader finds no working NVIDIA ICD and Dawn
+# falls back to llvmpipe — the suite then runs on the CPU. The fix is the
+# user-space Vulkan libraries from the installer of the *exact* driver
+# version the host runs (they must match the kernel module), extracted —
+# not installed — and handed to the loader through VK_ICD_FILENAMES. Every
+# later subprocess inherits the environment set here.
 
-try:
-    run(["vulkaninfo", "--summary"])
-except subprocess.CalledProcessError:
-    print("vulkaninfo failed — GPU may not have Vulkan support", file=sys.stderr)
-    sys.exit(1)
+# The driver's Vulkan ICD and the libraries it loads (linked or dlopen'd) —
+# found by tracing a Dawn device init with LD_DEBUG=libs.
+NV_VULKAN_LIBS = [
+    "libGLX_nvidia", "libnvidia-glcore", "libnvidia-glsi", "libnvidia-tls",
+    "libnvidia-glvkspirv", "libnvidia-gpucomp", "libnvidia-allocator",
+]
+NV_URLS = [
+    "https://us.download.nvidia.com/tesla/{v}/NVIDIA-Linux-x86_64-{v}.run",
+    "https://download.nvidia.com/XFree86/Linux-x86_64/{v}/NVIDIA-Linux-x86_64-{v}.run",
+]
+
+def setup_nvidia_vulkan(lib_dir="/tmp/nvidia-vulkan"):
+    try:
+        version = subprocess.check_output(  # nosec B603 B607
+            ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
+            text=True,
+        ).split()[0]
+    except (OSError, subprocess.CalledProcessError, IndexError):
+        sys.exit("nvidia-smi failed — is the GPU accelerator enabled for this kernel?")
+    print(f"\nNVIDIA driver {version}")
+
+    installer = Path("/tmp/nvidia.run")
+    for url in NV_URLS:
+        url = url.format(v=version)
+        print(f"\n$ curl {url}")
+        if subprocess.run(["curl", "-fsSL", "-o", str(installer), url]).returncode == 0:  # nosec B603 B607
+            break
+    else:
+        sys.exit(f"no NVIDIA installer found for driver {version}")
+
+    extract = Path("/tmp/nvidia-extract")
+    shutil.rmtree(extract, ignore_errors=True)
+    run(["sh", str(installer), "--extract-only", "--target", str(extract)],
+        stdout=subprocess.DEVNULL)
+    installer.unlink()
+
+    out = Path(lib_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for name in NV_VULKAN_LIBS:
+        src = extract / f"{name}.so.{version}"
+        if src.exists():  # libnvidia-gpucomp only exists from ~530 on
+            shutil.copy(src, out / src.name)
+    # Soname links (libGLX_nvidia.so.0, which the ICD manifest names, and
+    # libnvidia-allocator.so.1); the rest are linked by full version.
+    run([shutil.which("ldconfig") or "/sbin/ldconfig", "-n", str(out)])
+
+    manifest = json.loads((extract / "nvidia_icd.json").read_text())
+    manifest["ICD"]["library_path"] = str(out / "libGLX_nvidia.so.0")
+    icd = out / "nvidia_icd.json"
+    icd.write_text(json.dumps(manifest, indent=2))
+    shutil.rmtree(extract)
+
+    # NVIDIA only: llvmpipe stays out of the loader's list entirely, so Dawn
+    # can't quietly pick it.
+    os.environ["VK_ICD_FILENAMES"] = str(icd)
+    os.environ["VK_DRIVER_FILES"] = str(icd)  # the newer loaders' name for it
+    os.environ["LD_LIBRARY_PATH"] = ":".join(
+        p for p in (str(out), os.environ.get("LD_LIBRARY_PATH")) if p)
+
+def verify_vulkan_gpu():
+    print("\n$ vulkaninfo --summary")
+    info = subprocess.run(["vulkaninfo", "--summary"], capture_output=True, text=True)  # nosec B603 B607
+    print(info.stdout)
+    print(info.stderr, file=sys.stderr)
+    if info.returncode != 0 or "PHYSICAL_DEVICE_TYPE_DISCRETE_GPU" not in info.stdout:
+        sys.exit("Vulkan sees no discrete GPU — the tests would run on a CPU "
+                 "fallback (llvmpipe), so they're not run at all.")
+
+setup_nvidia_vulkan()
+verify_vulkan_gpu()
 
 # ── 3. Clone repo ───────────────────────────────────────────────────────────
 
 REPO    = "https://github.com/manit2004/wgblas.git"
-WORKDIR = "/kaggle/working/wgblas"
+# Outside /kaggle/working — see the header.
+WORKDIR = "/tmp/wgblas"
 
 run(["git", "clone", "--depth=1", REPO, WORKDIR])
 run(["npm", "ci"], cwd=WORKDIR)
 
-# ── 4. Run tests under coverage ───────────────────────────────────────────────
+# ── 4. Check Dawn picks the GPU ─────────────────────────────────────────────
+# What the tests will actually get: wgblas's own init(), whose adapter choice
+# is Dawn's, not vulkaninfo's.
+
+print("\n$ node -e <print wgblas adapter>")
+adapter = subprocess.check_output(  # nosec B603
+    [node, "--input-type=module", "-e",
+     "import { init, gpuName, cleanup } from 'wgblas';"
+     "await init({ powerPreference: 'high-performance' });"
+     "console.log(JSON.stringify(gpuName())); cleanup();"],
+    cwd=WORKDIR, text=True,
+).strip().splitlines()[-1]  # Dawn prints warnings first
+print(f"wgblas adapter: {adapter}")
+if any(cpu in adapter.lower() for cpu in ("llvmpipe", "swiftshader", "lavapipe")):
+    sys.exit(f"Dawn picked a CPU fallback ({adapter}) — not running the tests on it.")
+
+# ── 5. Run tests under coverage ───────────────────────────────────────────────
 # Same test.*.js scope `make test` runs, wrapped in c8 so this kernel — the
 # only place tests actually run against a real GPU — can also produce the
 # lcov report the coverage badge/CI upload needs. gpustorage.*.js isn't

@@ -41,3 +41,19 @@ export async function gatherStridedPass(device, src, n, inc, label) {
   );
   return { buffer, params, pass: { pipeline, bindGroup, workgroups } };
 }
+
+/**
+ * Whether packing a strided vector pays for itself when `rereads` rows each
+ * read the whole vector. Packing a double-double vector costs two extra
+ * dispatches (one per half), which at small sizes outweighs the gain
+ * (measured on a GTX 1650: dger/dsyr/dsyr2 at stride 4-5 dropped ~15 points
+ * of cuBLAS efficiency at n=256 when packed), while at large sizes or wide
+ * strides — every element on its own 32-byte sector — it's a 2-8x win.
+ * Measured crossover: pack from 2048 rows, or from 1024 rows at stride >= 8.
+ * @param {number} inc - the vector's stride
+ * @param {number} rereads - how many rows re-read the whole vector
+ * @returns {boolean}
+ */
+export function worthPackingDD(inc, rereads) {
+  return inc > 1 && (rereads >= 2048 || (rereads >= 1024 && inc >= 8));
+}

@@ -1,5 +1,6 @@
 // dtrmv: y := op(A) * x, double-double (Dekker) f64 emulation of strmv
-// (triangular matrix-vector product). A, x, and y are each split into an f32
+// (triangular matrix-vector product). dtrmv.mjs runs this for no-transpose,
+// and for transpose below COLUMN_KERNEL_MIN_N (above it, dtrmv_t.wgsl). A, x, and y are each split into an f32
 // (hi, lo) pair; WGSL has no f64 type. A is n×n triangular — only the
 // triangle specified by uplo is referenced. Like strmv.wgsl, wgblas's trmv
 // takes a separate output vector y rather than overwriting x in place (the

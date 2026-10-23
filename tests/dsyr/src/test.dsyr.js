@@ -129,6 +129,61 @@ test("dsyr zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures cap the sizes well below one 64-lane chunk per row, so rows
+// spanning several chunks never run there, nor does packing strided vectors
+// at size (worthPackingDD only packs from 1024+ rows). These cover multi-
+// chunk rows with an lda that leaves every row misaligned, x read
+// strided in place, and the packed path (1100 rows at stride 8); both
+// layouts. Padding must come back untouched.
+test("dsyr multi-chunk rows and packed vectors (regression)", async (t) => {
+  // [N, inc]: n=600 doesn't reach worthPackingDD's threshold (vectors read
+  // strided in place); n=1100 at stride 8 does (vectors packed first).
+  for (const [N, inc] of [
+    [600, 1],
+    [600, 3],
+    [1100, 8],
+  ])
+    for (const layout of ["row-major", "column-major"])
+      for (const uplo of ["lower", "upper"]) {
+        await t.test(`${layout} ${uplo} n=${N} inc=${inc}`, async () => {
+          const lda = N + 3;
+          const a = {
+            uplo,
+            n: N,
+            alpha: 1.5,
+            x: randomFloat64Array((N - 1) * inc + 1, -1, 1, 211),
+            incx: inc,
+            A: randomFloat64Array(N * lda, -1, 1, 213),
+            lda,
+            layout,
+          };
+          const got = await dsyr(
+            device,
+            a.uplo,
+            a.n,
+            a.alpha,
+            a.x,
+            a.incx,
+            a.A,
+            a.lda,
+            a.layout,
+          );
+          const factor = forwardFactor(got, stdlibReference(a), a);
+          assert.ok(
+            factor <= THRESHOLD,
+            `forward factor ${factor} > ${THRESHOLD}`,
+          );
+          for (let o = 0; o < N; o++)
+            for (let p = N; p < lda; p++)
+              assert.equal(
+                got.A[o * lda + p],
+                a.A[o * lda + p],
+                `padding element ${o * lda + p} changed`,
+              );
+        });
+      }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("dsyr edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

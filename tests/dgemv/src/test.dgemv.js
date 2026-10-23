@@ -196,6 +196,78 @@ test("dgemv zero-dimension (regression)", async (t) => {
   });
 });
 
+// Fixtures stay within one SPLITK_CHUNK_ROWS_DD (64) chunk of the
+// contraction dimension, so the transpose kernel's split-K path (several row
+// chunks plus the reduce_partials_f64 pass) never runs there. 600
+// contraction rows give ten chunks, the last only remainder rows (no full
+// tile); 256 divides evenly; 257 leaves a one-row last chunk. 70 and 130
+// outputs leave the last workgroup ragged. Column-major no-transpose reaches the same
+// kernel. beta=0 must ignore y's prior value (here NaN).
+test("dgemv split-K transpose (regression)", async (t) => {
+  // [trans, layout, rows of op(A)'s contraction, outputs, inc, beta]
+  for (const [trans, layout, K, N, inc, beta] of [
+    ["transpose", "row-major", 600, 70, 1, 0.75],
+    ["transpose", "row-major", 600, 70, 3, 0.75],
+    ["transpose", "row-major", 600, 70, 1, 0],
+    ["no-transpose", "column-major", 600, 70, 2, 0.75],
+    ["transpose", "row-major", 256, 70, 1, 0.75],
+    ["transpose", "row-major", 257, 130, 1, 0.75],
+  ]) {
+    await t.test(
+      `${trans} ${layout} K=${K} N=${N} inc=${inc} beta=${beta}`,
+      async () => {
+        const isNoTrans = trans === "no-transpose";
+        // Shapes in BLAS terms: A is m×n in `layout`.
+        const m = isNoTrans ? N : K;
+        const n = isNoTrans ? K : N;
+        const lda = (layout === "row-major" ? n : m) + 3;
+        const outer = layout === "row-major" ? m : n;
+        const y = randomFloat64Array((N - 1) * inc + 1, -1, 1, 307);
+        if (beta === 0) for (let i = 0; i < N; i++) y[i * inc] = NaN;
+        const a = {
+          trans,
+          m,
+          n,
+          alpha: 1.5,
+          A: randomFloat64Array(outer * lda, -1, 1, 301),
+          lda,
+          x: randomFloat64Array((K - 1) * inc + 1, -1, 1, 303),
+          incx: inc,
+          beta,
+          y,
+          incy: inc,
+          layout,
+        };
+        const got = await dgemv(
+          device,
+          a.trans,
+          a.m,
+          a.n,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.beta,
+          a.y,
+          a.incy,
+          a.layout,
+        );
+        // The reference and bound see y = 0 where beta = 0 discards NaN.
+        const aRef = beta === 0 ? { ...a, y: new Float64Array(y.length) } : a;
+        const factor = forwardFactor(got, stdlibReference(aRef), aRef);
+        assert.ok(
+          factor <= THRESHOLD,
+          `forward factor ${factor} > ${THRESHOLD}`,
+        );
+        for (let i = 0; i < y.length; i++)
+          if (i % inc !== 0)
+            assert.equal(got.y[i], y[i], `y gap element ${i} changed`);
+      },
+    );
+  }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("dgemv edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

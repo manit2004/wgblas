@@ -15,23 +15,22 @@ import {
 const WARMUP_ITERS = 5;
 const BENCH_ITERS = 100;
 // Square n×n triangular matrix; lower triangle stored. Blocked solve: each
-// 64-row diagonal block is still a genuine sequential dependency (single
-// workgroup), but propagating a solved block onto the remaining rows is a
-// dense, fully parallel update — see dtrsv_invert_block.wgsl/
-// dtrsv_update.wgsl/dtrsv.mjs. That turns n sequential stages into
-// ceil(n/64), same shape as strsv.js's own story, now at DD precision.
+// 64-row diagonal block is still a genuine sequential dependency, but
+// propagating a solved block onto the remaining rows is a dense, fully
+// parallel update — see dtrsv_small.wgsl/dtrsv_step.wgsl/dtrsv.mjs. That
+// turns n sequential stages into ceil(n/64), same shape as strsv.js's own
+// story, now at DD precision.
 //
 // Unlike every other Level 2 routine here, strsv/dtrsv's dominant
-// performance story isn't uplo/trans/lda — it's dispatch-count overhead:
-// each block is 3 sequential GPU dispatches (invert + apply + update, one
-// more than strsv's 2 since the inverse can't be precomputed on the CPU at
-// DD precision), so total time is bound by fixed per-dispatch overhead at
-// small n and by growing per-block update work at large n. numBlocks and
-// ms_per_block below make that curve directly visible. Measured (not
-// assumed): ms_per_block grows from 0.084ms (n=32, 1 block) to 0.128ms
-// (n=4096, 64 blocks) — a ~1.5x rise, confirming the per-block cost isn't
-// flat but grows as each later block's "update" pass covers more remaining
-// rows.
+// performance story isn't uplo/trans/lda — it's the chain of dependent
+// steps: up to two blocks are each solved by substitution plus an
+// update-only step; past that, every block's inverse is built in one
+// parallel dispatch, then each block is one fused solve-and-update dispatch,
+// all in a single compute pass. Total time is bound by that chain at small n
+// and by growing per-block update work at large n; numBlocks and
+// ms_per_block below make that curve directly visible. (Before the fused
+// step and single pass, ms_per_block ran 0.084ms at n=32 to 0.128ms at
+// n=4096 on a GTX 1650; after, 0.027ms to 0.063ms.)
 const SIZES = [32, 64, 128, 256, 512, 1024, 2048, 4096];
 const BLOCK_SIZE = 64; // matches dtrsv.mjs's own BLOCK_SIZE
 
@@ -57,7 +56,7 @@ for (const size of SIZES) {
   const n = size;
   const lda = n;
 
-  // 8 bytes/element (double-double), not 4 — see dtrsv_invert_block.wgsl.
+  // 8 bytes/element (double-double), not 4 — see dtrsv.mjs.
   const bytesA = n * lda * 8;
   if (bytesA > device.limits.maxStorageBufferBindingSize) {
     console.log(
