@@ -39,8 +39,9 @@ def run_shell(cmd, **kwargs):
 
 run(["apt-get", "update", "-qq"])
 # libx11-6/libxext6: libGLX_nvidia (the NVIDIA Vulkan ICD) links against them
-# even headless.
-run(["apt-get", "install", "-y", "-qq", "libvulkan1", "vulkan-tools", "libx11-6", "libxext6"])
+# even headless. libegl1: glvnd's libEGL dispatcher, which the ICD loads at
+# startup (it hands off to libEGL_nvidia, see section 2).
+run(["apt-get", "install", "-y", "-qq", "libvulkan1", "vulkan-tools", "libx11-6", "libxext6", "libegl1"])
 run_shell("curl -fsSL https://deb.nodesource.com/setup_22.x | bash -")
 run(["apt-get", "install", "-y", "-qq", "nodejs"])
 
@@ -62,10 +63,16 @@ print("npm: ", subprocess.check_output([npm, "--version"]).decode().strip())  # 
 # later subprocess inherits the environment set here.
 
 # The driver's Vulkan ICD and the libraries it loads (linked or dlopen'd) —
-# found by tracing a Dawn device init with LD_DEBUG=libs.
+# found by tracing a Dawn device init with LD_DEBUG=libs, and strace in a
+# plain ubuntu:22.04 container with only the GPU device nodes passed through
+# (which reproduces Kaggle's failure). The EGL pair is needed because the ICD
+# opens libEGL.so.1 while it initializes and, finding no NVIDIA EGL vendor,
+# returns no vkCreateInstance ("Could not get 'vkCreateInstance' via
+# 'vk_icdGetInstanceProcAddr'").
 NV_VULKAN_LIBS = [
     "libGLX_nvidia", "libnvidia-glcore", "libnvidia-glsi", "libnvidia-tls",
     "libnvidia-glvkspirv", "libnvidia-gpucomp", "libnvidia-allocator",
+    "libEGL_nvidia", "libnvidia-eglcore",
 ]
 NV_URLS = [
     "https://us.download.nvidia.com/tesla/{v}/NVIDIA-Linux-x86_64-{v}.run",
@@ -103,20 +110,28 @@ def setup_nvidia_vulkan(lib_dir="/tmp/nvidia-vulkan"):
         src = extract / f"{name}.so.{version}"
         if src.exists():  # libnvidia-gpucomp only exists from ~530 on
             shutil.copy(src, out / src.name)
-    # Soname links (libGLX_nvidia.so.0, which the ICD manifest names, and
-    # libnvidia-allocator.so.1); the rest are linked by full version.
+    # Soname links (libGLX_nvidia.so.0 and libEGL_nvidia.so.0, which the
+    # manifests name, and libnvidia-allocator.so.1); the rest are linked by
+    # full version.
     run([shutil.which("ldconfig") or "/sbin/ldconfig", "-n", str(out)])
 
     manifest = json.loads((extract / "nvidia_icd.json").read_text())
     manifest["ICD"]["library_path"] = str(out / "libGLX_nvidia.so.0")
     icd = out / "nvidia_icd.json"
     icd.write_text(json.dumps(manifest, indent=2))
+    egl_vendor = out / "10_nvidia.json"
+    egl_vendor.write_text(json.dumps({
+        "file_format_version": "1.0.0",
+        "ICD": {"library_path": str(out / "libEGL_nvidia.so.0")},
+    }, indent=2))
     shutil.rmtree(extract)
 
     # NVIDIA only: llvmpipe stays out of the loader's list entirely, so Dawn
     # can't quietly pick it.
     os.environ["VK_ICD_FILENAMES"] = str(icd)
     os.environ["VK_DRIVER_FILES"] = str(icd)  # the newer loaders' name for it
+    # glvnd's EGL dispatcher otherwise only finds Mesa's vendor file.
+    os.environ["__EGL_VENDOR_LIBRARY_FILENAMES"] = str(egl_vendor)
     os.environ["LD_LIBRARY_PATH"] = ":".join(
         p for p in (str(out), os.environ.get("LD_LIBRARY_PATH")) if p)
 
