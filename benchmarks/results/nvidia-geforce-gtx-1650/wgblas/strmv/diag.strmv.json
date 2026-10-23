@@ -2,32 +2,32 @@
   {
     "diag": "non-unit",
     "n": 32,
-    "compute_ms": 0.006704,
-    "compute_GBs": 0.3532219570405728
+    "compute_ms": 0.006464,
+    "compute_GBs": 0.36633663366336633
   },
   {
     "diag": "non-unit",
     "n": 64,
-    "compute_ms": 0.006816,
-    "compute_GBs": 1.295774647887324
+    "compute_ms": 0.006528,
+    "compute_GBs": 1.352941176470588
   },
   {
     "diag": "non-unit",
     "n": 128,
-    "compute_ms": 0.00728,
-    "compute_GBs": 4.676923076923077
+    "compute_ms": 0.0068000000000000005,
+    "compute_GBs": 5.0070588235294125
   },
   {
     "diag": "non-unit",
     "n": 256,
-    "compute_ms": 0.00864,
-    "compute_GBs": 15.466666666666667
+    "compute_ms": 0.008608,
+    "compute_GBs": 15.524163568773236
   },
   {
     "diag": "non-unit",
     "n": 512,
-    "compute_ms": 0.011456,
-    "compute_GBs": 46.2122905027933
+    "compute_ms": 0.011568,
+    "compute_GBs": 45.76486860304288
   },
   {
     "diag": "non-unit",
@@ -44,44 +44,44 @@
   {
     "diag": "non-unit",
     "n": 2048,
-    "compute_ms": 0.08192,
-    "compute_GBs": 102.65
+    "compute_ms": 0.082336,
+    "compute_GBs": 102.13136416634279
   },
   {
     "diag": "non-unit",
     "n": 4096,
-    "compute_ms": 0.276768,
-    "compute_GBs": 121.38466874783212
+    "compute_ms": 0.27648,
+    "compute_GBs": 121.51111111111112
   },
   {
     "diag": "unit",
     "n": 32,
-    "compute_ms": 0.00672,
-    "compute_GBs": 0.3523809523809524
+    "compute_ms": 0.006592,
+    "compute_GBs": 0.3592233009708738
   },
   {
     "diag": "unit",
     "n": 64,
-    "compute_ms": 0.006912,
-    "compute_GBs": 1.2777777777777777
+    "compute_ms": 0.006656,
+    "compute_GBs": 1.3269230769230769
   },
   {
     "diag": "unit",
     "n": 128,
-    "compute_ms": 0.007183999999999999,
-    "compute_GBs": 4.739420935412028
+    "compute_ms": 0.0072,
+    "compute_GBs": 4.728888888888889
   },
   {
     "diag": "unit",
     "n": 256,
-    "compute_ms": 0.00872,
-    "compute_GBs": 15.324770642201837
+    "compute_ms": 0.00848,
+    "compute_GBs": 15.758490566037738
   },
   {
     "diag": "unit",
     "n": 512,
-    "compute_ms": 0.011536000000000001,
-    "compute_GBs": 45.89181692094313
+    "compute_ms": 0.011519999999999999,
+    "compute_GBs": 45.955555555555556
   },
   {
     "diag": "unit",
@@ -92,19 +92,19 @@
   {
     "diag": "unit",
     "n": 1280,
-    "compute_ms": 0.039088,
-    "compute_GBs": 84.15882112157185
+    "compute_ms": 0.038912,
+    "compute_GBs": 84.53947368421052
   },
   {
     "diag": "unit",
     "n": 2048,
-    "compute_ms": 0.08192,
-    "compute_GBs": 102.65
+    "compute_ms": 0.082464,
+    "compute_GBs": 101.97283663174234
   },
   {
     "diag": "unit",
     "n": 4096,
-    "compute_ms": 0.312768,
-    "compute_GBs": 107.41313689379989
+    "compute_ms": 0.27648,
+    "compute_GBs": 121.51111111111112
   }
 ]

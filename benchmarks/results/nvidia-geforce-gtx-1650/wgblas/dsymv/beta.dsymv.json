@@ -2,116 +2,116 @@
   {
     "beta": 0,
     "n": 32,
-    "compute_ms": 0.008224,
-    "compute_GBs": 0.5758754863813229
+    "compute_ms": 0.008256,
+    "compute_GBs": 0.5736434108527132
   },
   {
     "beta": 0,
     "n": 64,
-    "compute_ms": 0.008608,
-    "compute_GBs": 2.0520446096654275
+    "compute_ms": 0.008512,
+    "compute_GBs": 2.0751879699248117
   },
   {
     "beta": 0,
     "n": 128,
-    "compute_ms": 0.011519999999999999,
-    "compute_GBs": 5.911111111111111
+    "compute_ms": 0.011888,
+    "compute_GBs": 5.728129205921939
   },
   {
     "beta": 0,
     "n": 256,
-    "compute_ms": 0.021984,
-    "compute_GBs": 12.157205240174672
+    "compute_ms": 0.01856,
+    "compute_GBs": 14.400000000000002
   },
   {
     "beta": 0,
     "n": 512,
-    "compute_ms": 0.055296,
-    "compute_GBs": 19.14814814814815
+    "compute_ms": 0.042208,
+    "compute_GBs": 25.085670962850642
   },
   {
     "beta": 0,
     "n": 1024,
-    "compute_ms": 0.178176,
-    "compute_GBs": 23.655172413793103
+    "compute_ms": 0.12288,
+    "compute_GBs": 34.3
   },
   {
     "beta": 0,
     "n": 1280,
-    "compute_ms": 0.284832,
-    "compute_GBs": 23.09852825525222
+    "compute_ms": 0.182272,
+    "compute_GBs": 36.09550561797754
   },
   {
     "beta": 0,
     "n": 2048,
-    "compute_ms": 0.645312,
-    "compute_GBs": 26.06208469701478
+    "compute_ms": 0.427456,
+    "compute_GBs": 39.3448120976194
   },
   {
     "beta": 0,
     "n": 4096,
-    "compute_ms": 2.977008,
-    "compute_GBs": 22.56990374228084
+    "compute_ms": 1.610304,
+    "compute_GBs": 41.72552760224157
   },
   {
     "beta": 1,
     "n": 32,
-    "compute_ms": 0.008224,
-    "compute_GBs": 0.5758754863813229
+    "compute_ms": 0.008288,
+    "compute_GBs": 0.5714285714285714
   },
   {
     "beta": 1,
     "n": 64,
-    "compute_ms": 0.00856,
-    "compute_GBs": 2.0635514018691588
+    "compute_ms": 0.008448,
+    "compute_GBs": 2.0909090909090904
   },
   {
     "beta": 1,
     "n": 128,
-    "compute_ms": 0.0116,
-    "compute_GBs": 5.870344827586208
+    "compute_ms": 0.01184,
+    "compute_GBs": 5.751351351351352
   },
   {
     "beta": 1,
     "n": 256,
-    "compute_ms": 0.022032000000000003,
-    "compute_GBs": 12.130718954248366
+    "compute_ms": 0.01856,
+    "compute_GBs": 14.400000000000002
   },
   {
     "beta": 1,
     "n": 512,
-    "compute_ms": 0.055296,
-    "compute_GBs": 19.14814814814815
+    "compute_ms": 0.041888,
+    "compute_GBs": 25.277310924369747
   },
   {
     "beta": 1,
     "n": 1024,
-    "compute_ms": 0.178176,
-    "compute_GBs": 23.655172413793103
+    "compute_ms": 0.122912,
+    "compute_GBs": 34.29107003384535
   },
   {
     "beta": 1,
     "n": 1280,
-    "compute_ms": 0.285184,
-    "compute_GBs": 23.070017953321365
+    "compute_ms": 0.182272,
+    "compute_GBs": 36.09550561797754
   },
   {
     "beta": 1,
     "n": 2048,
-    "compute_ms": 0.645472,
-    "compute_GBs": 26.055624411283524
+    "compute_ms": 0.426896,
+    "compute_GBs": 39.39642442187324
   },
   {
     "beta": 1,
     "n": 4096,
-    "compute_ms": 2.918224,
-    "compute_GBs": 23.024546436462725
+    "compute_ms": 1.611584,
+    "compute_GBs": 41.69238711727096
   },
   {
     "beta": 2.5,
     "n": 32,
-    "compute_ms": 0.008224,
-    "compute_GBs": 0.5758754863813229
+    "compute_ms": 0.008256,
+    "compute_GBs": 0.5736434108527132
   },
   {
     "beta": 2.5,
@@ -122,97 +122,97 @@
   {
     "beta": 2.5,
     "n": 128,
-    "compute_ms": 0.011888,
-    "compute_GBs": 5.728129205921939
+    "compute_ms": 0.011824000000000001,
+    "compute_GBs": 5.7591339648173205
   },
   {
     "beta": 2.5,
     "n": 256,
-    "compute_ms": 0.022016,
-    "compute_GBs": 12.13953488372093
+    "compute_ms": 0.018592,
+    "compute_GBs": 14.375215146299483
   },
   {
     "beta": 2.5,
     "n": 512,
-    "compute_ms": 0.055296,
-    "compute_GBs": 19.14814814814815
+    "compute_ms": 0.041984,
+    "compute_GBs": 25.219512195121947
   },
   {
     "beta": 2.5,
     "n": 1024,
-    "compute_ms": 0.178176,
-    "compute_GBs": 23.655172413793103
+    "compute_ms": 0.12288,
+    "compute_GBs": 34.3
   },
   {
     "beta": 2.5,
     "n": 1280,
-    "compute_ms": 0.286096,
-    "compute_GBs": 22.99647670711929
+    "compute_ms": 0.182272,
+    "compute_GBs": 36.09550561797754
   },
   {
     "beta": 2.5,
     "n": 2048,
-    "compute_ms": 0.648512,
-    "compute_GBs": 25.933484654100468
+    "compute_ms": 0.427072,
+    "compute_GBs": 39.38018882062041
   },
   {
     "beta": 2.5,
     "n": 4096,
-    "compute_ms": 2.971824,
-    "compute_GBs": 22.609274304265668
+    "compute_ms": 1.610912,
+    "compute_GBs": 41.70977930513896
   },
   {
     "beta": -3.75,
     "n": 32,
-    "compute_ms": 0.00832,
-    "compute_GBs": 0.5692307692307692
+    "compute_ms": 0.008224,
+    "compute_GBs": 0.5758754863813229
   },
   {
     "beta": -3.75,
     "n": 64,
-    "compute_ms": 0.008591999999999999,
-    "compute_GBs": 2.0558659217877095
+    "compute_ms": 0.00864,
+    "compute_GBs": 2.0444444444444443
   },
   {
     "beta": -3.75,
     "n": 128,
-    "compute_ms": 0.011712,
-    "compute_GBs": 5.814207650273224
+    "compute_ms": 0.011952,
+    "compute_GBs": 5.697456492637216
   },
   {
     "beta": -3.75,
     "n": 256,
-    "compute_ms": 0.022095999999999998,
-    "compute_GBs": 12.095582910934109
+    "compute_ms": 0.018512,
+    "compute_GBs": 14.43733794295592
   },
   {
     "beta": -3.75,
     "n": 512,
-    "compute_ms": 0.055296,
-    "compute_GBs": 19.14814814814815
+    "compute_ms": 0.042032,
+    "compute_GBs": 25.19071183859916
   },
   {
     "beta": -3.75,
     "n": 1024,
-    "compute_ms": 0.178176,
-    "compute_GBs": 23.655172413793103
+    "compute_ms": 0.12288,
+    "compute_GBs": 34.3
   },
   {
     "beta": -3.75,
     "n": 1280,
-    "compute_ms": 0.28496,
-    "compute_GBs": 23.08815272318922
+    "compute_ms": 0.182272,
+    "compute_GBs": 36.09550561797754
   },
   {
     "beta": -3.75,
     "n": 2048,
-    "compute_ms": 0.6464160000000001,
-    "compute_GBs": 26.017573822430133
+    "compute_ms": 0.427424,
+    "compute_GBs": 39.347757730029194
   },
   {
     "beta": -3.75,
     "n": 4096,
-    "compute_ms": 2.9925759999999997,
-    "compute_GBs": 22.45249042964991
+    "compute_ms": 1.611104,
+    "compute_GBs": 41.70480862812084
   }
 ]
