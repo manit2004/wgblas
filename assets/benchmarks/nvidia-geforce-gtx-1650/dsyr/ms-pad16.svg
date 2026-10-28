@@ -26,22 +26,22 @@
 <text class="at" x="496.3" y="236" text-anchor="middle">1.0K</text>
 <text class="at" x="524.6" y="236" text-anchor="middle">1.3K</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">2.0K</text>
-<polyline class="ln1" points="58.0,215.6 145.7,215.5 233.3,214.8 321.0,213.2 408.7,205.6 496.3,177.6 524.6,152.0 584.0,56.1"/>
-<polyline class="ln2" points="58.0,217.5 145.7,217.5 233.3,217.3 321.0,216.1 408.7,210.5 496.3,181.7 524.6,146.5 584.0,50.7"/>
+<polyline class="ln1" points="58.0,215.6 145.7,215.4 233.3,214.8 321.0,213.2 408.7,205.8 496.3,176.3 524.6,151.0 584.0,58.5"/>
+<polyline class="ln2" points="58.0,217.5 145.7,217.6 233.3,217.3 321.0,216.2 408.7,210.5 496.3,181.8 524.6,146.6 584.0,51.8"/>
 <circle class="mk1" cx="58.0" cy="215.6" r="4"/>
-<circle class="mk1" cx="145.7" cy="215.5" r="4"/>
+<circle class="mk1" cx="145.7" cy="215.4" r="4"/>
 <circle class="mk1" cx="233.3" cy="214.8" r="4"/>
 <circle class="mk1" cx="321.0" cy="213.2" r="4"/>
-<circle class="mk1" cx="408.7" cy="205.6" r="4"/>
-<circle class="mk1" cx="496.3" cy="177.6" r="4"/>
-<circle class="mk1" cx="524.6" cy="152.0" r="4"/>
-<circle class="mk1" cx="584.0" cy="56.1" r="4"/>
+<circle class="mk1" cx="408.7" cy="205.8" r="4"/>
+<circle class="mk1" cx="496.3" cy="176.3" r="4"/>
+<circle class="mk1" cx="524.6" cy="151.0" r="4"/>
+<circle class="mk1" cx="584.0" cy="58.5" r="4"/>
 <circle class="mk2" cx="58.0" cy="217.5" r="4"/>
-<circle class="mk2" cx="145.7" cy="217.5" r="4"/>
+<circle class="mk2" cx="145.7" cy="217.6" r="4"/>
 <circle class="mk2" cx="233.3" cy="217.3" r="4"/>
-<circle class="mk2" cx="321.0" cy="216.1" r="4"/>
+<circle class="mk2" cx="321.0" cy="216.2" r="4"/>
 <circle class="mk2" cx="408.7" cy="210.5" r="4"/>
-<circle class="mk2" cx="496.3" cy="181.7" r="4"/>
-<circle class="mk2" cx="524.6" cy="146.5" r="4"/>
-<circle class="mk2" cx="584.0" cy="50.7" r="4"/>
+<circle class="mk2" cx="496.3" cy="181.8" r="4"/>
+<circle class="mk2" cx="524.6" cy="146.6" r="4"/>
+<circle class="mk2" cx="584.0" cy="51.8" r="4"/>
 </svg>

@@ -24,20 +24,20 @@
 <text class="at" x="373.6" y="236" text-anchor="middle">512</text>
 <text class="at" x="478.8" y="236" text-anchor="middle">1.0K</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">2.0K</text>
-<polyline class="ln1" points="58.0,184.4 163.2,131.8 268.4,120.6 373.6,57.7 478.8,124.2 584.0,174.1"/>
-<polyline class="ln2" points="58.0,171.8 163.2,72.8 268.4,43.8 373.6,52.2 478.8,88.4 584.0,160.1"/>
-<circle class="mk1" cx="58.0" cy="184.4" r="4"/>
-<circle class="mk1" cx="163.2" cy="131.8" r="4"/>
-<circle class="mk1" cx="268.4" cy="120.6" r="4"/>
-<circle class="mk1" cx="373.6" cy="57.7" r="4"/>
-<circle class="mk1" cx="478.8" cy="124.2" r="4"/>
-<circle class="mk1" cx="584.0" cy="174.1" r="4"/>
-<circle class="mk2" cx="58.0" cy="171.8" r="4"/>
-<circle class="mk2" cx="163.2" cy="72.8" r="4"/>
-<circle class="mk2" cx="268.4" cy="43.8" r="4"/>
-<circle class="mk2" cx="373.6" cy="52.2" r="4"/>
-<circle class="mk2" cx="478.8" cy="88.4" r="4"/>
-<circle class="mk2" cx="584.0" cy="160.1" r="4"/>
+<polyline class="ln1" points="58.0,183.7 163.2,128.9 268.4,121.7 373.6,53.8 478.8,123.3 584.0,172.6"/>
+<polyline class="ln2" points="58.0,167.6 163.2,67.2 268.4,30.3 373.6,42.0 478.8,78.0 584.0,153.9"/>
+<circle class="mk1" cx="58.0" cy="183.7" r="4"/>
+<circle class="mk1" cx="163.2" cy="128.9" r="4"/>
+<circle class="mk1" cx="268.4" cy="121.7" r="4"/>
+<circle class="mk1" cx="373.6" cy="53.8" r="4"/>
+<circle class="mk1" cx="478.8" cy="123.3" r="4"/>
+<circle class="mk1" cx="584.0" cy="172.6" r="4"/>
+<circle class="mk2" cx="58.0" cy="167.6" r="4"/>
+<circle class="mk2" cx="163.2" cy="67.2" r="4"/>
+<circle class="mk2" cx="268.4" cy="30.3" r="4"/>
+<circle class="mk2" cx="373.6" cy="42.0" r="4"/>
+<circle class="mk2" cx="478.8" cy="78.0" r="4"/>
+<circle class="mk2" cx="584.0" cy="153.9" r="4"/>
 <line class="ln1" x1="58" y1="252" x2="74" y2="252"/>
 <circle class="mk1" cx="66" cy="252" r="4"/>
 <text class="lt" x="80" y="256">wgblas</text>
