@@ -27,24 +27,24 @@
 <text class="at" x="422.2" y="236" text-anchor="middle">16K</text>
 <text class="at" x="503.1" y="236" text-anchor="middle">65K</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">262K</text>
-<polyline class="ln1" points="58.0,218.7 98.5,218.7 138.9,218.7 219.8,218.7 260.3,218.6 341.2,216.6 422.2,208.1 503.1,173.6 584.0,31.6"/>
-<polyline class="ln2" points="58.0,219.4 98.5,219.4 138.9,219.4 219.8,219.2 260.3,219.2 341.2,218.9 422.2,212.8 503.1,189.6 584.0,96.5"/>
+<polyline class="ln1" points="58.0,218.7 98.5,218.7 138.9,218.7 219.8,218.6 260.3,218.6 341.2,216.5 422.2,208.2 503.1,173.6 584.0,36.9"/>
+<polyline class="ln2" points="58.0,219.4 98.5,219.4 138.9,219.4 219.8,219.2 260.3,219.2 341.2,218.9 422.2,212.9 503.1,188.9 584.0,95.4"/>
 <circle class="mk1" cx="58.0" cy="218.7" r="4"/>
 <circle class="mk1" cx="98.5" cy="218.7" r="4"/>
 <circle class="mk1" cx="138.9" cy="218.7" r="4"/>
-<circle class="mk1" cx="219.8" cy="218.7" r="4"/>
+<circle class="mk1" cx="219.8" cy="218.6" r="4"/>
 <circle class="mk1" cx="260.3" cy="218.6" r="4"/>
-<circle class="mk1" cx="341.2" cy="216.6" r="4"/>
-<circle class="mk1" cx="422.2" cy="208.1" r="4"/>
+<circle class="mk1" cx="341.2" cy="216.5" r="4"/>
+<circle class="mk1" cx="422.2" cy="208.2" r="4"/>
 <circle class="mk1" cx="503.1" cy="173.6" r="4"/>
-<circle class="mk1" cx="584.0" cy="31.6" r="4"/>
+<circle class="mk1" cx="584.0" cy="36.9" r="4"/>
 <circle class="mk2" cx="58.0" cy="219.4" r="4"/>
 <circle class="mk2" cx="98.5" cy="219.4" r="4"/>
 <circle class="mk2" cx="138.9" cy="219.4" r="4"/>
 <circle class="mk2" cx="219.8" cy="219.2" r="4"/>
 <circle class="mk2" cx="260.3" cy="219.2" r="4"/>
 <circle class="mk2" cx="341.2" cy="218.9" r="4"/>
-<circle class="mk2" cx="422.2" cy="212.8" r="4"/>
-<circle class="mk2" cx="503.1" cy="189.6" r="4"/>
-<circle class="mk2" cx="584.0" cy="96.5" r="4"/>
+<circle class="mk2" cx="422.2" cy="212.9" r="4"/>
+<circle class="mk2" cx="503.1" cy="188.9" r="4"/>
+<circle class="mk2" cx="584.0" cy="95.4" r="4"/>
 </svg>

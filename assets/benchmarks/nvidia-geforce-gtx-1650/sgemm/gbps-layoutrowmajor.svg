@@ -22,11 +22,11 @@
 <text class="at" x="373.6" y="236" text-anchor="middle">512</text>
 <text class="at" x="478.8" y="236" text-anchor="middle">1.0K</text>
 <text class="at" x="584.0" y="236" text-anchor="middle">2.0K</text>
-<polyline class="ln1" points="58.0,174.2 163.2,108.2 268.4,99.6 373.6,24.0 478.8,103.3 584.0,164.5"/>
-<circle class="mk1" cx="58.0" cy="174.2" r="4"/>
-<circle class="mk1" cx="163.2" cy="108.2" r="4"/>
-<circle class="mk1" cx="268.4" cy="99.6" r="4"/>
-<circle class="mk1" cx="373.6" cy="24.0" r="4"/>
-<circle class="mk1" cx="478.8" cy="103.3" r="4"/>
-<circle class="mk1" cx="584.0" cy="164.5" r="4"/>
+<polyline class="ln1" points="58.0,175.8 163.2,110.3 268.4,100.2 373.6,20.2 478.8,101.9 584.0,163.6"/>
+<circle class="mk1" cx="58.0" cy="175.8" r="4"/>
+<circle class="mk1" cx="163.2" cy="110.3" r="4"/>
+<circle class="mk1" cx="268.4" cy="100.2" r="4"/>
+<circle class="mk1" cx="373.6" cy="20.2" r="4"/>
+<circle class="mk1" cx="478.8" cy="101.9" r="4"/>
+<circle class="mk1" cx="584.0" cy="163.6" r="4"/>
 </svg>

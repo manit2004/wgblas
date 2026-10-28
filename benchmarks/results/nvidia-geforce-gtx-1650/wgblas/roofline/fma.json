@@ -3,7 +3,7 @@
     "threads": 262144,
     "iters": 4096,
     "chains": 8,
-    "compute_ms": 5.449856,
-    "compute_GFLOPs": 3152.3528665711538
+    "compute_ms": 5.443392,
+    "compute_GFLOPs": 3156.096269384972
   }
 ]

@@ -2,337 +2,337 @@
   {
     "pad": 0,
     "n": 64,
-    "compute_ms": 0.07022400000000001,
-    "compute_GFLOPs": 3.7329687856003644,
-    "compute_GBs": 1.8664843928001822
+    "compute_ms": 0.018432,
+    "compute_GFLOPs": 14.222222222222223,
+    "compute_GBs": 7.111111111111112
   },
   {
     "pad": 0,
     "n": 128,
-    "compute_ms": 0.097824,
-    "compute_GFLOPs": 21.43801112201505,
-    "compute_GBs": 5.359502780503763
+    "compute_ms": 0.051744,
+    "compute_GFLOPs": 40.52937538651825,
+    "compute_GBs": 10.132343846629562
   },
   {
     "pad": 0,
     "n": 256,
-    "compute_ms": 0.19328,
-    "compute_GFLOPs": 86.80264900662252,
-    "compute_GBs": 10.850331125827815
+    "compute_ms": 0.17648,
+    "compute_GFLOPs": 95.0658204895739,
+    "compute_GBs": 11.883227561196737
   },
   {
     "pad": 0,
     "n": 512,
-    "compute_ms": 0.593024,
-    "compute_GFLOPs": 226.32764947118497,
-    "compute_GBs": 14.14547809194906
+    "compute_ms": 0.67544,
+    "compute_GFLOPs": 198.71154802795215,
+    "compute_GBs": 12.41947175174701
   },
   {
     "pad": 0,
     "n": 1024,
-    "compute_ms": 2.43712,
-    "compute_GFLOPs": 440.5781512605042,
-    "compute_GBs": 13.768067226890757
+    "compute_ms": 1.3213119999999998,
+    "compute_GFLOPs": 812.6330677387326,
+    "compute_GBs": 25.394783366835394
   },
   {
     "pad": 0,
     "n": 2048,
-    "compute_ms": 14.487680000000001,
-    "compute_GFLOPs": 592.9130538498918,
-    "compute_GBs": 9.264266466404559
+    "compute_ms": 7.4435839999999995,
+    "compute_GFLOPs": 1154.0051931972557,
+    "compute_GBs": 18.03133114370712
   },
   {
     "pad": 1,
     "n": 64,
-    "compute_ms": 0.07059199999999999,
-    "compute_GFLOPs": 3.713508612873981,
-    "compute_GBs": 1.8567543064369905
+    "compute_ms": 0.017264,
+    "compute_GFLOPs": 15.18443002780352,
+    "compute_GBs": 7.59221501390176
   },
   {
     "pad": 1,
     "n": 128,
-    "compute_ms": 0.09718399999999999,
-    "compute_GFLOPs": 21.579189990121833,
-    "compute_GBs": 5.394797497530458
+    "compute_ms": 0.045056,
+    "compute_GFLOPs": 46.545454545454554,
+    "compute_GBs": 11.636363636363638
   },
   {
     "pad": 1,
     "n": 256,
-    "compute_ms": 0.194048,
-    "compute_GFLOPs": 86.45910290237468,
-    "compute_GBs": 10.807387862796835
+    "compute_ms": 0.150096,
+    "compute_GFLOPs": 111.77656966208293,
+    "compute_GBs": 13.972071207760367
   },
   {
     "pad": 1,
     "n": 512,
-    "compute_ms": 0.593936,
-    "compute_GFLOPs": 225.98011907006818,
-    "compute_GBs": 14.123757441879262
+    "compute_ms": 0.590144,
+    "compute_GFLOPs": 227.4321657087084,
+    "compute_GBs": 14.214510356794275
   },
   {
     "pad": 1,
     "n": 1024,
-    "compute_ms": 2.44336,
-    "compute_GFLOPs": 439.45297622945446,
-    "compute_GBs": 13.732905507170452
+    "compute_ms": 1.487232,
+    "compute_GFLOPs": 721.9733195627852,
+    "compute_GBs": 22.561666236337036
   },
   {
     "pad": 1,
     "n": 2048,
-    "compute_ms": 14.53312,
-    "compute_GFLOPs": 591.059221419764,
-    "compute_GBs": 9.235300334683812
+    "compute_ms": 8.560368,
+    "compute_GFLOPs": 1003.4538926363913,
+    "compute_GBs": 15.678967072443614
   },
   {
     "pad": 8,
     "n": 64,
-    "compute_ms": 0.070704,
-    "compute_GFLOPs": 3.7076261597646525,
-    "compute_GBs": 1.8538130798823262
+    "compute_ms": 0.016848000000000002,
+    "compute_GFLOPs": 15.559354226020892,
+    "compute_GBs": 7.779677113010446
   },
   {
     "pad": 8,
     "n": 128,
-    "compute_ms": 0.097664,
-    "compute_GFLOPs": 21.47313237221494,
-    "compute_GBs": 5.368283093053735
+    "compute_ms": 0.044592,
+    "compute_GFLOPs": 47.02978112665949,
+    "compute_GBs": 11.757445281664873
   },
   {
     "pad": 8,
     "n": 256,
-    "compute_ms": 0.193392,
-    "compute_GFLOPs": 86.75237858856623,
-    "compute_GBs": 10.844047323570779
+    "compute_ms": 0.149504,
+    "compute_GFLOPs": 112.21917808219177,
+    "compute_GBs": 14.027397260273972
   },
   {
     "pad": 8,
     "n": 512,
-    "compute_ms": 0.595056,
-    "compute_GFLOPs": 225.5547847597537,
-    "compute_GBs": 14.097174047484605
+    "compute_ms": 0.575472,
+    "compute_GFLOPs": 233.23068368226433,
+    "compute_GBs": 14.57691773014152
   },
   {
     "pad": 8,
     "n": 1024,
-    "compute_ms": 2.442096,
-    "compute_GFLOPs": 439.68043189129344,
-    "compute_GBs": 13.74001349660292
+    "compute_ms": 1.304752,
+    "compute_GFLOPs": 822.9470612039684,
+    "compute_GBs": 25.71709566262401
   },
   {
     "pad": 8,
     "n": 2048,
-    "compute_ms": 14.508624000000001,
-    "compute_GFLOPs": 592.0571511123316,
-    "compute_GBs": 9.25089298613018
+    "compute_ms": 7.27552,
+    "compute_GFLOPs": 1180.6626319493314,
+    "compute_GBs": 18.447853624208303
   },
   {
     "pad": 16,
     "n": 64,
-    "compute_ms": 0.070032,
-    "compute_GFLOPs": 3.7432031071510172,
-    "compute_GBs": 1.8716015535755086
+    "compute_ms": 0.017472,
+    "compute_GFLOPs": 15.003663003663004,
+    "compute_GBs": 7.501831501831502
   },
   {
     "pad": 16,
     "n": 128,
-    "compute_ms": 0.097408,
-    "compute_GFLOPs": 21.529566360052563,
-    "compute_GBs": 5.382391590013141
+    "compute_ms": 0.046272,
+    "compute_GFLOPs": 45.322268326417706,
+    "compute_GBs": 11.330567081604427
   },
   {
     "pad": 16,
     "n": 256,
-    "compute_ms": 0.193472,
-    "compute_GFLOPs": 86.71650678134304,
-    "compute_GBs": 10.83956334766788
+    "compute_ms": 0.15752,
+    "compute_GFLOPs": 106.50848146267141,
+    "compute_GBs": 13.313560182833927
   },
   {
     "pad": 16,
     "n": 512,
-    "compute_ms": 0.59392,
-    "compute_GFLOPs": 225.98620689655175,
-    "compute_GBs": 14.124137931034484
+    "compute_ms": 0.6018399999999999,
+    "compute_GFLOPs": 223.01230891931414,
+    "compute_GBs": 13.938269307457134
   },
   {
     "pad": 16,
     "n": 1024,
-    "compute_ms": 2.4404640000000004,
-    "compute_GFLOPs": 439.9744573163136,
-    "compute_GBs": 13.7492017911348
+    "compute_ms": 1.30752,
+    "compute_GFLOPs": 821.2048947626041,
+    "compute_GBs": 25.66265296133138
   },
   {
     "pad": 16,
     "n": 2048,
-    "compute_ms": 14.476208,
-    "compute_GFLOPs": 593.3829212733059,
-    "compute_GBs": 9.271608144895405
+    "compute_ms": 7.3048,
+    "compute_GFLOPs": 1175.9301544190123,
+    "compute_GBs": 18.373908662797067
   },
   {
     "pad": 32,
     "n": 64,
-    "compute_ms": 0.07025600000000001,
-    "compute_GFLOPs": 3.731268503757686,
-    "compute_GBs": 1.865634251878843
+    "compute_ms": 0.018432,
+    "compute_GFLOPs": 14.222222222222223,
+    "compute_GBs": 7.111111111111112
   },
   {
     "pad": 32,
     "n": 128,
-    "compute_ms": 0.096992,
-    "compute_GFLOPs": 21.62190696139888,
-    "compute_GBs": 5.40547674034972
+    "compute_ms": 0.051904000000000006,
+    "compute_GFLOPs": 40.40443896424168,
+    "compute_GBs": 10.10110974106042
   },
   {
     "pad": 32,
     "n": 256,
-    "compute_ms": 0.193936,
-    "compute_GFLOPs": 86.5090339080934,
-    "compute_GBs": 10.813629238511675
+    "compute_ms": 0.176176,
+    "compute_GFLOPs": 95.22986104804288,
+    "compute_GBs": 11.90373263100536
   },
   {
     "pad": 32,
     "n": 512,
-    "compute_ms": 0.59392,
-    "compute_GFLOPs": 225.98620689655175,
-    "compute_GBs": 14.124137931034484
+    "compute_ms": 0.677888,
+    "compute_GFLOPs": 197.9939577039275,
+    "compute_GBs": 12.374622356495468
   },
   {
     "pad": 32,
     "n": 1024,
-    "compute_ms": 2.439376,
-    "compute_GFLOPs": 440.17069283292125,
-    "compute_GBs": 13.755334151028789
+    "compute_ms": 1.3311039999999998,
+    "compute_GFLOPs": 806.6550953193741,
+    "compute_GBs": 25.207971728730442
   },
   {
     "pad": 32,
     "n": 2048,
-    "compute_ms": 14.495584000000001,
-    "compute_GFLOPs": 592.5897564389265,
-    "compute_GBs": 9.259214944358227
+    "compute_ms": 7.489520000000001,
+    "compute_GFLOPs": 1146.9272519467202,
+    "compute_GBs": 17.920738311667503
   },
   {
     "pad": 48,
     "n": 64,
-    "compute_ms": 0.07039999999999999,
-    "compute_GFLOPs": 3.7236363636363645,
-    "compute_GBs": 1.8618181818181823
+    "compute_ms": 0.016992,
+    "compute_GFLOPs": 15.427495291902073,
+    "compute_GBs": 7.713747645951036
   },
   {
     "pad": 48,
     "n": 128,
-    "compute_ms": 0.097728,
-    "compute_GFLOPs": 21.459070072036674,
-    "compute_GBs": 5.3647675180091685
+    "compute_ms": 0.046736,
+    "compute_GFLOPs": 44.87230400547758,
+    "compute_GBs": 11.218076001369395
   },
   {
     "pad": 48,
     "n": 256,
-    "compute_ms": 0.19312,
-    "compute_GFLOPs": 86.87456503728251,
-    "compute_GBs": 10.859320629660314
+    "compute_ms": 0.157696,
+    "compute_GFLOPs": 106.3896103896104,
+    "compute_GBs": 13.2987012987013
   },
   {
     "pad": 48,
     "n": 512,
-    "compute_ms": 0.593712,
-    "compute_GFLOPs": 226.06537850001348,
-    "compute_GBs": 14.129086156250843
+    "compute_ms": 0.60416,
+    "compute_GFLOPs": 222.15593220338982,
+    "compute_GBs": 13.884745762711864
   },
   {
     "pad": 48,
     "n": 1024,
-    "compute_ms": 2.4433759999999998,
-    "compute_GFLOPs": 439.4500985521672,
-    "compute_GBs": 13.732815579755226
+    "compute_ms": 1.312704,
+    "compute_GFLOPs": 817.9618741163279,
+    "compute_GBs": 25.561308566135246
   },
   {
     "pad": 48,
     "n": 2048,
-    "compute_ms": 14.488416,
-    "compute_GFLOPs": 592.8829343387158,
-    "compute_GBs": 9.263795849042435
+    "compute_ms": 7.332528,
+    "compute_GFLOPs": 1171.4833672643324,
+    "compute_GBs": 18.304427613505194
   },
   {
     "pad": 64,
     "n": 64,
-    "compute_ms": 0.070464,
-    "compute_GFLOPs": 3.720254314259764,
-    "compute_GBs": 1.860127157129882
+    "compute_ms": 0.018432,
+    "compute_GFLOPs": 14.222222222222223,
+    "compute_GBs": 7.111111111111112
   },
   {
     "pad": 64,
     "n": 128,
-    "compute_ms": 0.097792,
-    "compute_GFLOPs": 21.445026178010473,
-    "compute_GBs": 5.361256544502618
+    "compute_ms": 0.051712,
+    "compute_GFLOPs": 40.554455445544555,
+    "compute_GBs": 10.138613861386139
   },
   {
     "pad": 64,
     "n": 256,
-    "compute_ms": 0.192816,
-    "compute_GFLOPs": 87.0115343125052,
-    "compute_GBs": 10.87644178906315
+    "compute_ms": 0.176128,
+    "compute_GFLOPs": 95.25581395348837,
+    "compute_GBs": 11.906976744186046
   },
   {
     "pad": 64,
     "n": 512,
-    "compute_ms": 0.59392,
-    "compute_GFLOPs": 225.98620689655175,
-    "compute_GBs": 14.124137931034484
+    "compute_ms": 0.67648,
+    "compute_GFLOPs": 198.40605487228007,
+    "compute_GBs": 12.400378429517504
   },
   {
     "pad": 64,
     "n": 1024,
-    "compute_ms": 2.44008,
-    "compute_GFLOPs": 440.0436969279696,
-    "compute_GBs": 13.75136552899905
+    "compute_ms": 1.3318880000000002,
+    "compute_GFLOPs": 806.1802674098722,
+    "compute_GBs": 25.193133356558505
   },
   {
     "pad": 64,
     "n": 2048,
-    "compute_ms": 14.498528,
-    "compute_GFLOPs": 592.4694280688357,
-    "compute_GBs": 9.257334813575557
+    "compute_ms": 7.4794719999999995,
+    "compute_GFLOPs": 1148.468045872757,
+    "compute_GBs": 17.94481321676183
   },
   {
     "pad": 128,
     "n": 64,
-    "compute_ms": 0.070848,
-    "compute_GFLOPs": 3.700090334236676,
-    "compute_GBs": 1.850045167118338
+    "compute_ms": 0.018432,
+    "compute_GFLOPs": 14.222222222222223,
+    "compute_GBs": 7.111111111111112
   },
   {
     "pad": 128,
     "n": 128,
-    "compute_ms": 0.097136,
-    "compute_GFLOPs": 21.589853401416573,
-    "compute_GBs": 5.397463350354143
+    "compute_ms": 0.05184,
+    "compute_GFLOPs": 40.45432098765433,
+    "compute_GBs": 10.113580246913582
   },
   {
     "pad": 128,
     "n": 256,
-    "compute_ms": 0.19288,
-    "compute_GFLOPs": 86.98266279552054,
-    "compute_GBs": 10.872832849440067
+    "compute_ms": 0.176128,
+    "compute_GFLOPs": 95.25581395348837,
+    "compute_GBs": 11.906976744186046
   },
   {
     "pad": 128,
     "n": 512,
-    "compute_ms": 0.5946720000000001,
-    "compute_GFLOPs": 225.70043317997147,
-    "compute_GBs": 14.106277073748217
+    "compute_ms": 0.678272,
+    "compute_GFLOPs": 197.8818645027364,
+    "compute_GBs": 12.367616531421024
   },
   {
     "pad": 128,
     "n": 1024,
-    "compute_ms": 2.439808,
-    "compute_GFLOPs": 440.09275483972505,
-    "compute_GBs": 13.752898588741408
+    "compute_ms": 1.329152,
+    "compute_GFLOPs": 807.8397534668723,
+    "compute_GBs": 25.244992295839758
   },
   {
     "pad": 128,
     "n": 2048,
-    "compute_ms": 14.493376,
-    "compute_GFLOPs": 592.6800347965858,
-    "compute_GBs": 9.260625543696653
+    "compute_ms": 7.494911999999999,
+    "compute_GFLOPs": 1146.1021279502684,
+    "compute_GBs": 17.907845749222943
   }
 ]

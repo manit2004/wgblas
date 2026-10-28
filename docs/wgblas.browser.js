@@ -1,11 +1,11 @@
 var wgblas = (() => {
-  var ti = Object.create;
-  var he = Object.defineProperty;
-  var oi = Object.getOwnPropertyDescriptor;
-  var ai = Object.getOwnPropertyNames;
-  var ii = Object.getPrototypeOf,
-    si = Object.prototype.hasOwnProperty;
-  var be = ((r) =>
+  var mi = Object.create;
+  var ve = Object.defineProperty;
+  var pi = Object.getOwnPropertyDescriptor;
+  var ci = Object.getOwnPropertyNames;
+  var wi = Object.getPrototypeOf,
+    gi = Object.prototype.hasOwnProperty;
+  var _e = ((r) =>
     typeof require < "u"
       ? require
       : typeof Proxy < "u"
@@ -24,33 +24,33 @@ var wgblas = (() => {
       throw ((e = [a]), a);
     }
   };
-  var Re = (r, o) => {
-      for (var e in o) he(r, e, { get: o[e], enumerable: !0 });
+  var Oe = (r, o) => {
+      for (var e in o) ve(r, e, { get: o[e], enumerable: !0 });
     },
-    He = (r, o, e, a) => {
+    Ke = (r, o, e, a) => {
       if ((o && typeof o == "object") || typeof o == "function")
-        for (let t of ai(o))
-          !si.call(r, t) &&
+        for (let t of ci(o))
+          !gi.call(r, t) &&
             t !== e &&
-            he(r, t, {
+            ve(r, t, {
               get: () => o[t],
-              enumerable: !(a = oi(o, t)) || a.enumerable,
+              enumerable: !(a = pi(o, t)) || a.enumerable,
             });
       return r;
     };
-  var ye = (r, o, e) => (
-      (e = r != null ? ti(ii(r)) : {}),
-      He(
+  var Be = (r, o, e) => (
+      (e = r != null ? mi(wi(r)) : {}),
+      Ke(
         o || !r || !r.__esModule
-          ? he(e, "default", { value: r, enumerable: !0 })
+          ? ve(e, "default", { value: r, enumerable: !0 })
           : e,
         r,
       )
     ),
-    ni = (r) => He(he({}, "__esModule", { value: !0 }), r);
-  var Xe,
-    Ye = J(() => {
-      Xe = `// sscal: x = alpha * x
+    hi = (r) => Ke(ve({}, "__esModule", { value: !0 }), r);
+  var it,
+    at = J(() => {
+      it = `// sscal: x = alpha * x
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 
@@ -75,9 +75,9 @@ fn main(
 }
 `;
     });
-  var Je,
-    $e = J(() => {
-      Je = `// cscal: x := alpha * x, complex. x is one interleaved f32 array
+  var nt,
+    st = J(() => {
+      nt = `// cscal: x := alpha * x, complex. x is one interleaved f32 array
 // (re0, im0, re1, im1, ...), matching Complex32Array/GpuVector's storage
 // (and cuBLAS's cuComplex / stdlib's Complex64Array) \u2014 no repacking needed
 // between JS and GPU.
@@ -112,9 +112,9 @@ fn main(
 }
 `;
     });
-  var rt,
-    Qe = J(() => {
-      rt = `// sswap: x <-> y
+  var ut,
+    lt = J(() => {
+      ut = `// sswap: x <-> y
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -142,9 +142,9 @@ fn main(
 }
 `;
     });
-  var tt,
-    et = J(() => {
-      tt = `// dswap: x <-> y, double-double (Dekker) f64 emulation of sswap. A swap is
+  var ft,
+    dt = J(() => {
+      ft = `// dswap: x <-> y, double-double (Dekker) f64 emulation of sswap. A swap is
 // pure data movement \u2014 hi and lo are exchanged verbatim, with no arithmetic
 // at all \u2014 so (unlike dscal/daxpy/ddot) this needs no
 // ddMulProtected/ddAddProtected renormalizing barrier, and so no
@@ -184,9 +184,9 @@ fn main(
 }
 `;
     });
-  var at,
-    ot = J(() => {
-      at = `// saxpy: y = alpha * x + y
+  var pt,
+    mt = J(() => {
+      pt = `// saxpy: y = alpha * x + y
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -213,9 +213,9 @@ fn main(
 }
 `;
     });
-  var st,
-    it = J(() => {
-      st = `// scopy: y = x
+  var wt,
+    ct = J(() => {
+      wt = `// scopy: y = x
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -241,9 +241,9 @@ fn main(
 }
 `;
     });
-  var lt,
-    nt = J(() => {
-      lt = `// dcopy: y = x, double-double (Dekker) f64 emulation of scopy. A copy is
+  var ht,
+    gt = J(() => {
+      ht = `// dcopy: y = x, double-double (Dekker) f64 emulation of scopy. A copy is
 // pure data movement \u2014 hi and lo are transferred verbatim, with no
 // arithmetic at all \u2014 so (unlike dscal/daxpy/ddot) this needs no
 // ddMulProtected/ddAddProtected renormalizing barrier, and so no
@@ -279,9 +279,9 @@ fn main(
 }
 `;
     });
-  var dt,
-    ut = J(() => {
-      dt = `// sdot: result = sum(x[i] * y[i])
+  var yt,
+    bt = J(() => {
+      yt = `// sdot: result = sum(x[i] * y[i])
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/sum.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:        array<f32>;
@@ -336,9 +336,9 @@ fn main(
 }
 `;
     });
-  var Ee,
-    ft = J(() => {
-      Ee = `// sum reduction: collapses 2*WGS partials into one scalar.
+  var Ne,
+    xt = J(() => {
+      Ne = `// sum reduction: collapses 2*WGS partials into one scalar.
 // dispatch: 1 workgroup of WGS threads.
 // partials must have exactly 2*WGS entries.
 
@@ -366,9 +366,9 @@ fn reduce(
 }
 `;
     });
-  var ct,
-    mt = J(() => {
-      ct = `// sasum: result = sum(|x[i]|)
+  var _t,
+    vt = J(() => {
+      _t = `// sasum: result = sum(|x[i]|)
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/abssum.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:        array<f32>;
@@ -421,27 +421,29 @@ fn main(
 }
 `;
     });
-  var wt,
-    pt = J(() => {
-      wt = `// snrm2: result = sqrt(sum(x[i] * x[i])), computed via scaled accumulation
-// (Blue's algorithm / reference BLAS's SLASSQ) rather than naive squaring \u2014
-// naive \`sum += x_i * x_i\` overflows to inf for |x_i| \u2273 1.8e19 (f32's
-// squaring range is only sqrt(f32_max)) and loses precision on tiny
-// magnitudes squaring into the denormal range. Running state is (scale,
-// ssq) with true-sum-of-squares == scale\xB2 \xB7 ssq: scale tracks the largest
-// |x_i| seen so far, and every other contribution is expressed *relative
-// to* scale (never squared in absolute terms), so ssq stays near 1
-// regardless of x's magnitude range. Merging two independent partials
-// (ssqMerge) is associative, so this composes with the same 4-way-ILP +
-// tree-reduction shape every other Level 1 reduction here uses \u2014 see
-// reduction/scaledSum.wgsl for the pass-2 counterpart, which finishes with
-// scale\xB7sqrt(ssq).
+  var kt,
+    Bt = J(() => {
+      kt = `// snrm2: result = sqrt(sum(x[i] * x[i])), overflow- and underflow-safe via
+// Blue's algorithm with fixed scaling (Anderson 2017, "Algorithm 978: Safe
+// Scaling in the Level 1 BLAS" \u2014 what LAPACK 3.10's snrm2 uses). Naive
+// \`sum += x_i * x_i\` overflows to inf for |x_i| \u2273 1.8e19 (f32's squaring
+// range is only sqrt(f32_max)) and loses precision on tiny magnitudes
+// squaring into the denormal range. Instead every |x_i| lands in one of
+// three accumulators by magnitude:
+//   big:    |x| > TBIG  \u2192 (|x| \xB7 SBIG)\xB2   (scaled down, can't overflow)
+//   medium: in between  \u2192 |x|\xB2            (squares safely as-is)
+//   small:  |x| < TSML  \u2192 (|x| \xB7 SSML)\xB2   (scaled up, keeps precision)
+// The scales are constant powers of two, so there's no per-element division
+// or data-dependent rescaling (the running-max SLASSQ update this replaced
+// divided on every element and made the kernel compute-bound), and partials
+// merge by plain addition \u2014 the same 4-way-ILP + tree-reduction shape as
+// sasum. reduction/scaledSum.wgsl adds the partials and combines the three
+// sums into the norm.
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/scaledSum.wgsl.
 
-@group(0) @binding(0) var<storage, read>       x:             array<f32>;
-@group(0) @binding(1) var<storage, read_write> partialsScale: array<f32>;
-@group(0) @binding(2) var<storage, read_write> partialsSsq:   array<f32>;
-@group(0) @binding(3) var<uniform>             params:        Params;
+@group(0) @binding(0) var<storage, read>       x:        array<f32>;
+@group(0) @binding(1) var<storage, read_write> partials: array<f32>; // 3 per workgroup: big, medium, small
+@group(0) @binding(2) var<uniform>             params:   Params;
 
 struct Params {
   n:     u32,
@@ -450,36 +452,30 @@ struct Params {
 
 const WGS: u32 = 64;
 
-struct ScaleSsq {
-  scale: f32,
-  ssq:   f32,
+// Thresholds and scales (powers of two, exact to apply). LAPACK's f32
+// constants, except TBIG = 2^50 rather than 2^52: medium squares are then
+// < 2^100, so the medium sum can't overflow below n = 2^28 elements.
+const TSML: f32 = 0x1p-63f;
+const TBIG: f32 = 0x1p50f;
+const SSML: f32 = 0x1p75f;
+const SBIG: f32 = 0x1p-76f;
+
+// Adds |xi|'s contribution to (big, medium, small). NaN fails both
+// comparisons and lands in medium, which the final combine propagates.
+fn accum(s: vec3f, xi: f32) -> vec3f {
+  let ax = abs(xi);
+  let big = ax > TBIG;
+  let sml = ax < TSML;
+  let yb = ax * SBIG;
+  let ys = ax * SSML;
+  return s + vec3f(
+    select(0.0, yb * yb, big),
+    select(ax * ax, 0.0, big || sml),
+    select(0.0, ys * ys, sml),
+  );
 }
 
-// Folds one more |value| into a running (scale, ssq) pair.
-fn ssqAccum(acc: ScaleSsq, absxi: f32) -> ScaleSsq {
-  if (absxi == 0.0) { return acc; }
-  if (absxi > acc.scale) {
-    let r = acc.scale / absxi; // 0/absxi == 0 on the first nonzero value \u2014 safe
-    return ScaleSsq(absxi, 1.0 + acc.ssq * r * r);
-  }
-  let r = absxi / acc.scale; // reached only once acc.scale > 0 (absxi <= acc.scale and absxi > 0)
-  return ScaleSsq(acc.scale, acc.ssq + r * r);
-}
-
-// Associative merge of two independent (scale, ssq) partials \u2014 lets this
-// compose with a tree reduction exactly like a plain sum would.
-fn ssqMerge(a: ScaleSsq, b: ScaleSsq) -> ScaleSsq {
-  if (a.scale == 0.0 && b.scale == 0.0) { return ScaleSsq(0.0, 1.0); }
-  if (a.scale >= b.scale) {
-    let r = b.scale / a.scale;
-    return ScaleSsq(a.scale, a.ssq + b.ssq * r * r);
-  }
-  let r = a.scale / b.scale;
-  return ScaleSsq(b.scale, b.ssq + a.ssq * r * r);
-}
-
-var<workgroup> tileScale: array<f32, 64>;
-var<workgroup> tileSsq:   array<f32, 64>;
+var<workgroup> tile: array<vec3f, 64>;
 
 @compute @workgroup_size(64)
 fn main(
@@ -488,120 +484,133 @@ fn main(
   @builtin(workgroup_id)         wgid:   vec3u,
   @builtin(num_workgroups)       num_wg: vec3u,
 ) {
-  var acc0 = ScaleSsq(0.0, 1.0);
-  var acc1 = ScaleSsq(0.0, 1.0);
-  var acc2 = ScaleSsq(0.0, 1.0);
-  var acc3 = ScaleSsq(0.0, 1.0);
+  var acc0 = vec3f(0.0);
+  var acc1 = vec3f(0.0);
+  var acc2 = vec3f(0.0);
+  var acc3 = vec3f(0.0);
 
   let stride   = num_wg.x * WGS;
   let n4_floor = (params.n / (4u * stride)) * (4u * stride);
 
   for (var id = gid.x; id < n4_floor; id += 4u * stride) {
-    acc0 = ssqAccum(acc0, abs(x[ id                * params.x_inc]));
-    acc1 = ssqAccum(acc1, abs(x[(id +      stride) * params.x_inc]));
-    acc2 = ssqAccum(acc2, abs(x[(id + 2u * stride) * params.x_inc]));
-    acc3 = ssqAccum(acc3, abs(x[(id + 3u * stride) * params.x_inc]));
+    acc0 = accum(acc0, x[ id                * params.x_inc]);
+    acc1 = accum(acc1, x[(id +      stride) * params.x_inc]);
+    acc2 = accum(acc2, x[(id + 2u * stride) * params.x_inc]);
+    acc3 = accum(acc3, x[(id + 3u * stride) * params.x_inc]);
   }
   for (var id = n4_floor + gid.x; id < params.n; id += stride) {
-    acc0 = ssqAccum(acc0, abs(x[id * params.x_inc]));
+    acc0 = accum(acc0, x[id * params.x_inc]);
   }
 
-  let combined = ssqMerge(ssqMerge(acc0, acc1), ssqMerge(acc2, acc3));
-  tileScale[lid.x] = combined.scale;
-  tileSsq[lid.x]   = combined.ssq;
+  tile[lid.x] = (acc0 + acc1) + (acc2 + acc3);
   workgroupBarrier();
 
   for (var s = WGS / 2u; s > 0u; s >>= 1u) {
     if (lid.x < s) {
-      let merged = ssqMerge(
-        ScaleSsq(tileScale[lid.x], tileSsq[lid.x]),
-        ScaleSsq(tileScale[lid.x + s], tileSsq[lid.x + s]),
-      );
-      tileScale[lid.x] = merged.scale;
-      tileSsq[lid.x]   = merged.ssq;
+      tile[lid.x] = tile[lid.x] + tile[lid.x + s];
     }
     workgroupBarrier();
   }
 
   if (lid.x == 0u) {
-    partialsScale[wgid.x] = tileScale[0];
-    partialsSsq[wgid.x]   = tileSsq[0];
+    partials[3u * wgid.x]      = tile[0].x;
+    partials[3u * wgid.x + 1u] = tile[0].y;
+    partials[3u * wgid.x + 2u] = tile[0].z;
   }
 }
 `;
     });
-  var ht,
-    gt = J(() => {
-      ht = `// scaledSum reduction: collapses 2*WGS (scale, ssq) partials from
-// snrm2.wgsl into the final norm \u2014 sqrt(scale\xB2 \xB7 ssq) == scale \xB7 sqrt(ssq).
-// Mirrors reduction/sum.wgsl's shape exactly, merging via ssqMerge (see
-// snrm2.wgsl for the derivation) instead of plain \`+\`, and taking the final
-// sqrt here rather than on the CPU \u2014 unlike sasum/sdot's plain sum, "sum of
-// squares" isn't a meaningful standalone value to hand back, only
-// scale\xB7sqrt(ssq) is.
+  var Et,
+    At = J(() => {
+      Et = `// scaledSum reduction: collapses snrm2.wgsl's 2*WGS (big, medium, small)
+// partials into the final norm. The partials merge by plain addition (their
+// scales are fixed powers of two \u2014 see snrm2.wgsl), then the three sums are
+// combined exactly as LAPACK 3.10's snrm2 does: big dominates if present
+// (medium folded in at big's scale); otherwise small and medium meet
+// through their square roots, so neither has to be rescaled into the
+// other's range; otherwise it's medium alone.
 // dispatch: 1 workgroup of WGS threads.
-// partialsScale/partialsSsq must have exactly 2*WGS entries each.
+// partials must hold exactly 3 * 2*WGS entries.
 
-@group(0) @binding(0) var<storage, read>       partialsScale: array<f32>;
-@group(0) @binding(1) var<storage, read>       partialsSsq:   array<f32>;
-@group(0) @binding(2) var<storage, read_write> result:        array<f32>;
+@group(0) @binding(0) var<storage, read>       partials: array<f32>;
+@group(0) @binding(1) var<storage, read_write> result:   array<f32>;
 
 const WGS: u32 = 64;
 
-// True sum-of-squares represented so far == scale\xB2 \xB7 ssq \u2014 see snrm2.wgsl.
-struct ScaleSsq {
-  scale: f32,
-  ssq:   f32,
+const SSML: f32 = 0x1p75f;  // must match snrm2.wgsl
+const SBIG: f32 = 0x1p-76f; // must match snrm2.wgsl
+const SBIG_SQ_EXP: i32 = -152; // log2(SBIG\xB2)
+
+// NaN test on the bit pattern: \`v != v\` can be folded away by a shader
+// compiler that assumes no NaNs (measured: it was, on NVIDIA/Vulkan).
+fn isNan(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) > 0x7f800000u;
 }
 
-// Associative merge of two independent (scale, ssq) partials.
-fn ssqMerge(a: ScaleSsq, b: ScaleSsq) -> ScaleSsq {
-  if (a.scale == 0.0 && b.scale == 0.0) { return ScaleSsq(0.0, 1.0); }
-  if (a.scale >= b.scale) {
-    let r = b.scale / a.scale;
-    return ScaleSsq(a.scale, a.ssq + b.ssq * r * r);
-  }
-  let r = a.scale / b.scale;
-  return ScaleSsq(b.scale, b.ssq + a.ssq * r * r);
+fn partial(i: u32) -> vec3f {
+  return vec3f(partials[3u * i], partials[3u * i + 1u], partials[3u * i + 2u]);
 }
 
-var<workgroup> tileScale: array<f32, 64>;
-var<workgroup> tileSsq:   array<f32, 64>;
+var<workgroup> tile: array<vec3f, 64>;
 
 @compute @workgroup_size(64)
 fn reduce_scaled(
   @builtin(local_invocation_id) lid: vec3u,
 ) {
   let i = lid.x;
-  let merged0 = ssqMerge(
-    ScaleSsq(partialsScale[i], partialsSsq[i]),
-    ScaleSsq(partialsScale[i + WGS], partialsSsq[i + WGS]),
-  );
-  tileScale[i] = merged0.scale;
-  tileSsq[i]   = merged0.ssq;
+  tile[i] = partial(i) + partial(i + WGS);
   workgroupBarrier();
 
   for (var s = WGS / 2u; s > 0u; s >>= 1u) {
     if (i < s) {
-      let merged = ssqMerge(
-        ScaleSsq(tileScale[i], tileSsq[i]),
-        ScaleSsq(tileScale[i + s], tileSsq[i + s]),
-      );
-      tileScale[i] = merged.scale;
-      tileSsq[i]   = merged.ssq;
+      tile[i] = tile[i] + tile[i + s];
     }
     workgroupBarrier();
   }
 
   if (i == 0u) {
-    result[0] = tileScale[0] * sqrt(tileSsq[0]);
+    var abig = tile[0].x;
+    var amed = tile[0].y;
+    var asml = tile[0].z;
+    // A NaN anywhere in x landed in the medium sum: the norm is NaN (min/max
+    // below don't propagate NaN reliably, so return it outright).
+    if (isNan(amed)) {
+      result[0] = amed;
+      return;
+    }
+    let medLive = amed > 0.0;
+    var scl = 1.0;
+    var sumsq = amed;
+    if (abig > 0.0) {
+      // Medium in big's units is amed\xB7SBIG\xB2 = amed\xB72^-152 \u2014 one exact ldexp.
+      // Never as (amed\xB7SBIG)\xB7SBIG: a compiler may fold that into
+      // amed\xB7(SBIG\xB7SBIG), and the constant 2^-152 underflows f32 to 0 (it
+      // did, on NVIDIA/Vulkan). If the scaled value underflows, medium was
+      // below big's rounding anyway (big's smallest square is 2^-52).
+      if (medLive) { abig = abig + ldexp(amed, SBIG_SQ_EXP); }
+      scl = 1.0 / SBIG;
+      sumsq = abig;
+    } else if (asml > 0.0) {
+      if (medLive) {
+        amed = sqrt(amed);
+        asml = sqrt(asml) / SSML;
+        let ymax = max(asml, amed);
+        let ymin = min(asml, amed);
+        let q = ymin / ymax;
+        sumsq = ymax * ymax * (1.0 + q * q);
+      } else {
+        scl = 1.0 / SSML;
+        sumsq = asml;
+      }
+    }
+    result[0] = scl * sqrt(sumsq);
   }
 }
 `;
     });
-  var yt,
-    bt = J(() => {
-      yt = `// isamax: returns index of element with largest absolute value
+  var Lt,
+    St = J(() => {
+      Lt = `// isamax: returns index of element with largest absolute value
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/argmax.wgsl.
 
 @group(0) @binding(0) var<storage, read>       x:            array<f32>;
@@ -685,9 +694,9 @@ fn main(
 }
 `;
     });
-  var vt,
-    xt = J(() => {
-      vt = `// amax reduction: collapses 2*WGS (value, index) pairs into one index.
+  var Dt,
+    Gt = J(() => {
+      Dt = `// amax reduction: collapses 2*WGS (value, index) pairs into one index.
 // dispatch: 1 workgroup of WGS threads.
 // partials_val and partials_idx must have exactly 2*WGS entries.
 
@@ -732,9 +741,9 @@ fn reduce(
 }
 `;
     });
-  var Pr,
-    Bt = J(() => {
-      Pr = `// Double-double arithmetic via Dekker's algorithm \u2014 an alternative to
+  var Tr,
+    Pt = J(() => {
+      Tr = `// Double-double arithmetic via Dekker's algorithm \u2014 an alternative to
 // f64add.wgsl's bit-exact IEEE-754 emulation. Doesn't touch that path.
 //
 // A double-double number is a pair (hi, lo) of f32 with hi+lo approximating
@@ -754,9 +763,9 @@ struct DD {
 }
 `;
     });
-  var Be,
-    _t = J(() => {
-      Be = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
+  var Ee,
+    Nt = J(() => {
+      Ee = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // |a| for a double-double pair. Negation is exact (no rounding), so this is
 // just a sign flip on both components \u2014 hi alone determines the pair's sign.
@@ -768,9 +777,9 @@ fn ddAbs(a: DD) -> DD {
 }
 `;
     });
-  var Tr,
-    kt = J(() => {
-      Tr = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
+  var Fr,
+    It = J(() => {
+      Fr = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // \u2500\u2500 A real compiler bug \u2014 read before touching anything below \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
@@ -856,9 +865,9 @@ fn ddSubProtected(a: DD, b: DD, threadSlot: u32) -> DD {
 }
 `;
     });
-  var St,
-    At = J(() => {
-      St = `// dasum: sum(|x[i]|), double-double (Dekker). Same ILP=4 shape as sasum.wgsl;
+  var Rt,
+    Mt = J(() => {
+      Rt = `// dasum: sum(|x[i]|), double-double (Dekker). Same ILP=4 shape as sasum.wgsl;
 // see f64/utils/add.wgsl for ddAddProtected and why plain ddAdd isn't safe.
 // GpuVector input isn't pre-abs'd, so ddAbs() (f64/utils/abs.wgsl) applies
 // unconditionally below.
@@ -945,9 +954,9 @@ fn dasum_main(
 }
 `;
     });
-  var Ge,
-    Et = J(() => {
-      Ge = `// sum reduction (f64, double-double): collapses 2*WGS partial (hi, lo) pairs
+  var Ie,
+    Tt = J(() => {
+      Ie = `// sum reduction (f64, double-double): collapses 2*WGS partial (hi, lo) pairs
 // into one, using ddAddProtected instead of plain f32 \`+\` (see
 // reduction/sum.wgsl for the f32 original this mirrors).
 // dispatch: 1 workgroup of WGS threads. partialsHi/partialsLo must have
@@ -989,9 +998,9 @@ fn reduce_f64(
 }
 `;
     });
-  var jr,
-    Gt = J(() => {
-      jr = `// Requires f64/dekker.wgsl concatenated first for the DD struct, and
+  var Or,
+    Ht = J(() => {
+      Or = `// Requires f64/dekker.wgsl concatenated first for the DD struct, and
 // f64/utils/add.wgsl for fsub/negf (bitcast-based subtraction/negation) and,
 // for ddMulProtected at the bottom, fastTwoSumProtected.
 //
@@ -1092,9 +1101,9 @@ fn ddMulProtected(a: DD, b: DD, threadSlot: u32) -> DD {
 }
 `;
     });
-  var Dt,
-    Lt = J(() => {
-      Dt = `// ddot: sum(x[i] * y[i]), double-double (Dekker). Same ILP=4 shape as
+  var jt,
+    Ct = J(() => {
+      jt = `// ddot: sum(x[i] * y[i]), double-double (Dekker). Same ILP=4 shape as
 // dasum.wgsl, which this mirrors closely \u2014 the only structural difference is
 // a second input vector and a product where dasum takes an absolute value.
 //
@@ -1202,9 +1211,9 @@ fn ddot_main(
 }
 `;
     });
-  var Pt,
-    Nt = J(() => {
-      Pt = `// dscal: x := alpha * x, double-double (Dekker) f64 emulation of sscal.
+  var Wt,
+    Ft = J(() => {
+      Wt = `// dscal: x := alpha * x, double-double (Dekker) f64 emulation of sscal.
 // alpha and x are each an f32 (hi, lo) pair. See f64/utils/multiply.wgsl for
 // ddMulProtected and why plain ddMulRaw isn't safe without a renormalizing
 // barrier \u2014 that barrier needs a provably uniform loop trip count across
@@ -1266,9 +1275,9 @@ fn dscal_main(
 }
 `;
     });
-  var It,
-    Mt = J(() => {
-      It = `// daxpy: y := alpha * x + y, double-double (Dekker) f64 emulation of saxpy.
+  var Kt,
+    Ot = J(() => {
+      Kt = `// daxpy: y := alpha * x + y, double-double (Dekker) f64 emulation of saxpy.
 // Each element costs one ddMulProtected (alpha*x[i]) then one ddAddProtected
 // (+ y[i]) \u2014 the same two-protected-op shape ddot spends per term, applied
 // straight to the output instead of folded into a reduction. See dscal.wgsl
@@ -1336,9 +1345,9 @@ fn daxpy_main(
 }
 `;
     });
-  var Le,
-    Rt = J(() => {
-      Le = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
+  var Me,
+    qt = J(() => {
+      Me = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // a > b for double-double pairs. hi dominates (|lo| <= ulp(hi)/2 always), so
 // comparing hi alone is correct except on an exact hi tie, when lo breaks it.
@@ -1352,9 +1361,9 @@ fn ddGreater(a: DD, b: DD) -> bool {
 }
 `;
     });
-  var Tt,
-    Ht = J(() => {
-      Tt = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
+  var Ut,
+    Vt = J(() => {
+      Ut = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // a == b for double-double pairs \u2014 exact field equality, no rounding
 // involved, so (like ddGreater) this needs no protection.
@@ -1363,9 +1372,9 @@ fn ddEqual(a: DD, b: DD) -> bool {
 }
 `;
     });
-  var jt,
-    Ct = J(() => {
-      jt = `// idamax: returns index of element with largest absolute value (f64, double-double)
+  var Zt,
+    zt = J(() => {
+      Zt = `// idamax: returns index of element with largest absolute value (f64, double-double)
 // pass 1 dispatches exactly 2 * WGS workgroups; pass 2 uses reduction/argmaxF64.wgsl.
 // Concatenated after f64/dekker.wgsl (DD struct), f64/utils/abs.wgsl (ddAbs),
 // f64/utils/greater.wgsl (ddGreater), and f64/utils/equal.wgsl (ddEqual).
@@ -1463,9 +1472,9 @@ fn idamax_main(
 }
 `;
     });
-  var Ft,
-    qt = J(() => {
-      Ft = `// amax reduction (f64, double-double): collapses 2*WGS (value, index) pairs
+  var Yt,
+    Xt = J(() => {
+      Yt = `// amax reduction (f64, double-double): collapses 2*WGS (value, index) pairs
 // into one index, using ddGreater/ddEqual instead of plain f32 \`>\`/\`==\` (see
 // reduction/argmax.wgsl for the f32 original this mirrors).
 // dispatch: 1 workgroup of WGS threads. partialsValHi/partialsValLo/
@@ -1517,9 +1526,9 @@ fn reduce_f64(
 }
 `;
     });
-  var Ot,
-    Wt = J(() => {
-      Ot = `// srot: x = c*x + s*y,  y = -s*x + c*y
+  var Jt,
+    $t = J(() => {
+      Jt = `// srot: x = c*x + s*y,  y = -s*x + c*y
 
 @group(0) @binding(0) var<storage, read_write> x: array<f32>;
 @group(0) @binding(1) var<storage, read_write> y: array<f32>;
@@ -1550,9 +1559,9 @@ fn main(
 }
 `;
     });
-  var Vt,
-    Kt = J(() => {
-      Vt = `// drot: x = c*x + s*y, y = -s*x + c*y \u2014 double-double (Dekker) f64 emulation
+  var ro,
+    Qt = J(() => {
+      ro = `// drot: x = c*x + s*y, y = -s*x + c*y \u2014 double-double (Dekker) f64 emulation
 // of srot. c, s, x, and y are each split into an f32 (hi, lo) pair. Each
 // element costs four ddMulProtected (c*x, s*y, -s*x, c*y) then two
 // ddAddProtected (the two sums) \u2014 negS is computed once outside the loop
@@ -1635,9 +1644,9 @@ fn drot_main(
 }
 `;
     });
-  var zt,
-    Ut = J(() => {
-      zt = `// srotm: applies modified Givens rotation H to vectors x and y.
+  var to,
+    eo = J(() => {
+      to = `// srotm: applies modified Givens rotation H to vectors x and y.
 // param[0] = flag: -1 (full H), 0 (unit diagonal), 1 (unit off-diagonal)
 // param = [ flag, h11, h21, h12, h22 ]
 // flag == -2 (identity/no-op) is handled in JS before dispatch reaches here.
@@ -1689,9 +1698,9 @@ fn main(
 }
 `;
     });
-  var Yt,
-    Zt = J(() => {
-      Yt = `// drotm: applies a modified Givens rotation H to vectors x and y \u2014 double-
+  var ao,
+    oo = J(() => {
+      ao = `// drotm: applies a modified Givens rotation H to vectors x and y \u2014 double-
 // double (Dekker) f64 emulation of srotm. paramHi/paramLo[0] = flag: -1
 // (full H), 0 (unit diagonal), 1 (unit off-diagonal). param = [ flag, h11,
 // h21, h12, h22 ], each entry an f32 (hi, lo) pair.
@@ -1792,9 +1801,9 @@ fn drotm_main(
 }
 `;
     });
-  var De,
-    Xt = J(() => {
-      De = `// Requires f64/dekker.wgsl concatenated first for the DD struct, and
+  var Re,
+    io = J(() => {
+      Re = `// Requires f64/dekker.wgsl concatenated first for the DD struct, and
 // f64/utils/add.wgsl (ddSubProtected/ddAddProtected/negf) and
 // f64/utils/multiply.wgsl (ddMulProtected).
 //
@@ -1841,9 +1850,9 @@ fn ddDivProtected(a: DD, b: DD, threadSlot: u32) -> DD {
 }
 `;
     });
-  var Jt,
-    $t = J(() => {
-      Jt = `// Requires f64/dekker.wgsl concatenated first for the DD struct, and
+  var no,
+    so = J(() => {
+      no = `// Requires f64/dekker.wgsl concatenated first for the DD struct, and
 // f64/utils/add.wgsl (ddSubProtected/ddAddProtected) and
 // f64/utils/multiply.wgsl (twoProdBit \u2014 squaring a plain f32 needs no
 // barrier, per multiply.wgsl's own note that twoProdBit is universally safe
@@ -1890,35 +1899,40 @@ fn ddSqrtProtected(a: DD, threadSlot: u32) -> DD {
 }
 `;
     });
-  var ro,
-    Qt = J(() => {
-      ro = `// dnrm2: result = sqrt(sum(x[i] * x[i])), double-double (Dekker) f64
-// emulation of snrm2 \u2014 same scaled accumulation (Blue's algorithm), just
-// with \`scale\`/\`ssq\` as DD pairs (via ddDivProtected/ddMulProtected/
-// ddAddProtected/ddSqrtProtected) instead of plain f32. Squaring still
-// saturates an f32 hi component above ~1.8e19 regardless of DD precision
-// (DD widens the mantissa, not the exponent range), so the scaling is
-// still needed here for the same reason it was in snrm2.
+  var uo,
+    lo = J(() => {
+      uo = `// dnrm2: result = sqrt(sum(x[i] * x[i])), double-double (Dekker) f64
+// emulation of snrm2 \u2014 the same fixed-scale Blue's algorithm (Anderson
+// 2017; LAPACK 3.10's dnrm2), with each accumulator a DD pair. DD widens the
+// mantissa, not the exponent range, so the scaling is still needed:
+//   big:    |x| > TBIG  \u2192 (|x| \xB7 SBIG)\xB2
+//   medium: in between  \u2192 |x|\xB2
+//   small:  |x| < TSML  \u2192 (|x| \xB7 SSML)\xB2
+// The big side matches snrm2. The small side doesn't: a square's lo half is
+// ~2^-48 below it, and the GPU flushes denormals, so every square must stay
+// >= 2^-78 to keep its full DD precision (with snrm2's TSML = 2^-63, medium
+// inputs near 1e-15 lost ~17 bits). Here medium starts at 2^-38 (squares
+// >= 2^-76), and SSML = 2^64 maps small inputs down to 2^-102 into
+// [2^-38, 2^26). Below 2^-102 an input's own lo half is already a denormal
+// (flushed on load), so no scaling can recover it.
+// Scaling by a power of two is exact on both DD halves, so each element
+// costs one protected square and one protected add (into whichever
+// accumulator its magnitude picks, via select \u2014 protected ops' barriers need
+// every thread at the same call site). The running-max (scale, ssq) update
+// this replaced cost a protected divide, three multiplies and two adds per
+// element.
 //
-// snrm2.wgsl's ssqAccum/ssqMerge each branch on which operand is bigger \u2014
-// can't carry over directly, since a protected op's workgroupBarrier()
-// needs every thread to reach the same call site, and here different
-// threads could take different branches. Both formulas are computed
-// unconditionally below; only the final combine (\`ddSelect\`) differs per
-// thread \u2014 same fix shape as drot's/drotm's own per-dispatch flags, just
-// applied to a per-element branch instead.
+// Inf and NaN would turn into NaN inside the DD error terms (inf - inf), so
+// they're kept out of the sums and tracked in a flag instead (0 = none,
+// 1 = Inf seen, 2 = NaN seen; merged by max) \u2014 reduction/scaledSumF64.wgsl
+// returns NaN, else Inf, if set.
 //
-// pass 1 dispatches 2*WGS workgroups; pass 2 (reduction/scaledSumF64.wgsl)
-// duplicates ssqAccumProtected/ssqMergeProtected rather than sharing them,
-// same as the plain-f32 pair already does.
+// pass 1 dispatches 2*WGS workgroups; pass 2 is reduction/scaledSumF64.wgsl.
 
-@group(0) @binding(0) var<storage, read>       xHi:           array<f32>;
-@group(0) @binding(1) var<storage, read>       xLo:           array<f32>;
-@group(0) @binding(2) var<storage, read_write> partialsScaleHi: array<f32>;
-@group(0) @binding(3) var<storage, read_write> partialsScaleLo: array<f32>;
-@group(0) @binding(4) var<storage, read_write> partialsSsqHi:   array<f32>;
-@group(0) @binding(5) var<storage, read_write> partialsSsqLo:   array<f32>;
-@group(0) @binding(6) var<uniform>             params:        Params;
+@group(0) @binding(0) var<storage, read>       xHi:      array<f32>;
+@group(0) @binding(1) var<storage, read>       xLo:      array<f32>;
+@group(0) @binding(2) var<storage, read_write> partials: array<f32>; // PARTIAL_LEN per workgroup
+@group(0) @binding(3) var<uniform>             params:   Params;
 
 struct Params {
   n:     u32,
@@ -1926,59 +1940,85 @@ struct Params {
 }
 
 const WGS: u32 = 64;
+// Per-workgroup partial: big.hi, big.lo, med.hi, med.lo, sml.hi, sml.lo, flag.
+const PARTIAL_LEN: u32 = 7;
 
-struct ScaleSsq {
-  scale: DD,
-  ssq:   DD,
+// Thresholds and scales (powers of two) \u2014 see the header for the DD-specific
+// small side; TBIG/SBIG are snrm2.wgsl's.
+const TSML: f32 = 0x1p-38f;
+const TBIG: f32 = 0x1p50f;
+const SSML: f32 = 0x1p64f;
+const SBIG: f32 = 0x1p-76f;
+
+struct Acc3 {
+  big:  DD,
+  med:  DD,
+  sml:  DD,
+  flag: f32,
 }
 
 fn ddSelect(a: DD, b: DD, cond: bool) -> DD {
   return DD(select(a.hi, b.hi, cond), select(a.lo, b.lo, cond));
 }
 
-// Folds one more |value| (DD) into a running (scale, ssq) pair \u2014 branch-free,
-// see file header. \`bigger\`/\`smaller\` name the two operands by magnitude
-// (not by which one was "acc" vs "new"), and biggerIsZero==true only when
-// both scale and absxi are still exactly zero (the very first zero
-// elements, before any nonzero value has been seen) \u2014 substituting a safe
-// denominator there avoids a 0/0 without needing a separate branch/return;
-// the arithmetic already reduces to a correct no-op in that case.
-fn ssqAccumProtected(acc: ScaleSsq, absxi: DD, threadSlot: u32) -> ScaleSsq {
-  let isBigger = ddGreater(absxi, acc.scale);
-  let bigger = ddSelect(acc.scale, absxi, isBigger);
-  let smaller = ddSelect(absxi, acc.scale, isBigger);
-  let biggerIsZero = bigger.hi == 0.0;
-  let safeBigger = ddSelect(bigger, DD(1.0, 0.0), biggerIsZero);
-  let r = ddDivProtected(smaller, safeBigger, threadSlot);
-  let rsq = ddMulProtected(r, r, threadSlot);
-  let ssqTimesRsq = ddMulProtected(acc.ssq, rsq, threadSlot);
-  let sumIfBigger = ddAddProtected(DD(1.0, 0.0), ssqTimesRsq, threadSlot);
-  let sumIfNotBigger = ddAddProtected(acc.ssq, rsq, threadSlot);
-  let newSsq = ddSelect(sumIfNotBigger, sumIfBigger, isBigger);
-  return ScaleSsq(bigger, newSsq);
+// Bit-pattern tests: \`v != v\` style checks can be folded away by a shader
+// compiler that assumes no NaNs (it was, for snrm2, on NVIDIA/Vulkan).
+fn isNan(v: f32) -> bool { return (bitcast<u32>(v) & 0x7fffffffu) > 0x7f800000u; }
+fn isInf(v: f32) -> bool { return (bitcast<u32>(v) & 0x7fffffffu) == 0x7f800000u; }
+
+// Adds one element to the accumulators. Every thread makes the same two
+// protected calls whatever the element's magnitude.
+fn accumProtected(acc: Acc3, xi: DD, threadSlot: u32) -> Acc3 {
+  let ax = ddAbs(xi);
+  let nan = isNan(ax.hi);
+  let inf = isInf(ax.hi);
+  let finite = !(nan || inf);
+  let big = finite && ax.hi > TBIG;
+  let sml = finite && ax.hi < TSML;
+  let med = finite && !big && !sml;
+  let s = select(select(1.0, SSML, sml), SBIG, big);
+  let y = DD(select(0.0, ax.hi * s, finite), select(0.0, ax.lo * s, finite));
+  let sq = ddMulProtected(y, y, threadSlot);
+  let dest = ddSelect(ddSelect(acc.med, acc.sml, sml), acc.big, big);
+  let sum = ddAddProtected(dest, sq, threadSlot);
+  return Acc3(
+    ddSelect(acc.big, sum, big),
+    ddSelect(acc.med, sum, med),
+    ddSelect(acc.sml, sum, sml),
+    max(acc.flag, select(select(0.0, 1.0, inf), 2.0, nan)),
+  );
 }
 
-// Associative merge of two independent (scale, ssq) partials \u2014 same
-// branch-free shape, for combining ILP lanes and the tree reduction.
-fn ssqMergeProtected(a: ScaleSsq, b: ScaleSsq, threadSlot: u32) -> ScaleSsq {
-  let isBigger = !ddGreater(b.scale, a.scale); // a.scale >= b.scale
-  let bigger = ddSelect(b.scale, a.scale, isBigger);
-  let smaller = ddSelect(a.scale, b.scale, isBigger);
-  let biggerSsq = ddSelect(b.ssq, a.ssq, isBigger);
-  let smallerSsq = ddSelect(a.ssq, b.ssq, isBigger);
-  let biggerIsZero = bigger.hi == 0.0;
-  let safeBigger = ddSelect(bigger, DD(1.0, 0.0), biggerIsZero);
-  let r = ddDivProtected(smaller, safeBigger, threadSlot);
-  let rsq = ddMulProtected(r, r, threadSlot);
-  let smallerSsqTimesRsq = ddMulProtected(smallerSsq, rsq, threadSlot);
-  let newSsq = ddAddProtected(biggerSsq, smallerSsqTimesRsq, threadSlot);
-  return ScaleSsq(bigger, newSsq);
+// Partials merge by addition \u2014 their scales are fixed powers of two.
+fn mergeProtected(a: Acc3, b: Acc3, threadSlot: u32) -> Acc3 {
+  return Acc3(
+    ddAddProtected(a.big, b.big, threadSlot),
+    ddAddProtected(a.med, b.med, threadSlot),
+    ddAddProtected(a.sml, b.sml, threadSlot),
+    max(a.flag, b.flag),
+  );
 }
 
-var<workgroup> tileScaleHi: array<f32, 64>;
-var<workgroup> tileScaleLo: array<f32, 64>;
-var<workgroup> tileSsqHi:   array<f32, 64>;
-var<workgroup> tileSsqLo:   array<f32, 64>;
+const ZERO3 = Acc3(DD(0.0, 0.0), DD(0.0, 0.0), DD(0.0, 0.0), 0.0);
+
+var<workgroup> tile: array<f32, 448>; // WGS \xD7 PARTIAL_LEN
+
+fn tileLoad(i: u32) -> Acc3 {
+  let b = i * PARTIAL_LEN;
+  return Acc3(DD(tile[b], tile[b + 1u]), DD(tile[b + 2u], tile[b + 3u]),
+              DD(tile[b + 4u], tile[b + 5u]), tile[b + 6u]);
+}
+
+fn tileStore(i: u32, v: Acc3) {
+  let b = i * PARTIAL_LEN;
+  tile[b] = v.big.hi;
+  tile[b + 1u] = v.big.lo;
+  tile[b + 2u] = v.med.hi;
+  tile[b + 3u] = v.med.lo;
+  tile[b + 4u] = v.sml.hi;
+  tile[b + 5u] = v.sml.lo;
+  tile[b + 6u] = v.flag;
+}
 
 @compute @workgroup_size(64)
 fn dnrm2_main(
@@ -1987,10 +2027,10 @@ fn dnrm2_main(
   @builtin(workgroup_id)         wgid:   vec3u,
   @builtin(num_workgroups)       num_wg: vec3u,
 ) {
-  var acc0 = ScaleSsq(DD(0.0, 0.0), DD(1.0, 0.0));
-  var acc1 = ScaleSsq(DD(0.0, 0.0), DD(1.0, 0.0));
-  var acc2 = ScaleSsq(DD(0.0, 0.0), DD(1.0, 0.0));
-  var acc3 = ScaleSsq(DD(0.0, 0.0), DD(1.0, 0.0));
+  var acc0 = ZERO3;
+  var acc1 = ZERO3;
+  var acc2 = ZERO3;
+  var acc3 = ZERO3;
 
   let stride   = num_wg.x * WGS;
   let n4_floor = (params.n / (4u * stride)) * (4u * stride);
@@ -2004,10 +2044,10 @@ fn dnrm2_main(
     let i1 = (id +      stride) * params.x_inc;
     let i2 = (id + 2u * stride) * params.x_inc;
     let i3 = (id + 3u * stride) * params.x_inc;
-    acc0 = ssqAccumProtected(acc0, ddAbs(DD(xHi[i0], xLo[i0])), lid.x);
-    acc1 = ssqAccumProtected(acc1, ddAbs(DD(xHi[i1], xLo[i1])), lid.x);
-    acc2 = ssqAccumProtected(acc2, ddAbs(DD(xHi[i2], xLo[i2])), lid.x);
-    acc3 = ssqAccumProtected(acc3, ddAbs(DD(xHi[i3], xLo[i3])), lid.x);
+    acc0 = accumProtected(acc0, DD(xHi[i0], xLo[i0]), lid.x);
+    acc1 = accumProtected(acc1, DD(xHi[i1], xLo[i1]), lid.x);
+    acc2 = accumProtected(acc2, DD(xHi[i2], xLo[i2]), lid.x);
+    acc3 = accumProtected(acc3, DD(xHi[i3], xLo[i3]), lid.x);
   }
 
   // Tail is ragged (0-3 extra per thread) \u2014 pad to this workgroup's worst
@@ -2021,146 +2061,174 @@ fn dnrm2_main(
     let id    = n4_floor + gid.x + iter * stride;
     let valid = id < params.n;
     let i     = select(0u, id * params.x_inc, valid); // index 0 always in-bounds
-    let loaded = ddAbs(DD(xHi[i], xLo[i]));
-    let contribution = DD(select(0.0, loaded.hi, valid), select(0.0, loaded.lo, valid));
-    acc0 = ssqAccumProtected(acc0, contribution, lid.x);
+    let v = DD(select(0.0, xHi[i], valid), select(0.0, xLo[i], valid));
+    acc0 = accumProtected(acc0, v, lid.x);
   }
 
-  let combined01 = ssqMergeProtected(acc0, acc1, lid.x);
-  let combined23 = ssqMergeProtected(acc2, acc3, lid.x);
-  let combined = ssqMergeProtected(combined01, combined23, lid.x);
-  tileScaleHi[lid.x] = combined.scale.hi;
-  tileScaleLo[lid.x] = combined.scale.lo;
-  tileSsqHi[lid.x]   = combined.ssq.hi;
-  tileSsqLo[lid.x]   = combined.ssq.lo;
+  let combined = mergeProtected(
+    mergeProtected(acc0, acc1, lid.x),
+    mergeProtected(acc2, acc3, lid.x),
+    lid.x,
+  );
+  tileStore(lid.x, combined);
   workgroupBarrier();
 
   // Inactive threads merge against a throwaway partner and discard it
-  // (ssqMergeProtected must be called unconditionally by every thread).
+  // (mergeProtected must be called unconditionally by every thread).
   for (var s = WGS / 2u; s > 0u; s >>= 1u) {
     let partner = select(lid.x, lid.x + s, lid.x < s);
-    let a = ScaleSsq(DD(tileScaleHi[lid.x], tileScaleLo[lid.x]), DD(tileSsqHi[lid.x], tileSsqLo[lid.x]));
-    let b = ScaleSsq(DD(tileScaleHi[partner], tileScaleLo[partner]), DD(tileSsqHi[partner], tileSsqLo[partner]));
-    let merged = ssqMergeProtected(a, b, lid.x);
+    let merged = mergeProtected(tileLoad(lid.x), tileLoad(partner), lid.x);
     workgroupBarrier(); // all threads must read tile[] above before any write below
-    if (lid.x < s) {
-      tileScaleHi[lid.x] = merged.scale.hi;
-      tileScaleLo[lid.x] = merged.scale.lo;
-      tileSsqHi[lid.x]   = merged.ssq.hi;
-      tileSsqLo[lid.x]   = merged.ssq.lo;
-    }
+    if (lid.x < s) { tileStore(lid.x, merged); }
     workgroupBarrier();
   }
 
-  if (lid.x == 0u) {
-    partialsScaleHi[wgid.x] = tileScaleHi[0];
-    partialsScaleLo[wgid.x] = tileScaleLo[0];
-    partialsSsqHi[wgid.x]   = tileSsqHi[0];
-    partialsSsqLo[wgid.x]   = tileSsqLo[0];
+  if (lid.x < PARTIAL_LEN) {
+    partials[wgid.x * PARTIAL_LEN + lid.x] = tile[lid.x];
   }
 }
 `;
     });
-  var to,
-    eo = J(() => {
-      to = `// scaledSum reduction (f64, double-double): collapses 2*WGS (scale, ssq) DD
-// partials from dnrm2.wgsl into the final norm \u2014 sqrt(scale\xB2 \xB7 ssq) ==
-// scale \xB7 sqrt(ssq), via ddMulProtected/ddSqrtProtected. Mirrors
-// reduction/scaledSum.wgsl's shape exactly; ssqMergeProtected is duplicated
-// from dnrm2.wgsl rather than shared via f64/utils/ \u2014 see that file's own
-// header for why (same convention the f32 pair already uses).
+  var mo,
+    fo = J(() => {
+      mo = `// scaledSumF64 reduction: collapses dnrm2.wgsl's 2*WGS (big, medium, small,
+// flag) DD partials into the final norm \u2014 the double-double counterpart of
+// reduction/scaledSum.wgsl. Partials merge by DD addition (fixed power-of-
+// two scales), then the three sums combine as in LAPACK 3.10's dnrm2: big
+// dominates if present (medium folded in at big's scale); otherwise small
+// and medium meet through their square roots; otherwise medium alone. A
+// NaN seen anywhere gives NaN, else an Inf gives Inf (see dnrm2.wgsl).
+//
+// Protected ops need every thread at the same call site, so every thread
+// evaluates all three cases and select() picks \u2014 only thread 0 writes.
 // dispatch: 1 workgroup of WGS threads.
-// partialsScale*/partialsSsq* must have exactly 2*WGS entries each.
+// partials must hold exactly PARTIAL_LEN * 2*WGS entries.
 
-@group(0) @binding(0) var<storage, read>       partialsScaleHi: array<f32>;
-@group(0) @binding(1) var<storage, read>       partialsScaleLo: array<f32>;
-@group(0) @binding(2) var<storage, read>       partialsSsqHi:   array<f32>;
-@group(0) @binding(3) var<storage, read>       partialsSsqLo:   array<f32>;
-@group(0) @binding(4) var<storage, read_write> resultHi:        array<f32, 1>;
-@group(0) @binding(5) var<storage, read_write> resultLo:        array<f32, 1>;
+@group(0) @binding(0) var<storage, read>       partials: array<f32>;
+@group(0) @binding(1) var<storage, read_write> resultHi: array<f32, 1>;
+@group(0) @binding(2) var<storage, read_write> resultLo: array<f32, 1>;
 
 const WGS: u32 = 64;
+const PARTIAL_LEN: u32 = 7; // must match dnrm2.wgsl
 
-struct ScaleSsq {
-  scale: DD,
-  ssq:   DD,
+const SSML: f32 = 0x1p64f;  // must match dnrm2.wgsl
+const SBIG: f32 = 0x1p-76f; // must match dnrm2.wgsl
+const SBIG_SQ_EXP: i32 = -152; // log2(SBIG\xB2)
+
+struct Acc3 {
+  big:  DD,
+  med:  DD,
+  sml:  DD,
+  flag: f32,
 }
 
 fn ddSelect(a: DD, b: DD, cond: bool) -> DD {
   return DD(select(a.hi, b.hi, cond), select(a.lo, b.lo, cond));
 }
 
-// Associative merge of two independent (scale, ssq) partials \u2014 see
-// dnrm2.wgsl for the derivation and why this is branch-free.
-fn ssqMergeProtected(a: ScaleSsq, b: ScaleSsq, threadSlot: u32) -> ScaleSsq {
-  let isBigger = !ddGreater(b.scale, a.scale); // a.scale >= b.scale
-  let bigger = ddSelect(b.scale, a.scale, isBigger);
-  let smaller = ddSelect(a.scale, b.scale, isBigger);
-  let biggerSsq = ddSelect(b.ssq, a.ssq, isBigger);
-  let smallerSsq = ddSelect(a.ssq, b.ssq, isBigger);
-  let biggerIsZero = bigger.hi == 0.0;
-  let safeBigger = ddSelect(bigger, DD(1.0, 0.0), biggerIsZero);
-  let r = ddDivProtected(smaller, safeBigger, threadSlot);
-  let rsq = ddMulProtected(r, r, threadSlot);
-  let smallerSsqTimesRsq = ddMulProtected(smallerSsq, rsq, threadSlot);
-  let newSsq = ddAddProtected(biggerSsq, smallerSsqTimesRsq, threadSlot);
-  return ScaleSsq(bigger, newSsq);
+// Exact scaling of a DD value by a power of two.
+fn ddScale(a: DD, s: f32) -> DD {
+  return DD(a.hi * s, a.lo * s);
 }
 
-var<workgroup> tileScaleHi: array<f32, 64>;
-var<workgroup> tileScaleLo: array<f32, 64>;
-var<workgroup> tileSsqHi:   array<f32, 64>;
-var<workgroup> tileSsqLo:   array<f32, 64>;
+fn mergeProtected(a: Acc3, b: Acc3, threadSlot: u32) -> Acc3 {
+  return Acc3(
+    ddAddProtected(a.big, b.big, threadSlot),
+    ddAddProtected(a.med, b.med, threadSlot),
+    ddAddProtected(a.sml, b.sml, threadSlot),
+    max(a.flag, b.flag),
+  );
+}
+
+fn partialAt(i: u32) -> Acc3 {
+  let b = i * PARTIAL_LEN;
+  return Acc3(DD(partials[b], partials[b + 1u]), DD(partials[b + 2u], partials[b + 3u]),
+              DD(partials[b + 4u], partials[b + 5u]), partials[b + 6u]);
+}
+
+var<workgroup> tile: array<f32, 448>; // WGS \xD7 PARTIAL_LEN
+
+fn tileLoad(i: u32) -> Acc3 {
+  let b = i * PARTIAL_LEN;
+  return Acc3(DD(tile[b], tile[b + 1u]), DD(tile[b + 2u], tile[b + 3u]),
+              DD(tile[b + 4u], tile[b + 5u]), tile[b + 6u]);
+}
+
+fn tileStore(i: u32, v: Acc3) {
+  let b = i * PARTIAL_LEN;
+  tile[b] = v.big.hi;
+  tile[b + 1u] = v.big.lo;
+  tile[b + 2u] = v.med.hi;
+  tile[b + 3u] = v.med.lo;
+  tile[b + 4u] = v.sml.hi;
+  tile[b + 5u] = v.sml.lo;
+  tile[b + 6u] = v.flag;
+}
 
 @compute @workgroup_size(64)
 fn reduce_scaled_f64(
   @builtin(local_invocation_id) lid: vec3u,
 ) {
   let i = lid.x;
-  let a = ScaleSsq(DD(partialsScaleHi[i], partialsScaleLo[i]), DD(partialsSsqHi[i], partialsSsqLo[i]));
-  let b = ScaleSsq(DD(partialsScaleHi[i + WGS], partialsScaleLo[i + WGS]), DD(partialsSsqHi[i + WGS], partialsSsqLo[i + WGS]));
-  let merged0 = ssqMergeProtected(a, b, i);
-  tileScaleHi[i] = merged0.scale.hi;
-  tileScaleLo[i] = merged0.scale.lo;
-  tileSsqHi[i]   = merged0.ssq.hi;
-  tileSsqLo[i]   = merged0.ssq.lo;
+  tileStore(i, mergeProtected(partialAt(i), partialAt(i + WGS), i));
   workgroupBarrier();
 
   for (var s = WGS / 2u; s > 0u; s >>= 1u) {
     let partner = select(i, i + s, i < s);
-    let ai = ScaleSsq(DD(tileScaleHi[i], tileScaleLo[i]), DD(tileSsqHi[i], tileSsqLo[i]));
-    let bi = ScaleSsq(DD(tileScaleHi[partner], tileScaleLo[partner]), DD(tileSsqHi[partner], tileSsqLo[partner]));
-    let merged = ssqMergeProtected(ai, bi, i);
+    let merged = mergeProtected(tileLoad(i), tileLoad(partner), i);
     workgroupBarrier();
-    if (i < s) {
-      tileScaleHi[i] = merged.scale.hi;
-      tileScaleLo[i] = merged.scale.lo;
-      tileSsqHi[i]   = merged.ssq.hi;
-      tileSsqLo[i]   = merged.ssq.lo;
-    }
+    if (i < s) { tileStore(i, merged); }
     workgroupBarrier();
   }
 
-  // ddSqrtProtected/ddMulProtected's own workgroupBarrier()s need every
-  // thread to call them \u2014 every thread redundantly computes the same final
-  // scale\xB7sqrt(ssq) from tile[0] (still visible to all after the reduction
-  // above), and only the write-back is conditional. Guarding the calls
-  // themselves behind \`if (i == 0u)\` (as the plain-f32 original safely
-  // does with its unprotected \`sqrt()\`) would leave 63 threads never
-  // reaching a barrier the one remaining thread still needs.
-  let scale = DD(tileScaleHi[0], tileScaleLo[0]);
-  let ssq = DD(tileSsqHi[0], tileSsqLo[0]);
-  let result = ddMulProtected(scale, ddSqrtProtected(ssq, i), i);
+  // Final combine \u2014 every thread computes it (protected ops), thread 0 writes.
+  let t = tileLoad(0u);
+  let medLive = t.med.hi > 0.0;
+  let one = DD(1.0, 0.0);
+
+  // Medium's norm (0 if empty; ddSqrtProtected handles 0 exactly).
+  let rMed = ddSqrtProtected(t.med, i);
+
+  // Case big: medium in big's units is amed\xB7SBIG\xB2 = amed\xB72^-152 \u2014 one exact
+  // ldexp. Never as (amed\xB7SBIG)\xB7SBIG: a compiler may fold that into
+  // amed\xB7(SBIG\xB7SBIG), and the constant 2^-152 underflows f32 to 0 (it did,
+  // on NVIDIA/Vulkan). Not via sqrt(amed) squared either: the DD sqrt is
+  // markedly less accurate on some backends. If the scaled value underflows,
+  // medium was below big's rounding anyway (big's smallest square is 2^-52).
+  let medInBig = DD(ldexp(t.med.hi, SBIG_SQ_EXP), ldexp(t.med.lo, SBIG_SQ_EXP));
+  let bigTotal = ddAddProtected(t.big, medInBig, i);
+  let resBig = ddScale(ddSqrtProtected(bigTotal, i), 1.0 / SBIG);
+
+  // Case small: with medium present, the two meet through their roots,
+  // ymax\xB7sqrt(1 + (ymin/ymax)\xB2); alone, small's root scaled back down.
+  let rSml = ddScale(ddSqrtProtected(t.sml, i), 1.0 / SSML);
+  let smlBigger = ddGreater(rSml, rMed);
+  let ymax = ddSelect(rMed, rSml, smlBigger);
+  let ymin = ddSelect(rSml, rMed, smlBigger);
+  let q = ddDivProtected(ymin, ddSelect(ymax, one, ymax.hi == 0.0), i);
+  let q2 = ddMulProtected(q, q, i);
+  let resMix = ddMulProtected(ymax, ddSqrtProtected(ddAddProtected(one, q2, i), i), i);
+  let resSml = ddSelect(rSml, resMix, medLive);
+
+  var res = ddSelect(ddSelect(rMed, resSml, t.sml.hi > 0.0), resBig, t.big.hi > 0.0);
+  // Built from a runtime value: a const-expression that evaluates to Inf or
+  // NaN is a shader-creation error in WGSL.
+  let rt = i & 0u;
+  let inf = bitcast<f32>(0x7f800000u | rt);
+  let nan = bitcast<f32>(0x7fc00000u | rt);
+  res = ddSelect(res, DD(inf, 0.0), t.flag >= 1.0);
+  res = ddSelect(res, DD(nan, 0.0), t.flag >= 2.0);
+
   if (i == 0u) {
-    resultHi[0] = result.hi;
-    resultLo[0] = result.lo;
+    resultHi[0] = res.hi;
+    resultLo[0] = res.lo;
   }
 }
 `;
     });
-  var _e,
-    oo = J(() => {
-      _e = `// reduce_partials: y[i] = alpha * \u03A3_c partial[c*n + i] + beta * y[i]
+  var Se,
+    po = J(() => {
+      Se = `// reduce_partials: y[i] = alpha * \u03A3_c partial[c*n + i] + beta * y[i]
 // Second pass for the split-row (split-K) Level 2 kernels (strmv_t,
 // sgemv_t): they spread one output's dot product across \`chunks\`
 // workgroups for memory parallelism, each writing its share to its own
@@ -2199,9 +2267,9 @@ fn main(
 }
 `;
     });
-  var io,
-    ao = J(() => {
-      io = `// sgemv_n: y = alpha * A * x + beta * y  (A is m\xD7n row-major, no-transpose)
+  var wo,
+    co = J(() => {
+      wo = `// sgemv_n: y = alpha * A * x + beta * y  (A is m\xD7n row-major, no-transpose)
 //
 // One workgroup per output row, with a grid-stride outer loop so the shader
 // still covers all rows when m exceeds maxComputeWorkgroupsPerDimension.
@@ -2280,9 +2348,9 @@ fn main(
 }
 `;
     });
-  var no,
-    so = J(() => {
-      no = `// sgemv_t: y = alpha * A^T * x + beta * y  (A is m\xD7n row-major, transposed)
+  var ho,
+    go = J(() => {
+      ho = `// sgemv_t: y = alpha * A^T * x + beta * y  (A is m\xD7n row-major, transposed)
 // One thread per column of A (one element of y, length n): at each row j the
 // 64 lanes of a workgroup read A[j*lda + col..col+63] \u2014 contiguous, coalesced.
 //
@@ -2354,9 +2422,9 @@ fn main(
 }
 `;
     });
-  var me,
-    lo = J(() => {
-      me = `// gather_strided: dst[i] = src[i * inc], i < n
+  var Qr,
+    bo = J(() => {
+      Qr = `// gather_strided: dst[i] = src[i * inc], i < n
 // Packs a strided vector into a contiguous scratch buffer once, so an O(n\xB2)
 // Level 2 kernel that re-reads the vector for every row reads it at unit
 // stride instead of re-doing the scattered gather n times (see
@@ -2385,9 +2453,9 @@ fn main(
 }
 `;
     });
-  var fo,
-    uo = J(() => {
-      fo = `// ssymv (pass 1 of 2): y = alpha * A * x + beta * y, A n\xD7n symmetric with only
+  var xo,
+    yo = J(() => {
+      xo = `// ssymv (pass 1 of 2): y = alpha * A * x + beta * y, A n\xD7n symmetric with only
 // its lower (uplo=0) or upper (uplo=1) triangle stored.
 //
 // Tiled over the stored triangle: one workgroup per TILE\xD7TILE tile, read once
@@ -2507,9 +2575,9 @@ fn main(
 }
 `;
     });
-  var co,
-    mo = J(() => {
-      co = `// strmv: y = A * x \u2014 strmv's no-transpose path (transpose runs strmv_t.wgsl).
+  var _o,
+    vo = J(() => {
+      _o = `// strmv: y = A * x \u2014 strmv's no-transpose path (transpose runs strmv_t.wgsl).
 // A is n\xD7n triangular, lower (uplo=0) or upper (uplo=1) triangle stored.
 // diag=1 (unit) treats the diagonal as 1 without reading A's diagonal values.
 // One workgroup per row, grid-stride outer loop.
@@ -2572,9 +2640,9 @@ fn main(
 }
 `;
     });
-  var wo,
-    po = J(() => {
-      wo = `// strmv_t: y = A^T * x for triangular A \u2014 strmv's transpose path, in the
+  var ko,
+    Bo = J(() => {
+      ko = `// strmv_t: y = A^T * x for triangular A \u2014 strmv's transpose path, in the
 // kernel's row-major frame (strmv.mjs has already folded layout into
 // uplo/trans). y[i] = \u03A3_j A[j,i] * x[j] over the stored range: j >= i for
 // lower, j <= i for upper.
@@ -2666,9 +2734,9 @@ fn main(
 }
 `;
     });
-  var Ne,
-    go = J(() => {
-      Ne = `// strsv_invert_block: computes the explicit inverse of every BLOCK_SIZE \xD7
+  var Te,
+    Ao = J(() => {
+      Te = `// strsv_invert_block: computes the explicit inverse of every BLOCK_SIZE \xD7
 // BLOCK_SIZE diagonal block of op(A), one workgroup per block (dispatch
 // x = numBlocks), writing each to a dense COLUMN-major scratch region of
 // Ainv (inv[r][c] at c*64 + r) \u2014 strsv_step.wgsl's matvec then reads each
@@ -2894,9 +2962,9 @@ fn strsv_invert_block_main(
 }
 `;
     });
-  var bo,
-    ho = J(() => {
-      bo = `// strsv_step: one block of the blocked triangular solve, in a single
+  var So,
+    Eo = J(() => {
+      So = `// strsv_step: one block of the blocked triangular solve, in a single
 // dispatch \u2014 replaces the strsv_apply_inverse + strsv_update pair, halving
 // the number of sequential dispatches the solve is limited by.
 //
@@ -3050,9 +3118,9 @@ fn main(
 }
 `;
     });
-  var xo,
-    yo = J(() => {
-      xo = `// scatter_strided: dst[i * inc] = src[i], i < n \u2014 the inverse of
+  var He,
+    Lo = J(() => {
+      He = `// scatter_strided: dst[i * inc] = src[i], i < n \u2014 the inverse of
 // gather_strided.wgsl. strsv uses it to copy the contiguous solution
 // buffer back into a possibly strided x, leaving the stride gaps untouched.
 
@@ -3079,9 +3147,9 @@ fn main(
 }
 `;
     });
-  var Pe,
-    vo = J(() => {
-      Pe = `// strsm_small: the whole triangular solve in one dispatch when the order
+  var Ce,
+    Go = J(() => {
+      Ce = `// strsm_small: the whole triangular solve in one dispatch when the order
 // fits one block (n <= 64) \u2014 strsv (one right-hand side) and strsm (many) \u2014
 // and each diagonal block of strsm's blocked solve (through offset views).
 // No explicit inverse: plain column-oriented substitution, backward stable
@@ -3208,9 +3276,9 @@ fn main(
 }
 `;
     });
-  var _o,
-    Bo = J(() => {
-      _o = `// sger: A := alpha * x * y^T + A  (rank-1 update, A is m\xD7n general/dense)
+  var Po,
+    Do = J(() => {
+      Po = `// sger: A := alpha * x * y^T + A  (rank-1 update, A is m\xD7n general/dense)
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read>       y: array<f32>;
@@ -3266,9 +3334,9 @@ fn main(
 }
 `;
     });
-  var Ao,
-    ko = J(() => {
-      Ao = `// dger: A := alpha * x * y^T + A, double-double (Dekker) f64 emulation of
+  var Io,
+    No = J(() => {
+      Io = `// dger: A := alpha * x * y^T + A, double-double (Dekker) f64 emulation of
 // sger (rank-1 update). x, y, A, and alpha are each split into an f32
 // (hi, lo) pair; WGSL has no f64 type. One workgroup per row of A
 // (grid-stride over rows); within a row, ddMulProtected/ddAddProtected each
@@ -3347,9 +3415,9 @@ fn dger_main(
 }
 `;
     });
-  var Eo,
-    So = J(() => {
-      Eo = `// ssyr: A := alpha * x * x^T + A  (symmetric rank-1 update)
+  var Ro,
+    Mo = J(() => {
+      Ro = `// ssyr: A := alpha * x * x^T + A  (symmetric rank-1 update)
 // A is n\xD7n symmetric; only the triangle specified by uplo is referenced/updated,
 // the other triangle is implied by symmetry (not touched).
 
@@ -3418,9 +3486,9 @@ fn main(
 }
 `;
     });
-  var Lo,
-    Go = J(() => {
-      Lo = `// dsyr: A := alpha * x * x^T + A, double-double (Dekker) f64 emulation of
+  var Ho,
+    To = J(() => {
+      Ho = `// dsyr: A := alpha * x * x^T + A, double-double (Dekker) f64 emulation of
 // ssyr (symmetric rank-1 update). x, A, and alpha are each split into an f32
 // (hi, lo) pair; WGSL has no f64 type. Only the triangle specified by uplo
 // is referenced/updated. One workgroup per row of A (grid-stride over
@@ -3506,9 +3574,9 @@ fn dsyr_main(
 }
 `;
     });
-  var No,
-    Do = J(() => {
-      No = `// ssyr2: A := alpha * x * y^T + alpha * y * x^T + A  (symmetric rank-2 update)
+  var jo,
+    Co = J(() => {
+      jo = `// ssyr2: A := alpha * x * y^T + alpha * y * x^T + A  (symmetric rank-2 update)
 // A is n\xD7n symmetric; only the triangle specified by uplo is referenced/updated,
 // the other triangle is implied by symmetry (not touched).
 
@@ -3576,9 +3644,9 @@ fn main(
 }
 `;
     });
-  var Mo,
-    Po = J(() => {
-      Mo = `// dsyr2: A := alpha * x * y^T + alpha * y * x^T + A, double-double (Dekker)
+  var Wo,
+    Fo = J(() => {
+      Wo = `// dsyr2: A := alpha * x * y^T + alpha * y * x^T + A, double-double (Dekker)
 // f64 emulation of ssyr2 (symmetric rank-2 update). x, y, A, and alpha are
 // each split into an f32 (hi, lo) pair; WGSL has no f64 type. Only the
 // triangle specified by uplo is referenced/updated. One workgroup per row
@@ -3675,9 +3743,9 @@ fn dsyr2_main(
 }
 `;
     });
-  var Ro,
-    Io = J(() => {
-      Ro = `// dgemv_n: y := alpha * A * x + beta * y, double-double (Dekker) f64
+  var Ko,
+    Oo = J(() => {
+      Ko = `// dgemv_n: y := alpha * A * x + beta * y, double-double (Dekker) f64
 // emulation of sgemv_n (matrix-vector product, no transpose). A, x, y,
 // alpha, and beta are each split into an f32 (hi, lo) pair; WGSL has no f64
 // type. Same one-workgroup-per-output-row shape as sgemv_n.wgsl (grid-stride
@@ -3791,37 +3859,47 @@ fn dgemv_n_main(
 }
 `;
     });
-  var To,
-    Ho = J(() => {
-      To = `// dgemv_t: y := alpha * A^T * x + beta * y, double-double (Dekker) f64
+  var Vo,
+    qo = J(() => {
+      Vo = `// dgemv_t: y := alpha * A^T * x + beta * y, double-double (Dekker) f64
 // emulation of sgemv_t (matrix-vector product, transposed). A, x, y, alpha,
 // and beta are each split into an f32 (hi, lo) pair; WGSL has no f64 type.
 // Same one-thread-per-output-column shape as sgemv_t.wgsl, tiling over x
-// (length m) via shared memory. Because ddMulProtected/ddAddProtected each
-// carry a workgroupBarrier(), every thread in the workgroup \u2014 including ones
-// whose column is out of range (n not a multiple of WGS) \u2014 must call them
-// the same number of times: unlike sgemv_t.wgsl's \`if (col < n)\` guard
-// around the whole accumulation, out-of-range threads here compute against
-// a clamped dummy column unconditionally and simply never write their
-// result (same technique dger.wgsl/ddot.wgsl use for their ragged tails).
+// (length m) via shared memory, and the same split-K: rows are split into
+// chunks along wid.y, each chunk writing its share to
+// partialHi/Lo[chunk*n + col] for reduce_partials_f64.wgsl to sum and scale
+// by alpha/beta. With one thread per output, n=4096 is only 64 workgroups \u2014
+// too few to hide the protected ops' barrier latency. A single chunk
+// (\`direct\` = 1) skips the second pass and writes y here instead.
+//
+// Because ddMulProtected/ddAddProtected each carry a workgroupBarrier(),
+// every thread in the workgroup \u2014 including ones whose column is out of
+// range (n not a multiple of WGS) \u2014 must call them the same number of
+// times: unlike sgemv_t.wgsl's early return for \`col >= n\`, out-of-range
+// threads here compute against a clamped dummy column unconditionally and
+// simply never write their result (same technique dger.wgsl/ddot.wgsl use
+// for their ragged tails). The chunk's row range depends only on wid.y, so
+// the loop bounds are workgroup-uniform.
 
-@group(0) @binding(0) var<storage, read>       AHi: array<f32>;
-@group(0) @binding(1) var<storage, read>       ALo: array<f32>;
-@group(0) @binding(2) var<storage, read>       xHi: array<f32>;
-@group(0) @binding(3) var<storage, read>       xLo: array<f32>;
-@group(0) @binding(4) var<storage, read_write> yHi: array<f32>;
-@group(0) @binding(5) var<storage, read_write> yLo: array<f32>;
+@group(0) @binding(0) var<storage, read>       AHi:   array<f32>;
+@group(0) @binding(1) var<storage, read>       ALo:   array<f32>;
+@group(0) @binding(2) var<storage, read>       xHi:   array<f32>;
+@group(0) @binding(3) var<storage, read>       xLo:   array<f32>;
+@group(0) @binding(4) var<storage, read_write> outHi: array<f32>; // y, or partials
+@group(0) @binding(5) var<storage, read_write> outLo: array<f32>;
 
 struct Params {
-  m:       u32,
-  n:       u32,
-  alphaHi: f32,
-  alphaLo: f32,
-  betaHi:  f32,
-  betaLo:  f32,
-  incx:    u32,
-  incy:    u32,
-  lda:     u32,
+  m:         u32,
+  n:         u32,
+  alphaHi:   f32,
+  alphaLo:   f32,
+  betaHi:    f32,
+  betaLo:    f32,
+  incx:      u32,
+  incy:      u32,
+  lda:       u32,
+  chunkRows: u32,  // a multiple of WGS
+  direct:    u32,  // 1 = single chunk, write y directly
 }
 
 @group(0) @binding(6) var<uniform> params: Params;
@@ -3831,22 +3909,23 @@ var<workgroup> xTile: array<DD, 64>;
 
 @compute @workgroup_size(64)
 fn dgemv_t_main(
-  @builtin(global_invocation_id) gid: vec3u,
-  @builtin(local_invocation_id)  lid: vec3u,
+  @builtin(workgroup_id)        wid: vec3u,
+  @builtin(local_invocation_id) lid: vec3u,
 ) {
-  let col      = gid.x;
+  let col      = wid.x * WGS + lid.x;
   let colValid = col < params.n;
   // Clamp so out-of-range threads still index safely \u2014 their contribution
   // is computed but never written back.
   let safeCol  = select(0u, col, colValid);
 
+  let jStart = wid.y * params.chunkRows;
+  let jEnd   = min(jStart + params.chunkRows, params.m);
+
   var acc = DD(0.0, 0.0);
 
-  let m_floor   = (params.m / WGS) * WGS;
-  let mainIters = m_floor / WGS;
-
-  for (var iter = 0u; iter < mainIters; iter++) {
-    let base = iter * WGS;
+  let tiles = (jEnd - jStart) / WGS;
+  for (var t = 0u; t < tiles; t++) {
+    let base = jStart + t * WGS;
     // Cooperative load: all 64 threads fill xTile with x[base..base+WGS),
     // independent of col \u2014 safe regardless of whether this thread's column
     // is in range.
@@ -3862,44 +3941,121 @@ fn dgemv_t_main(
     workgroupBarrier();
   }
 
-  // Remainder rows (m not a multiple of WGS): the count is the same for
-  // every thread regardless of col, so this loop is already barrier-safe
-  // without needing a second tiling pass.
-  let remCount = params.m - m_floor;
-  for (var k = 0u; k < remCount; k++) {
-    let row = m_floor + k;
+  // Remainder rows (only the last chunk, when m isn't a multiple of WGS):
+  // the count is the same for every thread regardless of col, so this loop
+  // is already barrier-safe without a second tiling pass.
+  for (var row = jStart + tiles * WGS; row < jEnd; row++) {
     let ia  = row * params.lda + safeCol;
     let ix  = row * params.incx;
     let prod = ddMulProtected(DD(AHi[ia], ALo[ia]), DD(xHi[ix], xLo[ix]), lid.x);
     acc = ddAddProtected(acc, prod, lid.x);
   }
 
-  let alpha = DD(params.alphaHi, params.alphaLo);
-  let beta  = DD(params.betaHi, params.betaLo);
-  let scaled = ddMulProtected(alpha, acc, lid.x);
+  // \`direct\` is uniform, but the protected ops still run on both paths (a
+  // barrier under a uniform branch is legal; this keeps the write the only
+  // divergent part).
+  if (params.direct == 1u) {
+    let alpha = DD(params.alphaHi, params.alphaLo);
+    let beta  = DD(params.betaHi, params.betaLo);
+    let scaled = ddMulProtected(alpha, acc, lid.x);
 
-  let iy = safeCol * params.incy;
-  let yVal = DD(yHi[iy], yLo[iy]);
-  let betaTimesY = ddMulProtected(beta, yVal, lid.x);
-  let withBeta = ddAddProtected(scaled, betaTimesY, lid.x);
-  let isBetaNonzero = params.betaHi != 0.0 || params.betaLo != 0.0;
-  // BLAS beta==0 semantics: y is written, not accumulated \u2014 the result
-  // must not depend on y's prior value (though it is still read above).
-  let result = DD(
-    select(scaled.hi, withBeta.hi, isBetaNonzero),
-    select(scaled.lo, withBeta.lo, isBetaNonzero),
-  );
+    let iy = safeCol * params.incy;
+    let yVal = DD(outHi[iy], outLo[iy]);
+    let betaTimesY = ddMulProtected(beta, yVal, lid.x);
+    let withBeta = ddAddProtected(scaled, betaTimesY, lid.x);
+    let isBetaNonzero = params.betaHi != 0.0 || params.betaLo != 0.0;
+    // BLAS beta==0 semantics: y is written, not accumulated \u2014 the result
+    // must not depend on y's prior value (though it is still read above).
+    let result = DD(
+      select(scaled.hi, withBeta.hi, isBetaNonzero),
+      select(scaled.lo, withBeta.lo, isBetaNonzero),
+    );
 
-  if (colValid) {
-    yHi[iy] = result.hi;
-    yLo[iy] = result.lo;
+    if (colValid) {
+      outHi[iy] = result.hi;
+      outLo[iy] = result.lo;
+    }
+  } else if (colValid) {
+    outHi[wid.y * params.n + col] = acc.hi;
+    outLo[wid.y * params.n + col] = acc.lo;
   }
 }
 `;
     });
-  var jo,
-    Co = J(() => {
-      jo = `// dsymv: y := alpha * A * x + beta * y, double-double (Dekker) f64 emulation
+  var Le,
+    Uo = J(() => {
+      Le = `// reduce_partials_f64: y[i] = alpha * \u03A3_c partial[c*n + i] + beta * y[i],
+// double-double (Dekker) f64 emulation of reduce_partials.wgsl \u2014 the second
+// pass for the split-K f64 Level 2 kernels (dgemv_t). Partials and y are
+// (hi, lo) f32 pairs; reads are coalesced across i.
+//
+// The protected ops carry a workgroupBarrier(), so the grid-stride and
+// chunk loops run a workgroup-uniform trip count, and lanes past n compute
+// against a clamped index and skip only the write.
+
+@group(0) @binding(0) var<storage, read>       partialHi: array<f32>;
+@group(0) @binding(1) var<storage, read>       partialLo: array<f32>;
+@group(0) @binding(2) var<storage, read_write> yHi:       array<f32>;
+@group(0) @binding(3) var<storage, read_write> yLo:       array<f32>;
+
+struct Params {
+  n:       u32,
+  chunks:  u32,
+  incy:    u32,
+  alphaHi: f32,
+  alphaLo: f32,
+  betaHi:  f32,
+  betaLo:  f32,
+}
+
+@group(0) @binding(4) var<uniform> params: Params;
+
+const WGS: u32 = 64u;
+
+@compute @workgroup_size(64)
+fn reduce_partials_f64(
+  @builtin(global_invocation_id) gid: vec3u,
+  @builtin(local_invocation_id)  lid: vec3u,
+  @builtin(num_workgroups)       nwg: vec3u,
+) {
+  let alpha = DD(params.alphaHi, params.alphaLo);
+  let beta  = DD(params.betaHi, params.betaLo);
+  let isBetaNonzero = params.betaHi != 0.0 || params.betaLo != 0.0;
+
+  let stride = nwg.x * WGS;
+  let iters  = (params.n + stride - 1u) / stride;
+  for (var it = 0u; it < iters; it++) {
+    let i     = gid.x + it * stride;
+    let valid = i < params.n;
+    let si    = select(0u, i, valid);
+
+    var s = DD(0.0, 0.0);
+    for (var c = 0u; c < params.chunks; c++) {
+      let pi = c * params.n + si;
+      s = ddAddProtected(s, DD(partialHi[pi], partialLo[pi]), lid.x);
+    }
+
+    let yi = si * params.incy;
+    let scaled = ddMulProtected(alpha, s, lid.x);
+    let betaTimesY = ddMulProtected(beta, DD(yHi[yi], yLo[yi]), lid.x);
+    let withBeta = ddAddProtected(scaled, betaTimesY, lid.x);
+    // BLAS beta==0 semantics: y is written, not accumulated \u2014 the result
+    // must not depend on y's prior value (though it is still read above).
+    let result = DD(
+      select(scaled.hi, withBeta.hi, isBetaNonzero),
+      select(scaled.lo, withBeta.lo, isBetaNonzero),
+    );
+    if (valid) {
+      yHi[yi] = result.hi;
+      yLo[yi] = result.lo;
+    }
+  }
+}
+`;
+    });
+  var Zo,
+    zo = J(() => {
+      Zo = `// dsymv: y := alpha * A * x + beta * y, double-double (Dekker) f64 emulation
 // of ssymv (symmetric matrix-vector product). A, x, y, alpha, and beta are
 // each split into an f32 (hi, lo) pair; WGSL has no f64 type. A is n\xD7n
 // symmetric \u2014 only the triangle specified by uplo is physically stored, so
@@ -4026,10 +4182,176 @@ fn dsymv_main(
 }
 `;
     });
-  var Fo,
-    qo = J(() => {
-      Fo = `// dtrmv: y := op(A) * x, double-double (Dekker) f64 emulation of strmv
-// (triangular matrix-vector product). A, x, and y are each split into an f32
+  var Yo,
+    Xo = J(() => {
+      Yo = `// dsymv_tile (pass 1 of 2): y = alpha * A * x + beta * y, double-double
+// (Dekker) f64 emulation of ssymv.wgsl \u2014 A n\xD7n symmetric with only its lower
+// (uplo=0) or upper (uplo=1) triangle stored; A and x are (hi, lo) f32 pairs.
+//
+// Same tiling as ssymv.wgsl: one workgroup per TILE\xD7TILE tile of the stored
+// triangle, read once with coalesced loads, applied as tile\xB7x (to the tile's
+// rows) and, off the diagonal, as tile\u1D40\xB7x (to its columns: the mirrored half
+// A[j,i] = A[i,j]). So A is read once, half of n\xB2, and never through a
+// strided column walk. Each contribution goes to its own partial slot \u2014
+// with p >= q the stored-block pair of a tile, slot q of block p's rows and
+// slot p of block q's rows (only slot p when p == q) \u2014 and
+// reduce_partials_f64.wgsl sums them and applies alpha/beta. Every
+// (block, slot) pair is written exactly once, so the partials need no
+// clearing.
+//
+// The protected ops carry a workgroupBarrier(), so every thread makes the
+// same calls (threadSlot = local_invocation_index, 256 threads \u2014 the size
+// of dekkerScratch): out-of-range and off-triangle elements are masked to 0,
+// and the final 8-way row/column sums are a tree every thread steps through
+// (ssymv.wgsl's \`ty == 0\` loop would be divergent), with only the writes
+// conditional.
+
+@group(0) @binding(0) var<storage, read>       AHi:       array<f32>;
+@group(0) @binding(1) var<storage, read>       ALo:       array<f32>;
+@group(0) @binding(2) var<storage, read>       xHi:       array<f32>;
+@group(0) @binding(3) var<storage, read>       xLo:       array<f32>;
+@group(0) @binding(4) var<storage, read_write> partialHi: array<f32>;
+@group(0) @binding(5) var<storage, read_write> partialLo: array<f32>;
+
+struct Params {
+  n:         u32,
+  lda:       u32,
+  uplo:      u32,  // 0 = lower, 1 = upper
+  numBlocks: u32,
+  incx:      u32,
+}
+
+@group(0) @binding(6) var<uniform> params: Params;
+
+const TILE: u32 = 32u;
+const ROWS_PER_THREAD: u32 = 4u; // TILE / workgroup height (8)
+
+var<workgroup> xr: array<DD, 32>;       // x over the tile's rows
+var<workgroup> xc: array<DD, 32>;       // x over the tile's columns
+var<workgroup> rowRed: array<DD, 1056>; // TILE x (TILE+1): per-element row products
+// 64 groups of 8: groups 0..31 are row r's partials (4 columns each), groups
+// 32..63 column c's partials (4 rows each); the tree sums each group to its
+// first element.
+var<workgroup> red: array<DD, 512>;
+
+fn ddMask(a: DD, keep: bool) -> DD {
+  return DD(select(0.0, a.hi, keep), select(0.0, a.lo, keep));
+}
+
+fn xAt(i: u32) -> DD {
+  let n = params.n;
+  let ix = min(i, n - 1u) * params.incx;
+  return ddMask(DD(xHi[ix], xLo[ix]), i < n);
+}
+
+@compute @workgroup_size(32, 8)
+fn dsymv_tile_main(
+  @builtin(workgroup_id)           wid: vec3u,
+  @builtin(num_workgroups)         nwg: vec3u,
+  @builtin(local_invocation_index) tid: u32,
+  @builtin(local_invocation_id)    lid: vec3u,
+) {
+  // Only the stored triangle's tiles are dispatched: linear tile index t over
+  // T(T+1)/2 tiles (laid out 2D to stay under the per-dimension limit) \u2192 the
+  // block pair (p, q), q <= p, row by row: t = p(p+1)/2 + q.
+  let t = wid.y * nwg.x + wid.x;
+  if (t >= params.numBlocks * (params.numBlocks + 1u) / 2u) { return; } // whole workgroup: uniform
+  var p = u32((sqrt(8.0 * f32(t) + 1.0) - 1.0) * 0.5);
+  // f32 sqrt can land one off near a row boundary \u2014 correct it exactly.
+  if (p * (p + 1u) / 2u > t) { p -= 1u; }
+  if ((p + 1u) * (p + 2u) / 2u <= t) { p += 1u; }
+  let q = t - p * (p + 1u) / 2u;
+
+  let n = params.n;
+  let lower = params.uplo == 0u;
+  let diag = p == q;
+  // Stored tile at block (p, q) for lower, (q, p) for upper.
+  let rb = select(q, p, lower);
+  let cb = select(p, q, lower);
+  let r0 = rb * TILE;
+  let c0 = cb * TILE;
+  let tx = lid.x;
+  let ty = lid.y;
+
+  if (ty == 0u) { xr[tx] = xAt(r0 + tx); }
+  if (ty == 1u) { xc[tx] = xAt(c0 + tx); }
+  workgroupBarrier();
+
+  // Each thread takes rows ty, ty+8, ty+16, ty+24 of column tx \u2014 32 lanes per
+  // row, so each warp reads one contiguous 128-byte segment per half. A
+  // diagonal tile has only one triangle stored: a stored element feeds its
+  // own row, a strictly-stored one also feeds its mirror (column) \u2014 the same
+  // two sums as an off-diagonal tile, just masked.
+  var colPart = DD(0.0, 0.0);
+  let gc = c0 + tx;
+  for (var k = 0u; k < ROWS_PER_THREAD; k++) {
+    let r = ty + 8u * k;
+    let gr = r0 + r;
+    let ia = min(gr, n - 1u) * params.lda + min(gc, n - 1u);
+    let a = ddMask(DD(AHi[ia], ALo[ia]), gr < n && gc < n);
+    let stored = !diag || select(tx >= r, tx <= r, lower);
+    let strict = !diag || select(tx > r, tx < r, lower);
+    rowRed[r * (TILE + 1u) + tx] = ddMulProtected(ddMask(a, stored), xc[tx], tid);
+    colPart = ddAddProtected(colPart, ddMulProtected(ddMask(a, strict), xr[r], tid), tid);
+  }
+  red[256u + tx * 8u + ty] = colPart;
+  workgroupBarrier();
+
+  // Row sums: 8 lanes per row each add 4 columns.
+  let row = tid / 8u;
+  let seg = tid % 8u;
+  let base = row * (TILE + 1u) + seg * 4u;
+  red[row * 8u + seg] = ddAddProtected(
+    ddAddProtected(rowRed[base], rowRed[base + 1u], tid),
+    ddAddProtected(rowRed[base + 2u], rowRed[base + 3u], tid),
+    tid,
+  );
+  workgroupBarrier();
+
+  // Tree over each group of 8: width 4, 2, 1 \u2014 256, 128, then 64 live
+  // pairs; idle threads add a throwaway pair and discard it.
+  for (var w = 4u; w > 0u; w >>= 1u) {
+    let live = tid < 64u * w;
+    let g = min(tid / w, 63u);
+    let i = g * 8u + tid % w;
+    let s = ddAddProtected(red[i], red[i + w], tid);
+    workgroupBarrier();
+    if (live) { red[i] = s; }
+    workgroupBarrier();
+  }
+
+  // Lanes tx of row ty == 0 write row tx's and column tx's sums.
+  let rs = red[tx * 8u];
+  let cs = red[(32u + tx) * 8u];
+  let both = ddAddProtected(rs, cs, tid);
+  if (ty == 0u) {
+    if (diag) {
+      // Both sums land on the same rows (and slot) for a diagonal tile.
+      if (r0 + tx < n) {
+        partialHi[p * n + r0 + tx] = both.hi;
+        partialLo[p * n + r0 + tx] = both.lo;
+      }
+    } else {
+      // tile \xB7 x \u2192 the tile's rows (block rb), slot cb
+      if (r0 + tx < n) {
+        partialHi[cb * n + r0 + tx] = rs.hi;
+        partialLo[cb * n + r0 + tx] = rs.lo;
+      }
+      // tile\u1D40 \xB7 x \u2192 the tile's columns (block cb), slot rb
+      if (c0 + tx < n) {
+        partialHi[rb * n + c0 + tx] = cs.hi;
+        partialLo[rb * n + c0 + tx] = cs.lo;
+      }
+    }
+  }
+}
+`;
+    });
+  var Jo,
+    $o = J(() => {
+      Jo = `// dtrmv: y := op(A) * x, double-double (Dekker) f64 emulation of strmv
+// (triangular matrix-vector product). dtrmv.mjs runs this for no-transpose,
+// and for transpose below COLUMN_KERNEL_MIN_N (above it, dtrmv_t.wgsl). A, x, and y are each split into an f32
 // (hi, lo) pair; WGSL has no f64 type. A is n\xD7n triangular \u2014 only the
 // triangle specified by uplo is referenced. Like strmv.wgsl, wgblas's trmv
 // takes a separate output vector y rather than overwriting x in place (the
@@ -4141,340 +4463,415 @@ fn dtrmv_main(
 }
 `;
     });
-  var Oo,
-    Wo = J(() => {
-      Oo = `// dtrsv_invert_block: double-double (Dekker) f64 emulation of
-// strsv_invert_block.wgsl \u2014 computes ONE column (workgroup_id.x) of ONE
-// block's (workgroup_id.y) explicit inverse, via the same one-row-at-a-time
-// substitution, solving against a unit basis vector e_col. A, Ainv, and the
-// running accumulation are each split into an f32 (hi, lo) pair; WGSL has no
-// f64 type.
+  var ra,
+    Qo = J(() => {
+      ra = `// dtrmv_t: y = A^T * x for triangular A, double-double (Dekker) f64
+// emulation of strmv_t \u2014 dtrmv's transpose path, in the kernel's row-major
+// frame (dtrmv.mjs has already folded layout into uplo/trans).
+// y[i] = \u03A3_j A[j,i] * x[j] over the stored range: j >= i for lower, j <= i
+// for upper.
 //
-// This is the first routine in the f64 port order to use ddDivProtected (the
-// non-unit-diagonal division) \u2014 deliberately last per TODO.md, since
-// division is where dnrm2 found real double-double edge-case bugs during
-// the L1 port. The division only runs once per (column, step) \u2014 same
-// barrier-uniformity requirement as every other protected op here \u2014 so
-// every thread in the workgroup computes it redundantly from the
-// already-shared \`tile[0]\` reduction result (same pattern dgemv_n uses for
-// its O(1) alpha/beta combine after the per-row reduction), with only
-// \`lid.x==0\` writing the result. \`params.diag\` is uniform across the whole
-// dispatch (not per-thread), so branching on it to skip the division
-// entirely for a unit diagonal is safe \u2014 unlike dtrmv.wgsl's per-element
-// diag check, which varies per thread and needed select() instead.
+// One thread per output i (a column of A), so at each step j the 64 lanes
+// of a workgroup read A[j*lda + i..i+63] \u2014 contiguous, coalesced. dtrmv.wgsl
+// used one workgroup per i with lanes walking j, which strided every lane by
+// lda.
+//
+// Rows are split into chunks along wid.y (split-K) so there are enough
+// workgroups in flight to hide the protected ops' barrier latency; each
+// chunk writes its share to partialHi/Lo[chunk*n + i] and
+// reduce_partials_f64.wgsl sums them (alpha = 1, beta = 0). With a single
+// chunk (\`direct\` = 1) the result goes straight to y and no second pass runs.
+//
+// The protected ops carry a workgroupBarrier(), so every lane makes the same
+// calls: the row range depends only on the workgroup, and lanes outside a
+// column's stored range (or past n) compute against an in-bounds column and
+// have their term selected to 0.
+
+@group(0) @binding(0) var<storage, read>       AHi:   array<f32>;
+@group(0) @binding(1) var<storage, read>       ALo:   array<f32>;
+@group(0) @binding(2) var<storage, read>       xHi:   array<f32>;
+@group(0) @binding(3) var<storage, read>       xLo:   array<f32>;
+@group(0) @binding(4) var<storage, read_write> outHi: array<f32>; // y, or partials
+@group(0) @binding(5) var<storage, read_write> outLo: array<f32>;
+
+struct Params {
+  n:         u32,
+  incx:      u32,
+  incy:      u32,
+  lda:       u32,
+  uplo:      u32,  // 0 = lower, 1 = upper
+  diag:      u32,  // 0 = non-unit, 1 = unit
+  chunkRows: u32,
+  direct:    u32,  // 1 = single chunk, write y directly
+}
+
+@group(0) @binding(6) var<uniform> params: Params;
+
+const WGS: u32 = 64u;
+
+@compute @workgroup_size(64)
+fn dtrmv_t_main(
+  @builtin(workgroup_id)        wid: vec3u,
+  @builtin(local_invocation_id) lid: vec3u,
+) {
+  let tileStart = wid.x * WGS;
+  let i = tileStart + lid.x;
+  let iOK = i < params.n;
+  let ic = min(i, params.n - 1u); // in-bounds column for masked lanes
+
+  // Rows this chunk covers, narrowed to what any column in the tile can use.
+  let chunkStart = wid.y * params.chunkRows;
+  var jStart = chunkStart;
+  var jEnd = min(chunkStart + params.chunkRows, params.n);
+  if (params.uplo == 0u) {
+    jStart = max(jStart, tileStart);
+  } else {
+    jEnd = min(jEnd, tileStart + WGS);
+  }
+  jEnd = max(jEnd, jStart); // an empty range must not wrap below
+
+  var acc = DD(0.0, 0.0);
+  for (var j = jStart; j < jEnd; j++) {
+    let inRange = select(j <= i, j >= i, params.uplo == 0u) && iOK;
+    let isUnitDiag = params.diag == 1u && j == i;
+    let ia = j * params.lda + ic;
+    let a = DD(select(AHi[ia], 1.0, isUnitDiag), select(ALo[ia], 0.0, isUnitDiag));
+    let ix = j * params.incx; // same for every lane: a broadcast read
+    let prod = ddMulProtected(a, DD(xHi[ix], xLo[ix]), lid.x);
+    let term = DD(select(0.0, prod.hi, inRange), select(0.0, prod.lo, inRange));
+    acc = ddAddProtected(acc, term, lid.x);
+  }
+
+  if (iOK) {
+    if (params.direct == 1u) {
+      outHi[i * params.incy] = acc.hi;
+      outLo[i * params.incy] = acc.lo;
+    } else {
+      outHi[wid.y * params.n + i] = acc.hi;
+      outLo[wid.y * params.n + i] = acc.lo;
+    }
+  }
+}
+`;
+    });
+  var ta,
+    ea = J(() => {
+      ta = `// dtrsv_small: substitution over one 64-row diagonal block, double-double
+// (Dekker) f64 \u2014 the f64 counterpart of strsm_small.wgsl as strsv uses it.
+// Two modes, picked by the uniform \`invert\` param:
+//   solve  (invert = 0): one block of the system, in place on x through a
+//          strided view (dtrsv's whole solve when n <= 64, and each diagonal
+//          block of the few-block path), optionally leaving a packed copy of
+//          the solution in X for the presolved dtrsv_step update.
+//   invert (invert = 1): every block's explicit inverse at once (dispatch
+//          y = numBlocks), solving op(A_block)\xB7X = I four columns per
+//          workgroup, written COLUMN-major (inv[r][c] at c*64 + r) for
+//          dtrsv_step.wgsl's coalesced matvec. Rows above a column's
+//          diagonal are structural zeros, so a workgroup's steps start at
+//          its first column \u2014 and every row is written, zeros included.
+// An effectively-upper block is reversed into a lower one first (J\xB7U\xB7J, as
+// in strsv_invert_block.wgsl), so the loop always runs forward.
+//
+// Thread (i, r) owns row i of right-hand side r. Step j: every thread forms
+// b_i / L_ii (as b_i times the reciprocal it computed up front), row j's
+// owner publishes it as x_j, and every row below folds it in,
+// b_i -= L_ij\xB7x_j. The protected ops carry a workgroupBarrier(), so every
+// thread makes the same calls and selects \u2014 strsm_small.wgsl's 4\xD74 chunking
+// would add protected ops, not save barriers. Each step's L_ij load is
+// issued a step ahead, off the dependency chain. (The per-column inversion
+// this replaced ran a 64-lane tree reduction plus a division per step:
+// ~38 barriers per step against ~9 here.)
 
 @group(0) @binding(0) var<storage, read>       AHi: array<f32>;
 @group(0) @binding(1) var<storage, read>       ALo: array<f32>;
-@group(0) @binding(2) var<storage, read_write> AinvHi: array<f32>;
-@group(0) @binding(3) var<storage, read_write> AinvLo: array<f32>;
+@group(0) @binding(2) var<storage, read_write> BHi: array<f32>; // x (solve) or Ainv (invert)
+@group(0) @binding(3) var<storage, read_write> BLo: array<f32>;
+// Packed copy of the solution (row i at i), solve mode with xLd = 1: the
+// presolved dtrsv_step reads the block's solution from there, contiguous \u2014
+// where the inverse path's step leaves it too. Unused when inverting.
+@group(0) @binding(4) var<storage, read_write> XHi: array<f32>;
+@group(0) @binding(5) var<storage, read_write> XLo: array<f32>;
 
 struct Params {
-  n:     u32,
-  lda:   u32,
-  trans: u32,  // 0 = no-transpose, 1 = transpose
-  uplo:  u32,  // 0 = lower, 1 = upper
-  diag:  u32,  // 0 = non-unit, 1 = unit
+  n:        u32, // solve: the block's order (<= BLOCK_SIZE); invert: the full order
+  aOff:     u32, // solve: the block's A offset (invert derives it per block)
+  aRs:      u32, // op(A) element (i, j) at off + i*aRs + j*aCs
+  aCs:      u32,
+  bOff:     u32, // solve: x's view
+  bInc:     u32,
+  backward: u32, // 1 = effectively upper: solve on the reversed system
+  unit:     u32, // 1 = unit diagonal (not read)
+  invert:   u32,
+  xLd:      u32, // solve: 1 = also write the packed copy to X
 }
 
-@group(0) @binding(4) var<uniform> params: Params;
+@group(0) @binding(6) var<uniform> params: Params;
 
-const WGS: u32 = 64u;
 const BLOCK_SIZE: u32 = 64u;
-var<workgroup> tile: array<DD, 64>;
+const RHS_PER_WG: u32 = 4u;
 
-fn readA(i: u32, j: u32) -> DD {
-  let idx = select(j * params.lda + i, i * params.lda + j, params.trans == 0u);
+var<workgroup> published: array<DD, 4>; // x_j per right-hand side
+
+fn ddSelect(a: DD, b: DD, cond: bool) -> DD {
+  return DD(select(a.hi, b.hi, cond), select(a.lo, b.lo, cond));
+}
+
+fn loadA(idx: u32) -> DD {
   return DD(AHi[idx], ALo[idx]);
 }
 
-@compute @workgroup_size(64)
-fn dtrsv_invert_block_main(
-  @builtin(workgroup_id)        wgid: vec3u,
-  @builtin(local_invocation_id) lid:  vec3u,
+@compute @workgroup_size(256)
+fn dtrsv_small_main(
+  @builtin(workgroup_id)           wid: vec3u,
+  @builtin(local_invocation_index) tid: u32,
 ) {
-  let col = wgid.x;
-  let blockIndex = wgid.y;
-  let blockStart = blockIndex * BLOCK_SIZE;
-  var blockEnd = blockStart + BLOCK_SIZE;
-  if (blockEnd > params.n) { blockEnd = params.n; }
-  let blockLen = blockEnd - blockStart;
+  let inv = params.invert == 1u;
+  let blockStart = wid.y * BLOCK_SIZE;
+  let len = select(params.n, min(BLOCK_SIZE, params.n - blockStart), inv);
+  // Invert: this workgroup's columns are [c0, c0+4); past the block it has
+  // none. Uniform (workgroup id + params), so the barriers below stay legal.
+  let c0 = wid.x * RHS_PER_WG;
+  if (inv && c0 >= len) { return; }
+  let aBase = select(params.aOff, blockStart * (params.aRs + params.aCs), inv);
+  let back = params.backward == 1u;
 
-  if (col >= blockLen) { return; }
+  let i = tid % BLOCK_SIZE;
+  let r = tid / BLOCK_SIZE;
+  let rhs = c0 + r; // invert: this thread's column of the frame
+  let live = i < len && select(r == 0u, rhs < len, inv);
+  let li = min(i, len - 1u);
+  let oi = select(li, len - 1u - li, back); // frame row -> block row
+  let rowBase = aBase + oi * params.aRs;
 
-  let ainvBase = blockIndex * BLOCK_SIZE * BLOCK_SIZE;
-  let forward = (params.trans == 0u) == (params.uplo == 0u);
+  let one = DD(1.0, 0.0);
+  let rinv = ddDivProtected(one, ddSelect(loadA(rowBase + oi * params.aCs), one, params.unit == 1u), tid);
 
-  if forward {
-    for (var r = lid.x; r < col; r += WGS) {
-      AinvHi[ainvBase + r * BLOCK_SIZE + col] = 0.0;
-      AinvLo[ainvBase + r * BLOCK_SIZE + col] = 0.0;
-    }
-  } else {
-    for (var r = col + 1u + lid.x; r < blockLen; r += WGS) {
-      AinvHi[ainvBase + r * BLOCK_SIZE + col] = 0.0;
-      AinvLo[ainvBase + r * BLOCK_SIZE + col] = 0.0;
-    }
+  var b = DD(0.0, 0.0);
+  if (inv) {
+    b = ddSelect(b, one, i == rhs);
+  } else if (live) {
+    let bi = params.bOff + oi * params.bInc;
+    b = DD(BHi[bi], BLo[bi]);
   }
-  storageBarrier();
-  workgroupBarrier();
+  var xi = DD(0.0, 0.0); // rows above jStart are structural zeros
 
-  let numSteps = select(col + 1u, blockLen - col, forward);
-  for (var step = 0u; step < numSteps; step++) {
-    let localRow = select(col - step, col + step, forward);
-    let i = blockStart + localRow;
+  let jStart = select(0u, c0, inv);
+  var aNext = loadA(rowBase + select(jStart, len - 1u - jStart, back) * params.aCs);
+  for (var j = jStart; j < len; j++) {
+    let a = aNext;
+    let jn = min(j + 1u, len - 1u);
+    aNext = loadA(rowBase + select(jn, len - 1u - jn, back) * params.aCs);
 
-    // Accumulation range over lj: [col, localRow) forward, [localRow+1, col+1) backward.
-    // Range length varies per step, but every thread runs the SAME step at
-    // the same time, so the main/tail split is already uniform for this
-    // step \u2014 just not the same across different steps (see dsyr.wgsl).
-    let ljStart = select(localRow + 1u, col, forward);
-    let ljEnd   = select(col + 1u, localRow, forward);
-    let rangeLen    = ljEnd - ljStart;
-    let range_floor = ljStart + (rangeLen / WGS) * WGS;
-    let mainIters   = (range_floor - ljStart) / WGS;
-    let hasTail     = select(0u, 1u, range_floor < ljEnd);
-
-    var acc = DD(0.0, 0.0);
-
-    for (var iter = 0u; iter < mainIters; iter++) {
-      let lj = ljStart + lid.x + iter * WGS;
-      let aij = readA(i, blockStart + lj);
-      let aidx = ainvBase + lj * BLOCK_SIZE + col;
-      let ainv = DD(AinvHi[aidx], AinvLo[aidx]);
-      let prod = ddMulProtected(aij, ainv, lid.x);
-      acc = ddAddProtected(acc, prod, lid.x);
+    let cand = ddMulProtected(b, rinv, tid);
+    if (i == j) {
+      published[r] = cand;
+      xi = cand;
     }
-
-    for (var iter = 0u; iter < hasTail; iter++) {
-      let lj    = range_floor + lid.x;
-      let valid = lj < ljEnd;
-      let safeLj = select(ljStart, lj, valid); // ljStart is always in-range when rangeLen > 0, the only case hasTail can be 1
-      let aij = readA(i, blockStart + safeLj);
-      let aidx = ainvBase + safeLj * BLOCK_SIZE + col;
-      let ainv = DD(AinvHi[aidx], AinvLo[aidx]);
-      let prod = ddMulProtected(aij, ainv, lid.x);
-      let contribution = DD(select(0.0, prod.hi, valid), select(0.0, prod.lo, valid));
-      acc = ddAddProtected(acc, contribution, lid.x);
-    }
-
-    tile[lid.x] = acc;
     workgroupBarrier();
+    // The next write to published[r] comes after the barriers in the ops below,
+    // so every thread has read this one by then.
+    let xj = published[r];
+    // a is L_ij only below the diagonal (above it, the unstored triangle \u2014
+    // possibly anything, even NaN); select() keeps it out of b.
+    let nb = ddSubProtected(b, ddMulProtected(a, xj, tid), tid);
+    b = ddSelect(b, nb, i > j);
+  }
 
-    // Inactive threads combine against a throwaway partner and discard it
-    // (ddAddProtected must be called unconditionally by every thread).
-    for (var s = WGS / 2u; s > 0u; s >>= 1u) {
-      let partner = select(lid.x, lid.x + s, lid.x < s);
-      let combined = ddAddProtected(tile[lid.x], tile[partner], lid.x);
-      workgroupBarrier(); // all threads must read tile[] above before any write below
-      if (lid.x < s) { tile[lid.x] = combined; }
-      workgroupBarrier();
-    }
-
-    // tile[0] now holds the full accumulation, visible to every lane \u2014 every
-    // thread redundantly finishes the O(1) rhs/division so the protected
-    // ops below stay uniformly called (only the write is gated).
-    let e = DD(select(0.0, 1.0, localRow == col), 0.0);
-    let rhs = ddSubProtected(e, tile[0], lid.x);
-
-    var val: DD;
-    if params.diag == 1u {
-      val = rhs;
+  if (live) {
+    if (inv) {
+      let oc = select(rhs, len - 1u - rhs, back);
+      let idx = wid.y * BLOCK_SIZE * BLOCK_SIZE + oc * BLOCK_SIZE + oi;
+      BHi[idx] = xi.hi;
+      BLo[idx] = xi.lo;
     } else {
-      val = ddDivProtected(rhs, readA(i, i), lid.x);
+      let bi = params.bOff + oi * params.bInc;
+      BHi[bi] = xi.hi;
+      BLo[bi] = xi.lo;
+      if (params.xLd != 0u) {
+        XHi[oi] = xi.hi;
+        XLo[oi] = xi.lo;
+      }
     }
-
-    if (lid.x == 0u) {
-      AinvHi[ainvBase + localRow * BLOCK_SIZE + col] = val.hi;
-      AinvLo[ainvBase + localRow * BLOCK_SIZE + col] = val.lo;
-    }
-    storageBarrier();
-    workgroupBarrier();
   }
 }
 `;
     });
-  var Vo,
-    Ko = J(() => {
-      Vo = `// dtrsv_apply_inverse: double-double (Dekker) f64 emulation of
-// strsv_apply_inverse.wgsl \u2014 given a precomputed block inverse (from
-// dtrsv_invert_block.wgsl), computes this block's solution as a dense
-// matrix-vector multiply against the block's current remainder in x.
-// Ainv, x, and the per-row accumulation are each split into an f32 (hi, lo)
-// pair; WGSL has no f64 type.
+  var aa,
+    oa = J(() => {
+      aa = `// dtrsv_step: one block of the blocked triangular solve in a single
+// dispatch, double-double (Dekker) f64 emulation of strsv_step.wgsl \u2014
+// replaces the dtrsv_apply_inverse + dtrsv_update pair, halving the number
+// of sequential dispatches the solve is limited by.
 //
-// Unlike dsymv/dtrmv's per-row reduction across 64 threads, each thread here
-// owns one whole row's dot product independently (blockLen <= WGS, so one
-// thread per row already covers it, no tree reduction needed) \u2014 same shape
-// as dgemv_t.wgsl's per-thread accumulation. The f32 original early-returns
-// threads with \`lid.x >= blockLen\` (the last, possibly-short block); DD
-// can't do that, since every thread must call ddMulProtected/ddAddProtected
-// the same number of times. Instead every thread runs the identical
-// \`blockLen\`-iteration loop (reading past-blockLen rows of Ainv, which the
-// zero-initialized, never-written buffer backing them makes safe garbage \u2014
-// see dgemv_t.wgsl's clamped-dummy-index technique) and only the final
-// write is gated.
+// Every workgroup solves the block itself (a 64\xD764 matvec against the
+// column-major inverse from dtrsv_small.wgsl's invert mode), then subtracts
+// its contribution from its own tile of TILE_ROWS remaining rows. The
+// solution goes to \`sol\`, not x: other workgroups are still reading this
+// block's unsolved values from x in the same dispatch. dtrsv.mjs copies sol
+// into x after the last block. Workgroup 0 writes \`sol\`; when no rows remain
+// (the last block) a single workgroup runs just the solve. Presolved
+// (few-block path): the block is already solved into sol by dtrsv_small.wgsl,
+// and only the update runs.
+//
+// Four threads per row (256 per workgroup): each covers 16 of the block's 64
+// columns in both the solve and the update, and the four partial sums meet
+// in workgroup memory \u2014 a 16-term serial chain per thread instead of 64
+// (dtrsv_apply_inverse) or a 64-lane tree per row (dtrsv_update). The
+// protected ops carry a workgroupBarrier(), so every thread runs the same
+// calls on clamped indices with masked terms; only writes are conditional.
+// A thread's 16 loads are issued before its chain starts.
 
-@group(0) @binding(0) var<storage, read>       AinvHi: array<f32>;
-@group(0) @binding(1) var<storage, read>       AinvLo: array<f32>;
-@group(0) @binding(2) var<storage, read_write> xHi: array<f32>;
-@group(0) @binding(3) var<storage, read_write> xLo: array<f32>;
+@group(0) @binding(0) var<storage, read>       AHi:    array<f32>;
+@group(0) @binding(1) var<storage, read>       ALo:    array<f32>;
+@group(0) @binding(2) var<storage, read>       AinvHi: array<f32>;
+@group(0) @binding(3) var<storage, read>       AinvLo: array<f32>;
+@group(0) @binding(4) var<storage, read_write> xHi:    array<f32>;
+@group(0) @binding(5) var<storage, read_write> xLo:    array<f32>;
+@group(0) @binding(6) var<storage, read_write> solHi:  array<f32>;
+@group(0) @binding(7) var<storage, read_write> solLo:  array<f32>;
 
 struct Params {
-  incx:       u32,
-  blockIndex: u32,
-  blockStart: u32,
-  blockEnd:   u32,
-}
-
-@group(0) @binding(4) var<uniform> params: Params;
-
-const BLOCK_SIZE: u32 = 64u;
-var<workgroup> xLocal: array<DD, 64>;
-
-@compute @workgroup_size(64)
-fn dtrsv_apply_inverse_main(@builtin(local_invocation_id) lid: vec3u) {
-  let blockLen = params.blockEnd - params.blockStart;
-
-  if (lid.x < blockLen) {
-    let ix = (params.blockStart + lid.x) * params.incx;
-    xLocal[lid.x] = DD(xHi[ix], xLo[ix]);
-  }
-  workgroupBarrier();
-
-  let ainvBase = params.blockIndex * BLOCK_SIZE * BLOCK_SIZE;
-  var acc = DD(0.0, 0.0);
-  for (var j = 0u; j < blockLen; j++) {
-    let aidx = ainvBase + lid.x * BLOCK_SIZE + j;
-    let prod = ddMulProtected(DD(AinvHi[aidx], AinvLo[aidx]), xLocal[j], lid.x);
-    acc = ddAddProtected(acc, prod, lid.x);
-  }
-
-  if (lid.x < blockLen) {
-    let ix = (params.blockStart + lid.x) * params.incx;
-    xHi[ix] = acc.hi;
-    xLo[ix] = acc.lo;
-  }
-}
-`;
-    });
-  var zo,
-    Uo = J(() => {
-      zo = `// dtrsv_update: double-double (Dekker) f64 emulation of strsv_update.wgsl \u2014
-// subtracts a solved block's contribution from every remaining row in
-// parallel (one workgroup per row, like dtrmv.wgsl). A, x, and the per-row
-// accumulation are each split into an f32 (hi, lo) pair; WGSL has no f64
-// type. No diag/masking needed: this region never touches the diagonal.
-//
-// The column range [blockStart, blockEnd) is the same fixed width for every
-// row in a dispatch (not per-row-varying the way dtrmv's triangular range
-// is), so the main/tail split is computed once, outside the row loop \u2014 same
-// shape as dger.wgsl's column loop.
-
-@group(0) @binding(0) var<storage, read>       AHi: array<f32>;
-@group(0) @binding(1) var<storage, read>       ALo: array<f32>;
-@group(0) @binding(2) var<storage, read_write> xHi: array<f32>;
-@group(0) @binding(3) var<storage, read_write> xLo: array<f32>;
-
-struct Params {
-  n:          u32,
   incx:       u32,
   lda:        u32,
   trans:      u32,  // 0 = no-transpose, 1 = transpose
-  uplo:       u32,  // 0 = lower, 1 = upper
+  blockIndex: u32,
   blockStart: u32,
   blockEnd:   u32,  // exclusive
+  rangeStart: u32,  // first remaining row this block updates
+  rowCount:   u32,  // number of remaining rows (0 for the last block)
+  presolved:  u32,  // 1 = block already solved into sol: update only
 }
 
-@group(0) @binding(4) var<uniform> params: Params;
+@group(0) @binding(8) var<uniform> params: Params;
 
-const WGS: u32 = 64u;
-var<workgroup> tile: array<DD, 64>;
+const BLOCK_SIZE: u32 = 64u;
+const TILE_ROWS: u32 = 64u;  // remaining rows per workgroup
+const SPLIT: u32 = 4u;       // threads per row
+const SPAN: u32 = BLOCK_SIZE / SPLIT; // columns per thread
 
-@compute @workgroup_size(64)
-fn dtrsv_update_main(
-  @builtin(workgroup_id)        wgid: vec3u,
-  @builtin(local_invocation_id) lid:  vec3u,
-  @builtin(num_workgroups)      nwg:  vec3u,
+var<workgroup> xr: array<DD, 64>;    // this block's unsolved x
+var<workgroup> xs: array<DD, 64>;    // this block's solution
+var<workgroup> part: array<DD, 256>; // partial sums, [quarter][row]
+
+fn ddMask(a: DD, keep: bool) -> DD {
+  return DD(select(0.0, a.hi, keep), select(0.0, a.lo, keep));
+}
+
+// Row r's four quarter sums, every thread (the protected adds need it).
+fn sumParts(r: u32, tid: u32) -> DD {
+  return ddAddProtected(
+    ddAddProtected(part[r], part[BLOCK_SIZE + r], tid),
+    ddAddProtected(part[2u * BLOCK_SIZE + r], part[3u * BLOCK_SIZE + r], tid),
+    tid,
+  );
+}
+
+@compute @workgroup_size(256)
+fn dtrsv_step_main(
+  @builtin(workgroup_id)           wid: vec3u,
+  @builtin(local_invocation_index) tid: u32,
 ) {
-  // forward: remaining rows are [blockEnd,n); backward: [0,blockStart).
-  // Uniform across the whole dispatch (derived from params only), so an
-  // early return here is safe \u2014 never a partial-workgroup divergence.
-  let forward = (params.trans == 0u) == (params.uplo == 0u);
+  let blockLen = params.blockEnd - params.blockStart;
+  let lane = tid % BLOCK_SIZE;
+  let laneOK = lane < blockLen;
+  let laneIdx = params.blockStart + min(lane, blockLen - 1u);
 
-  var rangeStart: u32;
-  var rangeEnd: u32;
-  if forward {
-    rangeStart = params.blockEnd;
-    rangeEnd = params.n;
+  if (params.presolved == 1u) {
+    // Uniform branch.
+    if (tid < BLOCK_SIZE) {
+      xs[tid] = ddMask(DD(solHi[laneIdx], solLo[laneIdx]), laneOK);
+    }
+    workgroupBarrier();
   } else {
-    rangeStart = 0u;
-    rangeEnd = params.blockStart;
+    if (tid < BLOCK_SIZE) {
+      let ix = laneIdx * params.incx;
+      xr[tid] = ddMask(DD(xHi[ix], xLo[ix]), laneOK);
+    }
+    workgroupBarrier();
+
+    // Solve the block: xs = Ainv \xB7 xr. Thread (r, q) sums columns
+    // [q\xB716, q\xB716+16) of row r. Ainv is column-major, so at each column the
+    // lanes (consecutive r) read consecutive floats. Rows/cols past blockLen
+    // are zero in Ainv (never written; buffers start zeroed) and in xr.
+    let r = lane;
+    let q = tid / BLOCK_SIZE;
+    let ainvBase = params.blockIndex * BLOCK_SIZE * BLOCK_SIZE + r;
+    var av: array<DD, SPAN>;
+    for (var u = 0u; u < SPAN; u++) {
+      let ia = ainvBase + (q * SPAN + u) * BLOCK_SIZE;
+      av[u] = DD(AinvHi[ia], AinvLo[ia]);
+    }
+    var acc = DD(0.0, 0.0);
+    for (var u = 0u; u < SPAN; u++) {
+      acc = ddAddProtected(acc, ddMulProtected(av[u], xr[q * SPAN + u], tid), tid);
+    }
+    part[q * BLOCK_SIZE + r] = acc;
+    workgroupBarrier();
+    let v = sumParts(lane, tid);
+    if (tid < BLOCK_SIZE) {
+      xs[tid] = v;
+      if (wid.x == 0u && laneOK) {
+        solHi[params.blockStart + tid] = v.hi;
+        solLo[params.blockStart + tid] = v.lo;
+      }
+    }
+    workgroupBarrier();
   }
 
-  if (rangeStart >= rangeEnd) { return; }
-  let count = rangeEnd - rangeStart;
-
-  let colCount    = params.blockEnd - params.blockStart;
-  let col_floor   = (colCount / WGS) * WGS;
-  let mainIters   = col_floor / WGS;
-  let hasTail     = select(0u, 1u, col_floor < colCount);
-
-  for (var idx = wgid.x; idx < count; idx += nwg.x) {
-    let i = rangeStart + idx;
-    var acc = DD(0.0, 0.0);
-
-    for (var iter = 0u; iter < mainIters; iter++) {
-      let j = params.blockStart + lid.x + iter * WGS;
-      let aidx = select(j * params.lda + i, i * params.lda + j, params.trans == 0u);
-      let ix = j * params.incx;
-      let prod = ddMulProtected(DD(AHi[aidx], ALo[aidx]), DD(xHi[ix], xLo[ix]), lid.x);
-      acc = ddAddProtected(acc, prod, lid.x);
+  // Update this workgroup's tile of remaining rows: x[i] -= op(A)[i, block] \xB7 xs.
+  // rowCount is dispatch-uniform, so the barriers below stay uniform.
+  if (params.rowCount == 0u) { return; }
+  let lastRow = params.rowCount - 1u;
+  var av: array<DD, SPAN>;
+  var q: u32;
+  var r: u32;
+  if (params.trans != 0u) {
+    // A[j,i]: rows fastest across lanes, so at each j consecutive lanes read
+    // consecutive i \u2014 coalesced.
+    r = tid % TILE_ROWS;
+    q = tid / TILE_ROWS;
+    let i = params.rangeStart + min(wid.x * TILE_ROWS + r, lastRow);
+    let col = params.blockStart * params.lda + i;
+    for (var u = 0u; u < SPAN; u++) {
+      let j = q * SPAN + u;
+      let ia = col + min(j, blockLen - 1u) * params.lda;
+      av[u] = ddMask(DD(AHi[ia], ALo[ia]), j < blockLen);
     }
-
-    for (var iter = 0u; iter < hasTail; iter++) {
-      let j     = params.blockStart + col_floor + lid.x;
-      let valid = j < params.blockEnd;
-      let safeJ = select(params.blockStart, j, valid);
-      let aidx  = select(safeJ * params.lda + i, i * params.lda + safeJ, params.trans == 0u);
-      let ix    = safeJ * params.incx;
-      let prod  = ddMulProtected(DD(AHi[aidx], ALo[aidx]), DD(xHi[ix], xLo[ix]), lid.x);
-      let contribution = DD(select(0.0, prod.hi, valid), select(0.0, prod.lo, valid));
-      acc = ddAddProtected(acc, contribution, lid.x);
+  } else {
+    // A[i,j]: quarters fastest across lanes, interleaved \u2014 lane q takes
+    // columns q, q+4, q+8, \u2026 \u2014 so at each step a row's four lanes read 16
+    // contiguous bytes per half.
+    r = tid / SPLIT;
+    q = tid % SPLIT;
+    let i = params.rangeStart + min(wid.x * TILE_ROWS + r, lastRow);
+    let rowBase = i * params.lda + params.blockStart;
+    for (var u = 0u; u < SPAN; u++) {
+      let j = q + u * SPLIT;
+      let ia = rowBase + min(j, blockLen - 1u);
+      av[u] = ddMask(DD(AHi[ia], ALo[ia]), j < blockLen);
     }
+  }
+  var acc = DD(0.0, 0.0);
+  for (var u = 0u; u < SPAN; u++) {
+    let j = select(q + u * SPLIT, q * SPAN + u, params.trans != 0u);
+    acc = ddAddProtected(acc, ddMulProtected(av[u], xs[j], tid), tid);
+  }
+  part[q * TILE_ROWS + r] = acc;
+  workgroupBarrier();
 
-    tile[lid.x] = acc;
-    workgroupBarrier();
-
-    // Inactive threads combine against a throwaway partner and discard it
-    // (ddAddProtected must be called unconditionally by every thread).
-    for (var s = WGS / 2u; s > 0u; s >>= 1u) {
-      let partner = select(lid.x, lid.x + s, lid.x < s);
-      let combined = ddAddProtected(tile[lid.x], tile[partner], lid.x);
-      workgroupBarrier(); // all threads must read tile[] above before any write below
-      if (lid.x < s) { tile[lid.x] = combined; }
-      workgroupBarrier();
-    }
-
-    let ix_i = i * params.incx;
-    let xVal = DD(xHi[ix_i], xLo[ix_i]);
-    // tile[0] now holds the full subtracted term, visible to every lane \u2014
-    // every thread redundantly finishes the O(1) subtraction so the
-    // protected op below stays uniformly called (only the write is gated).
-    let result = ddSubProtected(xVal, tile[0], lid.x);
-
-    if (lid.x == 0u) {
-      xHi[ix_i] = result.hi;
-      xLo[ix_i] = result.lo;
-    }
-    // All 64 threads must agree before the next row (grid-stride) reuses tile[].
-    workgroupBarrier();
+  let local = wid.x * TILE_ROWS + lane;
+  let ix = (params.rangeStart + min(local, lastRow)) * params.incx;
+  let updated = ddSubProtected(DD(xHi[ix], xLo[ix]), sumParts(lane, tid), tid);
+  if (tid < TILE_ROWS && local < params.rowCount) {
+    xHi[ix] = updated.hi;
+    xLo[ix] = updated.lo;
   }
 }
 `;
     });
-  var Yo,
-    Zo = J(() => {
-      Yo = `// dgemm_small: C = alpha * op(A) * op(B) + beta * C \u2014 double-double (Dekker)
+  var sa,
+    ia = J(() => {
+      sa = `// dgemm_small: C = alpha * op(A) * op(B) + beta * C \u2014 double-double (Dekker)
 // f64 emulation of sgemm_small.wgsl, same tile config and structure:
 // BM=BN=32, BK=8, TM=TN=2, 256 threads. Paired with dgemm_large.wgsl in the
 // same two-tier dispatch sgemm uses (see dgemm.mjs).
@@ -4731,9 +5128,9 @@ fn main(
 }
 `;
     });
-  var $o,
-    Xo = J(() => {
-      $o = `// dgemm_large: C = alpha * op(A) * op(B) + beta * C \u2014 double-double (Dekker)
+  var la,
+    na = J(() => {
+      la = `// dgemm_large: C = alpha * op(A) * op(B) + beta * C \u2014 double-double (Dekker)
 // f64 emulation of sgemm_large.wgsl, same tile config and structure:
 // BM=BN=64, BK=8, TM=8, TN=4, 128 threads. Paired with dgemm_small.wgsl in
 // the same two-tier dispatch sgemm uses (see dgemm.mjs).
@@ -4980,9 +5377,9 @@ fn main(
 }
 `;
     });
-  var ee,
-    Jo = J(() => {
-      ee = `// sgemm_small: C = alpha * op(A) * op(B) + beta * C \u2014 small-tile half of
+  var oe,
+    ua = J(() => {
+      oe = `// sgemm_small: C = alpha * op(A) * op(B) + beta * C \u2014 small-tile half of
 // the two-tier autotuned dispatch (see sgemm.mjs and sgemm_large.wgsl).
 // BM=BN=32, BK=8, TM=TN=2 \u2014 wins over the large tile below a 6x6=36
 // workgroup grid of 64-tiles, where the large tile doesn't have enough
@@ -5250,9 +5647,9 @@ fn main(
 }
 `;
     });
-  var te,
-    Qo = J(() => {
-      te = `// sgemm_large: C = alpha * op(A) * op(B) + beta * C \u2014 large-tile half of
+  var ae,
+    da = J(() => {
+      ae = `// sgemm_large: C = alpha * op(A) * op(B) + beta * C \u2014 large-tile half of
 // the two-tier autotuned dispatch (see sgemm.mjs and sgemm_small.wgsl).
 // BM=BN=64, BK=8, TM=8, TN=4 (128 threads/workgroup) \u2014 the kernel 9
 // autotuning winner (temp/autotune_sweep.mjs, temp/gen_sweep_kernel.mjs,
@@ -5515,9 +5912,9 @@ fn main(
 }
 `;
     });
-  var ea,
-    ra = J(() => {
-      ea = `// symmetrize: Adense := full dense expansion of a symmetric matrix stored
+  var ma,
+    fa = J(() => {
+      ma = `// symmetrize: Adense := full dense expansion of a symmetric matrix stored
 // with only its \`uplo\` triangle meaningful (the other triangle is implied
 // by symmetry: A[i,j] = A[j,i]). A plain element-wise pass, no tiling or
 // shared memory needed \u2014 used to materialize a dense operand for routines
@@ -5550,9 +5947,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
     });
-  var oa,
-    ta = J(() => {
-      oa = `// triangularize: Adense := dense expansion of op(A) (A or A^T per \`trans\`),
+  var ca,
+    pa = J(() => {
+      ca = `// triangularize: Adense := dense expansion of op(A) (A or A^T per \`trans\`),
 // zero-filling the unstored triangle (exact for a matmul) so strmm can reuse
 // sgemm's kernel unchanged. \`diag=1\` substitutes 1.0 on the diagonal.
 
@@ -5598,9 +5995,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
     });
-  var ia,
-    aa = J(() => {
-      ia = `// block_transfer: gather/scatter/scatter-subtract between a tight (blockLen
+  var ga,
+    wa = J(() => {
+      ga = `// block_transfer: gather/scatter/scatter-subtract between a tight (blockLen
 // x otherLen) block and a sub-range of a strided (any ld, row/col-major)
 // buffer \u2014 needed since block offsets aren't 256-byte-aligned and block
 // rows/cols aren't always one contiguous range for copyBufferToBuffer.
@@ -5644,292 +6041,303 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
     });
-  var sa = {};
-  Re(sa, { routineShaders: () => mr, shaderSources: () => vs });
+  var ha = {};
+  Oe(ha, { routineShaders: () => mr, shaderSources: () => Hs });
   var mr,
-    vs,
-    na = J(() => {
-      Ye();
-      $e();
-      Qe();
-      et();
-      ot();
-      it();
-      nt();
-      ut();
-      ft();
+    Hs,
+    ba = J(() => {
+      at();
+      st();
+      lt();
+      dt();
       mt();
-      pt();
+      ct();
       gt();
       bt();
       xt();
+      vt();
       Bt();
-      _t();
-      kt();
       At();
-      Et();
+      St();
       Gt();
-      Lt();
+      Pt();
       Nt();
+      It();
       Mt();
-      Rt();
+      Tt();
       Ht();
       Ct();
+      Ft();
+      Ot();
       qt();
-      Wt();
-      Kt();
-      Ut();
-      Zt();
+      Vt();
+      zt();
       Xt();
       $t();
       Qt();
       eo();
       oo();
-      ao();
+      io();
       so();
       lo();
-      uo();
-      mo();
+      fo();
       po();
+      co();
       go();
-      ho();
+      bo();
       yo();
       vo();
       Bo();
-      ko();
-      So();
+      Ao();
+      Eo();
+      Lo();
       Go();
       Do();
-      Po();
-      Io();
-      Ho();
+      No();
+      Mo();
+      To();
       Co();
+      Fo();
+      Oo();
       qo();
-      Wo();
-      Ko();
       Uo();
-      Zo();
+      zo();
       Xo();
-      Jo();
+      $o();
       Qo();
-      ra();
-      ta();
-      aa();
+      ea();
+      oa();
+      ia();
+      na();
+      ua();
+      da();
+      fa();
+      pa();
+      wa();
       mr = {};
-      mr.sscal = { sscal: Xe };
-      mr.cscal = { cscal: Je };
-      mr.sswap = { sswap: rt };
-      mr.dswap = { dswap: tt };
-      mr.saxpy = { saxpy: at };
-      mr.scopy = { scopy: st };
-      mr.dcopy = { dcopy: lt };
-      mr.sdot = { sdot: dt, "reduction/sum": Ee };
-      mr.sasum = { sasum: ct, "reduction/sum": Ee };
-      mr.snrm2 = { snrm2: wt, "reduction/scaledSum": ht };
-      mr.isamax = { isamax: yt, "reduction/argmax": vt };
+      mr.sscal = { sscal: it };
+      mr.cscal = { cscal: nt };
+      mr.sswap = { sswap: ut };
+      mr.dswap = { dswap: ft };
+      mr.saxpy = { saxpy: pt };
+      mr.scopy = { scopy: wt };
+      mr.dcopy = { dcopy: ht };
+      mr.sdot = { sdot: yt, "reduction/sum": Ne };
+      mr.sasum = { sasum: _t, "reduction/sum": Ne };
+      mr.snrm2 = { snrm2: kt, "reduction/scaledSum": Et };
+      mr.isamax = { isamax: Lt, "reduction/argmax": Dt };
       mr.dasum = {
-        "f64/dekker": Pr,
-        "f64/utils/abs": Be,
-        "f64/utils/add": Tr,
-        dasum: St,
-        "reduction/sumF64": Ge,
+        "f64/dekker": Tr,
+        "f64/utils/abs": Ee,
+        "f64/utils/add": Fr,
+        dasum: Rt,
+        "reduction/sumF64": Ie,
       };
       mr.ddot = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        ddot: Dt,
-        "reduction/sumF64": Ge,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        ddot: jt,
+        "reduction/sumF64": Ie,
       };
       mr.dscal = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dscal: Pt,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dscal: Wt,
       };
       mr.daxpy = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        daxpy: It,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        daxpy: Kt,
       };
       mr.idamax = {
-        "f64/dekker": Pr,
-        "f64/utils/abs": Be,
-        "f64/utils/greater": Le,
-        "f64/utils/equal": Tt,
-        idamax: jt,
-        "reduction/argmaxF64": Ft,
+        "f64/dekker": Tr,
+        "f64/utils/abs": Ee,
+        "f64/utils/greater": Me,
+        "f64/utils/equal": Ut,
+        idamax: Zt,
+        "reduction/argmaxF64": Yt,
       };
-      mr.srot = { srot: Ot };
+      mr.srot = { srot: Jt };
       mr.drot = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        drot: Vt,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        drot: ro,
       };
-      mr.srotm = { srotm: zt };
+      mr.srotm = { srotm: to };
       mr.drotm = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        drotm: Yt,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        drotm: ao,
       };
       mr.dnrm2 = {
-        "f64/dekker": Pr,
-        "f64/utils/abs": Be,
-        "f64/utils/greater": Le,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        "f64/utils/divide": De,
-        "f64/utils/sqrt": Jt,
-        dnrm2: ro,
-        "reduction/scaledSumF64": to,
+        "f64/dekker": Tr,
+        "f64/utils/abs": Ee,
+        "f64/utils/greater": Me,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        "f64/utils/divide": Re,
+        "f64/utils/sqrt": no,
+        dnrm2: uo,
+        "reduction/scaledSumF64": mo,
       };
-      mr.sgemv = { sgemv_n: io, sgemv_t: no, reduce_partials: _e };
-      mr.ssymv = { ssymv: fo, reduce_partials: _e, gather_strided: me };
+      mr.sgemv = { sgemv_n: wo, sgemv_t: ho, reduce_partials: Se };
+      mr.ssymv = { ssymv: xo, reduce_partials: Se, gather_strided: Qr };
       mr.strmv = {
-        strmv: co,
-        strmv_t: wo,
-        reduce_partials: _e,
-        gather_strided: me,
+        strmv: _o,
+        strmv_t: ko,
+        reduce_partials: Se,
+        gather_strided: Qr,
       };
       mr.strsv = {
-        strsv_invert_block: Ne,
-        strsv_step: bo,
-        scatter_strided: xo,
-        strsm_small: Pe,
+        strsv_invert_block: Te,
+        strsv_step: So,
+        scatter_strided: He,
+        strsm_small: Ce,
       };
-      mr.sger = { sger: _o, gather_strided: me };
+      mr.sger = { sger: Po, gather_strided: Qr };
       mr.dger = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dger: Ao,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dger: Io,
+        gather_strided: Qr,
       };
-      mr.ssyr = { ssyr: Eo, gather_strided: me };
+      mr.ssyr = { ssyr: Ro, gather_strided: Qr };
       mr.dsyr = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dsyr: Lo,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dsyr: Ho,
+        gather_strided: Qr,
       };
-      mr.ssyr2 = { ssyr2: No, gather_strided: me };
+      mr.ssyr2 = { ssyr2: jo, gather_strided: Qr };
       mr.dsyr2 = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dsyr2: Mo,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dsyr2: Wo,
+        gather_strided: Qr,
       };
       mr.dgemv = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dgemv_n: Ro,
-        dgemv_t: To,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dgemv_n: Ko,
+        dgemv_t: Vo,
+        reduce_partials_f64: Le,
       };
       mr.dsymv = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dsymv: jo,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dsymv: Zo,
+        dsymv_tile: Yo,
+        reduce_partials_f64: Le,
       };
       mr.dtrmv = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dtrmv: Fo,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dtrmv: Jo,
+        dtrmv_t: ra,
+        reduce_partials_f64: Le,
+        gather_strided: Qr,
       };
       mr.dtrsv = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        "f64/utils/divide": De,
-        dtrsv_invert_block: Oo,
-        dtrsv_apply_inverse: Vo,
-        dtrsv_update: zo,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        "f64/utils/divide": Re,
+        dtrsv_small: ta,
+        dtrsv_step: aa,
+        scatter_strided: He,
       };
       mr.dgemm = {
-        "f64/dekker": Pr,
-        "f64/utils/add": Tr,
-        "f64/utils/multiply": jr,
-        dgemm_small: Yo,
-        dgemm_large: $o,
+        "f64/dekker": Tr,
+        "f64/utils/add": Fr,
+        "f64/utils/multiply": Or,
+        dgemm_small: sa,
+        dgemm_large: la,
       };
-      mr.sgemm = { sgemm_small: ee, sgemm_large: te };
-      mr.sgemmtr = { sgemm_small: ee, sgemm_large: te };
-      mr.ssyrk = { sgemm_small: ee, sgemm_large: te };
-      mr.ssyr2k = { sgemm_small: ee, sgemm_large: te };
-      mr.ssymm = { sgemm_small: ee, sgemm_large: te, symmetrize: ea };
-      mr.strmm = { sgemm_small: ee, sgemm_large: te, triangularize: oa };
+      mr.sgemm = { sgemm_small: oe, sgemm_large: ae };
+      mr.sgemmtr = { sgemm_small: oe, sgemm_large: ae };
+      mr.ssyrk = { sgemm_small: oe, sgemm_large: ae };
+      mr.ssyr2k = { sgemm_small: oe, sgemm_large: ae };
+      mr.ssymm = { sgemm_small: oe, sgemm_large: ae, symmetrize: ma };
+      mr.strmm = { sgemm_small: oe, sgemm_large: ae, triangularize: ca };
       mr.strsm = {
-        strsv_invert_block: Ne,
-        strsm_small: Pe,
-        block_transfer: ia,
-        sgemm_small: ee,
-        sgemm_large: te,
+        strsv_invert_block: Te,
+        strsm_small: Ce,
+        block_transfer: ga,
+        sgemm_small: oe,
+        sgemm_large: ae,
       };
-      vs = Object.assign({}, ...Object.values(mr));
+      Hs = Object.assign({}, ...Object.values(mr));
     });
-  var Ps = {};
-  Re(Ps, {
+  var Qs = {};
+  Oe(Qs, {
     Complex32: () => Jr,
-    Complex32Array: () => Er,
+    Complex32Array: () => Ir,
     Complex64: () => $r,
-    Complex64Array: () => Rr,
-    GpuMatrix: () => Q,
-    GpuVector: () => H,
-    cleanup: () => We,
-    cscal: () => ua,
-    dasum: () => ya,
-    daxpy: () => pa,
-    dcopy: () => ga,
-    ddot: () => xa,
-    dgemm: () => Za,
-    dgemv: () => Wa,
-    dger: () => Ta,
-    dnrm2: () => Ba,
-    drot: () => Sa,
-    drotm: () => Ga,
-    dscal: () => da,
-    dswap: () => ma,
-    dsymv: () => Oa,
-    dsyr: () => ja,
-    dsyr2: () => Fa,
-    dtrmv: () => Ka,
-    dtrsv: () => za,
-    gpuName: () => Oe,
-    idamax: () => ka,
-    init: () => Fe,
-    isamax: () => _a,
-    randomFloat32Array: () => Ue,
-    randomFloat64Array: () => ze,
-    randomTriangularFloat32Array: () => Ze,
-    sasum: () => ba,
-    saxpy: () => ca,
-    scopy: () => wa,
-    sdot: () => ha,
-    sgemm: () => Ya,
-    sgemmtr: () => Xa,
-    sgemv: () => La,
-    sger: () => Ha,
-    snrm2: () => va,
-    srot: () => Aa,
-    srotm: () => Ea,
-    sscal: () => la,
-    sswap: () => fa,
-    ssymm: () => Qa,
-    ssymv: () => Da,
-    ssyr: () => Ca,
-    ssyr2: () => qa,
-    ssyr2k: () => Ja,
-    ssyrk: () => $a,
-    strmm: () => ri,
-    strmv: () => Na,
-    strsm: () => ei,
-    strsv: () => Ra,
+    Complex64Array: () => Cr,
+    GpuMatrix: () => sr,
+    GpuVector: () => C,
+    cleanup: () => Je,
+    cscal: () => va,
+    dasum: () => Pa,
+    daxpy: () => Ea,
+    dcopy: () => La,
+    ddot: () => Na,
+    dgemm: () => ai,
+    dgemv: () => Qa,
+    dger: () => Za,
+    dnrm2: () => Ma,
+    drot: () => Ca,
+    drotm: () => Fa,
+    dscal: () => _a,
+    dswap: () => ka,
+    dsymv: () => ri,
+    dsyr: () => Ya,
+    dsyr2: () => Ja,
+    dtrmv: () => ei,
+    dtrsv: () => oi,
+    gpuName: () => Qe,
+    idamax: () => Ta,
+    init: () => $e,
+    isamax: () => Ra,
+    randomFloat32Array: () => et,
+    randomFloat64Array: () => tt,
+    randomTriangularFloat32Array: () => ot,
+    sasum: () => Da,
+    saxpy: () => Aa,
+    scopy: () => Sa,
+    sdot: () => Ga,
+    sgemm: () => ii,
+    sgemmtr: () => si,
+    sgemv: () => Wa,
+    sger: () => za,
+    snrm2: () => Ia,
+    srot: () => Ha,
+    srotm: () => ja,
+    sscal: () => xa,
+    sswap: () => Ba,
+    ssymm: () => ui,
+    ssymv: () => Oa,
+    ssyr: () => Xa,
+    ssyr2: () => $a,
+    ssyr2k: () => li,
+    ssyrk: () => ni,
+    strmm: () => di,
+    strmv: () => Ka,
+    strsm: () => fi,
+    strsv: () => Ua,
   });
-  function Te(r, o) {
+  function qe(r, o) {
     return o
       ? r.features.has("timestamp-query")
         ? { requiredFeatures: ["timestamp-query"] }
@@ -5939,8 +6347,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
           {})
       : {};
   }
-  function Ce(r) {
-    if (!je(r)) return { querySet: null, passDescriptor: void 0 };
+  function Ve(r) {
+    if (!Ue(r)) return { querySet: null, passDescriptor: void 0 };
     let o = r.createQuerySet({ type: "timestamp", count: 2 });
     return {
       querySet: o,
@@ -5953,7 +6361,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       },
     };
   }
-  function Dr(r, o, e) {
+  function Rr(r, o, e) {
     if (!e) return null;
     let a = r.createBuffer({
       label: "timestamp-resolve",
@@ -5971,7 +6379,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       { tsReadBuffer: t, resolveBuffer: a, querySet: e }
     );
   }
-  async function C(r) {
+  async function V(r) {
     if (!r) return;
     let { tsReadBuffer: o, resolveBuffer: e, querySet: a } = r;
     await o.mapAsync(GPUMapMode.READ);
@@ -5984,96 +6392,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       Math.max(0, Number(t[1] - t[0])) / 1e6
     );
   }
-  var ne = null,
-    Ae = !1,
-    le = new Map(),
-    ce = new WeakMap(),
-    re = null,
-    qe = ({ powerPreference: r, benchmark: o }) => `${r}::${o}`;
-  async function Fe({
-    powerPreference: r = "high-performance",
-    benchmark: o = !1,
-    dumpShaders: e = !1,
-  } = {}) {
-    let a = { powerPreference: r, benchmark: o, dumpShaders: e },
-      t = qe(a),
-      i = le.get(t);
-    if (i) return i;
-    if (ne)
-      e !== Ae &&
-        typeof window > "u" &&
-        console.warn(
-          `dumpShaders: ${e} was requested, but the WebGPU instance was already created with dumpShaders: ${Ae}. The first init() call fixes this for the process.`,
-        );
-    else if (typeof window > "u") {
-      let { create: m, globals: w } = await import("webgpu");
-      (Object.assign(globalThis, w),
-        (ne = m(
-          e
-            ? ["enable-dawn-features=dump_shaders,disable_symbol_renaming"]
-            : [],
-        )),
-        (Ae = e));
-    } else
-      (e &&
-        console.warn(
-          "dumpShaders has no effect in the browser \u2014 see init()'s docs.",
-        ),
-        (ne = navigator.gpu));
-    if (!ne) throw new Error("WebGPU not supported in this environment.");
-    let s =
-      (await ne.requestAdapter({ powerPreference: r })) ??
-      (await ne.requestAdapter());
-    if (!s) throw new Error("No WebGPU adapter found.");
-    let n = [...(Te(s, o).requiredFeatures ?? [])],
-      d = await s.requestDevice({ requiredFeatures: n });
-    d.addEventListener("uncapturederror", (m) => {
-      console.error("Uncaptured GPU error:", m.error.message);
-    });
-    let u = n.includes("timestamp-query");
-    return (
-      ce.set(d, { adapter: s, benchmark: u, options: a }),
-      le.set(t, d),
-      re || (re = d),
-      d
-    );
-  }
-  function We(r) {
-    if (r === void 0) {
-      for (let e of le.values()) e.destroy();
-      (le.clear(), (re = null));
-      return;
-    }
-    let o = ce.get(r);
-    o &&
-      (le.delete(qe(o.options)),
-      ce.delete(r),
-      r.destroy(),
-      re === r && (re = le.values().next().value ?? null));
-  }
-  function Oe(r = re) {
-    let o = r && ce.get(r);
-    if (!o)
-      throw new Error(
-        "WebGPU adapter not initialized \u2014 call init() first.",
-      );
-    let { device: e, description: a } = o.adapter.info;
-    return { description: a || "unknown", device: e || "unknown" };
-  }
-  function je(r = re) {
-    return ce.get(r)?.benchmark ?? !1;
-  }
-  function ue() {
-    if (!re)
-      throw new Error(
-        "WebGPU device not initialized \u2014 call init() first.",
-      );
-    return re;
-  }
   function f(...r) {
     r.flat().forEach((o) => o.destroy());
   }
-  function Se(r, o, e) {
+  function Ge(r, o, e) {
     let a = r.limits.maxStorageBufferBindingSize;
     if (o > a)
       throw new Error(
@@ -6082,23 +6404,24 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   }
   function b(r, o, e = "blas-input", a = !1) {
     let t = o.byteLength;
-    Se(r, t, e);
+    Ge(r, t, e);
     let i = a
-        ? GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
-        : GPUBufferUsage.STORAGE,
-      s = r.createBuffer({ label: e, size: t, usage: i, mappedAtCreation: !0 }),
-      l = o.constructor;
-    return (new l(s.getMappedRange()).set(o), s.unmap(), s);
+        ? GPUBufferUsage.STORAGE |
+          GPUBufferUsage.COPY_DST |
+          GPUBufferUsage.COPY_SRC
+        : GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      s = r.createBuffer({ label: e, size: t, usage: i });
+    return (r.queue.writeBuffer(s, 0, o), s);
   }
-  function lr(r, o, e = "blas-storage", a = 0) {
+  function dr(r, o, e = "blas-storage", a = 0) {
     return (
-      Se(r, o, e),
+      Ge(r, o, e),
       r.createBuffer({ label: e, size: o, usage: GPUBufferUsage.STORAGE | a })
     );
   }
-  function Lr(r, o, e = "blas-result") {
+  function Mr(r, o, e = "blas-result") {
     return (
-      Se(r, o, e),
+      Ge(r, o, e),
       r.createBuffer({
         label: e,
         size: o,
@@ -6106,44 +6429,83 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       })
     );
   }
-  function D(r, o, e) {
-    let a = r.createBuffer({
-      label: "blas-readback",
-      size: e.size,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-    });
-    return (o.copyBufferToBuffer(e, 0, a, 0, e.size), a);
+  var bi = 4,
+    yi = 4 * 1024 * 1024,
+    xi = 32 * 1024 * 1024,
+    de = new Map(),
+    Ze = new WeakMap();
+  function vi(r) {
+    let o = de.get(r);
+    return (o || ((o = { bySize: new Map(), bytes: 0 }), de.set(r, o)), o);
   }
-  var de = 16,
-    Ke = new WeakMap();
-  function li(r) {
-    let o = Ke.get(r);
+  function D(r, o, e) {
+    let a = e.size,
+      t = vi(r),
+      i = t.bySize.get(a)?.pop();
+    return (
+      i
+        ? (t.bytes -= a)
+        : ((i = r.createBuffer({
+            label: "blas-readback",
+            size: a,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+          })),
+          Ze.set(i, r)),
+      o.copyBufferToBuffer(e, 0, i, 0, a),
+      i
+    );
+  }
+  function Xe(r) {
+    let o = Ze.get(r),
+      e = o && de.get(o),
+      a = r.size,
+      t = e?.bySize.get(a) ?? [];
+    if (!e || a > yi || t.length >= bi || e.bytes + a > xi) {
+      r.destroy();
+      return;
+    }
+    (t.push(r), e.bySize.set(a, t), (e.bytes += a));
+  }
+  function De(r) {
+    let o = r === void 0 ? [...de.keys()] : [r];
+    for (let e of o) {
+      let a = de.get(e);
+      if (a) {
+        for (let t of a.bySize.values()) t.forEach((i) => i.destroy());
+        de.delete(e);
+      }
+    }
+  }
+  var ue = 16,
+    ze = new WeakMap();
+  function _i(r) {
+    let o = ze.get(r);
     return (
       o ||
         ((o = r.createBuffer({
           label: "blas-vec4-fallback",
-          size: de,
+          size: ue,
           usage: GPUBufferUsage.STORAGE,
         })),
-        Ke.set(r, o)),
+        ze.set(r, o)),
       o
     );
   }
-  function Br(r, o) {
+  function Ar(r, o) {
     let e = o instanceof GPUBuffer ? o : o.buffer,
       a = o instanceof GPUBuffer ? 0 : (o.offset ?? 0),
       t = o instanceof GPUBuffer ? o.size : (o.size ?? e.size - a),
-      i = Math.floor(t / de) * de;
-    return i < de
-      ? { buffer: li(r), offset: 0, size: de }
+      i = Math.floor(t / ue) * ue;
+    return i < ue
+      ? { buffer: _i(r), offset: 0, size: ue }
       : { buffer: e, offset: a, size: i };
   }
-  function Ar(r, o, e, a, t = 0) {
+  function Lr(r, o, e, a, t = 0) {
     if (o % 4 !== 0 || t % 4 !== 0) return !1;
     let i = r instanceof GPUBuffer ? r : r.buffer,
       s = r instanceof GPUBuffer ? 0 : (r.offset ?? 0),
       l = r instanceof GPUBuffer ? i.size : (r.size ?? i.size - s),
-      n = Math.floor(l / de) * 4;
+      n = Math.floor(l / ue) * 4;
     if (n <= 0) return !1;
     let d = t + (Math.max(e, 1) - 1) * o + (Math.max(a, 1) - 1);
     return Math.floor(d / 4) * 4 + 4 <= n;
@@ -6170,16 +6532,105 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     });
     return (r.queue.writeBuffer(l, 0, i), l);
   }
-  async function G(r, o = Float32Array) {
+  var fe = null,
+    Pe = !1,
+    me = new Map(),
+    we = new WeakMap(),
+    ee = null,
+    Ye = ({ powerPreference: r, benchmark: o }) => `${r}::${o}`;
+  async function $e({
+    powerPreference: r = "high-performance",
+    benchmark: o = !1,
+    dumpShaders: e = !1,
+  } = {}) {
+    let a = { powerPreference: r, benchmark: o, dumpShaders: e },
+      t = Ye(a),
+      i = me.get(t);
+    if (i) return i;
+    if (fe)
+      e !== Pe &&
+        typeof window > "u" &&
+        console.warn(
+          `dumpShaders: ${e} was requested, but the WebGPU instance was already created with dumpShaders: ${Pe}. The first init() call fixes this for the process.`,
+        );
+    else if (typeof window > "u") {
+      let { create: m, globals: w } = await import("webgpu");
+      (Object.assign(globalThis, w),
+        (fe = m(
+          e
+            ? ["enable-dawn-features=dump_shaders,disable_symbol_renaming"]
+            : [],
+        )),
+        (Pe = e));
+    } else
+      (e &&
+        console.warn(
+          "dumpShaders has no effect in the browser \u2014 see init()'s docs.",
+        ),
+        (fe = navigator.gpu));
+    if (!fe) throw new Error("WebGPU not supported in this environment.");
+    let s =
+      (await fe.requestAdapter({ powerPreference: r })) ??
+      (await fe.requestAdapter());
+    if (!s) throw new Error("No WebGPU adapter found.");
+    let n = [...(qe(s, o).requiredFeatures ?? [])],
+      d = await s.requestDevice({ requiredFeatures: n });
+    d.addEventListener("uncapturederror", (m) => {
+      console.error("Uncaptured GPU error:", m.error.message);
+    });
+    let u = n.includes("timestamp-query");
+    return (
+      we.set(d, { adapter: s, benchmark: u, options: a }),
+      me.set(t, d),
+      ee || (ee = d),
+      d
+    );
+  }
+  function Je(r) {
+    if (r === void 0) {
+      De();
+      for (let e of me.values()) e.destroy();
+      (me.clear(), (ee = null));
+      return;
+    }
+    let o = we.get(r);
+    o &&
+      (me.delete(Ye(o.options)),
+      we.delete(r),
+      De(r),
+      r.destroy(),
+      ee === r && (ee = me.values().next().value ?? null));
+  }
+  function Qe(r = ee) {
+    let o = r && we.get(r);
+    if (!o)
+      throw new Error(
+        "WebGPU adapter not initialized \u2014 call init() first.",
+      );
+    let { device: e, description: a } = o.adapter.info;
+    return { description: a || "unknown", device: e || "unknown" };
+  }
+  function Ue(r = ee) {
+    return we.get(r)?.benchmark ?? !1;
+  }
+  function pe() {
+    if (!ee)
+      throw new Error(
+        "WebGPU device not initialized \u2014 call init() first.",
+      );
+    return ee;
+  }
+  async function S(r, o = Float32Array) {
+    let e = !1;
     try {
       await r.mapAsync(GPUMapMode.READ);
-      let e = new o(r.getMappedRange().slice());
-      return (r.unmap(), e);
+      let a = new o(r.getMappedRange().slice());
+      return (r.unmap(), (e = !0), a);
     } finally {
-      r.destroy();
+      e ? Xe(r) : r.destroy();
     }
   }
-  function z(r) {
+  function $(r) {
     let o = r.length,
       e = new Float32Array(o),
       a = new Float32Array(o);
@@ -6200,7 +6651,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         ((this.re = o), (this.im = e));
       }
     },
-    Rr = class extends Array {
+    Cr = class extends Array {
       constructor(o) {
         if (o === void 0) {
           super();
@@ -6237,18 +6688,18 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         }
       }
     };
-  function fe(r, o = r.length) {
+  function ce(r, o = r.length) {
     let e = new Float32Array(o * 2);
     for (let a = 0; a < o; a++)
       ((e[a * 2] = r[a].re), (e[a * 2 + 1] = r[a].im));
     return e;
   }
-  function xe(r, o = r.length) {
+  function ke(r, o = r.length) {
     let e = new Float64Array(o),
       a = new Float64Array(o);
     for (let u = 0; u < o; u++) ((e[u] = r[u].re), (a[u] = r[u].im));
-    let { hi: t, lo: i } = z(e),
-      { hi: s, lo: l } = z(a),
+    let { hi: t, lo: i } = $(e),
+      { hi: s, lo: l } = $(a),
       n = new Float32Array(o * 2),
       d = new Float32Array(o * 2);
     for (let u = 0; u < o; u++)
@@ -6258,7 +6709,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         (d[u * 2 + 1] = l[u]));
     return { hi: n, lo: d };
   }
-  function ve(r, o) {
+  function Ae(r, o) {
     let e = r.length / 2,
       a = new Float32Array(e),
       t = new Float32Array(e),
@@ -6271,7 +6722,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         (s[u] = o[u * 2 + 1]));
     let l = cr(a, t),
       n = cr(i, s),
-      d = new Rr(e);
+      d = new Cr(e);
     for (let u = 0; u < e; u++) d[u] = new $r(l[u], n[u]);
     return d;
   }
@@ -6280,7 +6731,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         ((this.re = Math.fround(o)), (this.im = Math.fround(e)));
       }
     },
-    Er = class extends Array {
+    Ir = class extends Array {
       constructor(o) {
         if (o === void 0) {
           super();
@@ -6317,33 +6768,33 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         }
       }
     };
-  var H = class r {
+  var C = class r {
     constructor(o, e, a = Float32Array, t = null, i = null) {
       ((this._buf = o),
         (this._loBuf = t),
         (this.length = e),
         (this.dtype = a),
-        (this.device = i ?? ue()));
+        (this.device = i ?? pe()));
     }
     static from(o, e) {
       let a = o instanceof GPUDevice,
-        t = a ? o : ue(),
+        t = a ? o : pe(),
         i = a ? e : o;
       if (i instanceof Float64Array) {
-        let { hi: l, lo: n } = z(i),
+        let { hi: l, lo: n } = $(i),
           d = b(t, l, "gpu-vector-f64-hi", !0),
           u = b(t, n, "gpu-vector-f64-lo", !0);
         return new r(d, i.length, Float64Array, u, t);
       }
-      if (i instanceof Er) {
-        let l = b(t, fe(i), "gpu-vector-complex32", !0);
-        return new r(l, i.length, Er, null, t);
+      if (i instanceof Ir) {
+        let l = b(t, ce(i), "gpu-vector-complex32", !0);
+        return new r(l, i.length, Ir, null, t);
       }
-      if (i instanceof Rr) {
-        let { hi: l, lo: n } = xe(i),
+      if (i instanceof Cr) {
+        let { hi: l, lo: n } = ke(i),
           d = b(t, l, "gpu-vector-complex64-hi", !0),
           u = b(t, n, "gpu-vector-complex64-lo", !0);
-        return new r(d, i.length, Rr, u, t);
+        return new r(d, i.length, Cr, u, t);
       }
       if (!(i instanceof Float32Array))
         throw new Error(
@@ -6356,20 +6807,20 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       let o = this.device,
         e = o.createCommandEncoder(),
         a = D(o, e, this._buf);
-      if ((o.queue.submit([e.finish()]), this.dtype === Er))
-        return new Er(await G(a, Float32Array));
-      if (!this._loBuf) return G(a, this.dtype);
+      if ((o.queue.submit([e.finish()]), this.dtype === Ir))
+        return new Ir(await S(a, Float32Array));
+      if (!this._loBuf) return S(a, this.dtype);
       let t = o.createCommandEncoder(),
         i = D(o, t, this._loBuf);
       o.queue.submit([t.finish()]);
-      let [s, l] = await Promise.all([G(a, Float32Array), G(i, Float32Array)]);
-      return this.dtype === Rr ? ve(s, l) : cr(s, l);
+      let [s, l] = await Promise.all([S(a, Float32Array), S(i, Float32Array)]);
+      return this.dtype === Cr ? Ae(s, l) : cr(s, l);
     }
     destroy() {
       (this._buf.destroy(), this._loBuf && this._loBuf.destroy());
     }
   };
-  var Q = class r {
+  var sr = class r {
     constructor(
       o,
       e,
@@ -6387,11 +6838,11 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         (this.lda = t),
         (this.layout = s),
         (this.dtype = n),
-        (this.device = l ?? ue()));
+        (this.device = l ?? pe()));
     }
     static from(o, ...e) {
       let a = o instanceof GPUDevice,
-        t = a ? o : ue(),
+        t = a ? o : pe(),
         i = a ? e.shift() : o,
         [s, l, n, d = "row-major"] = e;
       if (d !== "row-major" && d !== "column-major")
@@ -6401,8 +6852,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         (n === void 0 && (n = u ? l : s),
         !(i instanceof Float32Array) &&
           !(i instanceof Float64Array) &&
-          !(i instanceof Er) &&
-          !(i instanceof Rr))
+          !(i instanceof Ir) &&
+          !(i instanceof Cr))
       )
         throw new Error(
           "GpuMatrix.from expects a Float32Array, Float64Array, Complex32Array, or Complex64Array.",
@@ -6420,24 +6871,24 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
           "data does not have enough elements for the given rows, cols, and lda.",
         );
       if (i instanceof Float64Array) {
-        let p = w * n,
-          { hi: g, lo: y } = z(i.subarray(0, p)),
+        let c = w * n,
+          { hi: g, lo: y } = $(i.subarray(0, c)),
           h = b(t, g, "gpu-matrix-f64-hi", !0),
           x = b(t, y, "gpu-matrix-f64-lo", !0);
         return new r(h, s, l, n, x, d, t, Float64Array);
       }
-      if (i instanceof Er) {
-        let p = b(t, fe(i, w * n), "gpu-matrix-complex32", !0);
-        return new r(p, s, l, n, null, d, t, Er);
+      if (i instanceof Ir) {
+        let c = b(t, ce(i, w * n), "gpu-matrix-complex32", !0);
+        return new r(c, s, l, n, null, d, t, Ir);
       }
-      if (i instanceof Rr) {
-        let { hi: p, lo: g } = xe(i, w * n),
-          y = b(t, p, "gpu-matrix-complex64-hi", !0),
+      if (i instanceof Cr) {
+        let { hi: c, lo: g } = ke(i, w * n),
+          y = b(t, c, "gpu-matrix-complex64-hi", !0),
           h = b(t, g, "gpu-matrix-complex64-lo", !0);
-        return new r(y, s, l, n, h, d, t, Rr);
+        return new r(y, s, l, n, h, d, t, Cr);
       }
-      let c = b(t, i.subarray(0, w * n), "gpu-matrix", !0);
-      return new r(c, s, l, n, null, d, t);
+      let p = b(t, i.subarray(0, w * n), "gpu-matrix", !0);
+      return new r(p, s, l, n, null, d, t);
     }
     async read() {
       let o = this.device,
@@ -6447,10 +6898,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       let t = this.layout !== "column-major",
         i = t ? this.rows : this.cols,
         s = t ? this.cols : this.rows;
-      if (this.dtype === Er) {
-        let d = new Er(await G(a, Float32Array));
+      if (this.dtype === Ir) {
+        let d = new Ir(await S(a, Float32Array));
         if (this.lda === s) return d;
-        let u = new Er(i * s);
+        let u = new Ir(i * s);
         for (let m = 0; m < i; m++)
           for (let w = 0; w < s; w++) u[m * s + w] = d[m * this.lda + w];
         return u;
@@ -6460,25 +6911,25 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
           u = D(o, d, this._loBuf);
         o.queue.submit([d.finish()]);
         let [m, w] = await Promise.all([
-          G(a, Float32Array),
-          G(u, Float32Array),
+          S(a, Float32Array),
+          S(u, Float32Array),
         ]);
-        if (this.dtype === Rr) {
-          let g = ve(m, w);
+        if (this.dtype === Cr) {
+          let g = Ae(m, w);
           if (this.lda === s) return g;
-          let y = new Rr(i * s);
+          let y = new Cr(i * s);
           for (let h = 0; h < i; h++)
             for (let x = 0; x < s; x++) y[h * s + x] = g[h * this.lda + x];
           return y;
         }
-        let c = cr(m, w);
-        if (this.lda === s) return c;
-        let p = new Float64Array(i * s);
+        let p = cr(m, w);
+        if (this.lda === s) return p;
+        let c = new Float64Array(i * s);
         for (let g = 0; g < i; g++)
-          p.set(c.subarray(g * this.lda, g * this.lda + s), g * s);
-        return p;
+          c.set(p.subarray(g * this.lda, g * this.lda + s), g * s);
+        return c;
       }
-      let l = await G(a, Float32Array);
+      let l = await S(a, Float32Array);
       if (this.lda === s) return l;
       let n = new Float32Array(i * s);
       for (let d = 0; d < i; d++)
@@ -6489,7 +6940,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       (this._buf.destroy(), this._loBuf && this._loBuf.destroy());
     }
   };
-  function Ve(r) {
+  function rt(r) {
     let o = r >>> 0;
     return function () {
       o = (o + 1831565813) | 0;
@@ -6500,19 +6951,19 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       );
     };
   }
-  function Ue(r, o = -1, e = 1, a) {
+  function et(r, o = -1, e = 1, a) {
     let t = new Float32Array(r),
-      i = a === void 0 ? Math.random : Ve(a);
+      i = a === void 0 ? Math.random : rt(a);
     for (let s = 0; s < r; s++) t[s] = o + i() * (e - o);
     return t;
   }
-  function ze(r, o = -1, e = 1, a) {
+  function tt(r, o = -1, e = 1, a) {
     let t = new Float64Array(r),
-      i = a === void 0 ? Math.random : Ve(a);
+      i = a === void 0 ? Math.random : rt(a);
     for (let s = 0; s < r; s++) t[s] = o + i() * (e - o);
     return t;
   }
-  function Ze(
+  function ot(
     r,
     o,
     e = "lower",
@@ -6540,25 +6991,25 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     }
     return u;
   }
-  function N(r, o, e, a = 0) {
+  function G(r, o, e, a = 0) {
     let t = e.map((i, s) => ({
       binding: a + s,
       resource: i instanceof GPUBuffer ? { buffer: i } : i,
     }));
     return r.createBindGroup({ layout: o, entries: t });
   }
-  function j(r, o) {
+  function U(r, o) {
     r.queue.submit([o.finish()]);
   }
-  function Hr(r) {
-    let { querySet: o, passDescriptor: e } = Ce(r);
+  function jr(r) {
+    let { querySet: o, passDescriptor: e } = Ve(r);
     return {
       commandEncoder: r.createCommandEncoder(),
       querySet: o,
       passDescriptor: e,
     };
   }
-  function Nr(r, o, e, a, t) {
+  function Zr(r, o, e, a, t) {
     let i = r.beginComputePass(t);
     (i.setPipeline(o),
       i.setBindGroup(0, e),
@@ -6567,12 +7018,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         : i.dispatchWorkgroups(a.x, a.y, a.z ?? 1),
       i.end());
   }
-  function zr(r, o) {
+  function wr(r, o) {
     if (o.length === 1) {
       let [i] = o;
-      return $(r, i.pipeline, i.bindGroup, i.workgroups);
+      return vr(r, i.pipeline, i.bindGroup, i.workgroups);
     }
-    let { commandEncoder: e, querySet: a } = Hr(r);
+    let { commandEncoder: e, querySet: a } = jr(r);
     o.forEach((i, s) => {
       let l;
       (a && s === 0
@@ -6582,35 +7033,35 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         : a &&
           s === o.length - 1 &&
           (l = { timestampWrites: { querySet: a, endOfPassWriteIndex: 1 } }),
-        Nr(e, i.pipeline, i.bindGroup, i.workgroups, l));
+        Zr(e, i.pipeline, i.bindGroup, i.workgroups, l));
     });
-    let t = Dr(r, e, a);
+    let t = Rr(r, e, a);
     return { commandEncoder: e, ts: t };
   }
-  function $(r, o, e, a) {
-    let { commandEncoder: t, querySet: i, passDescriptor: s } = Hr(r);
-    Nr(t, o, e, a, s);
-    let l = Dr(r, t, i);
+  function vr(r, o, e, a) {
+    let { commandEncoder: t, querySet: i, passDescriptor: s } = jr(r);
+    Zr(t, o, e, a, s);
+    let l = Rr(r, t, i);
     return { commandEncoder: t, ts: l };
   }
-  var ks = {},
-    Me = new WeakMap();
-  async function P(r, o, e = "main") {
-    Me.has(r) || Me.set(r, new Map());
-    let a = Me.get(r),
+  var Fs = {},
+    je = new WeakMap();
+  async function N(r, o, e = "main") {
+    je.has(r) || je.set(r, new Map());
+    let a = je.get(r),
       t = Array.isArray(o) ? o : [o],
       i = `${t.join("+")}::${e}`;
     if (!a.has(i)) {
-      let s = _s(r, t, e).catch((l) => {
+      let s = js(r, t, e).catch((l) => {
         throw (a.delete(i), l);
       });
       a.set(i, s);
     }
     return a.get(i);
   }
-  async function Bs(r) {
+  async function Cs(r) {
     if (typeof process > "u" || !process.versions?.node) {
-      let { shaderSources: o } = await Promise.resolve().then(() => (na(), sa)),
+      let { shaderSources: o } = await Promise.resolve().then(() => (ba(), ha)),
         e = o[r];
       if (!e) throw new Error(`Shader "${r}" not found in browser bundle.`);
       return e;
@@ -6618,45 +7069,45 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       let { readFileSync: o } = await import("fs"),
         { fileURLToPath: e } = await import("url"),
         { dirname: a, join: t } = await import("path"),
-        i = a(e(ks.url));
+        i = a(e(Fs.url));
       return o(t(i, `../shaders/${r}.wgsl`), "utf8");
     }
   }
-  async function _s(r, o, e = "main") {
+  async function js(r, o, e = "main") {
     let a = o.join("+"),
-      t = await Promise.all(o.map(Bs)),
+      t = await Promise.all(o.map(Cs)),
       i = 0,
-      s = t.map((p, g) => {
-        let y = p.split(`
+      s = t.map((c, g) => {
+        let y = c.split(`
 `).length,
           h = { name: o[g], startLine: i + 1, endLine: i + y };
         return ((i += y), h);
       }),
-      l = (p) => {
-        let g = p && s.find((y) => p >= y.startLine && p <= y.endLine);
-        return g ? `${g.name}.wgsl:${p - g.startLine + 1}` : `line ${p}`;
+      l = (c) => {
+        let g = c && s.find((y) => c >= y.startLine && c <= y.endLine);
+        return g ? `${g.name}.wgsl:${c - g.startLine + 1}` : `line ${c}`;
       },
       n = t.join(`
 `),
       d = r.createShaderModule({ label: a, code: n }),
       m = (await d.getCompilationInfo()).messages.filter(
-        (p) => p.type === "error",
+        (c) => c.type === "error",
       );
     if (m.length > 0)
       throw new Error(`Shader "${a}" compilation failed:
-${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
+${m.map((c) => `  ${l(c.lineNum)}: ${c.message}`).join(`
 `)}`);
     let w = e === "main" ? { module: d } : { module: d, entryPoint: e },
-      c = r.createComputePipeline({ label: a, layout: "auto", compute: w });
-    return ((c._shaderModule = d), c);
+      p = r.createComputePipeline({ label: a, layout: "auto", compute: w });
+    return ((p._shaderModule = d), p);
   }
-  function _r(r, o, e) {
+  function Er(r, o, e) {
     let a = r.limits.maxComputeWorkgroupsPerDimension;
     return e === void 0
       ? Math.min(Math.ceil(o / 64), a)
       : { x: Math.min(Math.ceil(e / 8), a), y: Math.min(Math.ceil(o / 8), a) };
   }
-  function sr(r, o, e, a = "x") {
+  function tr(r, o, e, a = "x") {
     let t = r.limits.maxComputeWorkgroupsPerDimension;
     if (o > t)
       throw new Error(
@@ -6664,30 +7115,30 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       );
     return o;
   }
-  function ke(r, o, e, a) {
+  function ya(r, o, e, a) {
     return a === void 0
-      ? sr(r, Math.ceil(e / 64), o)
+      ? tr(r, Math.ceil(e / 64), o)
       : {
-          x: sr(r, Math.ceil(a / 8), o, "x"),
-          y: sr(r, Math.ceil(e / 8), o, "y"),
+          x: tr(r, Math.ceil(a / 8), o, "x"),
+          y: tr(r, Math.ceil(e / 8), o, "y"),
         };
   }
-  function F(r) {
+  function z(r) {
     if (!(r instanceof GPUDevice))
       throw new Error("device must be a GPUDevice.");
   }
-  function W(r, o, e) {
+  function Z(r, o, e) {
     for (let [a, t] of Object.entries(e))
-      if (!(!(t instanceof H) && !(t instanceof Q)) && t.device !== r)
+      if (!(!(t instanceof C) && !(t instanceof sr)) && t.device !== r)
         throw new Error(
           `${o}: ${a} belongs to a different GPUDevice than the one passed in. GPU buffers cannot be shared across devices \u2014 recreate the operand on this device, or call the routine with the device that owns it.`,
         );
   }
-  async function la(r, o, e, a, t) {
-    let i = a instanceof H;
+  async function xa(r, o, e, a, t) {
+    let i = a instanceof C;
     if (
-      (F(r),
-      W(r, "sscal", { x: a }),
+      (z(r),
+      Z(r, "sscal", { x: a }),
       !Number.isInteger(o) || !Number.isInteger(t))
     )
       throw new Error("n and incx must be integers.");
@@ -6695,14 +7146,14 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (Number.isNaN(e)) throw new Error("alpha must not be NaN.");
     if (!Number.isFinite(e)) throw new Error("alpha must be finite.");
     if (t <= 0) throw new Error("incx must be positive.");
-    if (!(a instanceof Float32Array) && !(a instanceof H))
+    if (!(a instanceof Float32Array) && !(a instanceof C))
       throw new Error("x must be a Float32Array or GpuVector.");
     if (o <= 0) return i ? {} : { x: a };
     if (a.length < (o - 1) * t + 1)
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let s = await P(r, "sscal"),
+    let s = await N(r, "sscal"),
       l = null,
       n = null,
       d = null;
@@ -6717,22 +7168,22 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "sscal-params",
         )));
-      let u = N(r, s.getBindGroupLayout(0), [l, n]),
-        { commandEncoder: m, ts: w } = $(r, s, u, _r(r, o));
-      ((d = i ? null : D(r, m, l)), j(r, m));
-      let c = await C(w);
-      if (i) return c !== void 0 ? { gpuTimeMs: c } : {};
-      let p = await G(d, Float32Array);
-      return ((d = null), c !== void 0 ? { x: p, gpuTimeMs: c } : { x: p });
+      let u = G(r, s.getBindGroupLayout(0), [l, n]),
+        { commandEncoder: m, ts: w } = vr(r, s, u, Er(r, o));
+      ((d = i ? null : D(r, m, l)), U(r, m));
+      let p = await V(w);
+      if (i) return p !== void 0 ? { gpuTimeMs: p } : {};
+      let c = await S(d, Float32Array);
+      return ((d = null), p !== void 0 ? { x: c, gpuTimeMs: p } : { x: c });
     } finally {
       (!i && l && f(l), n && f(n), d && f(d));
     }
   }
-  async function ua(r, o, e, a, t) {
-    let i = a instanceof H;
+  async function va(r, o, e, a, t) {
+    let i = a instanceof C;
     if (
-      (F(r),
-      W(r, "cscal", { x: a }),
+      (z(r),
+      Z(r, "cscal", { x: a }),
       !Number.isInteger(o) || !Number.isInteger(t))
     )
       throw new Error("n and incx must be integers.");
@@ -6742,21 +7193,21 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (!Number.isFinite(e.re) || !Number.isFinite(e.im))
       throw new Error("alpha must be finite.");
     if (t <= 0) throw new Error("incx must be positive.");
-    if (!(a instanceof Er) && !i)
+    if (!(a instanceof Ir) && !i)
       throw new Error("x must be a Complex32Array or GpuVector.");
-    if (i && a.dtype !== Er)
+    if (i && a.dtype !== Ir)
       throw new Error("x must be a Complex32Array-backed GpuVector.");
     if (o <= 0) return i ? {} : { x: a };
     if (a.length < (o - 1) * t + 1)
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let s = await P(r, "cscal"),
+    let s = await N(r, "cscal"),
       l = null,
       n = null,
       d = null;
     try {
-      ((l = i ? a._buf : b(r, fe(a), "cscal-x", !0)),
+      ((l = i ? a._buf : b(r, ce(a), "cscal-x", !0)),
         (n = T(
           r,
           [
@@ -6767,22 +7218,22 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "cscal-params",
         )));
-      let u = N(r, s.getBindGroupLayout(0), [l, n]),
-        { commandEncoder: m, ts: w } = $(r, s, u, _r(r, o));
-      ((d = i ? null : D(r, m, l)), j(r, m));
-      let c = await C(w);
-      if (i) return c !== void 0 ? { gpuTimeMs: c } : {};
-      let p = await G(d, Float32Array);
+      let u = G(r, s.getBindGroupLayout(0), [l, n]),
+        { commandEncoder: m, ts: w } = vr(r, s, u, Er(r, o));
+      ((d = i ? null : D(r, m, l)), U(r, m));
+      let p = await V(w);
+      if (i) return p !== void 0 ? { gpuTimeMs: p } : {};
+      let c = await S(d, Float32Array);
       d = null;
-      let g = new Er(p);
-      return c !== void 0 ? { x: g, gpuTimeMs: c } : { x: g };
+      let g = new Ir(c);
+      return p !== void 0 ? { x: g, gpuTimeMs: p } : { x: g };
     } finally {
       (!i && l && f(l), n && f(n), d && f(d));
     }
   }
-  async function da(r, o, e, a, t) {
-    let i = a instanceof H;
-    if ((F(r), !Number.isInteger(o) || !Number.isInteger(t)))
+  async function _a(r, o, e, a, t) {
+    let i = a instanceof C;
+    if ((z(r), !Number.isInteger(o) || !Number.isInteger(t)))
       throw new Error("n and incx must be integers.");
     if (typeof e != "number") throw new Error("alpha must be a number.");
     if (Number.isNaN(e)) throw new Error("alpha must not be NaN.");
@@ -6792,26 +7243,26 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (i && a.dtype !== Float64Array)
       throw new Error("x must be a Float64Array-backed GpuVector.");
     if (t <= 0) throw new Error("incx must be positive.");
-    if ((W(r, "dscal", { x: a }), o <= 0)) return i ? {} : { x: a };
+    if ((Z(r, "dscal", { x: a }), o <= 0)) return i ? {} : { x: a };
     if (a.length < (o - 1) * t + 1)
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let l = await P(r, [
+    let l = await N(r, [
         ...["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
         "dscal",
       ]),
-      { hi: n, lo: d } = z(new Float64Array([e])),
+      { hi: n, lo: d } = $(new Float64Array([e])),
       u = null,
       m = null,
       w = null,
-      c = null,
-      p = null;
+      p = null,
+      c = null;
     try {
       if (i) ((u = a._buf), (m = a._loBuf));
       else {
-        let { hi: A, lo: k } = z(a);
-        ((u = b(r, A, "dscal-xHi", !0)), (m = b(r, k, "dscal-xLo", !0)));
+        let { hi: k, lo: E } = $(a);
+        ((u = b(r, k, "dscal-xHi", !0)), (m = b(r, E, "dscal-xLo", !0)));
       }
       w = T(
         r,
@@ -6823,34 +7274,34 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ],
         "dscal-params",
       );
-      let g = N(r, l.getBindGroupLayout(0), [u, m, w]),
-        { commandEncoder: y, ts: h } = $(r, l, g, _r(r, o));
-      ((c = i ? null : D(r, y, u)), (p = i ? null : D(r, y, m)), j(r, y));
-      let x = await C(h);
+      let g = G(r, l.getBindGroupLayout(0), [u, m, w]),
+        { commandEncoder: y, ts: h } = vr(r, l, g, Er(r, o));
+      ((p = i ? null : D(r, y, u)), (c = i ? null : D(r, y, m)), U(r, y));
+      let x = await V(h);
       if (i) return x !== void 0 ? { gpuTimeMs: x } : {};
-      let _ = await G(c, Float32Array);
-      c = null;
-      let v = await G(p, Float32Array);
+      let _ = await S(p, Float32Array);
       p = null;
+      let v = await S(c, Float32Array);
+      c = null;
       let B = cr(_, v);
       return x !== void 0 ? { x: B, gpuTimeMs: x } : { x: B };
     } finally {
-      (!i && u && f(u), !i && m && f(m), w && f(w), c && f(c), p && f(p));
+      (!i && u && f(u), !i && m && f(m), w && f(w), p && f(p), c && f(c));
     }
   }
-  async function fa(r, o, e, a, t, i) {
-    let s = e instanceof H,
-      l = t instanceof H;
+  async function Ba(r, o, e, a, t, i) {
+    let s = e instanceof C,
+      l = t instanceof C;
     if (
-      (F(r),
-      W(r, "sswap", { x: e, y: t }),
+      (z(r),
+      Z(r, "sswap", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
     if (a <= 0 || i <= 0) throw new Error("incx and incy must be positive.");
-    if (!(e instanceof Float32Array) && !(e instanceof H))
+    if (!(e instanceof Float32Array) && !(e instanceof C))
       throw new Error("x must be a Float32Array or GpuVector.");
-    if (!(t instanceof Float32Array) && !(t instanceof H))
+    if (!(t instanceof Float32Array) && !(t instanceof C))
       throw new Error("y must be a Float32Array or GpuVector.");
     if (e.constructor !== t.constructor)
       throw new Error(
@@ -6865,12 +7316,12 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let n = await P(r, "sswap"),
+    let n = await N(r, "sswap"),
       d = null,
       u = null,
       m = null,
       w = null,
-      c = null;
+      p = null;
     try {
       ((d = s ? e._buf : b(r, e, "sswap-x", !0)),
         (u = l ? t._buf : b(r, t, "sswap-y", !0)),
@@ -6883,28 +7334,28 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "sswap-params",
         )));
-      let p = N(r, n.getBindGroupLayout(0), [d, u, m]),
-        { commandEncoder: g, ts: y } = $(r, n, p, _r(r, o));
-      ((w = s ? null : D(r, g, d)), (c = l ? null : D(r, g, u)), j(r, g));
-      let h = await C(y);
+      let c = G(r, n.getBindGroupLayout(0), [d, u, m]),
+        { commandEncoder: g, ts: y } = vr(r, n, c, Er(r, o));
+      ((w = s ? null : D(r, g, d)), (p = l ? null : D(r, g, u)), U(r, g));
+      let h = await V(y);
       if (s) return h !== void 0 ? { gpuTimeMs: h } : {};
-      let x = await G(w, Float32Array);
+      let x = await S(w, Float32Array);
       w = null;
-      let _ = await G(c, Float32Array);
+      let _ = await S(p, Float32Array);
       return (
-        (c = null),
+        (p = null),
         h !== void 0 ? { x, y: _, gpuTimeMs: h } : { x, y: _ }
       );
     } finally {
-      (!s && d && f(d), !l && u && f(u), m && f(m), w && f(w), c && f(c));
+      (!s && d && f(d), !l && u && f(u), m && f(m), w && f(w), p && f(p));
     }
   }
-  async function ma(r, o, e, a, t, i) {
-    let s = e instanceof H,
-      l = t instanceof H;
+  async function ka(r, o, e, a, t, i) {
+    let s = e instanceof C,
+      l = t instanceof C;
     if (
-      (F(r),
-      W(r, "dswap", { x: e, y: t }),
+      (z(r),
+      Z(r, "dswap", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -6930,27 +7381,27 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let n = await P(r, "dswap"),
+    let n = await N(r, "dswap"),
       d = null,
       u = null,
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null,
       y = null,
       h = null;
     try {
       if (s) ((d = e._buf), (u = e._loBuf), (m = t._buf), (w = t._loBuf));
       else {
-        let L = z(e),
-          R = z(t);
-        ((d = b(r, L.hi, "dswap-xHi", !0)),
-          (u = b(r, L.lo, "dswap-xLo", !0)),
-          (m = b(r, R.hi, "dswap-yHi", !0)),
-          (w = b(r, R.lo, "dswap-yLo", !0)));
+        let P = $(e),
+          M = $(t);
+        ((d = b(r, P.hi, "dswap-xHi", !0)),
+          (u = b(r, P.lo, "dswap-xLo", !0)),
+          (m = b(r, M.hi, "dswap-yHi", !0)),
+          (w = b(r, M.lo, "dswap-yLo", !0)));
       }
-      c = T(
+      p = T(
         r,
         [
           { value: o, type: "u32" },
@@ -6959,44 +7410,44 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ],
         "dswap-params",
       );
-      let x = N(r, n.getBindGroupLayout(0), [d, u, m, w, c]),
-        { commandEncoder: _, ts: v } = $(r, n, x, _r(r, o));
-      ((p = s ? null : D(r, _, d)),
+      let x = G(r, n.getBindGroupLayout(0), [d, u, m, w, p]),
+        { commandEncoder: _, ts: v } = vr(r, n, x, Er(r, o));
+      ((c = s ? null : D(r, _, d)),
         (g = s ? null : D(r, _, u)),
         (y = l ? null : D(r, _, m)),
         (h = l ? null : D(r, _, w)),
-        j(r, _));
-      let B = await C(v);
+        U(r, _));
+      let B = await V(v);
       if (s) return B !== void 0 ? { gpuTimeMs: B } : {};
-      let A = await G(p, Float32Array);
-      p = null;
-      let k = await G(g, Float32Array);
+      let k = await S(c, Float32Array);
+      c = null;
+      let E = await S(g, Float32Array);
       g = null;
-      let I = await G(y, Float32Array);
+      let I = await S(y, Float32Array);
       y = null;
-      let M = await G(h, Float32Array);
+      let R = await S(h, Float32Array);
       h = null;
-      let S = cr(A, k),
-        E = cr(I, M);
-      return B !== void 0 ? { x: S, y: E, gpuTimeMs: B } : { x: S, y: E };
+      let A = cr(k, E),
+        L = cr(I, R);
+      return B !== void 0 ? { x: A, y: L, gpuTimeMs: B } : { x: A, y: L };
     } finally {
       (!s && d && f(d),
         !s && u && f(u),
         !l && m && f(m),
         !l && w && f(w),
-        c && f(c),
         p && f(p),
+        c && f(c),
         g && f(g),
         y && f(y),
         h && f(h));
     }
   }
-  async function ca(r, o, e, a, t, i, s) {
-    let l = a instanceof H,
-      n = i instanceof H;
+  async function Aa(r, o, e, a, t, i, s) {
+    let l = a instanceof C,
+      n = i instanceof C;
     if (
-      (F(r),
-      W(r, "saxpy", { x: a, y: i }),
+      (z(r),
+      Z(r, "saxpy", { x: a, y: i }),
       !Number.isInteger(o) || !Number.isInteger(t) || !Number.isInteger(s))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7021,11 +7472,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let d = await P(r, "saxpy"),
+    let d = await N(r, "saxpy"),
       u = null,
       m = null,
       w = null,
-      c = null;
+      p = null;
     try {
       ((u = l ? a._buf : b(r, a, "saxpy-x", !1)),
         (m = n ? i._buf : b(r, i, "saxpy-y", !0)),
@@ -7039,22 +7490,22 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "saxpy-params",
         )));
-      let p = N(r, d.getBindGroupLayout(0), [u, m, w]),
-        { commandEncoder: g, ts: y } = $(r, d, p, _r(r, o));
-      ((c = n ? null : D(r, g, m)), j(r, g));
-      let h = await C(y);
+      let c = G(r, d.getBindGroupLayout(0), [u, m, w]),
+        { commandEncoder: g, ts: y } = vr(r, d, c, Er(r, o));
+      ((p = n ? null : D(r, g, m)), U(r, g));
+      let h = await V(y);
       if (n) return h !== void 0 ? { gpuTimeMs: h } : {};
-      let x = await G(c, Float32Array);
-      return ((c = null), h !== void 0 ? { y: x, gpuTimeMs: h } : { y: x });
+      let x = await S(p, Float32Array);
+      return ((p = null), h !== void 0 ? { y: x, gpuTimeMs: h } : { y: x });
     } finally {
-      (!l && u && f(u), !n && m && f(m), w && f(w), c && f(c));
+      (!l && u && f(u), !n && m && f(m), w && f(w), p && f(p));
     }
   }
-  async function pa(r, o, e, a, t, i, s) {
-    let l = a instanceof H,
-      n = i instanceof H;
+  async function Ea(r, o, e, a, t, i, s) {
+    let l = a instanceof C,
+      n = i instanceof C;
     if (
-      (F(r),
+      (z(r),
       !Number.isInteger(o) || !Number.isInteger(t) || !Number.isInteger(s))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7074,7 +7525,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "x and y must be the same type (both Float64Array or both GpuVector).",
       );
     if (t <= 0 || s <= 0) throw new Error("incx and incy must be positive.");
-    if ((W(r, "daxpy", { x: a, y: i }), o <= 0)) return n ? {} : { y: i };
+    if ((Z(r, "daxpy", { x: a, y: i }), o <= 0)) return n ? {} : { y: i };
     if (a.length < (o - 1) * t + 1)
       throw new Error(
         "x does not have enough elements for the given n and incx.",
@@ -7083,27 +7534,27 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let u = await P(r, [
+    let u = await N(r, [
         ...["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
         "daxpy",
       ]),
-      { hi: m, lo: w } = z(new Float64Array([e])),
-      c = null,
+      { hi: m, lo: w } = $(new Float64Array([e])),
       p = null,
+      c = null,
       g = null,
       y = null,
       h = null,
       x = null,
       _ = null;
     try {
-      if (l) ((c = a._buf), (p = a._loBuf), (g = i._buf), (y = i._loBuf));
+      if (l) ((p = a._buf), (c = a._loBuf), (g = i._buf), (y = i._loBuf));
       else {
-        let E = z(a),
-          L = z(i);
-        ((c = b(r, E.hi, "daxpy-xHi", !1)),
-          (p = b(r, E.lo, "daxpy-xLo", !1)),
-          (g = b(r, L.hi, "daxpy-yHi", !0)),
-          (y = b(r, L.lo, "daxpy-yLo", !0)));
+        let L = $(a),
+          P = $(i);
+        ((p = b(r, L.hi, "daxpy-xHi", !1)),
+          (c = b(r, L.lo, "daxpy-xLo", !1)),
+          (g = b(r, P.hi, "daxpy-yHi", !0)),
+          (y = b(r, P.lo, "daxpy-yLo", !0)));
       }
       h = T(
         r,
@@ -7116,20 +7567,20 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ],
         "daxpy-params",
       );
-      let v = N(r, u.getBindGroupLayout(0), [c, p, g, y, h]),
-        { commandEncoder: B, ts: A } = $(r, u, v, _r(r, o));
-      ((x = n ? null : D(r, B, g)), (_ = n ? null : D(r, B, y)), j(r, B));
-      let k = await C(A);
-      if (n) return k !== void 0 ? { gpuTimeMs: k } : {};
-      let I = await G(x, Float32Array);
+      let v = G(r, u.getBindGroupLayout(0), [p, c, g, y, h]),
+        { commandEncoder: B, ts: k } = vr(r, u, v, Er(r, o));
+      ((x = n ? null : D(r, B, g)), (_ = n ? null : D(r, B, y)), U(r, B));
+      let E = await V(k);
+      if (n) return E !== void 0 ? { gpuTimeMs: E } : {};
+      let I = await S(x, Float32Array);
       x = null;
-      let M = await G(_, Float32Array);
+      let R = await S(_, Float32Array);
       _ = null;
-      let S = cr(I, M);
-      return k !== void 0 ? { y: S, gpuTimeMs: k } : { y: S };
+      let A = cr(I, R);
+      return E !== void 0 ? { y: A, gpuTimeMs: E } : { y: A };
     } finally {
-      (!l && c && f(c),
-        !l && p && f(p),
+      (!l && p && f(p),
+        !l && c && f(c),
         !n && g && f(g),
         !n && y && f(y),
         h && f(h),
@@ -7137,12 +7588,12 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         _ && f(_));
     }
   }
-  async function wa(r, o, e, a, t, i) {
-    let s = e instanceof H,
-      l = t instanceof H;
+  async function Sa(r, o, e, a, t, i) {
+    let s = e instanceof C,
+      l = t instanceof C;
     if (
-      (F(r),
-      W(r, "scopy", { x: e, y: t }),
+      (z(r),
+      Z(r, "scopy", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7164,7 +7615,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let n = await P(r, "scopy"),
+    let n = await N(r, "scopy"),
       d = null,
       u = null,
       m = null,
@@ -7181,23 +7632,23 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "scopy-params",
         )));
-      let c = N(r, n.getBindGroupLayout(0), [d, u, m]),
-        { commandEncoder: p, ts: g } = $(r, n, c, _r(r, o));
-      ((w = l ? null : D(r, p, u)), j(r, p));
-      let y = await C(g);
+      let p = G(r, n.getBindGroupLayout(0), [d, u, m]),
+        { commandEncoder: c, ts: g } = vr(r, n, p, Er(r, o));
+      ((w = l ? null : D(r, c, u)), U(r, c));
+      let y = await V(g);
       if (l) return y !== void 0 ? { gpuTimeMs: y } : {};
-      let h = await G(w, Float32Array);
+      let h = await S(w, Float32Array);
       return ((w = null), y !== void 0 ? { y: h, gpuTimeMs: y } : { y: h });
     } finally {
       (!s && d && f(d), !l && u && f(u), m && f(m), w && f(w));
     }
   }
-  async function ga(r, o, e, a, t, i) {
-    let s = e instanceof H,
-      l = t instanceof H;
+  async function La(r, o, e, a, t, i) {
+    let s = e instanceof C,
+      l = t instanceof C;
     if (
-      (F(r),
-      W(r, "dcopy", { x: e, y: t }),
+      (z(r),
+      Z(r, "dcopy", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7223,25 +7674,25 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let n = await P(r, "dcopy"),
+    let n = await N(r, "dcopy"),
       d = null,
       u = null,
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null;
     try {
       if (s) ((d = e._buf), (u = e._loBuf), (m = t._buf), (w = t._loBuf));
       else {
-        let k = z(e),
-          I = z(t);
-        ((d = b(r, k.hi, "dcopy-xHi", !1)),
-          (u = b(r, k.lo, "dcopy-xLo", !1)),
+        let E = $(e),
+          I = $(t);
+        ((d = b(r, E.hi, "dcopy-xHi", !1)),
+          (u = b(r, E.lo, "dcopy-xLo", !1)),
           (m = b(r, I.hi, "dcopy-yHi", !0)),
           (w = b(r, I.lo, "dcopy-yLo", !0)));
       }
-      c = T(
+      p = T(
         r,
         [
           { value: o, type: "u32" },
@@ -7250,33 +7701,33 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ],
         "dcopy-params",
       );
-      let y = N(r, n.getBindGroupLayout(0), [d, u, m, w, c]),
-        { commandEncoder: h, ts: x } = $(r, n, y, _r(r, o));
-      ((p = l ? null : D(r, h, m)), (g = l ? null : D(r, h, w)), j(r, h));
-      let _ = await C(x);
+      let y = G(r, n.getBindGroupLayout(0), [d, u, m, w, p]),
+        { commandEncoder: h, ts: x } = vr(r, n, y, Er(r, o));
+      ((c = l ? null : D(r, h, m)), (g = l ? null : D(r, h, w)), U(r, h));
+      let _ = await V(x);
       if (l) return _ !== void 0 ? { gpuTimeMs: _ } : {};
-      let v = await G(p, Float32Array);
-      p = null;
-      let B = await G(g, Float32Array);
+      let v = await S(c, Float32Array);
+      c = null;
+      let B = await S(g, Float32Array);
       g = null;
-      let A = cr(v, B);
-      return _ !== void 0 ? { y: A, gpuTimeMs: _ } : { y: A };
+      let k = cr(v, B);
+      return _ !== void 0 ? { y: k, gpuTimeMs: _ } : { y: k };
     } finally {
       (!s && d && f(d),
         !s && u && f(u),
         !l && m && f(m),
         !l && w && f(w),
-        c && f(c),
         p && f(p),
+        c && f(c),
         g && f(g));
     }
   }
-  async function ha(r, o, e, a, t, i) {
-    let s = e instanceof H,
-      l = t instanceof H;
+  async function Ga(r, o, e, a, t, i) {
+    let s = e instanceof C,
+      l = t instanceof C;
     if (
-      (F(r),
-      W(r, "sdot", { x: e, y: t }),
+      (z(r),
+      Z(r, "sdot", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7298,20 +7749,20 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let n = await P(r, "sdot"),
-      d = await P(r, "reduction/sum"),
+    let n = await N(r, "sdot"),
+      d = await N(r, "reduction/sum"),
       u = null,
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null;
     try {
       ((u = s ? e._buf : b(r, e, "sdot-x", !1)),
         (m = l ? t._buf : b(r, t, "sdot-y", !1)),
-        (w = lr(r, 512, "sdot-partials")),
-        (c = Lr(r, 4, "sdot-result")),
-        (p = T(
+        (w = dr(r, 512, "sdot-partials")),
+        (p = Mr(r, 4, "sdot-result")),
+        (c = T(
           r,
           [
             { value: o, type: "u32" },
@@ -7320,32 +7771,31 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "sdot-params",
         )));
-      let y = N(r, n.getBindGroupLayout(0), [u, m, w, p]),
-        { commandEncoder: h, ts: x } = $(r, n, y, 128);
-      j(r, h);
-      let _ = N(r, d.getBindGroupLayout(0), [w, c]),
-        { commandEncoder: v, ts: B } = $(r, d, _, 1);
-      ((g = D(r, v, c)), j(r, v));
-      let A = G(g, Float32Array);
+      let y = G(r, n.getBindGroupLayout(0), [u, m, w, c]),
+        h = G(r, d.getBindGroupLayout(0), [w, p]),
+        { commandEncoder: x, ts: _ } = wr(r, [
+          { pipeline: n, bindGroup: y, workgroups: 128 },
+          { pipeline: d, bindGroup: h, workgroups: 1 },
+        ]);
+      ((g = D(r, x, p)), U(r, x));
+      let v = S(g, Float32Array);
       g = null;
-      let [k, I, M] = await Promise.all([C(x), C(B), A]);
-      return k !== void 0 && I !== void 0
-        ? { dot: M[0], gpuTimeMs: k + I }
-        : { dot: M[0] };
+      let [B, k] = await Promise.all([V(_), v]);
+      return B !== void 0 ? { dot: k[0], gpuTimeMs: B } : { dot: k[0] };
     } finally {
       (!s && u && f(u),
         !l && m && f(m),
         w && f(w),
-        c && f(c),
         p && f(p),
+        c && f(c),
         g && f(g));
     }
   }
-  async function ba(r, o, e, a) {
-    let t = e instanceof H;
+  async function Da(r, o, e, a) {
+    let t = e instanceof C;
     if (
-      (F(r),
-      W(r, "sasum", { x: e }),
+      (z(r),
+      Z(r, "sasum", { x: e }),
       !Number.isInteger(o) || !Number.isInteger(a))
     )
       throw new Error("n and incx must be integers.");
@@ -7357,8 +7807,8 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let i = await P(r, "sasum"),
-      s = await P(r, "reduction/sum"),
+    let i = await N(r, "sasum"),
+      s = await N(r, "reduction/sum"),
       l = null,
       n = null,
       d = null,
@@ -7366,8 +7816,8 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       m = null;
     try {
       ((l = t ? e._buf : b(r, e, "sasum-x", !1)),
-        (n = lr(r, 512, "sasum-partials")),
-        (d = Lr(r, 4, "sasum-result")),
+        (n = dr(r, 512, "sasum-partials")),
+        (d = Mr(r, 4, "sasum-result")),
         (u = T(
           r,
           [
@@ -7376,27 +7826,26 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "sasum-params",
         )));
-      let w = N(r, i.getBindGroupLayout(0), [l, n, u]),
-        { commandEncoder: c, ts: p } = $(r, i, w, 128);
-      j(r, c);
-      let g = N(r, s.getBindGroupLayout(0), [n, d]),
-        { commandEncoder: y, ts: h } = $(r, s, g, 1);
-      ((m = D(r, y, d)), j(r, y));
-      let x = G(m, Float32Array);
+      let w = G(r, i.getBindGroupLayout(0), [l, n, u]),
+        p = G(r, s.getBindGroupLayout(0), [n, d]),
+        { commandEncoder: c, ts: g } = wr(r, [
+          { pipeline: i, bindGroup: w, workgroups: 128 },
+          { pipeline: s, bindGroup: p, workgroups: 1 },
+        ]);
+      ((m = D(r, c, d)), U(r, c));
+      let y = S(m, Float32Array);
       m = null;
-      let [_, v, B] = await Promise.all([C(p), C(h), x]);
-      return _ !== void 0 && v !== void 0
-        ? { asum: B[0], gpuTimeMs: _ + v }
-        : { asum: B[0] };
+      let [h, x] = await Promise.all([V(g), y]);
+      return h !== void 0 ? { asum: x[0], gpuTimeMs: h } : { asum: x[0] };
     } finally {
       (!t && l && f(l), n && f(n), d && f(d), u && f(u), m && f(m));
     }
   }
-  async function ya(r, o, e, a) {
-    let t = e instanceof H;
+  async function Pa(r, o, e, a) {
+    let t = e instanceof C;
     if (
-      (F(r),
-      W(r, "dasum", { x: e }),
+      (z(r),
+      Z(r, "dasum", { x: e }),
       !Number.isInteger(o) || !Number.isInteger(a))
     )
       throw new Error("n and incx must be integers.");
@@ -7411,28 +7860,28 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "x does not have enough elements for the given n and incx.",
       );
     let i = ["f64/dekker", "f64/utils/abs", "f64/utils/add"],
-      s = await P(r, [...i, "dasum"]),
-      l = await P(r, [...i, "reduction/sumF64"]),
+      s = await N(r, [...i, "dasum"]),
+      l = await N(r, [...i, "reduction/sumF64"]),
       n = null,
       d = null,
       u = null,
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null,
       y = null;
     try {
       if (t) ((n = e._buf), (d = e._loBuf));
       else {
-        let { hi: q, lo: O } = z(e.map(Math.abs));
-        ((n = b(r, q, "dasum-xHi", !1)), (d = b(r, O, "dasum-xLo", !1)));
+        let { hi: L, lo: P } = $(e.map(Math.abs));
+        ((n = b(r, L, "dasum-xHi", !1)), (d = b(r, P, "dasum-xLo", !1)));
       }
-      ((u = lr(r, 512, "dasum-partialsHi")),
-        (m = lr(r, 512, "dasum-partialsLo")),
-        (w = Lr(r, 4, "dasum-result-hi")),
-        (c = Lr(r, 4, "dasum-result-lo")),
-        (p = T(
+      ((u = dr(r, 512, "dasum-partialsHi")),
+        (m = dr(r, 512, "dasum-partialsLo")),
+        (w = Mr(r, 4, "dasum-result-hi")),
+        (p = Mr(r, 4, "dasum-result-lo")),
+        (c = T(
           r,
           [
             { value: o, type: "u32" },
@@ -7440,38 +7889,37 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "dasum-params",
         )));
-      let h = N(r, s.getBindGroupLayout(0), [n, d, u, m, p]),
-        { commandEncoder: x, ts: _ } = $(r, s, h, 128);
-      j(r, x);
-      let v = N(r, l.getBindGroupLayout(0), [u, m, w, c]),
-        { commandEncoder: B, ts: A } = $(r, l, v, 1);
-      ((g = D(r, B, w)), (y = D(r, B, c)), j(r, B));
-      let k = G(g, Float32Array),
-        I = G(y, Float32Array);
+      let h = G(r, s.getBindGroupLayout(0), [n, d, u, m, c]),
+        x = G(r, l.getBindGroupLayout(0), [u, m, w, p]),
+        { commandEncoder: _, ts: v } = wr(r, [
+          { pipeline: s, bindGroup: h, workgroups: 128 },
+          { pipeline: l, bindGroup: x, workgroups: 1 },
+        ]);
+      ((g = D(r, _, w)), (y = D(r, _, p)), U(r, _));
+      let B = S(g, Float32Array),
+        k = S(y, Float32Array);
       ((g = null), (y = null));
-      let [M, S, E, L] = await Promise.all([C(_), C(A), k, I]),
-        R = cr(E, L)[0];
-      return M !== void 0 && S !== void 0
-        ? { asum: R, gpuTimeMs: M + S }
-        : { asum: R };
+      let [E, I, R] = await Promise.all([V(v), B, k]),
+        A = cr(I, R)[0];
+      return E !== void 0 ? { asum: A, gpuTimeMs: E } : { asum: A };
     } finally {
       (!t && n && f(n),
         !t && d && f(d),
         u && f(u),
         m && f(m),
         w && f(w),
-        c && f(c),
         p && f(p),
+        c && f(c),
         g && f(g),
         y && f(y));
     }
   }
-  async function xa(r, o, e, a, t, i) {
-    let s = e instanceof H,
-      l = t instanceof H;
+  async function Na(r, o, e, a, t, i) {
+    let s = e instanceof C,
+      l = t instanceof C;
     if (
-      (F(r),
-      W(r, "ddot", { x: e, y: t }),
+      (z(r),
+      Z(r, "ddot", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7498,12 +7946,12 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "y does not have enough elements for the given n and incy.",
       );
     let n = ["f64/dekker", "f64/utils/add"],
-      d = await P(r, [...n, "f64/utils/multiply", "ddot"]),
-      u = await P(r, [...n, "reduction/sumF64"]),
+      d = await N(r, [...n, "f64/utils/multiply", "ddot"]),
+      u = await N(r, [...n, "reduction/sumF64"]),
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null,
       y = null,
       h = null,
@@ -7512,19 +7960,19 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       v = null,
       B = null;
     try {
-      if (s) ((m = e._buf), (w = e._loBuf), (c = t._buf), (p = t._loBuf));
+      if (s) ((m = e._buf), (w = e._loBuf), (p = t._buf), (c = t._loBuf));
       else {
-        let V = z(e),
-          K = z(t);
-        ((m = b(r, V.hi, "ddot-xHi", !1)),
-          (w = b(r, V.lo, "ddot-xLo", !1)),
-          (c = b(r, K.hi, "ddot-yHi", !1)),
-          (p = b(r, K.lo, "ddot-yLo", !1)));
+        let K = $(e),
+          X = $(t);
+        ((m = b(r, K.hi, "ddot-xHi", !1)),
+          (w = b(r, K.lo, "ddot-xLo", !1)),
+          (p = b(r, X.hi, "ddot-yHi", !1)),
+          (c = b(r, X.lo, "ddot-yLo", !1)));
       }
-      ((g = lr(r, 512, "ddot-partialsHi")),
-        (y = lr(r, 512, "ddot-partialsLo")),
-        (h = Lr(r, 4, "ddot-result-hi")),
-        (x = Lr(r, 4, "ddot-result-lo")),
+      ((g = dr(r, 512, "ddot-partialsHi")),
+        (y = dr(r, 512, "ddot-partialsLo")),
+        (h = Mr(r, 4, "ddot-result-hi")),
+        (x = Mr(r, 4, "ddot-result-lo")),
         (_ = T(
           r,
           [
@@ -7534,25 +7982,24 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "ddot-params",
         )));
-      let A = N(r, d.getBindGroupLayout(0), [m, w, c, p, g, y, _]),
-        { commandEncoder: k, ts: I } = $(r, d, A, 128);
-      j(r, k);
-      let M = N(r, u.getBindGroupLayout(0), [g, y, h, x]),
-        { commandEncoder: S, ts: E } = $(r, u, M, 1);
-      ((v = D(r, S, h)), (B = D(r, S, x)), j(r, S));
-      let L = G(v, Float32Array),
-        R = G(B, Float32Array);
+      let k = G(r, d.getBindGroupLayout(0), [m, w, p, c, g, y, _]),
+        E = G(r, u.getBindGroupLayout(0), [g, y, h, x]),
+        { commandEncoder: I, ts: R } = wr(r, [
+          { pipeline: d, bindGroup: k, workgroups: 128 },
+          { pipeline: u, bindGroup: E, workgroups: 1 },
+        ]);
+      ((v = D(r, I, h)), (B = D(r, I, x)), U(r, I));
+      let A = S(v, Float32Array),
+        L = S(B, Float32Array);
       ((v = null), (B = null));
-      let [q, O, Z, X] = await Promise.all([C(I), C(E), L, R]),
-        Y = cr(Z, X)[0];
-      return q !== void 0 && O !== void 0
-        ? { dot: Y, gpuTimeMs: q + O }
-        : { dot: Y };
+      let [P, M, H] = await Promise.all([V(R), A, L]),
+        W = cr(M, H)[0];
+      return P !== void 0 ? { dot: W, gpuTimeMs: P } : { dot: W };
     } finally {
       (!s && m && f(m),
         !s && w && f(w),
-        !l && c && f(c),
         !l && p && f(p),
+        !l && c && f(c),
         g && f(g),
         y && f(y),
         h && f(h),
@@ -7562,11 +8009,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         B && f(B));
     }
   }
-  async function va(r, o, e, a) {
-    let t = e instanceof H;
+  async function Ia(r, o, e, a) {
+    let t = e instanceof C;
     if (
-      (F(r),
-      W(r, "snrm2", { x: e }),
+      (z(r),
+      Z(r, "snrm2", { x: e }),
       !Number.isInteger(o) || !Number.isInteger(a))
     )
       throw new Error("n and incx must be integers.");
@@ -7578,20 +8025,18 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let i = await P(r, "snrm2"),
-      s = await P(r, "reduction/scaledSum"),
+    let i = await N(r, "snrm2"),
+      s = await N(r, "reduction/scaledSum"),
       l = null,
       n = null,
       d = null,
       u = null,
-      m = null,
-      w = null;
+      m = null;
     try {
       ((l = t ? e._buf : b(r, e, "snrm2-x", !1)),
-        (n = lr(r, 512, "snrm2-partials-scale")),
-        (d = lr(r, 512, "snrm2-partials-ssq")),
-        (u = Lr(r, 4, "snrm2-result")),
-        (m = T(
+        (n = dr(r, 384 * 4, "snrm2-partials")),
+        (d = Mr(r, 4, "snrm2-result")),
+        (u = T(
           r,
           [
             { value: o, type: "u32" },
@@ -7599,28 +8044,27 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "snrm2-params",
         )));
-      let c = N(r, i.getBindGroupLayout(0), [l, n, d, m]),
-        { commandEncoder: p, ts: g } = $(r, i, c, 128);
-      j(r, p);
-      let y = N(r, s.getBindGroupLayout(0), [n, d, u]),
-        { commandEncoder: h, ts: x } = $(r, s, y, 1);
-      ((w = D(r, h, u)), j(r, h));
-      let _ = G(w, Float32Array);
-      w = null;
-      let [v, B, A] = await Promise.all([C(g), C(x), _]),
-        k = A[0];
-      return v !== void 0 && B !== void 0
-        ? { nrm2: k, gpuTimeMs: v + B }
-        : { nrm2: k };
+      let w = G(r, i.getBindGroupLayout(0), [l, n, u]),
+        p = G(r, s.getBindGroupLayout(0), [n, d]),
+        { commandEncoder: c, ts: g } = wr(r, [
+          { pipeline: i, bindGroup: w, workgroups: 128 },
+          { pipeline: s, bindGroup: p, workgroups: 1 },
+        ]);
+      ((m = D(r, c, d)), U(r, c));
+      let y = S(m, Float32Array);
+      m = null;
+      let [h, x] = await Promise.all([V(g), y]),
+        _ = x[0];
+      return h !== void 0 ? { nrm2: _, gpuTimeMs: h } : { nrm2: _ };
     } finally {
-      (!t && l && f(l), n && f(n), d && f(d), u && f(u), m && f(m), w && f(w));
+      (!t && l && f(l), n && f(n), d && f(d), u && f(u), m && f(m));
     }
   }
-  async function Ba(r, o, e, a) {
-    let t = e instanceof H;
+  async function Ma(r, o, e, a) {
+    let t = e instanceof C;
     if (
-      (F(r),
-      W(r, "dnrm2", { x: e }),
+      (z(r),
+      Z(r, "dnrm2", { x: e }),
       !Number.isInteger(o) || !Number.isInteger(a))
     )
       throw new Error("n and incx must be integers.");
@@ -7643,32 +8087,26 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "f64/utils/divide",
         "f64/utils/sqrt",
       ],
-      s = await P(r, [...i, "dnrm2"]),
-      l = await P(r, [...i, "reduction/scaledSumF64"]),
+      s = await N(r, [...i, "dnrm2"]),
+      l = await N(r, [...i, "reduction/scaledSumF64"]),
       n = null,
       d = null,
       u = null,
       m = null,
       w = null,
-      c = null,
       p = null,
-      g = null,
-      y = null,
-      h = null,
-      x = null;
+      c = null,
+      g = null;
     try {
       if (t) ((n = e._buf), (d = e._loBuf));
       else {
-        let { hi: Z, lo: X } = z(e);
-        ((n = b(r, Z, "dnrm2-xHi", !1)), (d = b(r, X, "dnrm2-xLo", !1)));
+        let { hi: A, lo: L } = $(e);
+        ((n = b(r, A, "dnrm2-xHi", !1)), (d = b(r, L, "dnrm2-xLo", !1)));
       }
-      ((u = lr(r, 512, "dnrm2-partials-scaleHi")),
-        (m = lr(r, 512, "dnrm2-partials-scaleLo")),
-        (w = lr(r, 512, "dnrm2-partials-ssqHi")),
-        (c = lr(r, 512, "dnrm2-partials-ssqLo")),
-        (p = Lr(r, 4, "dnrm2-result-hi")),
-        (g = Lr(r, 4, "dnrm2-result-lo")),
-        (y = T(
+      ((u = dr(r, 896 * 4, "dnrm2-partials")),
+        (m = Mr(r, 4, "dnrm2-result-hi")),
+        (w = Mr(r, 4, "dnrm2-result-lo")),
+        (p = T(
           r,
           [
             { value: o, type: "u32" },
@@ -7676,39 +8114,35 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "dnrm2-params",
         )));
-      let _ = N(r, s.getBindGroupLayout(0), [n, d, u, m, w, c, y]),
-        { commandEncoder: v, ts: B } = $(r, s, _, 128);
-      j(r, v);
-      let A = N(r, l.getBindGroupLayout(0), [u, m, w, c, p, g]),
-        { commandEncoder: k, ts: I } = $(r, l, A, 1);
-      ((h = D(r, k, p)), (x = D(r, k, g)), j(r, k));
-      let M = G(h, Float32Array),
-        S = G(x, Float32Array);
-      ((h = null), (x = null));
-      let [E, L, R, q] = await Promise.all([C(B), C(I), M, S]),
-        O = cr(R, q)[0];
-      return E !== void 0 && L !== void 0
-        ? { nrm2: O, gpuTimeMs: E + L }
-        : { nrm2: O };
+      let y = G(r, s.getBindGroupLayout(0), [n, d, u, p]),
+        h = G(r, l.getBindGroupLayout(0), [u, m, w]),
+        { commandEncoder: x, ts: _ } = wr(r, [
+          { pipeline: s, bindGroup: y, workgroups: 128 },
+          { pipeline: l, bindGroup: h, workgroups: 1 },
+        ]);
+      ((c = D(r, x, m)), (g = D(r, x, w)), U(r, x));
+      let v = S(c, Float32Array),
+        B = S(g, Float32Array);
+      ((c = null), (g = null));
+      let [k, E, I] = await Promise.all([V(_), v, B]),
+        R = cr(E, I)[0];
+      return k !== void 0 ? { nrm2: R, gpuTimeMs: k } : { nrm2: R };
     } finally {
       (!t && n && f(n),
         !t && d && f(d),
         u && f(u),
         m && f(m),
         w && f(w),
-        c && f(c),
         p && f(p),
-        g && f(g),
-        y && f(y),
-        h && f(h),
-        x && f(x));
+        c && f(c),
+        g && f(g));
     }
   }
-  async function _a(r, o, e, a) {
-    let t = e instanceof H;
+  async function Ra(r, o, e, a) {
+    let t = e instanceof C;
     if (
-      (F(r),
-      W(r, "isamax", { x: e }),
+      (z(r),
+      Z(r, "isamax", { x: e }),
       !Number.isInteger(o) || !Number.isInteger(a))
     )
       throw new Error("n and incx must be integers.");
@@ -7720,8 +8154,8 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let i = await P(r, "isamax"),
-      s = await P(r, "reduction/argmax"),
+    let i = await N(r, "isamax"),
+      s = await N(r, "reduction/argmax"),
       l = null,
       n = null,
       d = null,
@@ -7730,9 +8164,9 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       w = null;
     try {
       ((l = t ? e._buf : b(r, e, "isamax-x", !1)),
-        (n = lr(r, 512, "isamax-partials-val")),
-        (d = lr(r, 512, "isamax-partials-idx")),
-        (u = Lr(r, 4, "isamax-result")),
+        (n = dr(r, 512, "isamax-partials-val")),
+        (d = dr(r, 512, "isamax-partials-idx")),
+        (u = Mr(r, 4, "isamax-result")),
         (m = T(
           r,
           [
@@ -7741,28 +8175,27 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "isamax-params",
         )));
-      let c = N(r, i.getBindGroupLayout(0), [l, n, d, m]),
-        { commandEncoder: p, ts: g } = $(r, i, c, 128);
-      j(r, p);
-      let y = N(r, s.getBindGroupLayout(0), [n, d, u]),
-        { commandEncoder: h, ts: x } = $(r, s, y, 1);
-      ((w = D(r, h, u)), j(r, h));
-      let _ = G(w, Uint32Array);
+      let p = G(r, i.getBindGroupLayout(0), [l, n, d, m]),
+        c = G(r, s.getBindGroupLayout(0), [n, d, u]),
+        { commandEncoder: g, ts: y } = wr(r, [
+          { pipeline: i, bindGroup: p, workgroups: 128 },
+          { pipeline: s, bindGroup: c, workgroups: 1 },
+        ]);
+      ((w = D(r, g, u)), U(r, g));
+      let h = S(w, Uint32Array);
       w = null;
-      let [v, B, A] = await Promise.all([C(g), C(x), _]),
-        k = A[0];
-      return v !== void 0 && B !== void 0
-        ? { index: k, gpuTimeMs: v + B }
-        : { index: k };
+      let [x, _] = await Promise.all([V(y), h]),
+        v = _[0];
+      return x !== void 0 ? { index: v, gpuTimeMs: x } : { index: v };
     } finally {
       (!t && l && f(l), n && f(n), d && f(d), u && f(u), m && f(m), w && f(w));
     }
   }
-  async function ka(r, o, e, a) {
-    let t = e instanceof H;
+  async function Ta(r, o, e, a) {
+    let t = e instanceof C;
     if (
-      (F(r),
-      W(r, "idamax", { x: e }),
+      (z(r),
+      Z(r, "idamax", { x: e }),
       !Number.isInteger(o) || !Number.isInteger(a))
     )
       throw new Error("n and incx must be integers.");
@@ -7782,27 +8215,27 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "f64/utils/greater",
         "f64/utils/equal",
       ],
-      s = await P(r, [...i, "idamax"], "idamax_main"),
-      l = await P(r, [...i, "reduction/argmaxF64"], "reduce_f64"),
+      s = await N(r, [...i, "idamax"], "idamax_main"),
+      l = await N(r, [...i, "reduction/argmaxF64"], "reduce_f64"),
       n = null,
       d = null,
       u = null,
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null;
     try {
       if (t) ((n = e._buf), (d = e._loBuf));
       else {
-        let { hi: E, lo: L } = z(e);
-        ((n = b(r, E, "idamax-xHi", !1)), (d = b(r, L, "idamax-xLo", !1)));
+        let { hi: I, lo: R } = $(e);
+        ((n = b(r, I, "idamax-xHi", !1)), (d = b(r, R, "idamax-xLo", !1)));
       }
-      ((u = lr(r, 512, "idamax-partials-val-hi")),
-        (m = lr(r, 512, "idamax-partials-val-lo")),
-        (w = lr(r, 512, "idamax-partials-idx")),
-        (c = Lr(r, 4, "idamax-result")),
-        (p = T(
+      ((u = dr(r, 512, "idamax-partials-val-hi")),
+        (m = dr(r, 512, "idamax-partials-val-lo")),
+        (w = dr(r, 512, "idamax-partials-idx")),
+        (p = Mr(r, 4, "idamax-result")),
+        (c = T(
           r,
           [
             { value: o, type: "u32" },
@@ -7810,36 +8243,35 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "idamax-params",
         )));
-      let y = N(r, s.getBindGroupLayout(0), [n, d, u, m, w, p]),
-        { commandEncoder: h, ts: x } = $(r, s, y, 128);
-      j(r, h);
-      let _ = N(r, l.getBindGroupLayout(0), [u, m, w, c]),
-        { commandEncoder: v, ts: B } = $(r, l, _, 1);
-      ((g = D(r, v, c)), j(r, v));
-      let A = G(g, Uint32Array);
+      let y = G(r, s.getBindGroupLayout(0), [n, d, u, m, w, c]),
+        h = G(r, l.getBindGroupLayout(0), [u, m, w, p]),
+        { commandEncoder: x, ts: _ } = wr(r, [
+          { pipeline: s, bindGroup: y, workgroups: 128 },
+          { pipeline: l, bindGroup: h, workgroups: 1 },
+        ]);
+      ((g = D(r, x, p)), U(r, x));
+      let v = S(g, Uint32Array);
       g = null;
-      let [k, I, M] = await Promise.all([C(x), C(B), A]),
-        S = M[0];
-      return k !== void 0 && I !== void 0
-        ? { index: S, gpuTimeMs: k + I }
-        : { index: S };
+      let [B, k] = await Promise.all([V(_), v]),
+        E = k[0];
+      return B !== void 0 ? { index: E, gpuTimeMs: B } : { index: E };
     } finally {
       (!t && n && f(n),
         !t && d && f(d),
         u && f(u),
         m && f(m),
         w && f(w),
-        c && f(c),
         p && f(p),
+        c && f(c),
         g && f(g));
     }
   }
-  async function Aa(r, o, e, a, t, i, s, l) {
-    let n = e instanceof H,
-      d = t instanceof H;
+  async function Ha(r, o, e, a, t, i, s, l) {
+    let n = e instanceof C,
+      d = t instanceof C;
     if (
-      (F(r),
-      W(r, "srot", { x: e, y: t }),
+      (z(r),
+      Z(r, "srot", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7867,16 +8299,16 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let u = await P(r, "srot"),
+    let u = await N(r, "srot"),
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null;
     try {
       ((m = n ? e._buf : b(r, e, "srot-x", !0)),
         (w = d ? t._buf : b(r, t, "srot-y", !0)),
-        (c = T(
+        (p = T(
           r,
           [
             { value: o, type: "u32" },
@@ -7887,26 +8319,26 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "srot-params",
         )));
-      let y = N(r, u.getBindGroupLayout(0), [m, w, c]),
-        { commandEncoder: h, ts: x } = $(r, u, y, _r(r, o));
-      ((p = n ? null : D(r, h, m)), (g = d ? null : D(r, h, w)), j(r, h));
-      let _ = await C(x);
+      let y = G(r, u.getBindGroupLayout(0), [m, w, p]),
+        { commandEncoder: h, ts: x } = vr(r, u, y, Er(r, o));
+      ((c = n ? null : D(r, h, m)), (g = d ? null : D(r, h, w)), U(r, h));
+      let _ = await V(x);
       if (n) return _ !== void 0 ? { gpuTimeMs: _ } : {};
-      let v = G(p, Float32Array),
-        B = G(g, Float32Array);
-      ((p = null), (g = null));
-      let [A, k] = await Promise.all([v, B]);
-      return _ !== void 0 ? { x: A, y: k, gpuTimeMs: _ } : { x: A, y: k };
+      let v = S(c, Float32Array),
+        B = S(g, Float32Array);
+      ((c = null), (g = null));
+      let [k, E] = await Promise.all([v, B]);
+      return _ !== void 0 ? { x: k, y: E, gpuTimeMs: _ } : { x: k, y: E };
     } finally {
-      (!n && m && f(m), !d && w && f(w), c && f(c), p && f(p), g && f(g));
+      (!n && m && f(m), !d && w && f(w), p && f(p), c && f(c), g && f(g));
     }
   }
-  async function Sa(r, o, e, a, t, i, s, l) {
-    let n = e instanceof H,
-      d = t instanceof H;
+  async function Ca(r, o, e, a, t, i, s, l) {
+    let n = e instanceof C,
+      d = t instanceof C;
     if (
-      (F(r),
-      W(r, "drot", { x: e, y: t }),
+      (z(r),
+      Z(r, "drot", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -7938,64 +8370,64 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let m = await P(r, [
+    let m = await N(r, [
         ...["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
         "drot",
       ]),
-      { hi: w, lo: c } = z(new Float64Array([s])),
-      { hi: p, lo: g } = z(new Float64Array([l])),
+      { hi: w, lo: p } = $(new Float64Array([s])),
+      { hi: c, lo: g } = $(new Float64Array([l])),
       y = null,
       h = null,
       x = null,
       _ = null,
       v = null,
       B = null,
-      A = null,
       k = null,
+      E = null,
       I = null;
     try {
       if (n) ((y = e._buf), (h = e._loBuf), (x = t._buf), (_ = t._loBuf));
       else {
-        let V = z(e),
-          K = z(t);
-        ((y = b(r, V.hi, "drot-xHi", !0)),
-          (h = b(r, V.lo, "drot-xLo", !0)),
-          (x = b(r, K.hi, "drot-yHi", !0)),
-          (_ = b(r, K.lo, "drot-yLo", !0)));
+        let F = $(e),
+          q = $(t);
+        ((y = b(r, F.hi, "drot-xHi", !0)),
+          (h = b(r, F.lo, "drot-xLo", !0)),
+          (x = b(r, q.hi, "drot-yHi", !0)),
+          (_ = b(r, q.lo, "drot-yLo", !0)));
       }
       v = T(
         r,
         [
           { value: o, type: "u32" },
           { value: w[0], type: "f32" },
-          { value: c[0], type: "f32" },
           { value: p[0], type: "f32" },
+          { value: c[0], type: "f32" },
           { value: g[0], type: "f32" },
           { value: a, type: "u32" },
           { value: i, type: "u32" },
         ],
         "drot-params",
       );
-      let M = N(r, m.getBindGroupLayout(0), [y, h, x, _, v]),
-        { commandEncoder: S, ts: E } = $(r, m, M, _r(r, o));
-      ((B = n ? null : D(r, S, y)),
-        (A = n ? null : D(r, S, h)),
-        (k = d ? null : D(r, S, x)),
-        (I = d ? null : D(r, S, _)),
-        j(r, S));
-      let L = await C(E);
-      if (n) return L !== void 0 ? { gpuTimeMs: L } : {};
-      let R = await G(B, Float32Array);
+      let R = G(r, m.getBindGroupLayout(0), [y, h, x, _, v]),
+        { commandEncoder: A, ts: L } = vr(r, m, R, Er(r, o));
+      ((B = n ? null : D(r, A, y)),
+        (k = n ? null : D(r, A, h)),
+        (E = d ? null : D(r, A, x)),
+        (I = d ? null : D(r, A, _)),
+        U(r, A));
+      let P = await V(L);
+      if (n) return P !== void 0 ? { gpuTimeMs: P } : {};
+      let M = await S(B, Float32Array);
       B = null;
-      let q = await G(A, Float32Array);
-      A = null;
-      let O = await G(k, Float32Array);
+      let H = await S(k, Float32Array);
       k = null;
-      let Z = await G(I, Float32Array);
+      let W = await S(E, Float32Array);
+      E = null;
+      let K = await S(I, Float32Array);
       I = null;
-      let X = cr(R, q),
-        Y = cr(O, Z);
-      return L !== void 0 ? { x: X, y: Y, gpuTimeMs: L } : { x: X, y: Y };
+      let X = cr(M, H),
+        O = cr(W, K);
+      return P !== void 0 ? { x: X, y: O, gpuTimeMs: P } : { x: X, y: O };
     } finally {
       (!n && y && f(y),
         !n && h && f(h),
@@ -8003,17 +8435,17 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         !d && _ && f(_),
         v && f(v),
         B && f(B),
-        A && f(A),
         k && f(k),
+        E && f(E),
         I && f(I));
     }
   }
-  async function Ea(r, o, e, a, t, i, s) {
-    let l = e instanceof H,
-      n = t instanceof H;
+  async function ja(r, o, e, a, t, i, s) {
+    let l = e instanceof C,
+      n = t instanceof C;
     if (
-      (F(r),
-      W(r, "srotm", { x: e, y: t }),
+      (z(r),
+      Z(r, "srotm", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -8039,18 +8471,18 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let d = await P(r, "srotm"),
+    let d = await N(r, "srotm"),
       u = null,
       m = null,
       w = null,
-      c = null,
       p = null,
+      c = null,
       g = null;
     try {
       ((u = l ? e._buf : b(r, e, "srotm-x", !0)),
         (m = n ? t._buf : b(r, t, "srotm-y", !0)),
         (w = b(r, s, "srotm-param", !1)),
-        (c = T(
+        (p = T(
           r,
           [
             { value: o, type: "u32" },
@@ -8059,31 +8491,31 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "srotm-params",
         )));
-      let y = N(r, d.getBindGroupLayout(0), [u, m, w, c]),
-        { commandEncoder: h, ts: x } = $(r, d, y, _r(r, o));
-      ((p = l ? null : D(r, h, u)), (g = n ? null : D(r, h, m)), j(r, h));
-      let _ = await C(x);
+      let y = G(r, d.getBindGroupLayout(0), [u, m, w, p]),
+        { commandEncoder: h, ts: x } = vr(r, d, y, Er(r, o));
+      ((c = l ? null : D(r, h, u)), (g = n ? null : D(r, h, m)), U(r, h));
+      let _ = await V(x);
       if (l) return _ !== void 0 ? { gpuTimeMs: _ } : {};
-      let v = G(p, Float32Array),
-        B = G(g, Float32Array);
-      ((p = null), (g = null));
-      let [A, k] = await Promise.all([v, B]);
-      return _ !== void 0 ? { x: A, y: k, gpuTimeMs: _ } : { x: A, y: k };
+      let v = S(c, Float32Array),
+        B = S(g, Float32Array);
+      ((c = null), (g = null));
+      let [k, E] = await Promise.all([v, B]);
+      return _ !== void 0 ? { x: k, y: E, gpuTimeMs: _ } : { x: k, y: E };
     } finally {
       (!l && u && f(u),
         !n && m && f(m),
         w && f(w),
-        c && f(c),
         p && f(p),
+        c && f(c),
         g && f(g));
     }
   }
-  async function Ga(r, o, e, a, t, i, s) {
-    let l = e instanceof H,
-      n = t instanceof H;
+  async function Fa(r, o, e, a, t, i, s) {
+    let l = e instanceof C,
+      n = t instanceof C;
     if (
-      (F(r),
-      W(r, "drotm", { x: e, y: t }),
+      (z(r),
+      Z(r, "drotm", { x: e, y: t }),
       !Number.isInteger(o) || !Number.isInteger(a) || !Number.isInteger(i))
     )
       throw new Error("n, incx, and incy must be integers.");
@@ -8113,13 +8545,13 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let u = await P(r, [
+    let u = await N(r, [
         ...["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
         "drotm",
       ]),
-      { hi: m, lo: w } = z(s),
-      c = null,
+      { hi: m, lo: w } = $(s),
       p = null,
+      c = null,
       g = null,
       y = null,
       h = null,
@@ -8127,17 +8559,17 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       _ = null,
       v = null,
       B = null,
-      A = null,
-      k = null;
+      k = null,
+      E = null;
     try {
-      if (l) ((c = e._buf), (p = e._loBuf), (g = t._buf), (y = t._loBuf));
+      if (l) ((p = e._buf), (c = e._loBuf), (g = t._buf), (y = t._loBuf));
       else {
-        let Y = z(e),
-          V = z(t);
-        ((c = b(r, Y.hi, "drotm-xHi", !0)),
-          (p = b(r, Y.lo, "drotm-xLo", !0)),
-          (g = b(r, V.hi, "drotm-yHi", !0)),
-          (y = b(r, V.lo, "drotm-yLo", !0)));
+        let O = $(e),
+          F = $(t);
+        ((p = b(r, O.hi, "drotm-xHi", !0)),
+          (c = b(r, O.lo, "drotm-xLo", !0)),
+          (g = b(r, F.hi, "drotm-yHi", !0)),
+          (y = b(r, F.lo, "drotm-yLo", !0)));
       }
       ((h = b(r, m, "drotm-paramHi", !1)),
         (x = b(r, w, "drotm-paramLo", !1)),
@@ -8150,29 +8582,29 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "drotm-params",
         )));
-      let I = N(r, u.getBindGroupLayout(0), [c, p, g, y, h, x, _]),
-        { commandEncoder: M, ts: S } = $(r, u, I, _r(r, o));
-      ((v = l ? null : D(r, M, c)),
-        (B = l ? null : D(r, M, p)),
-        (A = n ? null : D(r, M, g)),
-        (k = n ? null : D(r, M, y)),
-        j(r, M));
-      let E = await C(S);
-      if (l) return E !== void 0 ? { gpuTimeMs: E } : {};
-      let L = await G(v, Float32Array);
+      let I = G(r, u.getBindGroupLayout(0), [p, c, g, y, h, x, _]),
+        { commandEncoder: R, ts: A } = vr(r, u, I, Er(r, o));
+      ((v = l ? null : D(r, R, p)),
+        (B = l ? null : D(r, R, c)),
+        (k = n ? null : D(r, R, g)),
+        (E = n ? null : D(r, R, y)),
+        U(r, R));
+      let L = await V(A);
+      if (l) return L !== void 0 ? { gpuTimeMs: L } : {};
+      let P = await S(v, Float32Array);
       v = null;
-      let R = await G(B, Float32Array);
+      let M = await S(B, Float32Array);
       B = null;
-      let q = await G(A, Float32Array);
-      A = null;
-      let O = await G(k, Float32Array);
+      let H = await S(k, Float32Array);
       k = null;
-      let Z = cr(L, R),
-        X = cr(q, O);
-      return E !== void 0 ? { x: Z, y: X, gpuTimeMs: E } : { x: Z, y: X };
+      let W = await S(E, Float32Array);
+      E = null;
+      let K = cr(P, M),
+        X = cr(H, W);
+      return L !== void 0 ? { x: K, y: X, gpuTimeMs: L } : { x: K, y: X };
     } finally {
-      (!l && c && f(c),
-        !l && p && f(p),
+      (!l && p && f(p),
+        !l && c && f(c),
         !n && g && f(g),
         !n && y && f(y),
         h && f(h),
@@ -8180,17 +8612,17 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         _ && f(_),
         v && f(v),
         B && f(B),
-        A && f(A),
-        k && f(k));
+        k && f(k),
+        E && f(E));
     }
   }
-  async function La(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
-    let c = i instanceof Q,
-      p = l instanceof H,
-      g = u instanceof H;
+  async function Wa(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
+    let p = i instanceof sr,
+      c = l instanceof C,
+      g = u instanceof C;
     if (
-      (F(r),
-      W(r, "sgemv", { A: i, x: l, y: u }),
+      (z(r),
+      Z(r, "sgemv", { A: i, x: l, y: u }),
       o !== "no-transpose" && o !== "transpose")
     )
       throw new Error("trans must be 'no-transpose' or 'transpose'.");
@@ -8211,40 +8643,40 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     )
       throw new Error("m, n, incx, incy, and lda must be integers.");
     if (n <= 0 || m <= 0) throw new Error("incx and incy must be positive.");
-    if (!c && !(i instanceof Float32Array))
+    if (!p && !(i instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
-    if (!p && !(l instanceof Float32Array))
+    if (!c && !(l instanceof Float32Array))
       throw new Error("x must be a Float32Array or GpuVector.");
     if (!g && !(u instanceof Float32Array))
       throw new Error("y must be a Float32Array or GpuVector.");
-    if (p !== g)
+    if (c !== g)
       throw new Error(
         "x and y must be the same type (both Float32Array or both GpuVector).",
       );
-    if (p && !c)
-      throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
     if (c && !p)
+      throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
+    if (p && !c)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (p && l._buf === u._buf)
+    if (c && l._buf === u._buf)
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (c && g && i._buf === u._buf)
+    if (p && g && i._buf === u._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
-    if (c && s !== i.lda)
+    if (p && s !== i.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (c && (i.rows < e || i.cols < a))
+    if (p && (i.rows < e || i.cols < a))
       throw new Error("A is too small for the given m and n.");
     if (e < 0 || a < 0) throw new Error("m and n must be non-negative.");
     if (e === 0 || a === 0) return g ? {} : { y: u };
-    (c ? i.layout : w) === "column-major" &&
+    (p ? i.layout : w) === "column-major" &&
       (([e, a] = [a, e]),
       (o = o === "no-transpose" ? "transpose" : "no-transpose"));
     let h = o === "no-transpose",
       x = h ? a : e,
       _ = h ? e : a;
     if (s < a) throw new Error("lda must be >= n.");
-    if (!c && i.length < (e - 1) * s + a)
+    if (!p && i.length < (e - 1) * s + a)
       throw new Error(
         "A does not have enough elements for the given m, n, and lda.",
       );
@@ -8256,22 +8688,22 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given dimensions and incy.",
       );
-    let B = await P(r, h ? "sgemv_n" : "sgemv_t"),
-      A = h ? 1 : Math.ceil(e / 256),
-      k = A > 1 ? await P(r, "reduce_partials") : null,
+    let B = await N(r, h ? "sgemv_n" : "sgemv_t"),
+      k = h ? 1 : Math.ceil(e / 256),
+      E = k > 1 ? await N(r, "reduce_partials") : null,
       I = null,
-      M = null,
-      S = null,
-      E = null,
+      R = null,
+      A = null,
       L = null,
-      R = null;
+      P = null,
+      M = null;
     try {
-      ((I = c ? i._buf : b(r, i, "sgemv-A", !1)),
-        (M = p ? l._buf : b(r, l, "sgemv-x", !1)),
-        (S = g ? u._buf : b(r, u, "sgemv-y", !0)));
-      let q;
+      ((I = p ? i._buf : b(r, i, "sgemv-A", !1)),
+        (R = c ? l._buf : b(r, l, "sgemv-x", !1)),
+        (A = g ? u._buf : b(r, u, "sgemv-y", !0)));
+      let H;
       h
-        ? ((E = T(
+        ? ((L = T(
             r,
             [
               { value: e, type: "u32" },
@@ -8284,30 +8716,30 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
             ],
             "sgemv-params",
           )),
-          (q = [
+          (H = [
             {
               pipeline: B,
-              bindGroup: N(r, B.getBindGroupLayout(0), [I, M, S, E]),
+              bindGroup: G(r, B.getBindGroupLayout(0), [I, R, A, L]),
               workgroups: Math.min(
                 e,
                 r.limits.maxComputeWorkgroupsPerDimension,
               ),
             },
           ]))
-        : (A > 1 &&
-            ((L = lr(r, A * a * 4, "sgemv-partials")),
-            (R = T(
+        : (k > 1 &&
+            ((P = dr(r, k * a * 4, "sgemv-partials")),
+            (M = T(
               r,
               [
                 { value: a, type: "u32" },
-                { value: A, type: "u32" },
+                { value: k, type: "u32" },
                 { value: m, type: "u32" },
                 { value: t, type: "f32" },
                 { value: d, type: "f32" },
               ],
               "sgemv-reduce-params",
             ))),
-          (E = T(
+          (L = T(
             r,
             [
               { value: e, type: "u32" },
@@ -8318,48 +8750,48 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
               { value: m, type: "u32" },
               { value: s, type: "u32" },
               { value: 256, type: "u32" },
-              { value: A > 1 ? 0 : 1, type: "u32" },
+              { value: k > 1 ? 0 : 1, type: "u32" },
             ],
             "sgemv-t-params",
           )),
-          (q = [
+          (H = [
             {
               pipeline: B,
-              bindGroup: N(r, B.getBindGroupLayout(0), [I, M, L ?? S, E]),
+              bindGroup: G(r, B.getBindGroupLayout(0), [I, R, P ?? A, L]),
               workgroups: {
-                x: sr(r, Math.ceil(a / 64), "sgemv", "x"),
-                y: sr(r, A, "sgemv", "y"),
+                x: tr(r, Math.ceil(a / 64), "sgemv", "x"),
+                y: tr(r, k, "sgemv", "y"),
               },
             },
           ]),
-          A > 1 &&
-            q.push({
-              pipeline: k,
-              bindGroup: N(r, k.getBindGroupLayout(0), [L, S, R]),
+          k > 1 &&
+            H.push({
+              pipeline: E,
+              bindGroup: G(r, E.getBindGroupLayout(0), [P, A, M]),
               workgroups: Math.min(
                 Math.ceil(a / 64),
                 r.limits.maxComputeWorkgroupsPerDimension,
               ),
             }));
-      let { commandEncoder: O, ts: Z } = zr(r, q),
-        X = g ? null : D(r, O, S);
-      j(r, O);
-      let Y = await C(Z);
-      if (g) return Y !== void 0 ? { gpuTimeMs: Y } : {};
-      let V = await G(X, Float32Array);
-      return Y !== void 0 ? { y: V, gpuTimeMs: Y } : { y: V };
+      let { commandEncoder: W, ts: K } = wr(r, H),
+        X = g ? null : D(r, W, A);
+      U(r, W);
+      let O = await V(K);
+      if (g) return O !== void 0 ? { gpuTimeMs: O } : {};
+      let F = await S(X, Float32Array);
+      return O !== void 0 ? { y: F, gpuTimeMs: O } : { y: F };
     } finally {
-      (!c && I && f(I),
-        !p && M && f(M),
-        !g && S && f(S),
-        E && f(E),
+      (!p && I && f(I),
+        !c && R && f(R),
+        !g && A && f(A),
         L && f(L),
-        R && f(R));
+        P && f(P),
+        M && f(M));
     }
   }
-  async function Yr(r, o, e, a, t) {
-    let i = await P(r, "gather_strided"),
-      s = lr(r, e * 4, t),
+  async function Sr(r, o, e, a, t) {
+    let i = await N(r, "gather_strided"),
+      s = dr(r, e * 4, t),
       l = T(
         r,
         [
@@ -8368,7 +8800,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ],
         `${t}-params`,
       ),
-      n = N(r, i.getBindGroupLayout(0), [o, s, l]),
+      n = G(r, i.getBindGroupLayout(0), [o, s, l]),
       d = Math.min(
         Math.ceil(e / 64),
         r.limits.maxComputeWorkgroupsPerDimension,
@@ -8379,13 +8811,16 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       pass: { pipeline: i, bindGroup: n, workgroups: d },
     };
   }
-  async function Da(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
-    let w = s instanceof H,
-      c = d instanceof H,
-      p = t instanceof Q;
+  function te(r, o) {
+    return r > 1 && (o >= 2048 || (o >= 1024 && r >= 8));
+  }
+  async function Oa(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
+    let w = s instanceof C,
+      p = d instanceof C,
+      c = t instanceof sr;
     if (
-      (F(r),
-      W(r, "ssymv", { A: t, x: s, y: d }),
+      (z(r),
+      Z(r, "ssymv", { A: t, x: s, y: d }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -8406,31 +8841,31 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (!Number.isFinite(n)) throw new Error("beta must be finite.");
     if (l <= 0 || u <= 0) throw new Error("incx and incy must be positive.");
     if (i < e) throw new Error("lda must be >= n.");
-    if (!p && !(t instanceof Float32Array))
+    if (!c && !(t instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
     if (!w && !(s instanceof Float32Array))
       throw new Error("x must be a Float32Array or GpuVector.");
-    if (!c && !(d instanceof Float32Array))
+    if (!p && !(d instanceof Float32Array))
       throw new Error("y must be a Float32Array or GpuVector.");
-    if (w !== c)
+    if (w !== p)
       throw new Error(
         "x and y must be the same type (both Float32Array or both GpuVector).",
       );
-    if (w && !p)
+    if (w && !c)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (p && !w)
+    if (c && !w)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
     if (w && s._buf === d._buf)
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (p && i !== t.lda)
+    if (c && i !== t.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (p && (t.rows < e || t.cols < e))
+    if (c && (t.rows < e || t.cols < e))
       throw new Error("A is too small for the given n.");
     if (e < 0) throw new Error("n must be non-negative.");
-    if (e === 0) return c ? {} : { y: d };
-    if (!p && t.length < (e - 1) * i + e)
+    if (e === 0) return p ? {} : { y: d };
+    if (!c && t.length < (e - 1) * i + e)
       throw new Error(
         "A does not have enough elements for the given n and lda.",
       );
@@ -8443,24 +8878,24 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "y does not have enough elements for the given n and incy.",
       );
     let y =
-        (p ? t.layout : m) === "column-major" ? o === "upper" : o === "lower",
-      h = await P(r, "ssymv"),
-      x = await P(r, "reduce_partials"),
+        (c ? t.layout : m) === "column-major" ? o === "upper" : o === "lower",
+      h = await N(r, "ssymv"),
+      x = await N(r, "reduce_partials"),
       _ = Math.ceil(e / 32),
       v = null,
       B = null,
-      A = null,
       k = null,
+      E = null,
       I = null,
-      M = null,
-      S = null;
+      R = null,
+      A = null;
     try {
-      ((v = p ? t._buf : b(r, t, "ssymv-A", !1)),
+      ((v = c ? t._buf : b(r, t, "ssymv-A", !1)),
         (B = w ? s._buf : b(r, s, "ssymv-x", !1)),
-        (A = c ? d._buf : b(r, d, "ssymv-y", !0)),
-        l > 1 && (S = await Yr(r, B, e, l, "ssymv-x-packed")),
-        (I = lr(r, _ * e * 4, "ssymv-partials")),
-        (k = T(
+        (k = p ? d._buf : b(r, d, "ssymv-y", !0)),
+        l > 1 && (A = await Sr(r, B, e, l, "ssymv-x-packed")),
+        (I = dr(r, _ * e * 4, "ssymv-partials")),
+        (E = T(
           r,
           [
             { value: e, type: "u32" },
@@ -8470,7 +8905,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "ssymv-params",
         )),
-        (M = T(
+        (R = T(
           r,
           [
             { value: e, type: "u32" },
@@ -8481,56 +8916,56 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "ssymv-reduce-params",
         )));
-      let E = (_ * (_ + 1)) / 2,
-        L = r.limits.maxComputeWorkgroupsPerDimension,
-        R = Math.min(E, L),
-        q = sr(r, Math.ceil(E / R), "ssymv", "y"),
-        O = [
-          ...(S ? [S.pass] : []),
+      let L = (_ * (_ + 1)) / 2,
+        P = r.limits.maxComputeWorkgroupsPerDimension,
+        M = Math.min(L, P),
+        H = tr(r, Math.ceil(L / M), "ssymv", "y"),
+        W = [
+          ...(A ? [A.pass] : []),
           {
             pipeline: h,
-            bindGroup: N(r, h.getBindGroupLayout(0), [
+            bindGroup: G(r, h.getBindGroupLayout(0), [
               v,
-              S ? S.buffer : B,
+              A ? A.buffer : B,
               I,
-              k,
+              E,
             ]),
-            workgroups: { x: R, y: q },
+            workgroups: { x: M, y: H },
           },
           {
             pipeline: x,
-            bindGroup: N(r, x.getBindGroupLayout(0), [I, A, M]),
+            bindGroup: G(r, x.getBindGroupLayout(0), [I, k, R]),
             workgroups: Math.min(
               Math.ceil(e / 64),
               r.limits.maxComputeWorkgroupsPerDimension,
             ),
           },
         ],
-        { commandEncoder: Z, ts: X } = zr(r, O),
-        Y = c ? null : D(r, Z, A);
-      j(r, Z);
-      let V = await C(X);
-      if (c) return V !== void 0 ? { gpuTimeMs: V } : {};
-      let K = await G(Y, Float32Array);
-      return V !== void 0 ? { y: K, gpuTimeMs: V } : { y: K };
+        { commandEncoder: K, ts: X } = wr(r, W),
+        O = p ? null : D(r, K, k);
+      U(r, K);
+      let F = await V(X);
+      if (p) return F !== void 0 ? { gpuTimeMs: F } : {};
+      let q = await S(O, Float32Array);
+      return F !== void 0 ? { y: q, gpuTimeMs: F } : { y: q };
     } finally {
-      (!p && v && f(v),
+      (!c && v && f(v),
         !w && B && f(B),
-        !c && A && f(A),
-        k && f(k),
+        !p && k && f(k),
+        E && f(E),
         I && f(I),
-        M && f(M),
-        S && f(S.buffer, S.params));
+        R && f(R),
+        A && f(A.buffer, A.params));
     }
   }
-  async function Na(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
-    let w = l instanceof H,
-      c = d instanceof H,
-      p = i instanceof Q,
+  async function Ka(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
+    let w = l instanceof C,
+      p = d instanceof C,
+      c = i instanceof sr,
       g = a === "unit";
     if (
-      (F(r),
-      W(r, "strmv", { A: i, x: l, y: d }),
+      (z(r),
+      Z(r, "strmv", { A: i, x: l, y: d }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -8549,13 +8984,13 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("n, incx, incy, and lda must be integers.");
     if (n <= 0 || u <= 0) throw new Error("incx and incy must be positive.");
     if (s < t) throw new Error("lda must be >= n.");
-    if (!p && !(i instanceof Float32Array))
+    if (!c && !(i instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
     if (!w && !(l instanceof Float32Array))
       throw new Error("x must be a Float32Array or GpuVector.");
-    if (!c && !(d instanceof Float32Array))
+    if (!p && !(d instanceof Float32Array))
       throw new Error("y must be a Float32Array or GpuVector.");
-    if (w !== c)
+    if (w !== p)
       throw new Error(
         "x and y must be the same type (both Float32Array or both GpuVector).",
       );
@@ -8563,19 +8998,19 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (w && !p)
+    if (w && !c)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (p && !w)
+    if (c && !w)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (p && c && i._buf === d._buf)
+    if (c && p && i._buf === d._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
-    if (p && s !== i.lda)
+    if (c && s !== i.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (p && (i.rows < t || i.cols < t))
+    if (c && (i.rows < t || i.cols < t))
       throw new Error("A is too small for the given n.");
     if (t < 0) throw new Error("n must be non-negative.");
-    if (t === 0) return c ? {} : { y: d };
-    if (!p && i.length < (t - 1) * s + t)
+    if (t === 0) return p ? {} : { y: d };
+    if (!c && i.length < (t - 1) * s + t)
       throw new Error(
         "A does not have enough elements for the given n and lda.",
       );
@@ -8587,31 +9022,31 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let h = (p ? i.layout : m) === "column-major",
+    let h = (c ? i.layout : m) === "column-major",
       x = h ? o === "upper" : o === "lower",
       v = !(h ? e === "transpose" : e === "no-transpose"),
       B = v ? Math.ceil(t / 256) : 1,
-      A = await P(r, v ? "strmv_t" : "strmv"),
-      k = B > 1 ? await P(r, "reduce_partials") : null,
+      k = await N(r, v ? "strmv_t" : "strmv"),
+      E = B > 1 ? await N(r, "reduce_partials") : null,
       I = null,
-      M = null,
-      S = null,
-      E = null,
-      L = null,
       R = null,
-      q = null;
+      A = null,
+      L = null,
+      P = null,
+      M = null,
+      H = null;
     try {
-      ((I = p ? i._buf : b(r, i, "strmv-A", !1)),
-        (M = w ? l._buf : b(r, l, "strmv-x", !1)),
-        (S = c ? d._buf : b(r, d, "strmv-y", !0)),
-        n > 1 && (q = await Yr(r, M, t, n, "strmv-x-packed")));
-      let O = q ? q.buffer : M,
-        Z = q ? 1 : n,
+      ((I = c ? i._buf : b(r, i, "strmv-A", !1)),
+        (R = w ? l._buf : b(r, l, "strmv-x", !1)),
+        (A = p ? d._buf : b(r, d, "strmv-y", !0)),
+        n > 1 && (H = await Sr(r, R, t, n, "strmv-x-packed")));
+      let W = H ? H.buffer : R,
+        K = H ? 1 : n,
         X;
       (v
         ? (B > 1 &&
-            ((L = lr(r, B * t * 4, "strmv-partials")),
-            (R = T(
+            ((P = dr(r, B * t * 4, "strmv-partials")),
+            (M = T(
               r,
               [
                 { value: t, type: "u32" },
@@ -8622,11 +9057,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
               ],
               "strmv-reduce-params",
             ))),
-          (E = T(
+          (L = T(
             r,
             [
               { value: t, type: "u32" },
-              { value: Z, type: "u32" },
+              { value: K, type: "u32" },
               { value: u, type: "u32" },
               { value: s, type: "u32" },
               { value: x ? 0 : 1, type: "u32" },
@@ -8638,28 +9073,28 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           )),
           (X = [
             {
-              pipeline: A,
-              bindGroup: N(r, A.getBindGroupLayout(0), [I, O, L ?? S, E]),
+              pipeline: k,
+              bindGroup: G(r, k.getBindGroupLayout(0), [I, W, P ?? A, L]),
               workgroups: {
-                x: sr(r, Math.ceil(t / 64), "strmv", "x"),
-                y: sr(r, B, "strmv", "y"),
+                x: tr(r, Math.ceil(t / 64), "strmv", "x"),
+                y: tr(r, B, "strmv", "y"),
               },
             },
           ]),
           B > 1 &&
             X.push({
-              pipeline: k,
-              bindGroup: N(r, k.getBindGroupLayout(0), [L, S, R]),
+              pipeline: E,
+              bindGroup: G(r, E.getBindGroupLayout(0), [P, A, M]),
               workgroups: Math.min(
                 Math.ceil(t / 64),
                 r.limits.maxComputeWorkgroupsPerDimension,
               ),
             }))
-        : ((E = T(
+        : ((L = T(
             r,
             [
               { value: t, type: "u32" },
-              { value: Z, type: "u32" },
+              { value: K, type: "u32" },
               { value: u, type: "u32" },
               { value: s, type: "u32" },
               { value: 0, type: "u32" },
@@ -8670,33 +9105,33 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           )),
           (X = [
             {
-              pipeline: A,
-              bindGroup: N(r, A.getBindGroupLayout(0), [I, O, S, E]),
+              pipeline: k,
+              bindGroup: G(r, k.getBindGroupLayout(0), [I, W, A, L]),
               workgroups: Math.min(
                 t,
                 r.limits.maxComputeWorkgroupsPerDimension,
               ),
             },
           ])),
-        q && X.unshift(q.pass));
-      let { commandEncoder: Y, ts: V } = zr(r, X),
-        K = c ? null : D(r, Y, S);
-      j(r, Y);
-      let U = await C(V);
-      if (c) return U !== void 0 ? { gpuTimeMs: U } : {};
-      let tr = await G(K, Float32Array);
-      return U !== void 0 ? { y: tr, gpuTimeMs: U } : { y: tr };
+        H && X.unshift(H.pass));
+      let { commandEncoder: O, ts: F } = wr(r, X),
+        q = p ? null : D(r, O, A);
+      U(r, O);
+      let j = await V(F);
+      if (p) return j !== void 0 ? { gpuTimeMs: j } : {};
+      let Q = await S(q, Float32Array);
+      return j !== void 0 ? { y: Q, gpuTimeMs: j } : { y: Q };
     } finally {
-      (!p && I && f(I),
-        !w && M && f(M),
-        !c && S && f(S),
-        E && f(E),
+      (!c && I && f(I),
+        !w && R && f(R),
+        !p && A && f(A),
         L && f(L),
-        R && f(R),
-        q && f(q.buffer, q.params));
+        P && f(P),
+        M && f(M),
+        H && f(H.buffer, H.params));
     }
   }
-  function Ss(r, o, e) {
+  function Os(r, o, e) {
     let a = new ArrayBuffer(r * o),
       t = new DataView(a);
     for (let i = 0; i < r; i++) {
@@ -8706,9 +9141,9 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     }
     return a;
   }
-  var Ma = 48,
-    Es = 2;
-  function Ia(r, o, e) {
+  var qa = 48,
+    Ks = 2;
+  function Va(r, o, e) {
     let a = r.createBuffer({
       label: e,
       size: o.byteLength,
@@ -8716,11 +9151,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     });
     return (r.queue.writeBuffer(a, 0, o), a);
   }
-  async function Ra(r, o, e, a, t, i, s, l, n, d = "row-major") {
-    let u = l instanceof H,
-      m = i instanceof Q,
+  async function Ua(r, o, e, a, t, i, s, l, n, d = "row-major") {
+    let u = l instanceof C,
+      m = i instanceof sr,
       w = a === "unit";
-    if ((F(r), W(r, "strsv", { A: i, x: l }), o !== "lower" && o !== "upper"))
+    if ((z(r), Z(r, "strsv", { A: i, x: l }), o !== "lower" && o !== "upper"))
       throw new Error("uplo must be 'lower' or 'upper'.");
     if (e !== "no-transpose" && e !== "transpose")
       throw new Error("trans must be 'no-transpose' or 'transpose'.");
@@ -8756,100 +9191,100 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let p = (m ? i.layout : d) === "column-major",
-      g = p ? o === "upper" : o === "lower",
-      y = p ? e === "transpose" : e === "no-transpose",
-      h = await P(r, "strsv_invert_block"),
-      x = await P(r, "strsv_step"),
-      _ = await P(r, "scatter_strided"),
+    let c = (m ? i.layout : d) === "column-major",
+      g = c ? o === "upper" : o === "lower",
+      y = c ? e === "transpose" : e === "no-transpose",
+      h = await N(r, "strsv_invert_block"),
+      x = await N(r, "strsv_step"),
+      _ = await N(r, "scatter_strided"),
       v = y === g,
       B = [];
-    for (let Y = 0; Y < t; Y += 64) B.push(Y);
+    for (let O = 0; O < t; O += 64) B.push(O);
     v || B.reverse();
-    let A = B.length,
-      k = r.limits.minUniformBufferOffsetAlignment,
-      I = A <= Es,
-      M = (Y) =>
-        Ss(A, k, (V) => {
-          let K = V * 64,
-            U = Math.min(K + 64, t),
-            tr = v ? U : 0,
-            rr = v ? t - U : K;
-          return [n, s, y ? 0 : 1, V, K, U, tr, rr, Y];
+    let k = B.length,
+      E = r.limits.minUniformBufferOffsetAlignment,
+      I = k <= Ks,
+      R = (O) =>
+        Os(k, E, (F) => {
+          let q = F * 64,
+            j = Math.min(q + 64, t),
+            Q = v ? j : 0,
+            ur = v ? t - j : q;
+          return [n, s, y ? 0 : 1, F, q, j, Q, ur, O];
         }),
-      S = null,
-      E = null,
+      A = null,
       L = null,
-      R = null,
-      q = null,
-      O = null,
-      Z = null,
+      P = null,
+      M = null,
+      H = null,
+      W = null,
+      K = null,
       X = [];
     try {
-      ((S = m ? i._buf : b(r, i, "strsv-A", !1)),
-        (E = u ? l._buf : b(r, l, "strsv-x", !0)));
-      let { commandEncoder: Y, querySet: V, passDescriptor: K } = Hr(r),
-        U = Y.beginComputePass(K);
+      ((A = m ? i._buf : b(r, i, "strsv-A", !1)),
+        (L = u ? l._buf : b(r, l, "strsv-x", !0)));
+      let { commandEncoder: O, querySet: F, passDescriptor: q } = jr(r),
+        j = O.beginComputePass(q);
       if (I) {
-        let ur = await P(r, "strsm_small");
-        ((R = lr(r, t * 4, "strsv-sol")),
-          A > 1 && (q = Ia(r, M(1), "strsv-step-params")));
-        let ar = y ? s : 1,
-          er = y ? 1 : s;
-        for (let ir of B) {
-          let gr = ir / 64,
-            xr = Math.min(ir + 64, t),
-            wr = xr - ir,
-            nr = v ? t - xr : ir,
-            hr = T(
+        let er = await N(r, "strsm_small");
+        ((M = dr(r, t * 4, "strsv-sol")),
+          k > 1 && (H = Va(r, R(1), "strsv-step-params")));
+        let Y = y ? s : 1,
+          ar = y ? 1 : s;
+        for (let rr of B) {
+          let ir = rr / 64,
+            hr = Math.min(rr + 64, t),
+            br = hr - rr,
+            lr = v ? t - hr : rr,
+            gr = T(
               r,
               [
-                { value: wr, type: "u32" },
+                { value: br, type: "u32" },
                 { value: 1, type: "u32" },
-                { value: ir * (ar + er), type: "u32" },
+                { value: rr * (Y + ar), type: "u32" },
+                { value: Y, type: "u32" },
                 { value: ar, type: "u32" },
-                { value: er, type: "u32" },
-                { value: ir * n, type: "u32" },
+                { value: rr * n, type: "u32" },
                 { value: n, type: "u32" },
                 { value: 0, type: "u32" },
                 { value: v ? 0 : 1, type: "u32" },
                 { value: w ? 1 : 0, type: "u32" },
                 { value: 1, type: "f32" },
-                { value: nr > 0 ? 1 : 0, type: "u32" },
+                { value: lr > 0 ? 1 : 0, type: "u32" },
               ],
               "strsv-solve-params",
             );
-          (X.push(hr),
-            U.setPipeline(ur),
-            U.setBindGroup(
+          (X.push(gr),
+            j.setPipeline(er),
+            j.setBindGroup(
               0,
-              N(r, ur.getBindGroupLayout(0), [
-                S,
-                E,
-                hr,
-                { buffer: R, offset: ir * 4, size: wr * 4 },
+              G(r, er.getBindGroupLayout(0), [
+                A,
+                L,
+                gr,
+                { buffer: M, offset: rr * 4, size: br * 4 },
               ]),
             ),
-            U.dispatchWorkgroups(1),
-            nr !== 0 &&
-              (U.setPipeline(x),
-              U.setBindGroup(
+            j.dispatchWorkgroups(1),
+            lr !== 0 &&
+              (j.setPipeline(x),
+              j.setBindGroup(
                 0,
-                N(r, x.getBindGroupLayout(0), [
-                  S,
-                  S,
-                  E,
-                  R,
-                  { buffer: q, offset: gr * k, size: Ma },
+                G(r, x.getBindGroupLayout(0), [
+                  A,
+                  A,
+                  L,
+                  M,
+                  { buffer: H, offset: ir * E, size: qa },
                 ]),
               ),
-              U.dispatchWorkgroups(sr(r, Math.ceil(nr / 64), "strsv"))));
+              j.dispatchWorkgroups(tr(r, Math.ceil(lr / 64), "strsv"))));
         }
       } else {
-        ((L = lr(r, A * 64 * 64 * 4, "strsv-Ainv")),
-          (R = lr(r, t * 4, "strsv-sol")),
-          (q = Ia(r, M(0), "strsv-step-params")),
-          (O = T(
+        ((P = dr(r, k * 64 * 64 * 4, "strsv-Ainv")),
+          (M = dr(r, t * 4, "strsv-sol")),
+          (H = Va(r, R(0), "strsv-step-params")),
+          (W = T(
             r,
             [
               { value: t, type: "u32" },
@@ -8860,7 +9295,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
             ],
             "strsv-invert-params",
           )),
-          (Z = T(
+          (K = T(
             r,
             [
               { value: t, type: "u32" },
@@ -8868,61 +9303,61 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
             ],
             "strsv-scatter-params",
           )),
-          U.setPipeline(h),
-          U.setBindGroup(0, N(r, h.getBindGroupLayout(0), [S, L, O])),
-          U.dispatchWorkgroups(A),
-          U.setPipeline(x));
-        for (let ur of B) {
-          let ar = ur / 64,
-            er = Math.min(ur + 64, t),
-            ir = v ? t - er : ur;
-          (U.setBindGroup(
+          j.setPipeline(h),
+          j.setBindGroup(0, G(r, h.getBindGroupLayout(0), [A, P, W])),
+          j.dispatchWorkgroups(k),
+          j.setPipeline(x));
+        for (let er of B) {
+          let Y = er / 64,
+            ar = Math.min(er + 64, t),
+            rr = v ? t - ar : er;
+          (j.setBindGroup(
             0,
-            N(r, x.getBindGroupLayout(0), [
-              S,
+            G(r, x.getBindGroupLayout(0), [
+              A,
+              P,
               L,
-              E,
-              R,
-              { buffer: q, offset: ar * k, size: Ma },
+              M,
+              { buffer: H, offset: Y * E, size: qa },
             ]),
           ),
-            U.dispatchWorkgroups(
-              sr(r, Math.max(1, Math.ceil(ir / 64)), "strsv"),
+            j.dispatchWorkgroups(
+              tr(r, Math.max(1, Math.ceil(rr / 64)), "strsv"),
             ));
         }
-        (U.setPipeline(_),
-          U.setBindGroup(0, N(r, _.getBindGroupLayout(0), [R, E, Z])),
-          U.dispatchWorkgroups(
+        (j.setPipeline(_),
+          j.setBindGroup(0, G(r, _.getBindGroupLayout(0), [M, L, K])),
+          j.dispatchWorkgroups(
             Math.min(
               Math.ceil(t / 64),
               r.limits.maxComputeWorkgroupsPerDimension,
             ),
           ));
       }
-      U.end();
-      let tr = Dr(r, Y, V),
-        rr = u ? null : D(r, Y, E);
-      j(r, Y);
-      let or = await C(tr);
-      if (u) return or !== void 0 ? { gpuTimeMs: or } : {};
-      let fr = await G(rr, Float32Array);
-      return or !== void 0 ? { x: fr, gpuTimeMs: or } : { x: fr };
+      j.end();
+      let Q = Rr(r, O, F),
+        ur = u ? null : D(r, O, L);
+      U(r, O);
+      let nr = await V(Q);
+      if (u) return nr !== void 0 ? { gpuTimeMs: nr } : {};
+      let or = await S(ur, Float32Array);
+      return nr !== void 0 ? { x: or, gpuTimeMs: nr } : { x: or };
     } finally {
-      (!m && S && f(S),
-        !u && E && f(E),
-        L && f(L),
-        R && f(R),
-        q && f(q),
-        O && f(O),
-        Z && f(Z),
+      (!m && A && f(A),
+        !u && L && f(L),
+        P && f(P),
+        M && f(M),
+        H && f(H),
+        W && f(W),
+        K && f(K),
         f(X));
     }
   }
-  async function Ha(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
-    let m = n instanceof Q;
+  async function za(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
+    let m = n instanceof sr;
     if (
-      (F(r),
-      W(r, "sger", { A: n, x: t, y: s }),
+      (z(r),
+      Z(r, "sger", { A: n, x: t, y: s }),
       u !== "row-major" && u !== "column-major")
     )
       throw new Error("layout must be 'row-major' or 'column-major'.");
@@ -8946,24 +9381,24 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("A is too small for the given m and n.");
     (m ? n.layout : u) === "column-major" &&
       (([o, e] = [e, o]), ([t, s] = [s, t]), ([i, l] = [l, i]));
-    let c = t instanceof H,
-      p = s instanceof H;
+    let p = t instanceof C,
+      c = s instanceof C;
     if (d < e) throw new Error("lda must be >= n.");
-    if (!c && !(t instanceof Float32Array))
+    if (!p && !(t instanceof Float32Array))
       throw new Error("x must be a Float32Array or GpuVector.");
-    if (!p && !(s instanceof Float32Array))
+    if (!c && !(s instanceof Float32Array))
       throw new Error("y must be a Float32Array or GpuVector.");
-    if (c !== p)
+    if (p !== c)
       throw new Error(
         "x and y must be the same type (both Float32Array or both GpuVector).",
       );
-    if (c && !m)
+    if (p && !m)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (m && !c)
+    if (m && !p)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (m && c && n._buf === t._buf)
+    if (m && p && n._buf === t._buf)
       throw new Error("A and x must not reference the same GPU buffer.");
-    if (m && p && n._buf === s._buf)
+    if (m && c && n._buf === s._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
     if (o < 0 || e < 0) throw new Error("m and n must be non-negative.");
     if (o === 0 || e === 0) return m ? {} : { A: n };
@@ -8979,17 +9414,17 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let g = await P(r, "sger"),
+    let g = await N(r, "sger"),
       y = null,
       h = null,
       x = null,
       _ = null,
       v = null;
     try {
-      ((y = c ? t._buf : b(r, t, "sger-x", !1)),
-        (h = p ? s._buf : b(r, s, "sger-y", !1)),
+      ((y = p ? t._buf : b(r, t, "sger-x", !1)),
+        (h = c ? s._buf : b(r, s, "sger-y", !1)),
         (x = m ? n._buf : b(r, n, "sger-A", !0)),
-        l > 1 && (v = await Yr(r, h, e, l, "sger-y-packed")),
+        l > 1 && (v = await Sr(r, h, e, l, "sger-y-packed")),
         (_ = T(
           r,
           [
@@ -9002,31 +9437,31 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "sger-params",
         )));
-      let B = N(r, g.getBindGroupLayout(0), [y, v ? v.buffer : h, x, _]),
-        A = Math.min(o, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: k, ts: I } = zr(r, [
+      let B = G(r, g.getBindGroupLayout(0), [y, v ? v.buffer : h, x, _]),
+        k = Math.min(o, r.limits.maxComputeWorkgroupsPerDimension),
+        { commandEncoder: E, ts: I } = wr(r, [
           ...(v ? [v.pass] : []),
-          { pipeline: g, bindGroup: B, workgroups: A },
+          { pipeline: g, bindGroup: B, workgroups: k },
         ]),
-        M = m ? null : D(r, k, x);
-      j(r, k);
-      let S = await C(I);
-      if (m) return S !== void 0 ? { gpuTimeMs: S } : {};
-      let E = await G(M, Float32Array);
-      return S !== void 0 ? { A: E, gpuTimeMs: S } : { A: E };
+        R = m ? null : D(r, E, x);
+      U(r, E);
+      let A = await V(I);
+      if (m) return A !== void 0 ? { gpuTimeMs: A } : {};
+      let L = await S(R, Float32Array);
+      return A !== void 0 ? { A: L, gpuTimeMs: A } : { A: L };
     } finally {
-      (!c && y && f(y),
-        !p && h && f(h),
+      (!p && y && f(y),
+        !c && h && f(h),
         !m && x && f(x),
         _ && f(_),
         v && f(v.buffer, v.params));
     }
   }
-  async function Ta(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
-    let m = n instanceof Q;
+  async function Za(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
+    let m = n instanceof sr;
     if (
-      (F(r),
-      W(r, "dger", { A: n, x: t, y: s }),
+      (z(r),
+      Z(r, "dger", { A: n, x: t, y: s }),
       u !== "row-major" && u !== "column-major")
     )
       throw new Error("layout must be 'row-major' or 'column-major'.");
@@ -9052,28 +9487,28 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("A is too small for the given m and n.");
     (m ? n.layout : u) === "column-major" &&
       (([o, e] = [e, o]), ([t, s] = [s, t]), ([i, l] = [l, i]));
-    let c = t instanceof H,
-      p = s instanceof H;
+    let p = t instanceof C,
+      c = s instanceof C;
     if (d < e) throw new Error("lda must be >= n.");
-    if (!c && !(t instanceof Float64Array))
+    if (!p && !(t instanceof Float64Array))
       throw new Error("x must be a Float64Array or GpuVector.");
-    if (!p && !(s instanceof Float64Array))
+    if (!c && !(s instanceof Float64Array))
       throw new Error("y must be a Float64Array or GpuVector.");
-    if (c && t.dtype !== Float64Array)
+    if (p && t.dtype !== Float64Array)
       throw new Error("x must be a Float64Array-backed GpuVector.");
-    if (p && s.dtype !== Float64Array)
+    if (c && s.dtype !== Float64Array)
       throw new Error("y must be a Float64Array-backed GpuVector.");
-    if (c !== p)
+    if (p !== c)
       throw new Error(
         "x and y must be the same type (both Float64Array or both GpuVector).",
       );
-    if (c && !m)
+    if (p && !m)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (m && !c)
+    if (m && !p)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (m && c && n._buf === t._buf)
+    if (m && p && n._buf === t._buf)
       throw new Error("A and x must not reference the same GPU buffer.");
-    if (m && p && n._buf === s._buf)
+    if (m && c && n._buf === s._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
     if (o < 0 || e < 0) throw new Error("m and n must be non-negative.");
     if (o === 0 || e === 0) return m ? {} : { A: n };
@@ -9089,81 +9524,99 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let y = await P(
+    let y = await N(
         r,
         [...["f64/dekker", "f64/utils/add", "f64/utils/multiply"], "dger"],
         "dger_main",
       ),
-      { hi: h, lo: x } = z(new Float64Array([a])),
+      { hi: h, lo: x } = $(new Float64Array([a])),
       _ = null,
       v = null,
       B = null,
-      A = null,
       k = null,
+      E = null,
       I = null,
-      M = null,
-      S = null,
-      E = null;
+      R = null,
+      A = null,
+      L = null,
+      P = null,
+      M = null;
     try {
-      if (c)
+      if (p)
         ((_ = t._buf),
           (v = t._loBuf),
           (B = s._buf),
-          (A = s._loBuf),
-          (k = n._buf),
+          (k = s._loBuf),
+          (E = n._buf),
           (I = n._loBuf));
       else {
-        let K = z(t),
-          U = z(s),
-          tr = z(n);
-        ((_ = b(r, K.hi, "dger-xHi", !1)),
-          (v = b(r, K.lo, "dger-xLo", !1)),
-          (B = b(r, U.hi, "dger-yHi", !1)),
-          (A = b(r, U.lo, "dger-yLo", !1)),
-          (k = b(r, tr.hi, "dger-AHi", !0)),
-          (I = b(r, tr.lo, "dger-ALo", !0)));
+        let Q = $(t),
+          ur = $(s),
+          nr = $(n);
+        ((_ = b(r, Q.hi, "dger-xHi", !1)),
+          (v = b(r, Q.lo, "dger-xLo", !1)),
+          (B = b(r, ur.hi, "dger-yHi", !1)),
+          (k = b(r, ur.lo, "dger-yLo", !1)),
+          (E = b(r, nr.hi, "dger-AHi", !0)),
+          (I = b(r, nr.lo, "dger-ALo", !0)));
       }
-      M = T(
-        r,
-        [
-          { value: o, type: "u32" },
-          { value: e, type: "u32" },
-          { value: h[0], type: "f32" },
-          { value: x[0], type: "f32" },
-          { value: i, type: "u32" },
-          { value: l, type: "u32" },
-          { value: d, type: "u32" },
-        ],
-        "dger-params",
-      );
-      let L = N(r, y.getBindGroupLayout(0), [_, v, B, A, k, I, M]),
-        R = Math.min(o, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: q, ts: O } = $(r, y, L, R);
-      ((S = m ? null : D(r, q, k)), (E = m ? null : D(r, q, I)), j(r, q));
-      let Z = await C(O);
-      if (m) return Z !== void 0 ? { gpuTimeMs: Z } : {};
-      let X = await G(S, Float32Array);
-      S = null;
-      let Y = await G(E, Float32Array);
-      E = null;
-      let V = cr(X, Y);
-      return Z !== void 0 ? { A: V, gpuTimeMs: Z } : { A: V };
+      (te(l, o) &&
+        ((A = await Sr(r, B, e, l, "dger-yHi-packed")),
+        (L = await Sr(r, k, e, l, "dger-yLo-packed"))),
+        (R = T(
+          r,
+          [
+            { value: o, type: "u32" },
+            { value: e, type: "u32" },
+            { value: h[0], type: "f32" },
+            { value: x[0], type: "f32" },
+            { value: i, type: "u32" },
+            { value: A ? 1 : l, type: "u32" },
+            { value: d, type: "u32" },
+          ],
+          "dger-params",
+        )));
+      let H = G(r, y.getBindGroupLayout(0), [
+          _,
+          v,
+          A ? A.buffer : B,
+          L ? L.buffer : k,
+          E,
+          I,
+          R,
+        ]),
+        W = Math.min(o, r.limits.maxComputeWorkgroupsPerDimension),
+        { commandEncoder: K, ts: X } = wr(r, [
+          ...(A ? [A.pass, L.pass] : []),
+          { pipeline: y, bindGroup: H, workgroups: W },
+        ]);
+      ((P = m ? null : D(r, K, E)), (M = m ? null : D(r, K, I)), U(r, K));
+      let O = await V(X);
+      if (m) return O !== void 0 ? { gpuTimeMs: O } : {};
+      let F = await S(P, Float32Array);
+      P = null;
+      let q = await S(M, Float32Array);
+      M = null;
+      let j = cr(F, q);
+      return O !== void 0 ? { A: j, gpuTimeMs: O } : { A: j };
     } finally {
-      (!c && _ && f(_),
-        !c && v && f(v),
-        !p && B && f(B),
-        !p && A && f(A),
-        !m && k && f(k),
+      (A && f(A.buffer, A.params),
+        L && f(L.buffer, L.params),
+        !p && _ && f(_),
+        !p && v && f(v),
+        !c && B && f(B),
+        !c && k && f(k),
+        !m && E && f(E),
         !m && I && f(I),
-        M && f(M),
-        S && f(S),
-        E && f(E));
+        R && f(R),
+        P && f(P),
+        M && f(M));
     }
   }
-  async function Ca(r, o, e, a, t, i, s, l, n = "row-major") {
-    let d = t instanceof H,
-      u = s instanceof Q;
-    if ((F(r), W(r, "ssyr", { A: s, x: t }), o !== "lower" && o !== "upper"))
+  async function Xa(r, o, e, a, t, i, s, l, n = "row-major") {
+    let d = t instanceof C,
+      u = s instanceof sr;
+    if ((z(r), Z(r, "ssyr", { A: s, x: t }), o !== "lower" && o !== "upper"))
       throw new Error("uplo must be 'lower' or 'upper'.");
     if (n !== "row-major" && n !== "column-major")
       throw new Error("layout must be 'row-major' or 'column-major'.");
@@ -9200,15 +9653,15 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       );
     let w =
         (u ? s.layout : n) === "column-major" ? o === "upper" : o === "lower",
-      c = await P(r, "ssyr"),
-      p = null,
+      p = await N(r, "ssyr"),
+      c = null,
       g = null,
       y = null,
       h = null;
     try {
-      ((p = d ? t._buf : b(r, t, "ssyr-x", !1)),
+      ((c = d ? t._buf : b(r, t, "ssyr-x", !1)),
         (g = u ? s._buf : b(r, s, "ssyr-A", !0)),
-        i > 1 && (h = await Yr(r, p, e, i, "ssyr-x-packed")),
+        i > 1 && (h = await Sr(r, c, e, i, "ssyr-x-packed")),
         (y = T(
           r,
           [
@@ -9220,26 +9673,26 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           ],
           "ssyr-params",
         )));
-      let x = N(r, c.getBindGroupLayout(0), [h ? h.buffer : p, g, y]),
+      let x = G(r, p.getBindGroupLayout(0), [h ? h.buffer : c, g, y]),
         _ = Math.min(e, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: v, ts: B } = zr(r, [
+        { commandEncoder: v, ts: B } = wr(r, [
           ...(h ? [h.pass] : []),
-          { pipeline: c, bindGroup: x, workgroups: _ },
+          { pipeline: p, bindGroup: x, workgroups: _ },
         ]),
-        A = u ? null : D(r, v, g);
-      j(r, v);
-      let k = await C(B);
-      if (u) return k !== void 0 ? { gpuTimeMs: k } : {};
-      let I = await G(A, Float32Array);
-      return k !== void 0 ? { A: I, gpuTimeMs: k } : { A: I };
+        k = u ? null : D(r, v, g);
+      U(r, v);
+      let E = await V(B);
+      if (u) return E !== void 0 ? { gpuTimeMs: E } : {};
+      let I = await S(k, Float32Array);
+      return E !== void 0 ? { A: I, gpuTimeMs: E } : { A: I };
     } finally {
-      (!d && p && f(p), !u && g && f(g), y && f(y), h && f(h.buffer, h.params));
+      (!d && c && f(c), !u && g && f(g), y && f(y), h && f(h.buffer, h.params));
     }
   }
-  async function ja(r, o, e, a, t, i, s, l, n = "row-major") {
-    let d = t instanceof H,
-      u = s instanceof Q;
-    if ((F(r), W(r, "dsyr", { A: s, x: t }), o !== "lower" && o !== "upper"))
+  async function Ya(r, o, e, a, t, i, s, l, n = "row-major") {
+    let d = t instanceof C,
+      u = s instanceof sr;
+    if ((z(r), Z(r, "dsyr", { A: s, x: t }), o !== "lower" && o !== "upper"))
       throw new Error("uplo must be 'lower' or 'upper'.");
     if (n !== "row-major" && n !== "column-major")
       throw new Error("layout must be 'row-major' or 'column-major'.");
@@ -9280,70 +9733,85 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       );
     let w =
         (u ? s.layout : n) === "column-major" ? o === "upper" : o === "lower",
-      p = await P(
+      c = await N(
         r,
         [...["f64/dekker", "f64/utils/add", "f64/utils/multiply"], "dsyr"],
         "dsyr_main",
       ),
-      { hi: g, lo: y } = z(new Float64Array([a])),
+      { hi: g, lo: y } = $(new Float64Array([a])),
       h = null,
       x = null,
       _ = null,
       v = null,
       B = null,
-      A = null,
-      k = null;
+      k = null,
+      E = null,
+      I = null,
+      R = null;
     try {
       if (d) ((h = t._buf), (x = t._loBuf), (_ = s._buf), (v = s._loBuf));
       else {
-        let Z = z(t),
-          X = z(s);
-        ((h = b(r, Z.hi, "dsyr-xHi", !1)),
-          (x = b(r, Z.lo, "dsyr-xLo", !1)),
-          (_ = b(r, X.hi, "dsyr-AHi", !0)),
-          (v = b(r, X.lo, "dsyr-ALo", !0)));
+        let O = $(t),
+          F = $(s);
+        ((h = b(r, O.hi, "dsyr-xHi", !1)),
+          (x = b(r, O.lo, "dsyr-xLo", !1)),
+          (_ = b(r, F.hi, "dsyr-AHi", !0)),
+          (v = b(r, F.lo, "dsyr-ALo", !0)));
       }
-      B = T(
-        r,
-        [
-          { value: e, type: "u32" },
-          { value: g[0], type: "f32" },
-          { value: y[0], type: "f32" },
-          { value: i, type: "u32" },
-          { value: l, type: "u32" },
-          { value: w ? 0 : 1, type: "u32" },
-        ],
-        "dsyr-params",
-      );
-      let I = N(r, p.getBindGroupLayout(0), [h, x, _, v, B]),
-        M = Math.min(e, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: S, ts: E } = $(r, p, I, M);
-      ((A = u ? null : D(r, S, _)), (k = u ? null : D(r, S, v)), j(r, S));
-      let L = await C(E);
-      if (u) return L !== void 0 ? { gpuTimeMs: L } : {};
-      let R = await G(A, Float32Array);
-      A = null;
-      let q = await G(k, Float32Array);
-      k = null;
-      let O = cr(R, q);
-      return L !== void 0 ? { A: O, gpuTimeMs: L } : { A: O };
+      (te(i, e) &&
+        ((k = await Sr(r, h, e, i, "dsyr-xHi-packed")),
+        (E = await Sr(r, x, e, i, "dsyr-xLo-packed"))),
+        (B = T(
+          r,
+          [
+            { value: e, type: "u32" },
+            { value: g[0], type: "f32" },
+            { value: y[0], type: "f32" },
+            { value: k ? 1 : i, type: "u32" },
+            { value: l, type: "u32" },
+            { value: w ? 0 : 1, type: "u32" },
+          ],
+          "dsyr-params",
+        )));
+      let A = G(r, c.getBindGroupLayout(0), [
+          k ? k.buffer : h,
+          E ? E.buffer : x,
+          _,
+          v,
+          B,
+        ]),
+        L = Math.min(e, r.limits.maxComputeWorkgroupsPerDimension),
+        { commandEncoder: P, ts: M } = wr(r, [
+          ...[k, E].filter(Boolean).map((O) => O.pass),
+          { pipeline: c, bindGroup: A, workgroups: L },
+        ]);
+      ((I = u ? null : D(r, P, _)), (R = u ? null : D(r, P, v)), U(r, P));
+      let H = await V(M);
+      if (u) return H !== void 0 ? { gpuTimeMs: H } : {};
+      let W = await S(I, Float32Array);
+      I = null;
+      let K = await S(R, Float32Array);
+      R = null;
+      let X = cr(W, K);
+      return H !== void 0 ? { A: X, gpuTimeMs: H } : { A: X };
     } finally {
+      for (let A of [k, E]) A && f(A.buffer, A.params);
       (!d && h && f(h),
         !d && x && f(x),
         !u && _ && f(_),
         !u && v && f(v),
         B && f(B),
-        A && f(A),
-        k && f(k));
+        I && f(I),
+        R && f(R));
     }
   }
-  async function qa(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
-    let m = t instanceof H,
-      w = s instanceof H,
-      c = n instanceof Q;
+  async function $a(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
+    let m = t instanceof C,
+      w = s instanceof C,
+      p = n instanceof sr;
     if (
-      (F(r),
-      W(r, "ssyr2", { A: n, x: t, y: s }),
+      (z(r),
+      Z(r, "ssyr2", { A: n, x: t, y: s }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -9361,7 +9829,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (!Number.isFinite(a)) throw new Error("alpha must be finite.");
     if (i <= 0 || l <= 0) throw new Error("incx and incy must be positive.");
     if (d < e) throw new Error("lda must be >= n.");
-    if (!c && !(n instanceof Float32Array))
+    if (!p && !(n instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
     if (!m && !(t instanceof Float32Array))
       throw new Error("x must be a Float32Array or GpuVector.");
@@ -9371,25 +9839,25 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x and y must be the same type (both Float32Array or both GpuVector).",
       );
-    if (m && !c)
+    if (m && !p)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (c && !m)
+    if (p && !m)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (c && m && n._buf === t._buf)
+    if (p && m && n._buf === t._buf)
       throw new Error("A and x must not reference the same GPU buffer.");
-    if (c && w && n._buf === s._buf)
+    if (p && w && n._buf === s._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
     if (m && t._buf === s._buf)
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (c && d !== n.lda)
+    if (p && d !== n.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (c && (n.rows < e || n.cols < e))
+    if (p && (n.rows < e || n.cols < e))
       throw new Error("A is too small for the given n.");
     if (e < 0) throw new Error("n must be non-negative.");
-    if (e === 0) return c ? {} : { A: n };
-    if (!c && n.length < (e - 1) * d + e)
+    if (e === 0) return p ? {} : { A: n };
+    if (!p && n.length < (e - 1) * d + e)
       throw new Error(
         "A does not have enough elements for the given n and lda.",
       );
@@ -9402,66 +9870,66 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "y does not have enough elements for the given n and incy.",
       );
     let g =
-        (c ? n.layout : u) === "column-major" ? o === "upper" : o === "lower",
-      y = await P(r, "ssyr2"),
+        (p ? n.layout : u) === "column-major" ? o === "upper" : o === "lower",
+      y = await N(r, "ssyr2"),
       h = null,
       x = null,
       _ = null,
       v = null,
       B = null,
-      A = null;
+      k = null;
     try {
       ((h = m ? t._buf : b(r, t, "ssyr2-x", !1)),
         (x = w ? s._buf : b(r, s, "ssyr2-y", !1)),
-        (_ = c ? n._buf : b(r, n, "ssyr2-A", !0)),
-        i > 1 && (B = await Yr(r, h, e, i, "ssyr2-x-packed")),
-        l > 1 && (A = await Yr(r, x, e, l, "ssyr2-y-packed")),
+        (_ = p ? n._buf : b(r, n, "ssyr2-A", !0)),
+        i > 1 && (B = await Sr(r, h, e, i, "ssyr2-x-packed")),
+        l > 1 && (k = await Sr(r, x, e, l, "ssyr2-y-packed")),
         (v = T(
           r,
           [
             { value: e, type: "u32" },
             { value: a, type: "f32" },
             { value: B ? 1 : i, type: "u32" },
-            { value: A ? 1 : l, type: "u32" },
+            { value: k ? 1 : l, type: "u32" },
             { value: d, type: "u32" },
             { value: g ? 0 : 1, type: "u32" },
           ],
           "ssyr2-params",
         )));
-      let k = N(r, y.getBindGroupLayout(0), [
+      let E = G(r, y.getBindGroupLayout(0), [
           B ? B.buffer : h,
-          A ? A.buffer : x,
+          k ? k.buffer : x,
           _,
           v,
         ]),
         I = Math.min(e, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: M, ts: S } = zr(r, [
+        { commandEncoder: R, ts: A } = wr(r, [
           ...(B ? [B.pass] : []),
-          ...(A ? [A.pass] : []),
-          { pipeline: y, bindGroup: k, workgroups: I },
+          ...(k ? [k.pass] : []),
+          { pipeline: y, bindGroup: E, workgroups: I },
         ]),
-        E = c ? null : D(r, M, _);
-      j(r, M);
-      let L = await C(S);
-      if (c) return L !== void 0 ? { gpuTimeMs: L } : {};
-      let R = await G(E, Float32Array);
-      return L !== void 0 ? { A: R, gpuTimeMs: L } : { A: R };
+        L = p ? null : D(r, R, _);
+      U(r, R);
+      let P = await V(A);
+      if (p) return P !== void 0 ? { gpuTimeMs: P } : {};
+      let M = await S(L, Float32Array);
+      return P !== void 0 ? { A: M, gpuTimeMs: P } : { A: M };
     } finally {
       (!m && h && f(h),
         !w && x && f(x),
-        !c && _ && f(_),
+        !p && _ && f(_),
         v && f(v),
         B && f(B.buffer, B.params),
-        A && f(A.buffer, A.params));
+        k && f(k.buffer, k.params));
     }
   }
-  async function Fa(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
-    let m = t instanceof H,
-      w = s instanceof H,
-      c = n instanceof Q;
+  async function Ja(r, o, e, a, t, i, s, l, n, d, u = "row-major") {
+    let m = t instanceof C,
+      w = s instanceof C,
+      p = n instanceof sr;
     if (
-      (F(r),
-      W(r, "dsyr2", { A: n, x: t, y: s }),
+      (z(r),
+      Z(r, "dsyr2", { A: n, x: t, y: s }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -9479,9 +9947,9 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (!Number.isFinite(a)) throw new Error("alpha must be finite.");
     if (i <= 0 || l <= 0) throw new Error("incx and incy must be positive.");
     if (d < e) throw new Error("lda must be >= n.");
-    if (!c && !(n instanceof Float64Array))
+    if (!p && !(n instanceof Float64Array))
       throw new Error("A must be a Float64Array or GpuMatrix.");
-    if (c && n.dtype !== Float64Array)
+    if (p && n.dtype !== Float64Array)
       throw new Error("A must be a Float64Array-backed GpuMatrix.");
     if (!m && !(t instanceof Float64Array))
       throw new Error("x must be a Float64Array or GpuVector.");
@@ -9495,25 +9963,25 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x and y must be the same type (both Float64Array or both GpuVector).",
       );
-    if (m && !c)
+    if (m && !p)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (c && !m)
+    if (p && !m)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (c && m && n._buf === t._buf)
+    if (p && m && n._buf === t._buf)
       throw new Error("A and x must not reference the same GPU buffer.");
-    if (c && w && n._buf === s._buf)
+    if (p && w && n._buf === s._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
     if (m && t._buf === s._buf)
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (c && d !== n.lda)
+    if (p && d !== n.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (c && (n.rows < e || n.cols < e))
+    if (p && (n.rows < e || n.cols < e))
       throw new Error("A is too small for the given n.");
     if (e < 0) throw new Error("n must be non-negative.");
-    if (e === 0) return c ? {} : { A: n };
-    if (!c && n.length < (e - 1) * d + e)
+    if (e === 0) return p ? {} : { A: n };
+    if (!p && n.length < (e - 1) * d + e)
       throw new Error(
         "A does not have enough elements for the given n and lda.",
       );
@@ -9526,85 +9994,107 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "y does not have enough elements for the given n and incy.",
       );
     let g =
-        (c ? n.layout : u) === "column-major" ? o === "upper" : o === "lower",
-      h = await P(
+        (p ? n.layout : u) === "column-major" ? o === "upper" : o === "lower",
+      h = await N(
         r,
         [...["f64/dekker", "f64/utils/add", "f64/utils/multiply"], "dsyr2"],
         "dsyr2_main",
       ),
-      { hi: x, lo: _ } = z(new Float64Array([a])),
+      { hi: x, lo: _ } = $(new Float64Array([a])),
       v = null,
       B = null,
-      A = null,
       k = null,
-      I = null,
-      M = null,
-      S = null,
       E = null,
-      L = null;
+      I = null,
+      R = null,
+      A = null,
+      L = null,
+      P = null,
+      M = null,
+      H = null,
+      W = null,
+      K = null;
     try {
       if (m)
         ((v = t._buf),
           (B = t._loBuf),
-          (A = s._buf),
-          (k = s._loBuf),
+          (k = s._buf),
+          (E = s._loBuf),
           (I = n._buf),
-          (M = n._loBuf));
+          (R = n._loBuf));
       else {
-        let U = z(t),
-          tr = z(s),
-          rr = z(n);
-        ((v = b(r, U.hi, "dsyr2-xHi", !1)),
-          (B = b(r, U.lo, "dsyr2-xLo", !1)),
-          (A = b(r, tr.hi, "dsyr2-yHi", !1)),
-          (k = b(r, tr.lo, "dsyr2-yLo", !1)),
-          (I = b(r, rr.hi, "dsyr2-AHi", !0)),
-          (M = b(r, rr.lo, "dsyr2-ALo", !0)));
+        let or = $(t),
+          er = $(s),
+          Y = $(n);
+        ((v = b(r, or.hi, "dsyr2-xHi", !1)),
+          (B = b(r, or.lo, "dsyr2-xLo", !1)),
+          (k = b(r, er.hi, "dsyr2-yHi", !1)),
+          (E = b(r, er.lo, "dsyr2-yLo", !1)),
+          (I = b(r, Y.hi, "dsyr2-AHi", !0)),
+          (R = b(r, Y.lo, "dsyr2-ALo", !0)));
       }
-      S = T(
-        r,
-        [
-          { value: e, type: "u32" },
-          { value: x[0], type: "f32" },
-          { value: _[0], type: "f32" },
-          { value: i, type: "u32" },
-          { value: l, type: "u32" },
-          { value: d, type: "u32" },
-          { value: g ? 0 : 1, type: "u32" },
-        ],
-        "dsyr2-params",
-      );
-      let R = N(r, h.getBindGroupLayout(0), [v, B, A, k, I, M, S]),
-        q = Math.min(e, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: O, ts: Z } = $(r, h, R, q);
-      ((E = c ? null : D(r, O, I)), (L = c ? null : D(r, O, M)), j(r, O));
-      let X = await C(Z);
-      if (c) return X !== void 0 ? { gpuTimeMs: X } : {};
-      let Y = await G(E, Float32Array);
-      E = null;
-      let V = await G(L, Float32Array);
-      L = null;
-      let K = cr(Y, V);
-      return X !== void 0 ? { A: K, gpuTimeMs: X } : { A: K };
+      (te(i, e) &&
+        ((L = await Sr(r, v, e, i, "dsyr2-xHi-packed")),
+        (P = await Sr(r, B, e, i, "dsyr2-xLo-packed"))),
+        te(l, e) &&
+          ((M = await Sr(r, k, e, l, "dsyr2-yHi-packed")),
+          (H = await Sr(r, E, e, l, "dsyr2-yLo-packed"))),
+        (A = T(
+          r,
+          [
+            { value: e, type: "u32" },
+            { value: x[0], type: "f32" },
+            { value: _[0], type: "f32" },
+            { value: L ? 1 : i, type: "u32" },
+            { value: M ? 1 : l, type: "u32" },
+            { value: d, type: "u32" },
+            { value: g ? 0 : 1, type: "u32" },
+          ],
+          "dsyr2-params",
+        )));
+      let X = G(r, h.getBindGroupLayout(0), [
+          L ? L.buffer : v,
+          P ? P.buffer : B,
+          M ? M.buffer : k,
+          H ? H.buffer : E,
+          I,
+          R,
+          A,
+        ]),
+        O = Math.min(e, r.limits.maxComputeWorkgroupsPerDimension),
+        { commandEncoder: F, ts: q } = wr(r, [
+          ...[L, P, M, H].filter(Boolean).map((or) => or.pass),
+          { pipeline: h, bindGroup: X, workgroups: O },
+        ]);
+      ((W = p ? null : D(r, F, I)), (K = p ? null : D(r, F, R)), U(r, F));
+      let j = await V(q);
+      if (p) return j !== void 0 ? { gpuTimeMs: j } : {};
+      let Q = await S(W, Float32Array);
+      W = null;
+      let ur = await S(K, Float32Array);
+      K = null;
+      let nr = cr(Q, ur);
+      return j !== void 0 ? { A: nr, gpuTimeMs: j } : { A: nr };
     } finally {
+      for (let X of [L, P, M, H]) X && f(X.buffer, X.params);
       (!m && v && f(v),
         !m && B && f(B),
-        !w && A && f(A),
         !w && k && f(k),
-        !c && I && f(I),
-        !c && M && f(M),
-        S && f(S),
-        E && f(E),
-        L && f(L));
+        !w && E && f(E),
+        !p && I && f(I),
+        !p && R && f(R),
+        A && f(A),
+        W && f(W),
+        K && f(K));
     }
   }
-  async function Wa(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
-    let c = i instanceof Q,
-      p = l instanceof H,
-      g = u instanceof H;
+  async function Qa(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
+    let p = i instanceof sr,
+      c = l instanceof C,
+      g = u instanceof C;
     if (
-      (F(r),
-      W(r, "dgemv", { A: i, x: l, y: u }),
+      (z(r),
+      Z(r, "dgemv", { A: i, x: l, y: u }),
       o !== "no-transpose" && o !== "transpose")
     )
       throw new Error("trans must be 'no-transpose' or 'transpose'.");
@@ -9625,46 +10115,46 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     )
       throw new Error("m, n, incx, incy, and lda must be integers.");
     if (n <= 0 || m <= 0) throw new Error("incx and incy must be positive.");
-    if (!c && !(i instanceof Float64Array))
+    if (!p && !(i instanceof Float64Array))
       throw new Error("A must be a Float64Array or GpuMatrix.");
-    if (c && i.dtype !== Float64Array)
+    if (p && i.dtype !== Float64Array)
       throw new Error("A must be a Float64Array-backed GpuMatrix.");
-    if (!p && !(l instanceof Float64Array))
+    if (!c && !(l instanceof Float64Array))
       throw new Error("x must be a Float64Array or GpuVector.");
     if (!g && !(u instanceof Float64Array))
       throw new Error("y must be a Float64Array or GpuVector.");
-    if (p && l.dtype !== Float64Array)
+    if (c && l.dtype !== Float64Array)
       throw new Error("x must be a Float64Array-backed GpuVector.");
     if (g && u.dtype !== Float64Array)
       throw new Error("y must be a Float64Array-backed GpuVector.");
-    if (p !== g)
+    if (c !== g)
       throw new Error(
         "x and y must be the same type (both Float64Array or both GpuVector).",
       );
-    if (p && !c)
-      throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
     if (c && !p)
+      throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
+    if (p && !c)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (p && l._buf === u._buf)
+    if (c && l._buf === u._buf)
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (c && g && i._buf === u._buf)
+    if (p && g && i._buf === u._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
-    if (c && s !== i.lda)
+    if (p && s !== i.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (c && (i.rows < e || i.cols < a))
+    if (p && (i.rows < e || i.cols < a))
       throw new Error("A is too small for the given m and n.");
     if (e < 0 || a < 0) throw new Error("m and n must be non-negative.");
     if (e === 0 || a === 0) return g ? {} : { y: u };
-    (c ? i.layout : w) === "column-major" &&
+    (p ? i.layout : w) === "column-major" &&
       (([e, a] = [a, e]),
       (o = o === "no-transpose" ? "transpose" : "no-transpose"));
     let h = o === "no-transpose",
       x = h ? a : e,
       _ = h ? e : a;
     if (s < a) throw new Error("lda must be >= n.");
-    if (!c && i.length < (e - 1) * s + a)
+    if (!p && i.length < (e - 1) * s + a)
       throw new Error(
         "A does not have enough elements for the given m, n, and lda.",
       );
@@ -9678,86 +10168,155 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       );
     let v = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
       B = h ? "dgemv_n" : "dgemv_t",
-      A = h ? "dgemv_n_main" : "dgemv_t_main",
-      k = await P(r, [...v, B], A),
-      { hi: I, lo: M } = z(new Float64Array([t])),
-      { hi: S, lo: E } = z(new Float64Array([d])),
-      L = null,
-      R = null,
-      q = null,
-      O = null,
-      Z = null,
+      k = h ? "dgemv_n_main" : "dgemv_t_main",
+      E = await N(r, [...v, B], k),
+      I = h ? 1 : Math.ceil(e / 64),
+      R =
+        I > 1
+          ? await N(r, [...v, "reduce_partials_f64"], "reduce_partials_f64")
+          : null,
+      { hi: A, lo: L } = $(new Float64Array([t])),
+      { hi: P, lo: M } = $(new Float64Array([d])),
+      H = null,
+      W = null,
+      K = null,
       X = null,
-      Y = null,
-      V = null,
-      K = null;
+      O = null,
+      F = null,
+      q = null,
+      j = null,
+      Q = null,
+      ur = null,
+      nr = null,
+      or = null;
     try {
-      if (c) ((L = i._buf), (R = i._loBuf));
+      if (p) ((H = i._buf), (W = i._loBuf));
       else {
-        let ir = z(i);
-        ((L = b(r, ir.hi, "dgemv-AHi", !1)),
-          (R = b(r, ir.lo, "dgemv-ALo", !1)));
+        let gr = $(i);
+        ((H = b(r, gr.hi, "dgemv-AHi", !1)),
+          (W = b(r, gr.lo, "dgemv-ALo", !1)));
       }
-      if (p) ((q = l._buf), (O = l._loBuf));
+      if (c) ((K = l._buf), (X = l._loBuf));
       else {
-        let ir = z(l);
-        ((q = b(r, ir.hi, "dgemv-xHi", !1)),
-          (O = b(r, ir.lo, "dgemv-xLo", !1)));
+        let gr = $(l);
+        ((K = b(r, gr.hi, "dgemv-xHi", !1)),
+          (X = b(r, gr.lo, "dgemv-xLo", !1)));
       }
-      if (g) ((Z = u._buf), (X = u._loBuf));
+      if (g) ((O = u._buf), (F = u._loBuf));
       else {
-        let ir = z(u);
-        ((Z = b(r, ir.hi, "dgemv-yHi", !0)),
-          (X = b(r, ir.lo, "dgemv-yLo", !0)));
+        let gr = $(u);
+        ((O = b(r, gr.hi, "dgemv-yHi", !0)),
+          (F = b(r, gr.lo, "dgemv-yLo", !0)));
       }
-      Y = T(
-        r,
-        [
+      let er = [
           { value: e, type: "u32" },
           { value: a, type: "u32" },
-          { value: I[0], type: "f32" },
+          { value: A[0], type: "f32" },
+          { value: L[0], type: "f32" },
+          { value: P[0], type: "f32" },
           { value: M[0], type: "f32" },
-          { value: S[0], type: "f32" },
-          { value: E[0], type: "f32" },
           { value: n, type: "u32" },
           { value: m, type: "u32" },
           { value: s, type: "u32" },
         ],
-        "dgemv-params",
-      );
-      let U = N(r, k.getBindGroupLayout(0), [L, R, q, O, Z, X, Y]),
-        tr = h
-          ? Math.min(e, r.limits.maxComputeWorkgroupsPerDimension)
-          : ke(r, "dgemv", _),
-        { commandEncoder: rr, ts: or } = $(r, k, U, tr);
-      ((V = g ? null : D(r, rr, Z)), (K = g ? null : D(r, rr, X)), j(r, rr));
-      let fr = await C(or);
-      if (g) return fr !== void 0 ? { gpuTimeMs: fr } : {};
-      let ur = await G(V, Float32Array);
-      V = null;
-      let ar = await G(K, Float32Array);
-      K = null;
-      let er = cr(ur, ar);
-      return fr !== void 0 ? { y: er, gpuTimeMs: fr } : { y: er };
+        Y;
+      h
+        ? ((q = T(r, er, "dgemv-params")),
+          (Y = [
+            {
+              pipeline: E,
+              bindGroup: G(r, E.getBindGroupLayout(0), [H, W, K, X, O, F, q]),
+              workgroups: Math.min(
+                e,
+                r.limits.maxComputeWorkgroupsPerDimension,
+              ),
+            },
+          ]))
+        : (I > 1 &&
+            ((j = dr(r, I * a * 4, "dgemv-partialsHi")),
+            (Q = dr(r, I * a * 4, "dgemv-partialsLo")),
+            (ur = T(
+              r,
+              [
+                { value: a, type: "u32" },
+                { value: I, type: "u32" },
+                { value: m, type: "u32" },
+                { value: A[0], type: "f32" },
+                { value: L[0], type: "f32" },
+                { value: P[0], type: "f32" },
+                { value: M[0], type: "f32" },
+              ],
+              "dgemv-reduce-params",
+            ))),
+          (q = T(
+            r,
+            [
+              ...er,
+              { value: 64, type: "u32" },
+              { value: I > 1 ? 0 : 1, type: "u32" },
+            ],
+            "dgemv-t-params",
+          )),
+          (Y = [
+            {
+              pipeline: E,
+              bindGroup: G(r, E.getBindGroupLayout(0), [
+                H,
+                W,
+                K,
+                X,
+                j ?? O,
+                Q ?? F,
+                q,
+              ]),
+              workgroups: {
+                x: tr(r, Math.ceil(a / 64), "dgemv", "x"),
+                y: tr(r, I, "dgemv", "y"),
+              },
+            },
+          ]),
+          I > 1 &&
+            Y.push({
+              pipeline: R,
+              bindGroup: G(r, R.getBindGroupLayout(0), [j, Q, O, F, ur]),
+              workgroups: Math.min(
+                Math.ceil(a / 64),
+                r.limits.maxComputeWorkgroupsPerDimension,
+              ),
+            }));
+      let { commandEncoder: ar, ts: rr } = wr(r, Y);
+      ((nr = g ? null : D(r, ar, O)), (or = g ? null : D(r, ar, F)), U(r, ar));
+      let ir = await V(rr);
+      if (g) return ir !== void 0 ? { gpuTimeMs: ir } : {};
+      let hr = await S(nr, Float32Array);
+      nr = null;
+      let br = await S(or, Float32Array);
+      or = null;
+      let lr = cr(hr, br);
+      return ir !== void 0 ? { y: lr, gpuTimeMs: ir } : { y: lr };
     } finally {
-      (!c && L && f(L),
-        !c && R && f(R),
-        !p && q && f(q),
-        !p && O && f(O),
-        !g && Z && f(Z),
-        !g && X && f(X),
-        Y && f(Y),
-        V && f(V),
-        K && f(K));
+      (!p && H && f(H),
+        !p && W && f(W),
+        !c && K && f(K),
+        !c && X && f(X),
+        !g && O && f(O),
+        !g && F && f(F),
+        q && f(q),
+        j && f(j),
+        Q && f(Q),
+        ur && f(ur),
+        nr && f(nr),
+        or && f(or));
     }
   }
-  async function Oa(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
-    let w = s instanceof H,
-      c = d instanceof H,
-      p = t instanceof Q;
+  var qs = 256;
+  async function ri(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
+    let w = s instanceof C,
+      p = d instanceof C,
+      c = t instanceof sr;
     if (
-      (F(r),
-      W(r, "dsymv", { A: t, x: s, y: d }),
+      (z(r),
+      Z(r, "dsymv", { A: t, x: s, y: d }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -9778,39 +10337,39 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (!Number.isFinite(n)) throw new Error("beta must be finite.");
     if (l <= 0 || u <= 0) throw new Error("incx and incy must be positive.");
     if (i < e) throw new Error("lda must be >= n.");
-    if (!p && !(t instanceof Float64Array))
+    if (!c && !(t instanceof Float64Array))
       throw new Error("A must be a Float64Array or GpuMatrix.");
-    if (p && t.dtype !== Float64Array)
+    if (c && t.dtype !== Float64Array)
       throw new Error("A must be a Float64Array-backed GpuMatrix.");
     if (!w && !(s instanceof Float64Array))
       throw new Error("x must be a Float64Array or GpuVector.");
-    if (!c && !(d instanceof Float64Array))
+    if (!p && !(d instanceof Float64Array))
       throw new Error("y must be a Float64Array or GpuVector.");
     if (w && s.dtype !== Float64Array)
       throw new Error("x must be a Float64Array-backed GpuVector.");
-    if (c && d.dtype !== Float64Array)
+    if (p && d.dtype !== Float64Array)
       throw new Error("y must be a Float64Array-backed GpuVector.");
-    if (w !== c)
+    if (w !== p)
       throw new Error(
         "x and y must be the same type (both Float64Array or both GpuVector).",
       );
-    if (w && !p)
+    if (w && !c)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (p && !w)
+    if (c && !w)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
     if (w && s._buf === d._buf)
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (p && c && t._buf === d._buf)
+    if (c && p && t._buf === d._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
-    if (p && i !== t.lda)
+    if (c && i !== t.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (p && (t.rows < e || t.cols < e))
+    if (c && (t.rows < e || t.cols < e))
       throw new Error("A is too small for the given n.");
     if (e < 0) throw new Error("n must be non-negative.");
-    if (e === 0) return c ? {} : { y: d };
-    if (!p && t.length < (e - 1) * i + e)
+    if (e === 0) return p ? {} : { y: d };
+    if (!c && t.length < (e - 1) * i + e)
       throw new Error(
         "A does not have enough elements for the given n and lda.",
       );
@@ -9823,89 +10382,151 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "y does not have enough elements for the given n and incy.",
       );
     let y =
-        (p ? t.layout : m) === "column-major" ? o === "upper" : o === "lower",
-      x = await P(
-        r,
-        [...["f64/dekker", "f64/utils/add", "f64/utils/multiply"], "dsymv"],
-        "dsymv_main",
-      ),
-      { hi: _, lo: v } = z(new Float64Array([a])),
-      { hi: B, lo: A } = z(new Float64Array([n])),
-      k = null,
-      I = null,
-      M = null,
-      S = null,
-      E = null,
+        (c ? t.layout : m) === "column-major" ? o === "upper" : o === "lower",
+      h = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
+      x = e >= qs,
+      _ = x
+        ? await N(r, [...h, "dsymv_tile"], "dsymv_tile_main")
+        : await N(r, [...h, "dsymv"], "dsymv_main"),
+      v = x
+        ? await N(r, [...h, "reduce_partials_f64"], "reduce_partials_f64")
+        : null,
+      B = Math.ceil(e / 32),
+      { hi: k, lo: E } = $(new Float64Array([a])),
+      { hi: I, lo: R } = $(new Float64Array([n])),
+      A = null,
       L = null,
-      R = null,
+      P = null,
+      M = null,
+      H = null,
+      W = null,
+      K = null,
+      X = null,
+      O = null,
+      F = null,
       q = null,
-      O = null;
+      j = null;
     try {
-      if (p) ((k = t._buf), (I = t._loBuf));
+      if (c) ((A = t._buf), (L = t._loBuf));
       else {
-        let or = z(t);
-        ((k = b(r, or.hi, "dsymv-AHi", !1)),
-          (I = b(r, or.lo, "dsymv-ALo", !1)));
+        let rr = $(t);
+        ((A = b(r, rr.hi, "dsymv-AHi", !1)),
+          (L = b(r, rr.lo, "dsymv-ALo", !1)));
       }
-      if (w) ((M = s._buf), (S = s._loBuf));
+      if (w) ((P = s._buf), (M = s._loBuf));
       else {
-        let or = z(s);
-        ((M = b(r, or.hi, "dsymv-xHi", !1)),
-          (S = b(r, or.lo, "dsymv-xLo", !1)));
+        let rr = $(s);
+        ((P = b(r, rr.hi, "dsymv-xHi", !1)),
+          (M = b(r, rr.lo, "dsymv-xLo", !1)));
       }
-      if (c) ((E = d._buf), (L = d._loBuf));
+      if (p) ((H = d._buf), (W = d._loBuf));
       else {
-        let or = z(d);
-        ((E = b(r, or.hi, "dsymv-yHi", !0)),
-          (L = b(r, or.lo, "dsymv-yLo", !0)));
+        let rr = $(d);
+        ((H = b(r, rr.hi, "dsymv-yHi", !0)),
+          (W = b(r, rr.lo, "dsymv-yLo", !0)));
       }
-      R = T(
-        r,
-        [
-          { value: e, type: "u32" },
-          { value: _[0], type: "f32" },
-          { value: v[0], type: "f32" },
-          { value: B[0], type: "f32" },
-          { value: A[0], type: "f32" },
-          { value: l, type: "u32" },
-          { value: u, type: "u32" },
-          { value: i, type: "u32" },
-          { value: y ? 0 : 1, type: "u32" },
-        ],
-        "dsymv-params",
-      );
-      let Z = N(r, x.getBindGroupLayout(0), [k, I, M, S, E, L, R]),
-        X = Math.min(e, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: Y, ts: V } = $(r, x, Z, X);
-      ((q = c ? null : D(r, Y, E)), (O = c ? null : D(r, Y, L)), j(r, Y));
-      let K = await C(V);
-      if (c) return K !== void 0 ? { gpuTimeMs: K } : {};
-      let U = await G(q, Float32Array);
+      let Q;
+      if (!x)
+        ((K = T(
+          r,
+          [
+            { value: e, type: "u32" },
+            { value: k[0], type: "f32" },
+            { value: E[0], type: "f32" },
+            { value: I[0], type: "f32" },
+            { value: R[0], type: "f32" },
+            { value: l, type: "u32" },
+            { value: u, type: "u32" },
+            { value: i, type: "u32" },
+            { value: y ? 0 : 1, type: "u32" },
+          ],
+          "dsymv-params",
+        )),
+          (Q = [
+            {
+              pipeline: _,
+              bindGroup: G(r, _.getBindGroupLayout(0), [A, L, P, M, H, W, K]),
+              workgroups: e,
+            },
+          ]));
+      else {
+        ((X = dr(r, B * e * 4, "dsymv-partialsHi")),
+          (O = dr(r, B * e * 4, "dsymv-partialsLo")),
+          (K = T(
+            r,
+            [
+              { value: e, type: "u32" },
+              { value: i, type: "u32" },
+              { value: y ? 0 : 1, type: "u32" },
+              { value: B, type: "u32" },
+              { value: l, type: "u32" },
+            ],
+            "dsymv-tile-params",
+          )),
+          (F = T(
+            r,
+            [
+              { value: e, type: "u32" },
+              { value: B, type: "u32" },
+              { value: u, type: "u32" },
+              { value: k[0], type: "f32" },
+              { value: E[0], type: "f32" },
+              { value: I[0], type: "f32" },
+              { value: R[0], type: "f32" },
+            ],
+            "dsymv-reduce-params",
+          )));
+        let rr = (B * (B + 1)) / 2,
+          ir = r.limits.maxComputeWorkgroupsPerDimension,
+          hr = Math.min(rr, ir),
+          br = tr(r, Math.ceil(rr / hr), "dsymv", "y");
+        Q = [
+          {
+            pipeline: _,
+            bindGroup: G(r, _.getBindGroupLayout(0), [A, L, P, M, X, O, K]),
+            workgroups: { x: hr, y: br },
+          },
+          {
+            pipeline: v,
+            bindGroup: G(r, v.getBindGroupLayout(0), [X, O, H, W, F]),
+            workgroups: Math.min(Math.ceil(e / 64), ir),
+          },
+        ];
+      }
+      let { commandEncoder: ur, ts: nr } = wr(r, Q);
+      ((q = p ? null : D(r, ur, H)), (j = p ? null : D(r, ur, W)), U(r, ur));
+      let or = await V(nr);
+      if (p) return or !== void 0 ? { gpuTimeMs: or } : {};
+      let er = await S(q, Float32Array);
       q = null;
-      let tr = await G(O, Float32Array);
-      O = null;
-      let rr = cr(U, tr);
-      return K !== void 0 ? { y: rr, gpuTimeMs: K } : { y: rr };
+      let Y = await S(j, Float32Array);
+      j = null;
+      let ar = cr(er, Y);
+      return or !== void 0 ? { y: ar, gpuTimeMs: or } : { y: ar };
     } finally {
-      (!p && k && f(k),
-        !p && I && f(I),
-        !w && M && f(M),
-        !w && S && f(S),
-        !c && E && f(E),
+      (!c && A && f(A),
         !c && L && f(L),
-        R && f(R),
+        !w && P && f(P),
+        !w && M && f(M),
+        !p && H && f(H),
+        !p && W && f(W),
+        K && f(K),
+        X && f(X),
+        O && f(O),
+        F && f(F),
         q && f(q),
-        O && f(O));
+        j && f(j));
     }
   }
-  async function Ka(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
-    let w = l instanceof H,
-      c = d instanceof H,
-      p = i instanceof Q,
+  var Vs = 512;
+  async function ei(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
+    let w = l instanceof C,
+      p = d instanceof C,
+      c = i instanceof sr,
       g = a === "unit";
     if (
-      (F(r),
-      W(r, "dtrmv", { A: i, x: l, y: d }),
+      (z(r),
+      Z(r, "dtrmv", { A: i, x: l, y: d }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -9924,19 +10545,19 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("n, incx, incy, and lda must be integers.");
     if (n <= 0 || u <= 0) throw new Error("incx and incy must be positive.");
     if (s < t) throw new Error("lda must be >= n.");
-    if (!p && !(i instanceof Float64Array))
+    if (!c && !(i instanceof Float64Array))
       throw new Error("A must be a Float64Array or GpuMatrix.");
-    if (p && i.dtype !== Float64Array)
+    if (c && i.dtype !== Float64Array)
       throw new Error("A must be a Float64Array-backed GpuMatrix.");
     if (!w && !(l instanceof Float64Array))
       throw new Error("x must be a Float64Array or GpuVector.");
-    if (!c && !(d instanceof Float64Array))
+    if (!p && !(d instanceof Float64Array))
       throw new Error("y must be a Float64Array or GpuVector.");
     if (w && l.dtype !== Float64Array)
       throw new Error("x must be a Float64Array-backed GpuVector.");
-    if (c && d.dtype !== Float64Array)
+    if (p && d.dtype !== Float64Array)
       throw new Error("y must be a Float64Array-backed GpuVector.");
-    if (w !== c)
+    if (w !== p)
       throw new Error(
         "x and y must be the same type (both Float64Array or both GpuVector).",
       );
@@ -9944,19 +10565,19 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x and y must not reference the same GPU buffer when both are GpuVectors.",
       );
-    if (w && !p)
+    if (w && !c)
       throw new Error("A must be a GpuMatrix when x and y are GpuVectors.");
-    if (p && !w)
+    if (c && !w)
       throw new Error("x and y must be GpuVectors when A is a GpuMatrix.");
-    if (p && c && i._buf === d._buf)
+    if (c && p && i._buf === d._buf)
       throw new Error("A and y must not reference the same GPU buffer.");
-    if (p && s !== i.lda)
+    if (c && s !== i.lda)
       throw new Error("lda must match A.lda when A is a GpuMatrix.");
-    if (p && (i.rows < t || i.cols < t))
+    if (c && (i.rows < t || i.cols < t))
       throw new Error("A is too small for the given n.");
     if (t < 0) throw new Error("n must be non-negative.");
-    if (t === 0) return c ? {} : { y: d };
-    if (!p && i.length < (t - 1) * s + t)
+    if (t === 0) return p ? {} : { y: d };
+    if (!c && i.length < (t - 1) * s + t)
       throw new Error(
         "A does not have enough elements for the given n and lda.",
       );
@@ -9968,80 +10589,169 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "y does not have enough elements for the given n and incy.",
       );
-    let h = (p ? i.layout : m) === "column-major",
+    let h = (c ? i.layout : m) === "column-major",
       x = h ? o === "upper" : o === "lower",
       _ = h ? e === "transpose" : e === "no-transpose",
-      B = await P(
+      v = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
+      B = !_ && t >= Vs,
+      k = B ? Math.ceil(t / 64) : 1,
+      E = await N(
         r,
-        [...["f64/dekker", "f64/utils/add", "f64/utils/multiply"], "dtrmv"],
-        "dtrmv_main",
+        [...v, B ? "dtrmv_t" : "dtrmv"],
+        B ? "dtrmv_t_main" : "dtrmv_main",
       ),
-      A = null,
-      k = null,
-      I = null,
-      M = null,
-      S = null,
-      E = null,
-      L = null,
+      I =
+        k > 1
+          ? await N(r, [...v, "reduce_partials_f64"], "reduce_partials_f64")
+          : null,
       R = null,
-      q = null;
+      A = null,
+      L = null,
+      P = null,
+      M = null,
+      H = null,
+      W = null,
+      K = null,
+      X = null,
+      O = null,
+      F = null,
+      q = null,
+      j = null,
+      Q = null;
     try {
-      if (p) ((A = i._buf), (k = i._loBuf));
+      if (c) ((R = i._buf), (A = i._loBuf));
       else {
-        let rr = z(i);
-        ((A = b(r, rr.hi, "dtrmv-AHi", !1)),
-          (k = b(r, rr.lo, "dtrmv-ALo", !1)));
+        let lr = $(i);
+        ((R = b(r, lr.hi, "dtrmv-AHi", !1)),
+          (A = b(r, lr.lo, "dtrmv-ALo", !1)));
       }
-      if (w) ((I = l._buf), (M = l._loBuf));
+      if (w) ((L = l._buf), (P = l._loBuf));
       else {
-        let rr = z(l);
-        ((I = b(r, rr.hi, "dtrmv-xHi", !1)),
-          (M = b(r, rr.lo, "dtrmv-xLo", !1)));
+        let lr = $(l);
+        ((L = b(r, lr.hi, "dtrmv-xHi", !1)),
+          (P = b(r, lr.lo, "dtrmv-xLo", !1)));
       }
-      if (c) ((S = d._buf), (E = d._loBuf));
+      if (p) ((M = d._buf), (H = d._loBuf));
       else {
-        let rr = z(d);
-        ((S = b(r, rr.hi, "dtrmv-yHi", !0)),
-          (E = b(r, rr.lo, "dtrmv-yLo", !0)));
+        let lr = $(d);
+        ((M = b(r, lr.hi, "dtrmv-yHi", !0)),
+          (H = b(r, lr.lo, "dtrmv-yLo", !0)));
       }
-      L = T(
-        r,
-        [
-          { value: t, type: "u32" },
-          { value: n, type: "u32" },
-          { value: u, type: "u32" },
-          { value: s, type: "u32" },
-          { value: _ ? 0 : 1, type: "u32" },
-          { value: x ? 0 : 1, type: "u32" },
-          { value: g ? 1 : 0, type: "u32" },
-        ],
-        "dtrmv-params",
-      );
-      let O = N(r, B.getBindGroupLayout(0), [A, k, I, M, S, E, L]),
-        Z = Math.min(t, r.limits.maxComputeWorkgroupsPerDimension),
-        { commandEncoder: X, ts: Y } = $(r, B, O, Z);
-      ((R = c ? null : D(r, X, S)), (q = c ? null : D(r, X, E)), j(r, X));
-      let V = await C(Y);
-      if (c) return V !== void 0 ? { gpuTimeMs: V } : {};
-      let K = await G(R, Float32Array);
-      R = null;
-      let U = await G(q, Float32Array);
-      q = null;
-      let tr = cr(K, U);
-      return V !== void 0 ? { y: tr, gpuTimeMs: V } : { y: tr };
+      te(n, t) &&
+        ((F = await Sr(r, L, t, n, "dtrmv-xHi-packed")),
+        (q = await Sr(r, P, t, n, "dtrmv-xLo-packed")));
+      let ur = F ? F.buffer : L,
+        nr = q ? q.buffer : P,
+        or = F ? 1 : n,
+        er;
+      (B
+        ? (k > 1 &&
+            ((K = dr(r, k * t * 4, "dtrmv-partialsHi")),
+            (X = dr(r, k * t * 4, "dtrmv-partialsLo")),
+            (O = T(
+              r,
+              [
+                { value: t, type: "u32" },
+                { value: k, type: "u32" },
+                { value: u, type: "u32" },
+                { value: 1, type: "f32" },
+                { value: 0, type: "f32" },
+                { value: 0, type: "f32" },
+                { value: 0, type: "f32" },
+              ],
+              "dtrmv-reduce-params",
+            ))),
+          (W = T(
+            r,
+            [
+              { value: t, type: "u32" },
+              { value: or, type: "u32" },
+              { value: u, type: "u32" },
+              { value: s, type: "u32" },
+              { value: x ? 0 : 1, type: "u32" },
+              { value: g ? 1 : 0, type: "u32" },
+              { value: 64, type: "u32" },
+              { value: k > 1 ? 0 : 1, type: "u32" },
+            ],
+            "dtrmv-t-params",
+          )),
+          (er = [
+            {
+              pipeline: E,
+              bindGroup: G(r, E.getBindGroupLayout(0), [
+                R,
+                A,
+                ur,
+                nr,
+                K ?? M,
+                X ?? H,
+                W,
+              ]),
+              workgroups: {
+                x: tr(r, Math.ceil(t / 64), "dtrmv", "x"),
+                y: tr(r, k, "dtrmv", "y"),
+              },
+            },
+          ]),
+          k > 1 &&
+            er.push({
+              pipeline: I,
+              bindGroup: G(r, I.getBindGroupLayout(0), [K, X, M, H, O]),
+              workgroups: Math.min(
+                Math.ceil(t / 64),
+                r.limits.maxComputeWorkgroupsPerDimension,
+              ),
+            }))
+        : ((W = T(
+            r,
+            [
+              { value: t, type: "u32" },
+              { value: or, type: "u32" },
+              { value: u, type: "u32" },
+              { value: s, type: "u32" },
+              { value: _ ? 0 : 1, type: "u32" },
+              { value: x ? 0 : 1, type: "u32" },
+              { value: g ? 1 : 0, type: "u32" },
+            ],
+            "dtrmv-params",
+          )),
+          (er = [
+            {
+              pipeline: E,
+              bindGroup: G(r, E.getBindGroupLayout(0), [R, A, ur, nr, M, H, W]),
+              workgroups: Math.min(
+                t,
+                r.limits.maxComputeWorkgroupsPerDimension,
+              ),
+            },
+          ])),
+        F && er.unshift(F.pass, q.pass));
+      let { commandEncoder: Y, ts: ar } = wr(r, er);
+      ((j = p ? null : D(r, Y, M)), (Q = p ? null : D(r, Y, H)), U(r, Y));
+      let rr = await V(ar);
+      if (p) return rr !== void 0 ? { gpuTimeMs: rr } : {};
+      let ir = await S(j, Float32Array);
+      j = null;
+      let hr = await S(Q, Float32Array);
+      Q = null;
+      let br = cr(ir, hr);
+      return rr !== void 0 ? { y: br, gpuTimeMs: rr } : { y: br };
     } finally {
-      (!p && A && f(A),
-        !p && k && f(k),
-        !w && I && f(I),
-        !w && M && f(M),
-        !c && S && f(S),
-        !c && E && f(E),
-        L && f(L),
-        R && f(R),
-        q && f(q));
+      (!c && R && f(R),
+        !c && A && f(A),
+        !w && L && f(L),
+        !w && P && f(P),
+        !p && M && f(M),
+        !p && H && f(H),
+        W && f(W),
+        K && f(K),
+        X && f(X),
+        O && f(O));
+      for (let ur of [F, q]) ur && f(ur.buffer, ur.params);
+      (j && f(j), Q && f(Q));
     }
   }
-  function Va(r, o, e) {
+  function Us(r, o, e) {
     let a = new ArrayBuffer(r * o),
       t = new DataView(a);
     for (let i = 0; i < r; i++) {
@@ -10051,7 +10761,9 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     }
     return a;
   }
-  function Ua(r, o, e) {
+  var zs = 48,
+    Zs = 2;
+  function ti(r, o, e) {
     let a = r.createBuffer({
       label: e,
       size: o.byteLength,
@@ -10059,11 +10771,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     });
     return (r.queue.writeBuffer(a, 0, o), a);
   }
-  async function za(r, o, e, a, t, i, s, l, n, d = "row-major") {
-    let u = l instanceof H,
-      m = i instanceof Q,
+  async function oi(r, o, e, a, t, i, s, l, n, d = "row-major") {
+    let u = l instanceof C,
+      m = i instanceof sr,
       w = a === "unit";
-    if ((F(r), W(r, "dtrsv", { A: i, x: l }), o !== "lower" && o !== "upper"))
+    if ((z(r), Z(r, "dtrsv", { A: i, x: l }), o !== "lower" && o !== "upper"))
       throw new Error("uplo must be 'lower' or 'upper'.");
     if (e !== "no-transpose" && e !== "transpose")
       throw new Error("trans must be 'no-transpose' or 'transpose'.");
@@ -10103,156 +10815,211 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "x does not have enough elements for the given n and incx.",
       );
-    let p = (m ? i.layout : d) === "column-major",
-      g = p ? o === "upper" : o === "lower",
-      y = p ? e === "transpose" : e === "no-transpose",
+    let c = (m ? i.layout : d) === "column-major",
+      g = c ? o === "upper" : o === "lower",
+      y = c ? e === "transpose" : e === "no-transpose",
       h = [
         "f64/dekker",
         "f64/utils/add",
         "f64/utils/multiply",
         "f64/utils/divide",
       ],
-      x = await P(r, [...h, "dtrsv_invert_block"], "dtrsv_invert_block_main"),
-      _ = await P(r, [...h, "dtrsv_apply_inverse"], "dtrsv_apply_inverse_main"),
-      v = await P(r, [...h, "dtrsv_update"], "dtrsv_update_main"),
-      B = y === g,
-      A = [];
-    for (let U = 0; U < t; U += 64) A.push(U);
-    B || A.reverse();
-    let k = A.length,
-      I = r.limits.maxComputeWorkgroupsPerDimension,
-      M = r.limits.minUniformBufferOffsetAlignment,
-      S = null,
-      E = null,
-      L = null,
-      R = null,
-      q = null,
-      O = null,
-      Z = null,
+      x = await N(r, [...h, "dtrsv_small"], "dtrsv_small_main"),
+      _ = await N(r, [...h, "dtrsv_step"], "dtrsv_step_main"),
+      v = y === g,
+      B = [];
+    for (let Y = 0; Y < t; Y += 64) B.push(Y);
+    v || B.reverse();
+    let k = B.length,
+      E = r.limits.minUniformBufferOffsetAlignment,
+      I = k <= Zs,
+      R = I ? null : await N(r, "scatter_strided"),
+      A = y ? s : 1,
+      L = y ? 1 : s,
+      P = (Y) =>
+        Us(k, E, (ar) => {
+          let rr = ar * 64,
+            ir = Math.min(rr + 64, t),
+            hr = v ? ir : 0,
+            br = v ? t - ir : rr;
+          return [n, s, y ? 0 : 1, ar, rr, ir, hr, br, Y];
+        }),
+      M = null,
+      H = null,
+      W = null,
+      K = null,
       X = null,
-      Y = null,
-      V = null,
-      K = null;
+      O = null,
+      F = null,
+      q = null,
+      j = null,
+      Q = null,
+      ur = null,
+      nr = [],
+      or = null,
+      er = null;
     try {
-      if (m) ((S = i._buf), (E = i._loBuf));
+      if (m) ((M = i._buf), (H = i._loBuf));
       else {
-        let wr = z(i);
-        ((S = b(r, wr.hi, "dtrsv-AHi", !1)),
-          (E = b(r, wr.lo, "dtrsv-ALo", !1)));
+        let _r = $(i);
+        ((M = b(r, _r.hi, "dtrsv-AHi", !1)),
+          (H = b(r, _r.lo, "dtrsv-ALo", !1)));
       }
-      if (u) ((L = l._buf), (R = l._loBuf));
+      if (u) ((W = l._buf), (K = l._loBuf));
       else {
-        let wr = z(l);
-        ((L = b(r, wr.hi, "dtrsv-xHi", !0)),
-          (R = b(r, wr.lo, "dtrsv-xLo", !0)));
+        let _r = $(l);
+        ((W = b(r, _r.hi, "dtrsv-xHi", !0)),
+          (K = b(r, _r.lo, "dtrsv-xLo", !0)));
       }
-      ((q = lr(r, k * 64 * 64 * 4, "dtrsv-AinvHi")),
-        (O = lr(r, k * 64 * 64 * 4, "dtrsv-AinvLo")));
-      let U = Va(k, M, (wr) => {
-        let nr = wr * 64,
-          hr = Math.min(nr + 64, t);
-        return [n, wr, nr, hr];
-      });
-      Z = Ua(r, U, "dtrsv-apply-params");
-      let tr = Va(k, M, (wr) => {
-        let nr = wr * 64,
-          hr = Math.min(nr + 64, t);
-        return [t, n, s, y ? 0 : 1, g ? 0 : 1, nr, hr];
-      });
-      X = Ua(r, tr, "dtrsv-update-params");
-      let { commandEncoder: rr, querySet: or } = Hr(r);
-      Y = T(
-        r,
-        [
-          { value: t, type: "u32" },
-          { value: s, type: "u32" },
-          { value: y ? 0 : 1, type: "u32" },
-          { value: g ? 0 : 1, type: "u32" },
-          { value: w ? 1 : 0, type: "u32" },
-        ],
-        "dtrsv-invert-params",
-      );
-      let fr = N(r, x.getBindGroupLayout(0), [S, E, q, O, Y]);
-      Nr(
-        rr,
-        x,
-        fr,
-        { x: 64, y: k },
-        or
-          ? { timestampWrites: { querySet: or, beginningOfPassWriteIndex: 0 } }
-          : void 0,
-      );
-      for (let wr = 0; wr < A.length; wr++) {
-        let nr = A[wr],
-          hr = Math.min(nr + 64, t),
-          Mr = nr / 64,
-          Vr = wr === A.length - 1,
-          Ur = Mr * M,
-          Cr = N(r, _.getBindGroupLayout(0), [
+      ((F = dr(r, t * 4, "dtrsv-solHi")), (q = dr(r, t * 4, "dtrsv-solLo")));
+      let { commandEncoder: Y, querySet: ar, passDescriptor: rr } = jr(r),
+        ir = Y.beginComputePass(rr),
+        hr = (_r, Pr, Dr) =>
+          G(r, _.getBindGroupLayout(0), [
+            M,
+            H,
+            _r,
+            Pr,
+            W,
+            K,
+            F,
             q,
-            O,
-            L,
-            R,
-            { buffer: Z, offset: Ur, size: 16 },
+            { buffer: j, offset: Dr * E, size: zs },
           ]);
-        Nr(
-          rr,
-          _,
-          Cr,
-          1,
-          Vr && or
-            ? { timestampWrites: { querySet: or, endOfPassWriteIndex: 1 } }
-            : void 0,
-        );
-        let br = B ? t - hr : nr;
-        if (br === 0) continue;
-        let pr = N(r, v.getBindGroupLayout(0), [
-            S,
-            E,
-            L,
-            R,
-            { buffer: X, offset: Ur, size: 32 },
-          ]),
-          kr = Math.min(br, I);
-        Nr(rr, v, pr, kr);
+      if (I) {
+        k > 1 && (j = ti(r, P(1), "dtrsv-step-params"));
+        for (let _r of B) {
+          let Pr = _r / 64,
+            Dr = Math.min(_r + 64, t),
+            yr = Dr - _r,
+            pr = v ? t - Dr : _r,
+            kr = T(
+              r,
+              [
+                { value: yr, type: "u32" },
+                { value: _r * (A + L), type: "u32" },
+                { value: A, type: "u32" },
+                { value: L, type: "u32" },
+                { value: _r * n, type: "u32" },
+                { value: n, type: "u32" },
+                { value: v ? 0 : 1, type: "u32" },
+                { value: w ? 1 : 0, type: "u32" },
+                { value: 0, type: "u32" },
+                { value: pr > 0 ? 1 : 0, type: "u32" },
+              ],
+              "dtrsv-solve-params",
+            );
+          nr.push(kr);
+          let Br = (Nr) => ({ buffer: Nr, offset: _r * 4, size: yr * 4 });
+          (ir.setPipeline(x),
+            ir.setBindGroup(
+              0,
+              G(r, x.getBindGroupLayout(0), [M, H, W, K, Br(F), Br(q), kr]),
+            ),
+            ir.dispatchWorkgroups(1),
+            pr !== 0 &&
+              (ir.setPipeline(_),
+              ir.setBindGroup(0, hr(M, H, Pr)),
+              ir.dispatchWorkgroups(tr(r, Math.ceil(pr / 64), "dtrsv"))));
+        }
+      } else {
+        ((X = dr(r, k * 64 * 64 * 4, "dtrsv-AinvHi")),
+          (O = dr(r, k * 64 * 64 * 4, "dtrsv-AinvLo")),
+          (j = ti(r, P(0), "dtrsv-step-params")),
+          (Q = T(
+            r,
+            [
+              { value: t, type: "u32" },
+              { value: 0, type: "u32" },
+              { value: A, type: "u32" },
+              { value: L, type: "u32" },
+              { value: 0, type: "u32" },
+              { value: 1, type: "u32" },
+              { value: v ? 0 : 1, type: "u32" },
+              { value: w ? 1 : 0, type: "u32" },
+              { value: 1, type: "u32" },
+              { value: 0, type: "u32" },
+            ],
+            "dtrsv-invert-params",
+          )),
+          (ur = T(
+            r,
+            [
+              { value: t, type: "u32" },
+              { value: n, type: "u32" },
+            ],
+            "dtrsv-scatter-params",
+          )),
+          ir.setPipeline(x),
+          ir.setBindGroup(
+            0,
+            G(r, x.getBindGroupLayout(0), [M, H, X, O, F, q, Q]),
+          ),
+          ir.dispatchWorkgroups(64 / 4, tr(r, k, "dtrsv", "y")),
+          ir.setPipeline(_));
+        for (let _r of B) {
+          let Pr = _r / 64,
+            Dr = Math.min(_r + 64, t),
+            yr = v ? t - Dr : _r;
+          (ir.setBindGroup(0, hr(X, O, Pr)),
+            ir.dispatchWorkgroups(
+              tr(r, Math.max(1, Math.ceil(yr / 64)), "dtrsv"),
+            ));
+        }
+        ir.setPipeline(R);
+        for (let [_r, Pr] of [
+          [F, W],
+          [q, K],
+        ])
+          (ir.setBindGroup(0, G(r, R.getBindGroupLayout(0), [_r, Pr, ur])),
+            ir.dispatchWorkgroups(
+              Math.min(
+                Math.ceil(t / 64),
+                r.limits.maxComputeWorkgroupsPerDimension,
+              ),
+            ));
       }
-      let ar = Dr(r, rr, or);
-      ((V = u ? null : D(r, rr, L)), (K = u ? null : D(r, rr, R)), j(r, rr));
-      let er = await C(ar);
-      if (u) return er !== void 0 ? { gpuTimeMs: er } : {};
-      let ir = await G(V, Float32Array);
-      V = null;
-      let gr = await G(K, Float32Array);
-      K = null;
-      let xr = cr(ir, gr);
-      return er !== void 0 ? { x: xr, gpuTimeMs: er } : { x: xr };
+      ir.end();
+      let br = Rr(r, Y, ar);
+      ((or = u ? null : D(r, Y, W)), (er = u ? null : D(r, Y, K)), U(r, Y));
+      let lr = await V(br);
+      if (u) return lr !== void 0 ? { gpuTimeMs: lr } : {};
+      let gr = await S(or, Float32Array);
+      or = null;
+      let Hr = await S(er, Float32Array);
+      er = null;
+      let Wr = cr(gr, Hr);
+      return lr !== void 0 ? { x: Wr, gpuTimeMs: lr } : { x: Wr };
     } finally {
-      (!m && S && f(S),
-        !m && E && f(E),
-        !u && L && f(L),
-        !u && R && f(R),
-        q && f(q),
-        O && f(O),
-        Z && f(Z),
+      (!m && M && f(M),
+        !m && H && f(H),
+        !u && W && f(W),
+        !u && K && f(K),
         X && f(X),
-        Y && f(Y),
-        V && f(V),
-        K && f(K));
+        O && f(O),
+        F && f(F),
+        q && f(q),
+        j && f(j),
+        Q && f(Q),
+        ur && f(ur),
+        f(nr),
+        or && f(or),
+        er && f(er));
     }
   }
-  async function Za(r, o, e, a, t, i, s, l, n, d, u, m, w, c, p = "row-major") {
-    let g = l instanceof Q,
-      y = d instanceof Q,
-      h = w instanceof Q;
+  async function ai(r, o, e, a, t, i, s, l, n, d, u, m, w, p, c = "row-major") {
+    let g = l instanceof sr,
+      y = d instanceof sr,
+      h = w instanceof sr;
     if (
-      (F(r),
-      W(r, "dgemm", { A: l, B: d, C: w }),
+      (z(r),
+      Z(r, "dgemm", { A: l, B: d, C: w }),
       o !== "no-transpose" && o !== "transpose")
     )
       throw new Error("transA must be 'no-transpose' or 'transpose'.");
     if (e !== "no-transpose" && e !== "transpose")
       throw new Error("transB must be 'no-transpose' or 'transpose'.");
-    if (p !== "row-major" && p !== "column-major")
+    if (c !== "row-major" && c !== "column-major")
       throw new Error("layout must be 'row-major' or 'column-major'.");
     if (typeof s != "number") throw new Error("alpha must be a number.");
     if (Number.isNaN(s)) throw new Error("alpha must not be NaN.");
@@ -10266,7 +11033,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       !Number.isInteger(i) ||
       !Number.isInteger(n) ||
       !Number.isInteger(u) ||
-      !Number.isInteger(c)
+      !Number.isInteger(p)
     )
       throw new Error("m, n, k, lda, ldb, and ldc must be integers.");
     if (!g && !(l instanceof Float64Array))
@@ -10287,16 +11054,16 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
     if (a < 0 || t < 0 || i < 0)
       throw new Error("m, n, and k must be non-negative.");
-    if (n <= 0 || u <= 0 || c <= 0)
+    if (n <= 0 || u <= 0 || p <= 0)
       throw new Error("lda, ldb, and ldc must be positive.");
     if (a === 0 || t === 0) return h ? {} : { C: w };
-    let x = g ? l.layout : p,
-      _ = y ? d.layout : p,
-      v = h ? w.layout : p,
+    let x = g ? l.layout : c,
+      _ = y ? d.layout : c,
+      v = h ? w.layout : c,
       B = x === "column-major" ? i : a,
-      A = x === "column-major" ? a : i,
-      k = o === "no-transpose" ? B : A,
-      I = o === "no-transpose" ? A : B;
+      k = x === "column-major" ? a : i,
+      E = o === "no-transpose" ? B : k,
+      I = o === "no-transpose" ? k : B;
     if (n < I)
       throw new Error(
         `lda must be >= ${x === "column-major" ? "rows" : "cols"} of A as stored.`,
@@ -10304,43 +11071,43 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (g) {
       if (n !== l.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [ir, gr] = o === "no-transpose" ? [a, i] : [i, a];
-      if (l.rows < ir || l.cols < gr)
+      let [rr, ir] = o === "no-transpose" ? [a, i] : [i, a];
+      if (l.rows < rr || l.cols < ir)
         throw new Error("A is too small for the given m, k, and transA.");
-    } else if (l.length < (k - 1) * n + I)
+    } else if (l.length < (E - 1) * n + I)
       throw new Error(
         "A does not have enough elements for the given dimensions and lda.",
       );
-    let M = _ === "column-major" ? t : i,
-      S = _ === "column-major" ? i : t,
-      E = e === "no-transpose" ? M : S,
-      L = e === "no-transpose" ? S : M;
-    if (u < L)
+    let R = _ === "column-major" ? t : i,
+      A = _ === "column-major" ? i : t,
+      L = e === "no-transpose" ? R : A,
+      P = e === "no-transpose" ? A : R;
+    if (u < P)
       throw new Error(
         `ldb must be >= ${_ === "column-major" ? "rows" : "cols"} of B as stored.`,
       );
     if (y) {
       if (u !== d.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [ir, gr] = e === "no-transpose" ? [i, t] : [t, i];
-      if (d.rows < ir || d.cols < gr)
+      let [rr, ir] = e === "no-transpose" ? [i, t] : [t, i];
+      if (d.rows < rr || d.cols < ir)
         throw new Error("B is too small for the given n, k, and transB.");
-    } else if (d.length < (E - 1) * u + L)
+    } else if (d.length < (L - 1) * u + P)
       throw new Error(
         "B does not have enough elements for the given dimensions and ldb.",
       );
-    let R = v === "column-major" ? t : a,
-      q = v === "column-major" ? a : t;
-    if (c < q)
+    let M = v === "column-major" ? t : a,
+      H = v === "column-major" ? a : t;
+    if (p < H)
       throw new Error(
         `ldc must be >= ${v === "column-major" ? "rows" : "cols"} of C as stored.`,
       );
     if (h) {
-      if (c !== w.lda)
+      if (p !== w.lda)
         throw new Error("ldc must match C.lda when C is a GpuMatrix.");
       if (w.rows < a || w.cols < t)
         throw new Error("C is too small for the given m and n.");
-    } else if (w.length < (R - 1) * c + q)
+    } else if (w.length < (M - 1) * p + H)
       throw new Error(
         "C does not have enough elements for the given dimensions and ldc.",
       );
@@ -10357,10 +11124,10 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           o === "no-transpose" ? "transpose" : "no-transpose",
         ]),
         ([a, t] = [t, a])));
-    let O = Math.ceil(t / 64),
-      Z = Math.ceil(a / 64),
-      X = O * Z >= 36,
-      V = await P(
+    let W = Math.ceil(t / 64),
+      K = Math.ceil(a / 64),
+      X = W * K >= 36,
+      F = await N(
         r,
         [
           ...["f64/dekker", "f64/utils/add", "f64/utils/multiply"],
@@ -10368,114 +11135,112 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ],
         "main",
       ),
-      K = null,
-      U = null,
-      tr = null,
-      rr = null,
-      or = null,
-      fr = null,
+      q = null,
+      j = null,
+      Q = null,
       ur = null,
-      ar = null,
-      er = null;
+      nr = null,
+      or = null,
+      er = null,
+      Y = null,
+      ar = null;
     try {
-      if (g) ((K = l._buf), (U = l._loBuf));
+      if (g) ((q = l._buf), (j = l._loBuf));
       else {
-        let Sr = z(l);
-        ((K = b(r, Sr.hi, "dgemm-AHi", !1)),
-          (U = b(r, Sr.lo, "dgemm-ALo", !1)));
+        let Gr = $(l);
+        ((q = b(r, Gr.hi, "dgemm-AHi", !1)),
+          (j = b(r, Gr.lo, "dgemm-ALo", !1)));
       }
-      if (y) ((tr = d._buf), (rr = d._loBuf));
+      if (y) ((Q = d._buf), (ur = d._loBuf));
       else {
-        let Sr = z(d);
-        ((tr = b(r, Sr.hi, "dgemm-BHi", !1)),
-          (rr = b(r, Sr.lo, "dgemm-BLo", !1)));
+        let Gr = $(d);
+        ((Q = b(r, Gr.hi, "dgemm-BHi", !1)),
+          (ur = b(r, Gr.lo, "dgemm-BLo", !1)));
       }
-      if (h) ((or = w._buf), (fr = w._loBuf));
+      if (h) ((nr = w._buf), (or = w._loBuf));
       else {
-        let Sr = z(w);
-        ((or = b(r, Sr.hi, "dgemm-CHi", !0)),
-          (fr = b(r, Sr.lo, "dgemm-CLo", !0)));
+        let Gr = $(w);
+        ((nr = b(r, Gr.hi, "dgemm-CHi", !0)),
+          (or = b(r, Gr.lo, "dgemm-CLo", !0)));
       }
-      let ir = o === "no-transpose",
-        gr = e === "no-transpose",
-        xr = ir && Ar(K, n, a, i),
-        wr = Ar(tr, u, gr ? i : t, gr ? t : i),
-        { hi: nr, lo: hr } = z(new Float64Array([s])),
-        { hi: Mr, lo: Vr } = z(new Float64Array([m]));
-      ur = T(
+      let rr = o === "no-transpose",
+        ir = e === "no-transpose",
+        hr = rr && Lr(q, n, a, i),
+        br = Lr(Q, u, ir ? i : t, ir ? t : i),
+        { hi: lr, lo: gr } = $(new Float64Array([s])),
+        { hi: Hr, lo: Wr } = $(new Float64Array([m]));
+      er = T(
         r,
         [
           { value: a, type: "u32" },
           { value: t, type: "u32" },
           { value: i, type: "u32" },
-          { value: nr[0], type: "f32" },
-          { value: hr[0], type: "f32" },
-          { value: Mr[0], type: "f32" },
-          { value: Vr[0], type: "f32" },
+          { value: lr[0], type: "f32" },
+          { value: gr[0], type: "f32" },
+          { value: Hr[0], type: "f32" },
+          { value: Wr[0], type: "f32" },
           { value: n, type: "u32" },
           { value: u, type: "u32" },
-          { value: c, type: "u32" },
+          { value: p, type: "u32" },
           { value: o === "transpose" ? 1 : 0, type: "u32" },
           { value: e === "transpose" ? 1 : 0, type: "u32" },
-          { value: xr ? 1 : 0, type: "u32" },
-          { value: wr ? 1 : 0, type: "u32" },
+          { value: hr ? 1 : 0, type: "u32" },
+          { value: br ? 1 : 0, type: "u32" },
         ],
         "dgemm-params",
       );
-      let Ur = N(r, V.getBindGroupLayout(0), [
-          K,
-          Br(r, K),
-          U,
-          tr,
-          Br(r, tr),
-          rr,
-          or,
-          fr,
+      let _r = G(r, F.getBindGroupLayout(0), [
+          q,
+          Ar(r, q),
+          j,
+          Q,
+          Ar(r, Q),
           ur,
+          nr,
+          or,
+          er,
         ]),
-        Cr = X
-          ? { x: sr(r, O, "dgemm", "x"), y: sr(r, Z, "dgemm", "y") }
+        Pr = X
+          ? { x: tr(r, W, "dgemm", "x"), y: tr(r, K, "dgemm", "y") }
           : {
-              x: sr(r, Math.ceil(t / 32), "dgemm", "x"),
-              y: sr(r, Math.ceil(a / 32), "dgemm", "y"),
+              x: tr(r, Math.ceil(t / 32), "dgemm", "x"),
+              y: tr(r, Math.ceil(a / 32), "dgemm", "y"),
             },
-        { commandEncoder: Ir, ts: br } = $(r, V, Ur, Cr);
-      ((ar = h ? null : D(r, Ir, or)),
-        (er = h ? null : D(r, Ir, fr)),
-        j(r, Ir));
-      let pr = await C(br);
+        { commandEncoder: Dr, ts: yr } = vr(r, F, _r, Pr);
+      ((Y = h ? null : D(r, Dr, nr)), (ar = h ? null : D(r, Dr, or)), U(r, Dr));
+      let pr = await V(yr);
       if (h) return pr !== void 0 ? { gpuTimeMs: pr } : {};
-      let kr = await G(ar, Float32Array);
+      let kr = await S(Y, Float32Array);
+      Y = null;
+      let Br = await S(ar, Float32Array);
       ar = null;
-      let vr = await G(er, Float32Array);
-      er = null;
-      let Gr = cr(kr, vr);
-      return pr !== void 0 ? { C: Gr, gpuTimeMs: pr } : { C: Gr };
+      let Nr = cr(kr, Br);
+      return pr !== void 0 ? { C: Nr, gpuTimeMs: pr } : { C: Nr };
     } finally {
-      (!g && K && f(K),
-        !g && U && f(U),
-        !y && tr && f(tr),
-        !y && rr && f(rr),
+      (!g && q && f(q),
+        !g && j && f(j),
+        !y && Q && f(Q),
+        !y && ur && f(ur),
+        !h && nr && f(nr),
         !h && or && f(or),
-        !h && fr && f(fr),
-        ur && f(ur),
-        ar && f(ar),
-        er && f(er));
+        er && f(er),
+        Y && f(Y),
+        ar && f(ar));
     }
   }
-  async function Ya(r, o, e, a, t, i, s, l, n, d, u, m, w, c, p = "row-major") {
-    let g = l instanceof Q,
-      y = d instanceof Q,
-      h = w instanceof Q;
+  async function ii(r, o, e, a, t, i, s, l, n, d, u, m, w, p, c = "row-major") {
+    let g = l instanceof sr,
+      y = d instanceof sr,
+      h = w instanceof sr;
     if (
-      (F(r),
-      W(r, "sgemm", { A: l, B: d, C: w }),
+      (z(r),
+      Z(r, "sgemm", { A: l, B: d, C: w }),
       o !== "no-transpose" && o !== "transpose")
     )
       throw new Error("transA must be 'no-transpose' or 'transpose'.");
     if (e !== "no-transpose" && e !== "transpose")
       throw new Error("transB must be 'no-transpose' or 'transpose'.");
-    if (p !== "row-major" && p !== "column-major")
+    if (c !== "row-major" && c !== "column-major")
       throw new Error("layout must be 'row-major' or 'column-major'.");
     if (typeof s != "number") throw new Error("alpha must be a number.");
     if (Number.isNaN(s)) throw new Error("alpha must not be NaN.");
@@ -10489,7 +11254,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       !Number.isInteger(i) ||
       !Number.isInteger(n) ||
       !Number.isInteger(u) ||
-      !Number.isInteger(c)
+      !Number.isInteger(p)
     )
       throw new Error("m, n, k, lda, ldb, and ldc must be integers.");
     if (!g && !(l instanceof Float32Array))
@@ -10504,16 +11269,16 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
     if (a < 0 || t < 0 || i < 0)
       throw new Error("m, n, and k must be non-negative.");
-    if (n <= 0 || u <= 0 || c <= 0)
+    if (n <= 0 || u <= 0 || p <= 0)
       throw new Error("lda, ldb, and ldc must be positive.");
     if (a === 0 || t === 0) return h ? {} : { C: w };
-    let x = g ? l.layout : p,
-      _ = y ? d.layout : p,
-      v = h ? w.layout : p,
+    let x = g ? l.layout : c,
+      _ = y ? d.layout : c,
+      v = h ? w.layout : c,
       B = x === "column-major" ? i : a,
-      A = x === "column-major" ? a : i,
-      k = o === "no-transpose" ? B : A,
-      I = o === "no-transpose" ? A : B;
+      k = x === "column-major" ? a : i,
+      E = o === "no-transpose" ? B : k,
+      I = o === "no-transpose" ? k : B;
     if (n < I)
       throw new Error(
         `lda must be >= ${x === "column-major" ? "rows" : "cols"} of A as stored.`,
@@ -10521,43 +11286,43 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     if (g) {
       if (n !== l.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [ar, er] = o === "no-transpose" ? [a, i] : [i, a];
-      if (l.rows < ar || l.cols < er)
+      let [Y, ar] = o === "no-transpose" ? [a, i] : [i, a];
+      if (l.rows < Y || l.cols < ar)
         throw new Error("A is too small for the given m, k, and transA.");
-    } else if (l.length < (k - 1) * n + I)
+    } else if (l.length < (E - 1) * n + I)
       throw new Error(
         "A does not have enough elements for the given dimensions and lda.",
       );
-    let M = _ === "column-major" ? t : i,
-      S = _ === "column-major" ? i : t,
-      E = e === "no-transpose" ? M : S,
-      L = e === "no-transpose" ? S : M;
-    if (u < L)
+    let R = _ === "column-major" ? t : i,
+      A = _ === "column-major" ? i : t,
+      L = e === "no-transpose" ? R : A,
+      P = e === "no-transpose" ? A : R;
+    if (u < P)
       throw new Error(
         `ldb must be >= ${_ === "column-major" ? "rows" : "cols"} of B as stored.`,
       );
     if (y) {
       if (u !== d.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [ar, er] = e === "no-transpose" ? [i, t] : [t, i];
-      if (d.rows < ar || d.cols < er)
+      let [Y, ar] = e === "no-transpose" ? [i, t] : [t, i];
+      if (d.rows < Y || d.cols < ar)
         throw new Error("B is too small for the given n, k, and transB.");
-    } else if (d.length < (E - 1) * u + L)
+    } else if (d.length < (L - 1) * u + P)
       throw new Error(
         "B does not have enough elements for the given dimensions and ldb.",
       );
-    let R = v === "column-major" ? t : a,
-      q = v === "column-major" ? a : t;
-    if (c < q)
+    let M = v === "column-major" ? t : a,
+      H = v === "column-major" ? a : t;
+    if (p < H)
       throw new Error(
         `ldc must be >= ${v === "column-major" ? "rows" : "cols"} of C as stored.`,
       );
     if (h) {
-      if (c !== w.lda)
+      if (p !== w.lda)
         throw new Error("ldc must match C.lda when C is a GpuMatrix.");
       if (w.rows < a || w.cols < t)
         throw new Error("C is too small for the given m and n.");
-    } else if (w.length < (R - 1) * c + q)
+    } else if (w.length < (M - 1) * p + H)
       throw new Error(
         "C does not have enough elements for the given dimensions and ldc.",
       );
@@ -10574,18 +11339,18 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           o === "no-transpose" ? "transpose" : "no-transpose",
         ]),
         ([a, t] = [t, a])));
-    let O = Math.ceil(t / 64),
-      Z = Math.ceil(a / 64),
-      X = O * Z >= 36,
-      Y = await P(r, X ? "sgemm_large" : "sgemm_small"),
-      V = g ? l._buf : b(r, l, "sgemm-A", !1),
-      K = y ? d._buf : b(r, d, "sgemm-B", !1),
-      U = h ? w._buf : b(r, w, "sgemm-C", !0),
-      tr = o === "no-transpose",
-      rr = e === "no-transpose",
-      or = Ar(V, n, tr ? a : i, tr ? i : a),
-      fr = Ar(K, u, rr ? i : t, rr ? t : i),
-      ur = T(
+    let W = Math.ceil(t / 64),
+      K = Math.ceil(a / 64),
+      X = W * K >= 36,
+      O = await N(r, X ? "sgemm_large" : "sgemm_small"),
+      F = g ? l._buf : b(r, l, "sgemm-A", !1),
+      q = y ? d._buf : b(r, d, "sgemm-B", !1),
+      j = h ? w._buf : b(r, w, "sgemm-C", !0),
+      Q = o === "no-transpose",
+      ur = e === "no-transpose",
+      nr = Lr(F, n, Q ? a : i, Q ? i : a),
+      or = Lr(q, u, ur ? i : t, ur ? t : i),
+      er = T(
         r,
         [
           { value: a, type: "u32" },
@@ -10595,11 +11360,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           { value: m, type: "f32" },
           { value: n, type: "u32" },
           { value: u, type: "u32" },
-          { value: c, type: "u32" },
+          { value: p, type: "u32" },
           { value: o === "transpose" ? 1 : 0, type: "u32" },
           { value: e === "transpose" ? 1 : 0, type: "u32" },
+          { value: nr ? 1 : 0, type: "u32" },
           { value: or ? 1 : 0, type: "u32" },
-          { value: fr ? 1 : 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
@@ -10609,25 +11374,25 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "sgemm-params",
       );
     try {
-      let ar = N(r, Y.getBindGroupLayout(0), [V, Br(r, V), K, Br(r, K), U, ur]),
-        er = X
-          ? { x: sr(r, O, "sgemm", "x"), y: sr(r, Z, "sgemm", "y") }
+      let Y = G(r, O.getBindGroupLayout(0), [F, Ar(r, F), q, Ar(r, q), j, er]),
+        ar = X
+          ? { x: tr(r, W, "sgemm", "x"), y: tr(r, K, "sgemm", "y") }
           : {
-              x: sr(r, Math.ceil(t / 32), "sgemm", "x"),
-              y: sr(r, Math.ceil(a / 32), "sgemm", "y"),
+              x: tr(r, Math.ceil(t / 32), "sgemm", "x"),
+              y: tr(r, Math.ceil(a / 32), "sgemm", "y"),
             },
-        { commandEncoder: ir, ts: gr } = $(r, Y, ar, er),
-        xr = h ? null : D(r, ir, U);
-      j(r, ir);
-      let wr = await C(gr);
-      if (h) return wr !== void 0 ? { gpuTimeMs: wr } : {};
-      let nr = await G(xr, Float32Array);
-      return wr !== void 0 ? { C: nr, gpuTimeMs: wr } : { C: nr };
+        { commandEncoder: rr, ts: ir } = vr(r, O, Y, ar),
+        hr = h ? null : D(r, rr, j);
+      U(r, rr);
+      let br = await V(ir);
+      if (h) return br !== void 0 ? { gpuTimeMs: br } : {};
+      let lr = await S(hr, Float32Array);
+      return br !== void 0 ? { C: lr, gpuTimeMs: br } : { C: lr };
     } finally {
-      (g || f(V), y || f(K), h || f(U), f(ur));
+      (g || f(F), y || f(q), h || f(j), f(er));
     }
   }
-  async function Xa(
+  async function si(
     r,
     o,
     e,
@@ -10641,16 +11406,16 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     u,
     m,
     w,
-    c,
     p,
+    c,
     g = "row-major",
   ) {
-    let y = n instanceof Q,
-      h = u instanceof Q,
-      x = c instanceof Q;
+    let y = n instanceof sr,
+      h = u instanceof sr,
+      x = p instanceof sr;
     if (
-      (F(r),
-      W(r, "sgemmtr", { A: n, B: u, C: c }),
+      (z(r),
+      Z(r, "sgemmtr", { A: n, B: u, C: p }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -10672,14 +11437,14 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       !Number.isInteger(s) ||
       !Number.isInteger(d) ||
       !Number.isInteger(m) ||
-      !Number.isInteger(p)
+      !Number.isInteger(c)
     )
       throw new Error("m, n, k, lda, ldb, and ldc must be integers.");
     if (!y && !(n instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
     if (!h && !(u instanceof Float32Array))
       throw new Error("B must be a Float32Array or GpuMatrix.");
-    if (!x && !(c instanceof Float32Array))
+    if (!x && !(p instanceof Float32Array))
       throw new Error("C must be a Float32Array or GpuMatrix.");
     if ((y || h) && !x)
       throw new Error("C must be a GpuMatrix when A or B is a GpuMatrix.");
@@ -10687,60 +11452,60 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
     if (t < 0 || i < 0 || s < 0)
       throw new Error("m, n, and k must be non-negative.");
-    if (d <= 0 || m <= 0 || p <= 0)
+    if (d <= 0 || m <= 0 || c <= 0)
       throw new Error("lda, ldb, and ldc must be positive.");
-    if (t === 0 || i === 0) return x ? {} : { C: c };
+    if (t === 0 || i === 0) return x ? {} : { C: p };
     let _ = y ? n.layout : g,
       v = h ? u.layout : g,
-      B = x ? c.layout : g,
-      A = _ === "column-major" ? s : t,
-      k = _ === "column-major" ? t : s,
-      I = e === "no-transpose" ? A : k,
-      M = e === "no-transpose" ? k : A;
-    if (d < M)
+      B = x ? p.layout : g,
+      k = _ === "column-major" ? s : t,
+      E = _ === "column-major" ? t : s,
+      I = e === "no-transpose" ? k : E,
+      R = e === "no-transpose" ? E : k;
+    if (d < R)
       throw new Error(
         `lda must be >= ${_ === "column-major" ? "rows" : "cols"} of A as stored.`,
       );
     if (y) {
       if (d !== n.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [er, ir] = e === "no-transpose" ? [t, s] : [s, t];
-      if (n.rows < er || n.cols < ir)
+      let [ar, rr] = e === "no-transpose" ? [t, s] : [s, t];
+      if (n.rows < ar || n.cols < rr)
         throw new Error("A is too small for the given m, k, and transA.");
-    } else if (n.length < (I - 1) * d + M)
+    } else if (n.length < (I - 1) * d + R)
       throw new Error(
         "A does not have enough elements for the given dimensions and lda.",
       );
-    let S = v === "column-major" ? i : s,
-      E = v === "column-major" ? s : i,
-      L = a === "no-transpose" ? S : E,
-      R = a === "no-transpose" ? E : S;
-    if (m < R)
+    let A = v === "column-major" ? i : s,
+      L = v === "column-major" ? s : i,
+      P = a === "no-transpose" ? A : L,
+      M = a === "no-transpose" ? L : A;
+    if (m < M)
       throw new Error(
         `ldb must be >= ${v === "column-major" ? "rows" : "cols"} of B as stored.`,
       );
     if (h) {
       if (m !== u.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [er, ir] = a === "no-transpose" ? [s, i] : [i, s];
-      if (u.rows < er || u.cols < ir)
+      let [ar, rr] = a === "no-transpose" ? [s, i] : [i, s];
+      if (u.rows < ar || u.cols < rr)
         throw new Error("B is too small for the given n, k, and transB.");
-    } else if (u.length < (L - 1) * m + R)
+    } else if (u.length < (P - 1) * m + M)
       throw new Error(
         "B does not have enough elements for the given dimensions and ldb.",
       );
-    let q = B === "column-major" ? i : t,
-      O = B === "column-major" ? t : i;
-    if (p < O)
+    let H = B === "column-major" ? i : t,
+      W = B === "column-major" ? t : i;
+    if (c < W)
       throw new Error(
         `ldc must be >= ${B === "column-major" ? "rows" : "cols"} of C as stored.`,
       );
     if (x) {
-      if (p !== c.lda)
+      if (c !== p.lda)
         throw new Error("ldc must match C.lda when C is a GpuMatrix.");
-      if (c.rows < t || c.cols < i)
+      if (p.rows < t || p.cols < i)
         throw new Error("C is too small for the given m and n.");
-    } else if (c.length < (q - 1) * p + O)
+    } else if (p.length < (H - 1) * c + W)
       throw new Error(
         "C does not have enough elements for the given dimensions and ldc.",
       );
@@ -10758,18 +11523,18 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ]),
         ([t, i] = [i, t]),
         (o = o === "lower" ? "upper" : "lower")));
-    let Z = Math.ceil(i / 64),
+    let K = Math.ceil(i / 64),
       X = Math.ceil(t / 64),
-      Y = Z * X >= 36,
-      V = await P(r, Y ? "sgemm_large" : "sgemm_small"),
-      K = y ? n._buf : b(r, n, "sgemmtr-A", !1),
-      U = h ? u._buf : b(r, u, "sgemmtr-B", !1),
-      tr = x ? c._buf : b(r, c, "sgemmtr-C", !0),
-      rr = e === "no-transpose",
-      or = a === "no-transpose",
-      fr = Ar(K, d, rr ? t : s, rr ? s : t),
-      ur = Ar(U, m, or ? s : i, or ? i : s),
-      ar = T(
+      O = K * X >= 36,
+      F = await N(r, O ? "sgemm_large" : "sgemm_small"),
+      q = y ? n._buf : b(r, n, "sgemmtr-A", !1),
+      j = h ? u._buf : b(r, u, "sgemmtr-B", !1),
+      Q = x ? p._buf : b(r, p, "sgemmtr-C", !0),
+      ur = e === "no-transpose",
+      nr = a === "no-transpose",
+      or = Lr(q, d, ur ? t : s, ur ? s : t),
+      er = Lr(j, m, nr ? s : i, nr ? i : s),
+      Y = T(
         r,
         [
           { value: t, type: "u32" },
@@ -10779,11 +11544,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           { value: w, type: "f32" },
           { value: d, type: "u32" },
           { value: m, type: "u32" },
-          { value: p, type: "u32" },
+          { value: c, type: "u32" },
           { value: e === "transpose" ? 1 : 0, type: "u32" },
           { value: a === "transpose" ? 1 : 0, type: "u32" },
-          { value: fr ? 1 : 0, type: "u32" },
-          { value: ur ? 1 : 0, type: "u32" },
+          { value: or ? 1 : 0, type: "u32" },
+          { value: er ? 1 : 0, type: "u32" },
           { value: o === "lower" ? 1 : 2, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
@@ -10793,35 +11558,28 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "sgemmtr-params",
       );
     try {
-      let er = N(r, V.getBindGroupLayout(0), [
-          K,
-          Br(r, K),
-          U,
-          Br(r, U),
-          tr,
-          ar,
-        ]),
-        ir = Y
-          ? { x: sr(r, Z, "sgemmtr", "x"), y: sr(r, X, "sgemmtr", "y") }
+      let ar = G(r, F.getBindGroupLayout(0), [q, Ar(r, q), j, Ar(r, j), Q, Y]),
+        rr = O
+          ? { x: tr(r, K, "sgemmtr", "x"), y: tr(r, X, "sgemmtr", "y") }
           : {
-              x: sr(r, Math.ceil(i / 32), "sgemmtr", "x"),
-              y: sr(r, Math.ceil(t / 32), "sgemmtr", "y"),
+              x: tr(r, Math.ceil(i / 32), "sgemmtr", "x"),
+              y: tr(r, Math.ceil(t / 32), "sgemmtr", "y"),
             },
-        { commandEncoder: gr, ts: xr } = $(r, V, er, ir),
-        wr = x ? null : D(r, gr, tr);
-      j(r, gr);
-      let nr = await C(xr);
-      if (x) return nr !== void 0 ? { gpuTimeMs: nr } : {};
-      let hr = await G(wr, Float32Array);
-      return nr !== void 0 ? { C: hr, gpuTimeMs: nr } : { C: hr };
+        { commandEncoder: ir, ts: hr } = vr(r, F, ar, rr),
+        br = x ? null : D(r, ir, Q);
+      U(r, ir);
+      let lr = await V(hr);
+      if (x) return lr !== void 0 ? { gpuTimeMs: lr } : {};
+      let gr = await S(br, Float32Array);
+      return lr !== void 0 ? { C: gr, gpuTimeMs: lr } : { C: gr };
     } finally {
-      (y || f(K), h || f(U), x || f(tr), f(ar));
+      (y || f(q), h || f(j), x || f(Q), f(Y));
     }
   }
-  async function $a(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
-    let w = s instanceof Q,
-      c = d instanceof Q;
-    if ((F(r), W(r, "ssyrk", { A: s, C: d }), o !== "lower" && o !== "upper"))
+  async function ni(r, o, e, a, t, i, s, l, n, d, u, m = "row-major") {
+    let w = s instanceof sr,
+      p = d instanceof sr;
+    if ((z(r), Z(r, "ssyrk", { A: s, C: d }), o !== "lower" && o !== "upper"))
       throw new Error("uplo must be 'lower' or 'upper'.");
     if (e !== "no-transpose" && e !== "transpose")
       throw new Error("trans must be 'no-transpose' or 'transpose'.");
@@ -10842,37 +11600,37 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error("n, k, lda, and ldc must be integers.");
     if (!w && !(s instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
-    if (!c && !(d instanceof Float32Array))
+    if (!p && !(d instanceof Float32Array))
       throw new Error("C must be a Float32Array or GpuMatrix.");
-    if (w && !c)
+    if (w && !p)
       throw new Error("C must be a GpuMatrix when A is a GpuMatrix.");
-    if (c && !w)
+    if (p && !w)
       throw new Error("A must be a GpuMatrix when C is a GpuMatrix.");
     if (a < 0 || t < 0) throw new Error("n and k must be non-negative.");
     if (l <= 0 || u <= 0) throw new Error("lda and ldc must be positive.");
-    if (a === 0) return c ? {} : { C: d };
-    let p = w ? s.layout : m,
-      g = c ? d.layout : m,
-      y = p === "column-major" ? t : a,
-      h = p === "column-major" ? a : t,
+    if (a === 0) return p ? {} : { C: d };
+    let c = w ? s.layout : m,
+      g = p ? d.layout : m,
+      y = c === "column-major" ? t : a,
+      h = c === "column-major" ? a : t,
       x = e === "no-transpose" ? y : h,
       _ = e === "no-transpose" ? h : y;
     if (l < _)
       throw new Error(
-        `lda must be >= ${p === "column-major" ? "rows" : "cols"} of A as stored.`,
+        `lda must be >= ${c === "column-major" ? "rows" : "cols"} of A as stored.`,
       );
     if (w) {
       if (l !== s.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [V, K] = e === "no-transpose" ? [a, t] : [t, a];
-      if (s.rows < V || s.cols < K)
+      let [F, q] = e === "no-transpose" ? [a, t] : [t, a];
+      if (s.rows < F || s.cols < q)
         throw new Error("A is too small for the given n, k, and trans.");
     } else if (s.length < (x - 1) * l + _)
       throw new Error(
         "A does not have enough elements for the given dimensions and lda.",
       );
     if (u < a) throw new Error("ldc must be >= n.");
-    if (c) {
+    if (p) {
       if (u !== d.lda)
         throw new Error("ldc must match C.lda when C is a GpuMatrix.");
       if (d.rows < a || d.cols < a)
@@ -10882,30 +11640,30 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "C does not have enough elements for the given dimensions and ldc.",
       );
     let v = e;
-    p === "column-major" &&
+    c === "column-major" &&
       (v = v === "no-transpose" ? "transpose" : "no-transpose");
     let B = v === "no-transpose" ? "transpose" : "no-transpose",
-      A = o;
+      k = o;
     g === "column-major" &&
       (([v, B] = [
         B === "no-transpose" ? "transpose" : "no-transpose",
         v === "no-transpose" ? "transpose" : "no-transpose",
       ]),
-      (A = A === "lower" ? "upper" : "lower"));
-    let k = Math.ceil(a / 64),
+      (k = k === "lower" ? "upper" : "lower"));
+    let E = Math.ceil(a / 64),
       I = Math.ceil(a / 64),
-      M = k * I >= 36,
-      S = await P(r, M ? "sgemm_large" : "sgemm_small"),
-      E = w ? s._buf : b(r, s, "ssyrk-A", !1),
-      L = c ? d._buf : b(r, d, "ssyrk-C", !0),
-      R = w
-        ? lr(r, E.size, "ssyrk-B", GPUBufferUsage.COPY_DST)
+      R = E * I >= 36,
+      A = await N(r, R ? "sgemm_large" : "sgemm_small"),
+      L = w ? s._buf : b(r, s, "ssyrk-A", !1),
+      P = p ? d._buf : b(r, d, "ssyrk-C", !0),
+      M = w
+        ? dr(r, L.size, "ssyrk-B", GPUBufferUsage.COPY_DST)
         : b(r, s, "ssyrk-B", !1),
-      q = v === "no-transpose",
-      O = B === "no-transpose",
-      Z = Ar(E, l, q ? a : t, q ? t : a),
-      X = Ar(R, l, O ? t : a, O ? a : t),
-      Y = T(
+      H = v === "no-transpose",
+      W = B === "no-transpose",
+      K = Lr(L, l, H ? a : t, H ? t : a),
+      X = Lr(M, l, W ? t : a, W ? a : t),
+      O = T(
         r,
         [
           { value: a, type: "u32" },
@@ -10918,9 +11676,9 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
           { value: u, type: "u32" },
           { value: v === "transpose" ? 1 : 0, type: "u32" },
           { value: B === "transpose" ? 1 : 0, type: "u32" },
-          { value: Z ? 1 : 0, type: "u32" },
+          { value: K ? 1 : 0, type: "u32" },
           { value: X ? 1 : 0, type: "u32" },
-          { value: A === "lower" ? 1 : 2, type: "u32" },
+          { value: k === "lower" ? 1 : 2, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
@@ -10929,39 +11687,39 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "ssyrk-params",
       );
     try {
-      let V = N(r, S.getBindGroupLayout(0), [E, Br(r, E), R, Br(r, R), L, Y]),
-        K = M
-          ? { x: sr(r, k, "ssyrk", "x"), y: sr(r, I, "ssyrk", "y") }
+      let F = G(r, A.getBindGroupLayout(0), [L, Ar(r, L), M, Ar(r, M), P, O]),
+        q = R
+          ? { x: tr(r, E, "ssyrk", "x"), y: tr(r, I, "ssyrk", "y") }
           : {
-              x: sr(r, Math.ceil(a / 32), "ssyrk", "x"),
-              y: sr(r, Math.ceil(a / 32), "ssyrk", "y"),
+              x: tr(r, Math.ceil(a / 32), "ssyrk", "x"),
+              y: tr(r, Math.ceil(a / 32), "ssyrk", "y"),
             },
-        { commandEncoder: U, querySet: tr, passDescriptor: rr } = Hr(r);
-      (w && U.copyBufferToBuffer(E, 0, R, 0, E.size), Nr(U, S, V, K, rr));
-      let or = Dr(r, U, tr),
-        fr = c ? null : D(r, U, L);
-      j(r, U);
-      let ur = await C(or);
-      if (c) return ur !== void 0 ? { gpuTimeMs: ur } : {};
-      let ar = await G(fr, Float32Array);
-      return ur !== void 0 ? { C: ar, gpuTimeMs: ur } : { C: ar };
+        { commandEncoder: j, querySet: Q, passDescriptor: ur } = jr(r);
+      (w && j.copyBufferToBuffer(L, 0, M, 0, L.size), Zr(j, A, F, q, ur));
+      let nr = Rr(r, j, Q),
+        or = p ? null : D(r, j, P);
+      U(r, j);
+      let er = await V(nr);
+      if (p) return er !== void 0 ? { gpuTimeMs: er } : {};
+      let Y = await S(or, Float32Array);
+      return er !== void 0 ? { C: Y, gpuTimeMs: er } : { C: Y };
     } finally {
-      (w || f(E), f(R), c || f(L), f(Y));
+      (w || f(L), f(M), p || f(P), f(O));
     }
   }
-  async function Ja(r, o, e, a, t, i, s, l, n, d, u, m, w, c = "row-major") {
-    let p = s instanceof Q,
-      g = n instanceof Q,
-      y = m instanceof Q;
+  async function li(r, o, e, a, t, i, s, l, n, d, u, m, w, p = "row-major") {
+    let c = s instanceof sr,
+      g = n instanceof sr,
+      y = m instanceof sr;
     if (
-      (F(r),
-      W(r, "ssyr2k", { A: s, B: n, C: m }),
+      (z(r),
+      Z(r, "ssyr2k", { A: s, B: n, C: m }),
       o !== "lower" && o !== "upper")
     )
       throw new Error("uplo must be 'lower' or 'upper'.");
     if (e !== "no-transpose" && e !== "transpose")
       throw new Error("trans must be 'no-transpose' or 'transpose'.");
-    if (c !== "row-major" && c !== "column-major")
+    if (p !== "row-major" && p !== "column-major")
       throw new Error("layout must be 'row-major' or 'column-major'.");
     if (typeof i != "number") throw new Error("alpha must be a number.");
     if (Number.isNaN(i)) throw new Error("alpha must not be NaN.");
@@ -10977,56 +11735,56 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       !Number.isInteger(w)
     )
       throw new Error("n, k, lda, ldb, and ldc must be integers.");
-    if (!p && !(s instanceof Float32Array))
+    if (!c && !(s instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
     if (!g && !(n instanceof Float32Array))
       throw new Error("B must be a Float32Array or GpuMatrix.");
     if (!y && !(m instanceof Float32Array))
       throw new Error("C must be a Float32Array or GpuMatrix.");
-    if ((p || g) && !y)
+    if ((c || g) && !y)
       throw new Error("C must be a GpuMatrix when A or B is a GpuMatrix.");
-    if (y && (!p || !g))
+    if (y && (!c || !g))
       throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
     if (a < 0 || t < 0) throw new Error("n and k must be non-negative.");
     if (l <= 0 || d <= 0 || w <= 0)
       throw new Error("lda, ldb, and ldc must be positive.");
     if (a === 0) return y ? {} : { C: m };
-    let h = p ? s.layout : c,
-      x = g ? n.layout : c,
-      _ = y ? m.layout : c,
+    let h = c ? s.layout : p,
+      x = g ? n.layout : p,
+      _ = y ? m.layout : p,
       v = h === "column-major" ? t : a,
       B = h === "column-major" ? a : t,
-      A = e === "no-transpose" ? v : B,
-      k = e === "no-transpose" ? B : v;
-    if (l < k)
+      k = e === "no-transpose" ? v : B,
+      E = e === "no-transpose" ? B : v;
+    if (l < E)
       throw new Error(
         `lda must be >= ${h === "column-major" ? "rows" : "cols"} of A as stored.`,
       );
-    if (p) {
+    if (c) {
       if (l !== s.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [ar, er] = e === "no-transpose" ? [a, t] : [t, a];
-      if (s.rows < ar || s.cols < er)
+      let [Y, ar] = e === "no-transpose" ? [a, t] : [t, a];
+      if (s.rows < Y || s.cols < ar)
         throw new Error("A is too small for the given n, k, and trans.");
-    } else if (s.length < (A - 1) * l + k)
+    } else if (s.length < (k - 1) * l + E)
       throw new Error(
         "A does not have enough elements for the given dimensions and lda.",
       );
     let I = x === "column-major" ? t : a,
-      M = x === "column-major" ? a : t,
-      S = e === "no-transpose" ? I : M,
-      E = e === "no-transpose" ? M : I;
-    if (d < E)
+      R = x === "column-major" ? a : t,
+      A = e === "no-transpose" ? I : R,
+      L = e === "no-transpose" ? R : I;
+    if (d < L)
       throw new Error(
         `ldb must be >= ${x === "column-major" ? "rows" : "cols"} of B as stored.`,
       );
     if (g) {
       if (d !== n.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [ar, er] = e === "no-transpose" ? [a, t] : [t, a];
-      if (n.rows < ar || n.cols < er)
+      let [Y, ar] = e === "no-transpose" ? [a, t] : [t, a];
+      if (n.rows < Y || n.cols < ar)
         throw new Error("B is too small for the given n, k, and trans.");
-    } else if (n.length < (S - 1) * d + E)
+    } else if (n.length < (A - 1) * d + L)
       throw new Error(
         "B does not have enough elements for the given dimensions and ldb.",
       );
@@ -11040,48 +11798,48 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         "C does not have enough elements for the given dimensions and ldc.",
       );
-    let L = e;
+    let P = e;
     h === "column-major" &&
-      (L = L === "no-transpose" ? "transpose" : "no-transpose");
-    let R = e;
+      (P = P === "no-transpose" ? "transpose" : "no-transpose");
+    let M = e;
     x === "column-major" &&
-      (R = R === "no-transpose" ? "transpose" : "no-transpose");
-    let q = _ === "column-major" ? (o === "lower" ? "upper" : "lower") : o,
-      O = (ar) => (ar === "no-transpose" ? "transpose" : "no-transpose");
-    function Z(ar, er, ir, gr, xr, wr) {
-      let nr = ar,
-        hr = O(gr);
+      (M = M === "no-transpose" ? "transpose" : "no-transpose");
+    let H = _ === "column-major" ? (o === "lower" ? "upper" : "lower") : o,
+      W = (Y) => (Y === "no-transpose" ? "transpose" : "no-transpose");
+    function K(Y, ar, rr, ir, hr, br) {
+      let lr = Y,
+        gr = W(ir);
       return _ !== "column-major"
-        ? { transX: nr, X: er, ldX: ir, transY: hr, Y: xr, ldY: wr }
-        : { transX: O(hr), X: xr, ldX: wr, transY: O(nr), Y: er, ldY: ir };
+        ? { transX: lr, X: ar, ldX: rr, transY: gr, Y: hr, ldY: br }
+        : { transX: W(gr), X: hr, ldX: br, transY: W(lr), Y: ar, ldY: rr };
     }
     let X = Math.ceil(a / 64),
-      Y = Math.ceil(a / 64),
-      V = X * Y >= 36,
-      K = await P(r, V ? "sgemm_large" : "sgemm_small"),
-      U = V
-        ? { x: sr(r, X, "ssyr2k", "x"), y: sr(r, Y, "ssyr2k", "y") }
+      O = Math.ceil(a / 64),
+      F = X * O >= 36,
+      q = await N(r, F ? "sgemm_large" : "sgemm_small"),
+      j = F
+        ? { x: tr(r, X, "ssyr2k", "x"), y: tr(r, O, "ssyr2k", "y") }
         : {
-            x: sr(r, Math.ceil(a / 32), "ssyr2k", "x"),
-            y: sr(r, Math.ceil(a / 32), "ssyr2k", "y"),
+            x: tr(r, Math.ceil(a / 32), "ssyr2k", "x"),
+            y: tr(r, Math.ceil(a / 32), "ssyr2k", "y"),
           },
-      tr = p ? s._buf : b(r, s, "ssyr2k-A", !1),
-      rr = g ? n._buf : b(r, n, "ssyr2k-B", !1),
-      or = y ? m._buf : b(r, m, "ssyr2k-C", !0),
-      fr = null,
-      ur = null;
+      Q = c ? s._buf : b(r, s, "ssyr2k-A", !1),
+      ur = g ? n._buf : b(r, n, "ssyr2k-B", !1),
+      nr = y ? m._buf : b(r, m, "ssyr2k-C", !0),
+      or = null,
+      er = null;
     try {
-      let ar = Z(L, tr, l, R, rr, d),
-        er = Z(R, rr, d, L, tr, l),
-        ir = (pr) => {
+      let Y = K(P, Q, l, M, ur, d),
+        ar = K(M, ur, d, P, Q, l),
+        rr = (pr) => {
           let kr = pr.transX === "no-transpose",
-            vr = pr.transY === "no-transpose";
+            Br = pr.transY === "no-transpose";
           return [
-            Ar(pr.X, pr.ldX, kr ? a : t, kr ? t : a),
-            Ar(pr.Y, pr.ldY, vr ? t : a, vr ? a : t),
+            Lr(pr.X, pr.ldX, kr ? a : t, kr ? t : a),
+            Lr(pr.Y, pr.ldY, Br ? t : a, Br ? a : t),
           ];
         },
-        gr = (pr, kr) =>
+        ir = (pr, kr) =>
           T(
             r,
             [
@@ -11095,9 +11853,9 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
               { value: w, type: "u32" },
               { value: pr.transX === "transpose" ? 1 : 0, type: "u32" },
               { value: pr.transY === "transpose" ? 1 : 0, type: "u32" },
-              { value: ir(pr)[0] ? 1 : 0, type: "u32" },
-              { value: ir(pr)[1] ? 1 : 0, type: "u32" },
-              { value: q === "lower" ? 1 : 2, type: "u32" },
+              { value: rr(pr)[0] ? 1 : 0, type: "u32" },
+              { value: rr(pr)[1] ? 1 : 0, type: "u32" },
+              { value: H === "lower" ? 1 : 2, type: "u32" },
               { value: 0, type: "u32" },
               { value: 0, type: "u32" },
               { value: 0, type: "u32" },
@@ -11105,53 +11863,53 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
             ],
             "ssyr2k-params",
           );
-      ((fr = gr(ar, u)), (ur = gr(er, 1)));
-      let xr = N(r, K.getBindGroupLayout(0), [
+      ((or = ir(Y, u)), (er = ir(ar, 1)));
+      let hr = G(r, q.getBindGroupLayout(0), [
+          Y.X,
+          Ar(r, Y.X),
+          Y.Y,
+          Ar(r, Y.Y),
+          nr,
+          or,
+        ]),
+        br = G(r, q.getBindGroupLayout(0), [
           ar.X,
-          Br(r, ar.X),
+          Ar(r, ar.X),
           ar.Y,
-          Br(r, ar.Y),
-          or,
-          fr,
+          Ar(r, ar.Y),
+          nr,
+          er,
         ]),
-        wr = N(r, K.getBindGroupLayout(0), [
-          er.X,
-          Br(r, er.X),
-          er.Y,
-          Br(r, er.Y),
-          or,
-          ur,
-        ]),
-        { commandEncoder: nr, querySet: hr } = Hr(r),
-        Mr = hr
-          ? { timestampWrites: { querySet: hr, beginningOfPassWriteIndex: 0 } }
+        { commandEncoder: lr, querySet: gr } = jr(r),
+        Hr = gr
+          ? { timestampWrites: { querySet: gr, beginningOfPassWriteIndex: 0 } }
           : void 0,
-        Vr = hr
-          ? { timestampWrites: { querySet: hr, endOfPassWriteIndex: 1 } }
+        Wr = gr
+          ? { timestampWrites: { querySet: gr, endOfPassWriteIndex: 1 } }
           : void 0;
-      (Nr(nr, K, xr, U, Mr), Nr(nr, K, wr, U, Vr));
-      let Ur = Dr(r, nr, hr),
-        Cr = y ? null : D(r, nr, or);
-      j(r, nr);
-      let Ir = await C(Ur);
-      if (y) return Ir !== void 0 ? { gpuTimeMs: Ir } : {};
-      let br = await G(Cr, Float32Array);
-      return Ir !== void 0 ? { C: br, gpuTimeMs: Ir } : { C: br };
+      (Zr(lr, q, hr, j, Hr), Zr(lr, q, br, j, Wr));
+      let _r = Rr(r, lr, gr),
+        Pr = y ? null : D(r, lr, nr);
+      U(r, lr);
+      let Dr = await V(_r);
+      if (y) return Dr !== void 0 ? { gpuTimeMs: Dr } : {};
+      let yr = await S(Pr, Float32Array);
+      return Dr !== void 0 ? { C: yr, gpuTimeMs: Dr } : { C: yr };
     } finally {
-      (p || f(tr), g || f(rr), y || f(or), fr && f(fr), ur && f(ur));
+      (c || f(Q), g || f(ur), y || f(nr), or && f(or), er && f(er));
     }
   }
-  async function Qa(r, o, e, a, t, i, s, l, n, d, u, m, w, c = "row-major") {
-    let p = s instanceof Q,
-      g = n instanceof Q,
-      y = m instanceof Q;
+  async function ui(r, o, e, a, t, i, s, l, n, d, u, m, w, p = "row-major") {
+    let c = s instanceof sr,
+      g = n instanceof sr,
+      y = m instanceof sr;
     if (
-      (F(r), W(r, "ssymm", { A: s, B: n, C: m }), o !== "left" && o !== "right")
+      (z(r), Z(r, "ssymm", { A: s, B: n, C: m }), o !== "left" && o !== "right")
     )
       throw new Error("side must be 'left' or 'right'.");
     if (e !== "lower" && e !== "upper")
       throw new Error("uplo must be 'lower' or 'upper'.");
-    if (c !== "row-major" && c !== "column-major")
+    if (p !== "row-major" && p !== "column-major")
       throw new Error("layout must be 'row-major' or 'column-major'.");
     if (typeof i != "number") throw new Error("alpha must be a number.");
     if (Number.isNaN(i)) throw new Error("alpha must not be NaN.");
@@ -11167,25 +11925,25 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       !Number.isInteger(w)
     )
       throw new Error("m, n, lda, ldb, and ldc must be integers.");
-    if (!p && !(s instanceof Float32Array))
+    if (!c && !(s instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
     if (!g && !(n instanceof Float32Array))
       throw new Error("B must be a Float32Array or GpuMatrix.");
     if (!y && !(m instanceof Float32Array))
       throw new Error("C must be a Float32Array or GpuMatrix.");
-    if ((p || g) && !y)
+    if ((c || g) && !y)
       throw new Error("C must be a GpuMatrix when A or B is a GpuMatrix.");
-    if (y && (!p || !g))
+    if (y && (!c || !g))
       throw new Error("A and B must be GpuMatrix when C is a GpuMatrix.");
     if (a < 0 || t < 0) throw new Error("m and n must be non-negative.");
     if (a === 0 || t === 0) return y ? {} : { C: m };
-    let h = p ? s.layout : c,
-      x = g ? n.layout : c,
-      _ = y ? m.layout : c,
+    let h = c ? s.layout : p,
+      x = g ? n.layout : p,
+      _ = y ? m.layout : p,
       v = o === "left" ? a : t;
     if (l < v)
       throw new Error("lda must be >= " + (o === "left" ? "m" : "n") + ".");
-    if (p) {
+    if (c) {
       if (l !== s.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
       if (s.rows < v || s.cols < v)
@@ -11195,8 +11953,8 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "A does not have enough elements for the given dimensions and lda.",
       );
     let B = x === "column-major" ? t : a,
-      A = x === "column-major" ? a : t;
-    if (d < A)
+      k = x === "column-major" ? a : t;
+    if (d < k)
       throw new Error(
         `ldb must be >= ${x === "column-major" ? "rows" : "cols"} of B as stored.`,
       );
@@ -11205,11 +11963,11 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
       if (n.rows < a || n.cols < t)
         throw new Error("B is too small for the given m and n.");
-    } else if (n.length < (B - 1) * d + A)
+    } else if (n.length < (B - 1) * d + k)
       throw new Error(
         "B does not have enough elements for the given dimensions and ldb.",
       );
-    let k = _ === "column-major" ? t : a,
+    let E = _ === "column-major" ? t : a,
       I = _ === "column-major" ? a : t;
     if (w < I)
       throw new Error(
@@ -11220,75 +11978,75 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         throw new Error("ldc must match C.lda when C is a GpuMatrix.");
       if (m.rows < a || m.cols < t)
         throw new Error("C is too small for the given m and n.");
-    } else if (m.length < (k - 1) * w + I)
+    } else if (m.length < (E - 1) * w + I)
       throw new Error(
         "C does not have enough elements for the given dimensions and ldc.",
       );
-    let M = h === "column-major" ? (e === "lower" ? "upper" : "lower") : e,
-      S = x === "column-major" ? "transpose" : "no-transpose",
-      E = "no-transpose",
-      L = a,
-      R = t,
-      q = v,
-      O = o === "left" ? E : S,
-      Z = o === "left" ? S : E,
-      X = (wr) => (wr === "no-transpose" ? "transpose" : "no-transpose"),
-      Y = o === "right";
+    let R = h === "column-major" ? (e === "lower" ? "upper" : "lower") : e,
+      A = x === "column-major" ? "transpose" : "no-transpose",
+      L = "no-transpose",
+      P = a,
+      M = t,
+      H = v,
+      W = o === "left" ? L : A,
+      K = o === "left" ? A : L,
+      X = (br) => (br === "no-transpose" ? "transpose" : "no-transpose"),
+      O = o === "right";
     _ === "column-major" &&
-      (([O, Z] = [X(Z), X(O)]), (Y = !Y), ([L, R] = [R, L]));
-    let V = v,
-      K = Math.ceil(R / 64),
-      U = Math.ceil(L / 64),
-      tr = K * U >= 36,
-      rr = await P(r, tr ? "sgemm_large" : "sgemm_small"),
-      or = await P(r, "symmetrize"),
-      fr = tr
-        ? { x: sr(r, K, "ssymm", "x"), y: sr(r, U, "ssymm", "y") }
+      (([W, K] = [X(K), X(W)]), (O = !O), ([P, M] = [M, P]));
+    let F = v,
+      q = Math.ceil(M / 64),
+      j = Math.ceil(P / 64),
+      Q = q * j >= 36,
+      ur = await N(r, Q ? "sgemm_large" : "sgemm_small"),
+      nr = await N(r, "symmetrize"),
+      or = Q
+        ? { x: tr(r, q, "ssymm", "x"), y: tr(r, j, "ssymm", "y") }
         : {
-            x: sr(r, Math.ceil(R / 32), "ssymm", "x"),
-            y: sr(r, Math.ceil(L / 32), "ssymm", "y"),
+            x: tr(r, Math.ceil(M / 32), "ssymm", "x"),
+            y: tr(r, Math.ceil(P / 32), "ssymm", "y"),
           },
-      ur = p ? s._buf : b(r, s, "ssymm-A", !1),
-      ar = g ? n._buf : b(r, n, "ssymm-B", !1),
-      er = y ? m._buf : b(r, m, "ssymm-C", !0),
-      ir = lr(r, v * V * 4, "ssymm-Adense"),
-      gr = null,
-      xr = null;
+      er = c ? s._buf : b(r, s, "ssymm-A", !1),
+      Y = g ? n._buf : b(r, n, "ssymm-B", !1),
+      ar = y ? m._buf : b(r, m, "ssymm-C", !0),
+      rr = dr(r, v * F * 4, "ssymm-Adense"),
+      ir = null,
+      hr = null;
     try {
-      gr = T(
+      ir = T(
         r,
         [
           { value: v, type: "u32" },
           { value: l, type: "u32" },
-          { value: V, type: "u32" },
-          { value: M === "upper" ? 1 : 0, type: "u32" },
+          { value: F, type: "u32" },
+          { value: R === "upper" ? 1 : 0, type: "u32" },
         ],
         "ssymm-sym-params",
       );
-      let wr = N(r, or.getBindGroupLayout(0), [ur, ir, gr]),
-        nr = Y ? ar : ir,
-        hr = Y ? d : V,
-        Mr = Y ? ir : ar,
-        Vr = Y ? V : d,
-        Ur = O === "no-transpose",
-        Cr = Z === "no-transpose",
-        Ir = Ar(nr, hr, Ur ? L : q, Ur ? q : L),
-        br = Ar(Mr, Vr, Cr ? q : R, Cr ? R : q);
-      xr = T(
+      let br = G(r, nr.getBindGroupLayout(0), [er, rr, ir]),
+        lr = O ? Y : rr,
+        gr = O ? d : F,
+        Hr = O ? rr : Y,
+        Wr = O ? F : d,
+        _r = W === "no-transpose",
+        Pr = K === "no-transpose",
+        Dr = Lr(lr, gr, _r ? P : H, _r ? H : P),
+        yr = Lr(Hr, Wr, Pr ? H : M, Pr ? M : H);
+      hr = T(
         r,
         [
-          { value: L, type: "u32" },
-          { value: R, type: "u32" },
-          { value: q, type: "u32" },
+          { value: P, type: "u32" },
+          { value: M, type: "u32" },
+          { value: H, type: "u32" },
           { value: i, type: "f32" },
           { value: u, type: "f32" },
-          { value: hr, type: "u32" },
-          { value: Vr, type: "u32" },
+          { value: gr, type: "u32" },
+          { value: Wr, type: "u32" },
           { value: w, type: "u32" },
-          { value: O === "transpose" ? 1 : 0, type: "u32" },
-          { value: Z === "transpose" ? 1 : 0, type: "u32" },
-          { value: Ir ? 1 : 0, type: "u32" },
-          { value: br ? 1 : 0, type: "u32" },
+          { value: W === "transpose" ? 1 : 0, type: "u32" },
+          { value: K === "transpose" ? 1 : 0, type: "u32" },
+          { value: Dr ? 1 : 0, type: "u32" },
+          { value: yr ? 1 : 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
@@ -11297,39 +12055,39 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         ],
         "ssymm-gemm-params",
       );
-      let pr = N(r, rr.getBindGroupLayout(0), [
-          nr,
-          Br(r, nr),
-          Mr,
-          Br(r, Mr),
-          er,
-          xr,
+      let pr = G(r, ur.getBindGroupLayout(0), [
+          lr,
+          Ar(r, lr),
+          Hr,
+          Ar(r, Hr),
+          ar,
+          hr,
         ]),
-        { commandEncoder: kr, querySet: vr } = Hr(r),
-        Gr = vr
-          ? { timestampWrites: { querySet: vr, beginningOfPassWriteIndex: 0 } }
+        { commandEncoder: kr, querySet: Br } = jr(r),
+        Nr = Br
+          ? { timestampWrites: { querySet: Br, beginningOfPassWriteIndex: 0 } }
           : void 0,
-        Sr = vr
-          ? { timestampWrites: { querySet: vr, endOfPassWriteIndex: 1 } }
+        Gr = Br
+          ? { timestampWrites: { querySet: Br, endOfPassWriteIndex: 1 } }
           : void 0;
-      (Nr(kr, or, wr, { x: Math.ceil(v / 8), y: Math.ceil(v / 8) }, Gr),
-        Nr(kr, rr, pr, fr, Sr));
-      let oe = Dr(r, kr, vr),
-        ae = y ? null : D(r, kr, er);
-      j(r, kr);
-      let Zr = await C(oe);
-      if (y) return Zr !== void 0 ? { gpuTimeMs: Zr } : {};
-      let ie = await G(ae, Float32Array);
-      return Zr !== void 0 ? { C: ie, gpuTimeMs: Zr } : { C: ie };
+      (Zr(kr, nr, br, { x: Math.ceil(v / 8), y: Math.ceil(v / 8) }, Nr),
+        Zr(kr, ur, pr, or, Gr));
+      let ie = Rr(r, kr, Br),
+        se = y ? null : D(r, kr, ar);
+      U(r, kr);
+      let Xr = await V(ie);
+      if (y) return Xr !== void 0 ? { gpuTimeMs: Xr } : {};
+      let ne = await S(se, Float32Array);
+      return Xr !== void 0 ? { C: ne, gpuTimeMs: Xr } : { C: ne };
     } finally {
-      (p || f(ur), g || f(ar), y || f(er), f(ir), gr && f(gr), xr && f(xr));
+      (c || f(er), g || f(Y), y || f(ar), f(rr), ir && f(ir), hr && f(hr));
     }
   }
-  async function ri(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
-    let c = n instanceof Q,
-      p = u instanceof Q,
+  async function di(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
+    let p = n instanceof sr,
+      c = u instanceof sr,
       g = t === "unit";
-    if ((F(r), W(r, "strmm", { A: n, B: u }), o !== "left" && o !== "right"))
+    if ((z(r), Z(r, "strmm", { A: n, B: u }), o !== "left" && o !== "right"))
       throw new Error("side must be 'left' or 'right'.");
     if (e !== "lower" && e !== "upper")
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -11349,22 +12107,22 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       !Number.isInteger(m)
     )
       throw new Error("m, n, lda, and ldb must be integers.");
-    if (!c && !(n instanceof Float32Array))
+    if (!p && !(n instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
-    if (!p && !(u instanceof Float32Array))
+    if (!c && !(u instanceof Float32Array))
       throw new Error("B must be a Float32Array or GpuMatrix.");
-    if (c !== p)
+    if (p !== c)
       throw new Error(
         "A and B must both be GpuMatrix or both be Float32Array.",
       );
     if (i < 0 || s < 0) throw new Error("m and n must be non-negative.");
-    if (i === 0 || s === 0) return p ? {} : { B: u };
-    let y = c ? n.layout : w,
-      h = p ? u.layout : w,
+    if (i === 0 || s === 0) return c ? {} : { B: u };
+    let y = p ? n.layout : w,
+      h = c ? u.layout : w,
       x = o === "left" ? i : s;
     if (d < x)
       throw new Error("lda must be >= " + (o === "left" ? "m" : "n") + ".");
-    if (c) {
+    if (p) {
       if (d !== n.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
       if (n.rows < x || n.cols < x)
@@ -11379,7 +12137,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         `ldb must be >= ${h === "column-major" ? "rows" : "cols"} of B as stored.`,
       );
-    if (p) {
+    if (c) {
       if (m !== u.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
       if (u.rows < i || u.cols < s)
@@ -11389,172 +12147,172 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "B does not have enough elements for the given dimensions and ldb.",
       );
     let B = y === "column-major" ? (e === "lower" ? "upper" : "lower") : e,
-      A =
+      k =
         y === "column-major"
           ? a === "no-transpose"
             ? "transpose"
             : "no-transpose"
           : a,
-      k = h === "column-major" ? "transpose" : "no-transpose",
+      E = h === "column-major" ? "transpose" : "no-transpose",
       I = "no-transpose",
-      M = i,
-      S = s,
-      E = x,
-      L = o === "left" ? I : k,
-      R = o === "left" ? k : I,
-      q = (gr) => (gr === "no-transpose" ? "transpose" : "no-transpose"),
-      O = o === "right";
+      R = i,
+      A = s,
+      L = x,
+      P = o === "left" ? I : E,
+      M = o === "left" ? E : I,
+      H = (ir) => (ir === "no-transpose" ? "transpose" : "no-transpose"),
+      W = o === "right";
     h === "column-major" &&
-      (([L, R] = [q(R), q(L)]), (O = !O), ([M, S] = [S, M]));
-    let Z = x,
-      X = Math.ceil(S / 64),
-      Y = Math.ceil(M / 64),
-      V = X * Y >= 36,
-      K = await P(r, V ? "sgemm_large" : "sgemm_small"),
-      U = await P(r, "triangularize"),
-      tr = V
-        ? { x: sr(r, X, "strmm", "x"), y: sr(r, Y, "strmm", "y") }
+      (([P, M] = [H(M), H(P)]), (W = !W), ([R, A] = [A, R]));
+    let K = x,
+      X = Math.ceil(A / 64),
+      O = Math.ceil(R / 64),
+      F = X * O >= 36,
+      q = await N(r, F ? "sgemm_large" : "sgemm_small"),
+      j = await N(r, "triangularize"),
+      Q = F
+        ? { x: tr(r, X, "strmm", "x"), y: tr(r, O, "strmm", "y") }
         : {
-            x: sr(r, Math.ceil(S / 32), "strmm", "x"),
-            y: sr(r, Math.ceil(M / 32), "strmm", "y"),
+            x: tr(r, Math.ceil(A / 32), "strmm", "x"),
+            y: tr(r, Math.ceil(R / 32), "strmm", "y"),
           },
-      rr = null,
-      or = null,
-      fr = null,
       ur = null,
-      ar = null,
+      nr = null,
+      or = null,
       er = null,
-      ir = !1;
+      Y = null,
+      ar = null,
+      rr = !1;
     try {
-      ((rr = c ? n._buf : b(r, n, "strmm-A", !1)),
-        (or = p ? u._buf : b(r, u, "strmm-B", !0)),
-        (fr = lr(r, x * Z * 4, "strmm-Adense")),
-        (ur = lr(
+      ((ur = p ? n._buf : b(r, n, "strmm-A", !1)),
+        (nr = c ? u._buf : b(r, u, "strmm-B", !0)),
+        (or = dr(r, x * K * 4, "strmm-Adense")),
+        (er = dr(
           r,
           _ * m * 4,
           "strmm-out",
           GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
         )),
-        (ar = T(
+        (Y = T(
           r,
           [
             { value: x, type: "u32" },
             { value: d, type: "u32" },
-            { value: Z, type: "u32" },
+            { value: K, type: "u32" },
             { value: B === "upper" ? 1 : 0, type: "u32" },
-            { value: A === "transpose" ? 1 : 0, type: "u32" },
+            { value: k === "transpose" ? 1 : 0, type: "u32" },
             { value: g ? 1 : 0, type: "u32" },
           ],
           "strmm-tri-params",
         )));
-      let gr = N(r, U.getBindGroupLayout(0), [rr, fr, ar]),
-        xr = O ? or : fr,
-        wr = O ? m : Z,
-        nr = O ? fr : or,
-        hr = O ? Z : m,
-        Mr = L === "no-transpose",
-        Vr = R === "no-transpose",
-        Ur = Ar(xr, wr, Mr ? M : E, Mr ? E : M),
-        Cr = Ar(nr, hr, Vr ? E : S, Vr ? S : E),
-        Ir = (A === "no-transpose") == (B === "lower"),
-        br = !O,
-        pr = Ir !== (br ? !Mr : !Vr);
-      er = T(
+      let ir = G(r, j.getBindGroupLayout(0), [ur, or, Y]),
+        hr = W ? nr : or,
+        br = W ? m : K,
+        lr = W ? or : nr,
+        gr = W ? K : m,
+        Hr = P === "no-transpose",
+        Wr = M === "no-transpose",
+        _r = Lr(hr, br, Hr ? R : L, Hr ? L : R),
+        Pr = Lr(lr, gr, Wr ? L : A, Wr ? A : L),
+        Dr = (k === "no-transpose") == (B === "lower"),
+        yr = !W,
+        pr = Dr !== (yr ? !Hr : !Wr);
+      ar = T(
         r,
         [
-          { value: M, type: "u32" },
-          { value: S, type: "u32" },
-          { value: E, type: "u32" },
+          { value: R, type: "u32" },
+          { value: A, type: "u32" },
+          { value: L, type: "u32" },
           { value: l, type: "f32" },
           { value: 0, type: "f32" },
-          { value: wr, type: "u32" },
-          { value: hr, type: "u32" },
+          { value: br, type: "u32" },
+          { value: gr, type: "u32" },
           { value: m, type: "u32" },
-          { value: L === "transpose" ? 1 : 0, type: "u32" },
-          { value: R === "transpose" ? 1 : 0, type: "u32" },
-          { value: Ur ? 1 : 0, type: "u32" },
-          { value: Cr ? 1 : 0, type: "u32" },
+          { value: P === "transpose" ? 1 : 0, type: "u32" },
+          { value: M === "transpose" ? 1 : 0, type: "u32" },
+          { value: _r ? 1 : 0, type: "u32" },
+          { value: Pr ? 1 : 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
           { value: 0, type: "u32" },
-          { value: br ? (pr ? 1 : 2) : pr ? 3 : 4, type: "u32" },
+          { value: yr ? (pr ? 1 : 2) : pr ? 3 : 4, type: "u32" },
         ],
         "strmm-gemm-params",
       );
-      let vr = N(r, K.getBindGroupLayout(0), [
-          xr,
-          Br(r, xr),
-          nr,
-          Br(r, nr),
-          ur,
+      let Br = G(r, q.getBindGroupLayout(0), [
+          hr,
+          Ar(r, hr),
+          lr,
+          Ar(r, lr),
           er,
+          ar,
         ]),
-        { commandEncoder: Gr, querySet: Sr } = Hr(r);
-      Gr.copyBufferToBuffer(or, 0, ur, 0, Math.min(or.size, ur.size));
-      let oe = Sr
-          ? { timestampWrites: { querySet: Sr, beginningOfPassWriteIndex: 0 } }
+        { commandEncoder: Nr, querySet: Gr } = jr(r);
+      Nr.copyBufferToBuffer(nr, 0, er, 0, Math.min(nr.size, er.size));
+      let ie = Gr
+          ? { timestampWrites: { querySet: Gr, beginningOfPassWriteIndex: 0 } }
           : void 0,
-        ae = Sr
-          ? { timestampWrites: { querySet: Sr, endOfPassWriteIndex: 1 } }
+        se = Gr
+          ? { timestampWrites: { querySet: Gr, endOfPassWriteIndex: 1 } }
           : void 0;
-      (Nr(Gr, U, gr, { x: Math.ceil(x / 8), y: Math.ceil(x / 8) }, oe),
-        Nr(Gr, K, vr, tr, ae));
-      let Zr = Dr(r, Gr, Sr),
-        ie = p ? null : D(r, Gr, ur);
-      j(r, Gr);
-      let ge = await C(Zr);
-      if (p)
+      (Zr(Nr, j, ir, { x: Math.ceil(x / 8), y: Math.ceil(x / 8) }, ie),
+        Zr(Nr, q, Br, Q, se));
+      let Xr = Rr(r, Nr, Gr),
+        ne = c ? null : D(r, Nr, er);
+      U(r, Nr);
+      let xe = await V(Xr);
+      if (c)
         return (
           f(u._buf),
-          (u._buf = ur),
-          (ir = !0),
-          ge !== void 0 ? { gpuTimeMs: ge } : {}
+          (u._buf = er),
+          (rr = !0),
+          xe !== void 0 ? { gpuTimeMs: xe } : {}
         );
-      let Ie = await G(ie, Float32Array);
-      return ge !== void 0 ? { B: Ie, gpuTimeMs: ge } : { B: Ie };
+      let We = await S(ne, Float32Array);
+      return xe !== void 0 ? { B: We, gpuTimeMs: xe } : { B: We };
     } finally {
-      (!c && rr && f(rr),
-        !p && or && f(or),
-        fr && f(fr),
-        ur && !ir && f(ur),
-        ar && f(ar),
-        er && f(er));
+      (!p && ur && f(ur),
+        !c && nr && f(nr),
+        or && f(or),
+        er && !rr && f(er),
+        Y && f(Y),
+        ar && f(ar));
     }
   }
-  var Xr = (r, o, e, a) => ({ buffer: r, off: o, rs: e, cs: a }),
-    we = (r) => ({ ...r, rs: r.cs, cs: r.rs }),
-    se = (r, o, e) => ({ ...r, off: r.off + o * r.rs + e * r.cs });
-  function Ls(r, o) {
+  var Yr = (r, o, e, a) => ({ buffer: r, off: o, rs: e, cs: a }),
+    ye = (r) => ({ ...r, rs: r.cs, cs: r.rs }),
+    le = (r, o, e) => ({ ...r, off: r.off + o * r.rs + e * r.cs });
+  function Ys(r, o) {
     typeof o == "number"
       ? r.dispatchWorkgroups(o)
       : r.dispatchWorkgroups(o.x, o.y, o.z ?? 1);
   }
-  var Ds = 8;
-  function Ns(r, o, e, a, t, i, s, l, n, d, u, m) {
-    s.cs !== 1 && (([t, i, s] = [we(i), we(t), we(s)]), ([l, n] = [n, l]));
+  var $s = 8;
+  function Js(r, o, e, a, t, i, s, l, n, d, u, m) {
+    s.cs !== 1 && (([t, i, s] = [ye(i), ye(t), ye(s)]), ([l, n] = [n, l]));
     let w = t.cs === 1,
-      c = i.cs === 1,
-      p = w ? t.rs : t.cs,
-      g = c ? i.rs : i.cs,
-      y = Ar(t.buffer, p, w ? l : d, w ? d : l, t.off),
-      h = Ar(i.buffer, g, c ? d : n, c ? n : d, i.off),
+      p = i.cs === 1,
+      c = w ? t.rs : t.cs,
+      g = p ? i.rs : i.cs,
+      y = Lr(t.buffer, c, w ? l : d, w ? d : l, t.off),
+      h = Lr(i.buffer, g, p ? d : n, p ? n : d, i.off),
       x = Math.ceil(n / 64),
       _ = Math.ceil(l / 64),
       v = x * _ >= 36,
       B = v ? e.large : e.small,
-      A = a(
+      k = a(
         [
           { value: l, type: "u32" },
           { value: n, type: "u32" },
           { value: d, type: "u32" },
           { value: u, type: "f32" },
           { value: m, type: "f32" },
-          { value: p, type: "u32" },
+          { value: c, type: "u32" },
           { value: g, type: "u32" },
           { value: s.rs, type: "u32" },
           { value: w ? 0 : 1, type: "u32" },
-          { value: c ? 0 : 1, type: "u32" },
+          { value: p ? 0 : 1, type: "u32" },
           { value: y ? 1 : 0, type: "u32" },
           { value: h ? 1 : 0, type: "u32" },
           { value: 0, type: "u32" },
@@ -11568,25 +12326,25 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
     (o.setPipeline(B),
       o.setBindGroup(
         0,
-        N(r, B.getBindGroupLayout(0), [
+        G(r, B.getBindGroupLayout(0), [
           t.buffer,
-          Br(r, t.buffer),
+          Ar(r, t.buffer),
           i.buffer,
-          Br(r, i.buffer),
+          Ar(r, i.buffer),
           s.buffer,
-          A,
+          k,
         ]),
       ),
       o.dispatchWorkgroups(
-        sr(r, v ? x : Math.ceil(n / 32), "strsm", "x"),
-        sr(r, v ? _ : Math.ceil(l / 32), "strsm", "y"),
+        tr(r, v ? x : Math.ceil(n / 32), "strsm", "x"),
+        tr(r, v ? _ : Math.ceil(l / 32), "strsm", "y"),
       ));
   }
-  async function ei(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
-    let c = n instanceof Q,
-      p = u instanceof Q,
+  async function fi(r, o, e, a, t, i, s, l, n, d, u, m, w = "row-major") {
+    let p = n instanceof sr,
+      c = u instanceof sr,
       g = t === "unit";
-    if ((F(r), W(r, "strsm", { A: n, B: u }), o !== "left" && o !== "right"))
+    if ((z(r), Z(r, "strsm", { A: n, B: u }), o !== "left" && o !== "right"))
       throw new Error("side must be 'left' or 'right'.");
     if (e !== "lower" && e !== "upper")
       throw new Error("uplo must be 'lower' or 'upper'.");
@@ -11606,22 +12364,22 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       !Number.isInteger(m)
     )
       throw new Error("m, n, lda, and ldb must be integers.");
-    if (!c && !(n instanceof Float32Array))
+    if (!p && !(n instanceof Float32Array))
       throw new Error("A must be a Float32Array or GpuMatrix.");
-    if (!p && !(u instanceof Float32Array))
+    if (!c && !(u instanceof Float32Array))
       throw new Error("B must be a Float32Array or GpuMatrix.");
-    if (c !== p)
+    if (p !== c)
       throw new Error(
         "A and B must both be GpuMatrix or both be Float32Array.",
       );
     if (i < 0 || s < 0) throw new Error("m and n must be non-negative.");
-    if (i === 0 || s === 0) return p ? {} : { B: u };
-    let y = c ? n.layout : w,
-      h = p ? u.layout : w,
+    if (i === 0 || s === 0) return c ? {} : { B: u };
+    let y = p ? n.layout : w,
+      h = c ? u.layout : w,
       x = o === "left" ? i : s;
     if (d < x)
       throw new Error("lda must be >= " + (o === "left" ? "m" : "n") + ".");
-    if (c) {
+    if (p) {
       if (d !== n.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
       if (n.rows < x || n.cols < x)
@@ -11636,7 +12394,7 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
       throw new Error(
         `ldb must be >= ${h === "column-major" ? "rows" : "cols"} of B as stored.`,
       );
-    if (p) {
+    if (c) {
       if (m !== u.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
       if (u.rows < i || u.cols < s)
@@ -11646,109 +12404,109 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
         "B does not have enough elements for the given dimensions and ldb.",
       );
     let B = y === "column-major" ? (e === "lower" ? "upper" : "lower") : e,
-      A =
+      k =
         y === "column-major"
           ? a === "no-transpose"
             ? "transpose"
             : "no-transpose"
           : a,
-      k = o === "left" ? s : i,
+      E = o === "left" ? s : i,
       I = o === "left",
-      M = (A === "no-transpose") == (B === "lower"),
-      S = o === "left" ? M : !M,
-      E = [];
-    for (let fr = 0; fr < x; fr += 64) E.push(fr);
-    S || E.reverse();
-    let L = E.length,
-      R = await P(r, "strsm_small"),
-      q = L > Ds,
-      O = q ? await P(r, "strsv_invert_block") : null,
-      Z = q ? await P(r, "block_transfer") : null,
-      X = sr(r, Math.ceil(k / 4), "strsm"),
-      Y = {
-        small: await P(r, "sgemm_small"),
-        large: await P(r, "sgemm_large"),
+      R = (k === "no-transpose") == (B === "lower"),
+      A = o === "left" ? R : !R,
+      L = [];
+    for (let or = 0; or < x; or += 64) L.push(or);
+    A || L.reverse();
+    let P = L.length,
+      M = await N(r, "strsm_small"),
+      H = P > $s,
+      W = H ? await N(r, "strsv_invert_block") : null,
+      K = H ? await N(r, "block_transfer") : null,
+      X = tr(r, Math.ceil(E / 4), "strsm"),
+      O = {
+        small: await N(r, "sgemm_small"),
+        large: await N(r, "sgemm_large"),
       },
-      V = null,
-      K = null,
-      U = null,
-      tr = null,
-      rr = [];
-    function or(fr, ur) {
-      let ar = T(r, fr, ur);
-      return (rr.push(ar), ar);
+      F = null,
+      q = null,
+      j = null,
+      Q = null,
+      ur = [];
+    function nr(or, er) {
+      let Y = T(r, or, er);
+      return (ur.push(Y), Y);
     }
     try {
-      ((V = c ? n._buf : b(r, n, "strsm-A", !1)),
-        (K = p ? u._buf : b(r, u, "strsm-B", !0)),
-        q && (U = lr(r, L * 64 * 64 * 4, "strsm-Ainv")),
-        (tr = lr(r, (L > 1 ? 64 * k : 4) * 4, "strsm-Xblock")));
-      let fr = h === "column-major" ? Xr(K, 0, 1, m) : Xr(K, 0, m, 1),
-        ur = o === "left" ? fr : we(fr),
-        ar = A === "transpose" ? Xr(V, 0, 1, d) : Xr(V, 0, d, 1),
-        er = o === "left" ? ar : we(ar),
-        ir = Xr(tr, 0, k, 1),
-        { commandEncoder: gr, querySet: xr, passDescriptor: wr } = Hr(r),
-        nr = gr.beginComputePass(wr),
-        hr = (br, pr, kr, vr, Gr, Sr, oe, ae) =>
-          Ns(r, nr, Y, or, br, pr, kr, vr, Gr, Sr, oe, ae),
-        Mr = (br, pr, kr, vr, Gr) => {
-          let Sr = or(
+      ((F = p ? n._buf : b(r, n, "strsm-A", !1)),
+        (q = c ? u._buf : b(r, u, "strsm-B", !0)),
+        H && (j = dr(r, P * 64 * 64 * 4, "strsm-Ainv")),
+        (Q = dr(r, (P > 1 ? 64 * E : 4) * 4, "strsm-Xblock")));
+      let or = h === "column-major" ? Yr(q, 0, 1, m) : Yr(q, 0, m, 1),
+        er = o === "left" ? or : ye(or),
+        Y = k === "transpose" ? Yr(F, 0, 1, d) : Yr(F, 0, d, 1),
+        ar = o === "left" ? Y : ye(Y),
+        rr = Yr(Q, 0, E, 1),
+        { commandEncoder: ir, querySet: hr, passDescriptor: br } = jr(r),
+        lr = ir.beginComputePass(br),
+        gr = (yr, pr, kr, Br, Nr, Gr, ie, se) =>
+          Js(r, lr, O, nr, yr, pr, kr, Br, Nr, Gr, ie, se),
+        Hr = (yr, pr, kr, Br, Nr) => {
+          let Gr = nr(
             [
               { value: kr, type: "u32" },
-              { value: k, type: "u32" },
-              { value: br.off, type: "u32" },
-              { value: br.rs, type: "u32" },
-              { value: br.cs, type: "u32" },
+              { value: E, type: "u32" },
+              { value: yr.off, type: "u32" },
+              { value: yr.rs, type: "u32" },
+              { value: yr.cs, type: "u32" },
               { value: pr.off, type: "u32" },
               { value: pr.rs, type: "u32" },
               { value: pr.cs, type: "u32" },
-              { value: S ? 0 : 1, type: "u32" },
+              { value: A ? 0 : 1, type: "u32" },
               { value: g ? 1 : 0, type: "u32" },
-              { value: vr, type: "f32" },
-              { value: Gr, type: "u32" },
+              { value: Br, type: "f32" },
+              { value: Nr, type: "u32" },
             ],
             "strsm-solve-params",
           );
-          (nr.setPipeline(R),
-            nr.setBindGroup(0, N(r, R.getBindGroupLayout(0), [V, K, Sr, tr])),
-            nr.dispatchWorkgroups(X));
+          (lr.setPipeline(M),
+            lr.setBindGroup(0, G(r, M.getBindGroupLayout(0), [F, q, Gr, Q])),
+            lr.dispatchWorkgroups(X));
         };
       if (l === 0) {
-        let br = Xr(tr, 0, 1, 1);
-        hr(br, br, Xr(K, 0, m, 1), _, v, 0, 0, 0);
-      } else if (L === 1) Mr(er, ur, x, l, 0);
+        let yr = Yr(Q, 0, 1, 1);
+        gr(yr, yr, Yr(q, 0, m, 1), _, v, 0, 0, 0);
+      } else if (P === 1) Hr(ar, er, x, l, 0);
       else {
         if (l !== 1) {
-          let br = Xr(tr, 0, 1, 1);
-          hr(br, br, Xr(K, 0, m, 1), _, v, 0, 0, l);
+          let yr = Yr(Q, 0, 1, 1);
+          gr(yr, yr, Yr(q, 0, m, 1), _, v, 0, 0, l);
         }
-        if (q) {
-          let br = or(
+        if (H) {
+          let yr = nr(
             [
               { value: x, type: "u32" },
               { value: d, type: "u32" },
-              { value: A === "transpose" ? 1 : 0, type: "u32" },
+              { value: k === "transpose" ? 1 : 0, type: "u32" },
               { value: B === "upper" ? 1 : 0, type: "u32" },
               { value: g ? 1 : 0, type: "u32" },
             ],
             "strsm-invert-params",
           );
-          (nr.setPipeline(O),
-            nr.setBindGroup(0, N(r, O.getBindGroupLayout(0), [V, U, br])),
-            nr.dispatchWorkgroups(L));
-          for (let pr of E) {
+          (lr.setPipeline(W),
+            lr.setBindGroup(0, G(r, W.getBindGroupLayout(0), [F, j, yr])),
+            lr.dispatchWorkgroups(P));
+          for (let pr of L) {
             let kr = Math.min(pr + 64, x),
-              vr = kr - pr,
-              Sr = (pr / 64) * 64 * 64,
-              oe = o === "left" ? Xr(U, Sr, 1, 64) : Xr(U, Sr, 64, 1);
-            hr(oe, se(ur, pr, 0), ir, vr, k, vr, 1, 0);
-            let ae = or(
+              Br = kr - pr,
+              Gr = (pr / 64) * 64 * 64,
+              ie = o === "left" ? Yr(j, Gr, 1, 64) : Yr(j, Gr, 64, 1);
+            gr(ie, le(er, pr, 0), rr, Br, E, Br, 1, 0);
+            let se = nr(
               [
                 { value: pr, type: "u32" },
-                { value: vr, type: "u32" },
+                { value: Br, type: "u32" },
                 { value: 0, type: "u32" },
-                { value: k, type: "u32" },
+                { value: E, type: "u32" },
                 { value: m, type: "u32" },
                 { value: h === "column-major" ? 1 : 0, type: "u32" },
                 { value: I ? 1 : 0, type: "u32" },
@@ -11756,36 +12514,36 @@ ${m.map((p) => `  ${l(p.lineNum)}: ${p.message}`).join(`
               ],
               "strsm-scatter-params",
             );
-            (nr.setPipeline(Z),
-              nr.setBindGroup(0, N(r, Z.getBindGroupLayout(0), [tr, K, ae])),
-              Ls(nr, ke(r, "strsm", vr, k)));
-            let Zr = S ? kr : 0,
-              ie = S ? x : pr;
-            Zr >= ie ||
-              hr(se(er, Zr, pr), ir, se(ur, Zr, 0), ie - Zr, k, vr, -1, 1);
+            (lr.setPipeline(K),
+              lr.setBindGroup(0, G(r, K.getBindGroupLayout(0), [Q, q, se])),
+              Ys(lr, ya(r, "strsm", Br, E)));
+            let Xr = A ? kr : 0,
+              ne = A ? x : pr;
+            Xr >= ne ||
+              gr(le(ar, Xr, pr), rr, le(er, Xr, 0), ne - Xr, E, Br, -1, 1);
           }
         } else
-          for (let br of E) {
-            let pr = Math.min(br + 64, x),
-              kr = pr - br;
-            Mr(se(er, br, br), se(ur, br, 0), kr, 1, k);
-            let vr = S ? pr : 0,
-              Gr = S ? x : br;
-            vr >= Gr ||
-              hr(se(er, vr, br), ir, se(ur, vr, 0), Gr - vr, k, kr, -1, 1);
+          for (let yr of L) {
+            let pr = Math.min(yr + 64, x),
+              kr = pr - yr;
+            Hr(le(ar, yr, yr), le(er, yr, 0), kr, 1, E);
+            let Br = A ? pr : 0,
+              Nr = A ? x : yr;
+            Br >= Nr ||
+              gr(le(ar, Br, yr), rr, le(er, Br, 0), Nr - Br, E, kr, -1, 1);
           }
       }
-      nr.end();
-      let Vr = Dr(r, gr, xr),
-        Ur = p ? null : D(r, gr, K);
-      j(r, gr);
-      let Cr = await C(Vr);
-      if (p) return Cr !== void 0 ? { gpuTimeMs: Cr } : {};
-      let Ir = await G(Ur, Float32Array);
-      return Cr !== void 0 ? { B: Ir, gpuTimeMs: Cr } : { B: Ir };
+      lr.end();
+      let Wr = Rr(r, ir, hr),
+        _r = c ? null : D(r, ir, q);
+      U(r, ir);
+      let Pr = await V(Wr);
+      if (c) return Pr !== void 0 ? { gpuTimeMs: Pr } : {};
+      let Dr = await S(_r, Float32Array);
+      return Pr !== void 0 ? { B: Dr, gpuTimeMs: Pr } : { B: Dr };
     } finally {
-      (!c && V && f(V), !p && K && f(K), tr && f(tr), U && f(U), f(rr));
+      (!p && F && f(F), !c && q && f(q), Q && f(Q), j && f(j), f(ur));
     }
   }
-  return ni(Ps);
+  return hi(Qs);
 })();

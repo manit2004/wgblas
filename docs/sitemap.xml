@@ -12,15 +12,18 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/benchmarks_utils.printRow.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/benchmarks_utils.saveResults.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/benchmarks_utils.toColumnMajor.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/benchmarks_utils.warmClocks.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_benchmark.beginTimestamp.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_benchmark.benchmarkMode.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_benchmark.extractTimestamp.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_benchmark.resolveTimestamp.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_bindgroup.createBindGroup.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.clearReadbackPool.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.createParamsBuffer.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.createResultBuffer.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.createStorageBuffer.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.destroyBuffers.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.releaseReadback.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.stageReadback.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.uploadBuffer.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_buffer.vec4Usable.html</loc></url>
@@ -31,6 +34,7 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_compute.beginTimedEncoder.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_compute.encodePass.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_compute.runComputePass.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_compute.runComputePasses.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_compute.submit.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_device.requireGpuDevice.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_device.requireSameDevice.html</loc></url>
@@ -39,6 +43,8 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_pipeline.getPipeline.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_pipeline.loadShader.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_result.extractResult.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_strided.gatherStridedPass.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_strided.worthPackingDD.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_workgroup.calcWorkgroups.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_workgroup.requireWorkgroupCount.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_workgroup.requireWorkgroups.html</loc></url>
@@ -48,6 +54,7 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.daxpy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dcopy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.ddot.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dgemm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dgemv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dger.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dnrm2.html</loc></url>
@@ -160,6 +167,7 @@
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_daxpy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dcopy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ddot.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dgemm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dgemv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dger.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dnrm2.html</loc></url>
@@ -227,6 +235,7 @@
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_f64.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_pipeline.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_result.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_strided.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_workgroup.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/docs.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/examples.html</loc></url>
@@ -241,6 +250,7 @@
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.daxpy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dcopy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.ddot.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dgemm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dgemv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dger.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dnrm2.html</loc></url>
@@ -285,7 +295,13 @@
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.BM_SMALL.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.BN_LARGE.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.BN_SMALL.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.DNRM2_PARTIAL_LEN.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.LARGE_TILE_WORKGROUP_THRESHOLD.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.SPLITK_CHUNK_ROWS.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.SPLITK_CHUNK_ROWS_DD.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.SSYMV_TILE.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.STRSM_SMALL_RHS_PER_WG.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.STRSV_TILE_ROWS.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.TILE_WG_2D.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_utility-functions_constants.WGS.html</loc></url>
 </urlset>

@@ -21,7 +21,9 @@
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Maps <code>readBuffer</code> for CPU access, copies its contents into a new typed array, then unmaps.
 The <code>.slice()</code> is required — <code>getMappedRange()</code> returns a view into the mapped GPU memory
-which becomes invalid after <code>unmap()</code>, so we copy it out before unmapping.</p>
+which becomes invalid after <code>unmap()</code>, so we copy it out before unmapping.
+The buffer then goes back to its device's readback pool (see <code>stageReadback</code>)
+— only after a clean unmap; if mapping fails it is destroyed instead.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -42,7 +44,7 @@ which becomes invalid after <code>unmap()</code>, so we copy it out before unmap
 </ul>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/3414238e2e40fad7f1224653d0935619d9345f97/src/util/result.mjs#L14">src/util/result.mjs:14</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/33cfd2e6dd9f398bcd7816b510c662c5bd42d825/src/util/result.mjs#L18">src/util/result.mjs:18</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
