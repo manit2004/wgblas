@@ -1,14 +1,14 @@
 [
-  { "transA": "no-transpose", "n": 64, "compute_ms": 0.0102, "compute_GFLOPs": 25.6803, "compute_GBs": 12.8401 },
-  { "transA": "no-transpose", "n": 128, "compute_ms": 0.0261, "compute_GFLOPs": 80.2645, "compute_GBs": 20.0661 },
-  { "transA": "no-transpose", "n": 256, "compute_ms": 0.1004, "compute_GFLOPs": 167.0771, "compute_GBs": 20.8846 },
-  { "transA": "no-transpose", "n": 512, "compute_ms": 0.3764, "compute_GFLOPs": 356.5979, "compute_GBs": 22.2874 },
-  { "transA": "no-transpose", "n": 1024, "compute_ms": 1.5658, "compute_GFLOPs": 685.7640, "compute_GBs": 21.4301 },
-  { "transA": "no-transpose", "n": 2048, "compute_ms": 7.8108, "compute_GFLOPs": 1099.7554, "compute_GBs": 17.1837 },
+  { "transA": "no-transpose", "n": 64, "compute_ms": 0.0101, "compute_GFLOPs": 25.8423, "compute_GBs": 12.9211 },
+  { "transA": "no-transpose", "n": 128, "compute_ms": 0.0262, "compute_GFLOPs": 80.1664, "compute_GBs": 20.0416 },
+  { "transA": "no-transpose", "n": 256, "compute_ms": 0.1004, "compute_GFLOPs": 167.1837, "compute_GBs": 20.8980 },
+  { "transA": "no-transpose", "n": 512, "compute_ms": 0.3763, "compute_GFLOPs": 356.7192, "compute_GBs": 22.2949 },
+  { "transA": "no-transpose", "n": 1024, "compute_ms": 1.5646, "compute_GFLOPs": 686.2689, "compute_GBs": 21.4459 },
+  { "transA": "no-transpose", "n": 2048, "compute_ms": 7.8038, "compute_GFLOPs": 1100.7385, "compute_GBs": 17.1990 },
   { "transA": "transpose", "n": 64, "compute_ms": 0.0102, "compute_GFLOPs": 25.6000, "compute_GBs": 12.8000 },
-  { "transA": "transpose", "n": 128, "compute_ms": 0.0266, "compute_GFLOPs": 78.8640, "compute_GBs": 19.7160 },
-  { "transA": "transpose", "n": 256, "compute_ms": 0.1034, "compute_GFLOPs": 162.2429, "compute_GBs": 20.2804 },
-  { "transA": "transpose", "n": 512, "compute_ms": 0.3839, "compute_GFLOPs": 349.5981, "compute_GBs": 21.8499 },
-  { "transA": "transpose", "n": 1024, "compute_ms": 1.3292, "compute_GFLOPs": 807.8300, "compute_GBs": 25.2447 },
-  { "transA": "transpose", "n": 2048, "compute_ms": 7.8723, "compute_GFLOPs": 1091.1632, "compute_GBs": 17.0494 }
+  { "transA": "transpose", "n": 128, "compute_ms": 0.0264, "compute_GFLOPs": 79.3895, "compute_GBs": 19.8474 },
+  { "transA": "transpose", "n": 256, "compute_ms": 0.1016, "compute_GFLOPs": 165.2081, "compute_GBs": 20.6510 },
+  { "transA": "transpose", "n": 512, "compute_ms": 0.3808, "compute_GFLOPs": 352.4625, "compute_GBs": 22.0289 },
+  { "transA": "transpose", "n": 1024, "compute_ms": 1.3237, "compute_GFLOPs": 811.1597, "compute_GBs": 25.3487 },
+  { "transA": "transpose", "n": 2048, "compute_ms": 7.8336, "compute_GFLOPs": 1096.5568, "compute_GBs": 17.1337 }
 ]
