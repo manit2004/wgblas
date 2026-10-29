@@ -20,6 +20,7 @@
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.typedoc.json",
   "out": "docs",
+  "json": "docs/api.json",
 "navigation": {
     "includeCategories": true,
     "includeGroups": false

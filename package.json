@@ -255,6 +255,7 @@
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@size-limit/file": "^13.0.3",
     "@stdlib/array-complex64": "^0.3.2",
     "@stdlib/blas-base-cscal": "^0.1.1",
@@ -311,7 +312,8 @@
     "typedoc": "^0.28.19",
     "typedoc-plugin-katex": "^0.1.2",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "zod": "^4.6.7"
   },
   "scripts": {
     "prepare": "husky",
