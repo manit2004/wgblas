@@ -20,10 +20,14 @@ comparing the GPU result against the CPU stdlib reference using a
 routine-specific error metric and threshold.</p>
 <h2 id="input-generation" class="tsd-anchor-link">Input Generation<a href="#input-generation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p><code>buildArb</code> constructs a fast-check arbitrary that produces a complete args
-object for one test run. Scalar params (<code>n</code>, <code>incx</code>, <code>incy</code>, <code>alpha</code>, <code>c</code>,
-<code>s</code>) are generated first; vectors <code>x</code> and <code>y</code> are then sized to exactly
-<code>(n-1)*inc+1</code> elements so their length is always consistent with the
-generated <code>n</code> and stride.</p>
+object for one test run. Scalar and string params (<code>n</code>, <code>m</code>, <code>k</code>, <code>incx</code>,
+<code>alpha</code>, <code>uplo</code>, <code>trans</code>, …) are generated first, then each leading
+dimension (<code>lda</code>/<code>ldb</code>/<code>ldc</code>) at or above its minimum; arrays are then
+sized from their spec's <code>dependsOn</code> — exactly <code>(n-1)*inc+1</code> elements for a
+vector, enough rows × leading dimension for a matrix — so their length is
+always consistent with the generated shape and stride. Double-precision
+specs (<code>x64</code>, <code>alpha64</code>, …) generate genuine doubles via <code>float64Arb</code>, and
+complex ones <code>Complex32</code>/<code>Complex32Array</code> values.</p>
 <h2 id="ftz-flush-to-zero" class="tsd-anchor-link">FTZ — Flush to Zero<a href="#ftz-flush-to-zero" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>WGSL may flush subnormals to zero: <em>&quot;To flush to zero is to replace a
 subnormal value for a floating point type with a zero value of that type.&quot;</em>

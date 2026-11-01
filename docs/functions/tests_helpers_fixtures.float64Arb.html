@@ -20,9 +20,9 @@
 <div class="tsd-signature tsd-anchor-link" id="float64arb"><span class="tsd-kind-call-signature">float64Arb</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">min</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">max</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Arbitrary</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><a href="#float64arb" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>A fast-check arbitrary for f64 scalars in <code>[min, max]</code>, excluding subnormals.
-Used for dasum's x (Float64Array): the double-double kernel splits each
-double into a (hi, lo) f32 pair, so the same FTZ-safety floor as <code>floatArb</code>
-applies to both halves. hi/lo are always genuine f32 values (never raw
+Used for every f64 routine's arrays and scalars (the derived <code>…64</code> specs):
+the double-double kernels split each double into a (hi, lo) f32 pair, so
+the same FTZ-safety floor as <code>floatArb</code> applies to both halves. hi/lo are always genuine f32 values (never raw
 bits), so no NaN-bit-pattern filter is needed here — see f64.mjs.</p>
 </div>
 <div class="tsd-parameters">
@@ -33,7 +33,7 @@ bits), so no NaN-bit-pattern filter is needed here — see f64.mjs.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Arbitrary</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><p>fast-check arbitrary that generates usable f64 scalars</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/tests/helpers/fixtures.js#L92">tests/helpers/fixtures.js:92</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/3b9a6234a07a2cec7ef2d2c98d6ddb265a51ca53/tests/helpers/fixtures.js#L96">tests/helpers/fixtures.js:96</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

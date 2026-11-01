@@ -33,17 +33,24 @@
  *
  * ## What is WebGPU?
  *
- * WebGPU is the modern browser GPU API, shipping in Chrome 113+ and Firefox
- * nightly. It lets JavaScript programs upload data to the GPU, run compute
- * programs on it, and read results back — without plugins or native code.
+ * WebGPU is the modern GPU API for JavaScript — shipping in Chrome and Edge
+ * (113+), Safari (26+) and Firefox (141+, Windows first), and available in
+ * Node.js through Dawn (the `webgpu` npm package, which is what this
+ * library's tests and benchmarks run on). It lets JavaScript programs upload
+ * data to the GPU, run compute programs on it, and read results back —
+ * without plugins or native code.
  *
- * > **Note:** WGSL does not support `f64` natively, so this library currently
- * > implements single-precision (`f32`) routines only.
+ * > **Note:** WGSL has no native `f64`, so the double-precision `d*` routines
+ * > emulate it with *double-double* arithmetic: each value is a pair of `f32`s
+ * > (hi + lo), giving about 48 bits of significand but `f32`'s exponent range
+ * > — close to, not identical to, IEEE double. See
+ * > `devdocs/utility-functions/f64` for the host-side split and merge.
  *
  * ## What is a compute shader?
  *
  * Each routine runs a **compute shader** written in WGSL (a GPU program that
- * runs thousands of instances in parallel, each processing one element). WebGPU
+ * runs thousands of instances in parallel, each handling a slice of the
+ * work — one element, a strided run of elements, or a tile). WebGPU
  * has vertex and fragment shaders for graphics too — compute shaders are
  * specifically for general computation. This library only uses compute shaders,
  * so we call them simply "shaders" throughout.

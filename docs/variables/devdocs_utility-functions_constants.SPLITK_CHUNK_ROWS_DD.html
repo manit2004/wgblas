@@ -15,14 +15,14 @@
 <li><a href="" aria-current="page">SPLITK_CHUNK_ROWS_DD</a></li></ul>
 <h1>Variable SPLITK_CHUNK_ROWS_DD<code class="tsd-tag">Const</code></h1></div>
 <div class="tsd-signature"><span class="tsd-kind-variable">SPLITK_CHUNK_ROWS_DD</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">64</span></div>
-<div class="tsd-comment tsd-typography"><p>SPLITK_CHUNK_ROWS for the double-double kernels (dgemv_t.wgsl). JS-only.
+<div class="tsd-comment tsd-typography"><p>SPLITK_CHUNK_ROWS for the double-double kernels (dgemv_t.wgsl, dtrmv_t.wgsl). JS-only.
 A DD row costs far more than an f32 one (five barriers per term in the
 protected ops), so smaller chunks pay: more workgroups to hide barrier
 latency, against a reduce pass that's still cheap next to the main one.
 Must be a multiple of WGS (the kernels tile x by WGS rows).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/src/util/constants.mjs#L84">src/util/constants.mjs:84</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/3b9a6234a07a2cec7ef2d2c98d6ddb265a51ca53/src/util/constants.mjs#L84">src/util/constants.mjs:84</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

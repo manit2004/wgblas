@@ -1,0 +1,41 @@
+{
+  "name": "wgblas-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for the wgblas API reference and developer docs",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "wgblas",
+    "webgpu",
+    "blas",
+    "docs"
+  ],
+  "homepage": "https://manit2004.github.io/wgblas/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manit2004/wgblas.git",
+    "directory": "mcp"
+  },
+  "license": "Apache-2.0",
+  "author": "Manit Roy",
+  "type": "module",
+  "bin": {
+    "wgblas-docs-mcp": "docs-mcp.mjs"
+  },
+  "files": [
+    "docs-mcp.mjs",
+    "api.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "scripts": {
+    "prepack": "cp ../docs/api.json ./api.json && cp ../LICENSE ./LICENSE"
+  }
+}

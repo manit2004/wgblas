@@ -59,16 +59,16 @@ export declare class GpuMatrix {
    * when driving more than one GPU at once, since a GpuMatrix is bound for
    * life to whichever device created it.
    *
+   * {@includeCode ../../examples/gpumatrix-from/gpumatrix-from.js}
+   *
+   * **Explicit device (multi-GPU):**
+   * {@includeCode ../../examples/gpumatrix-from-device/gpumatrix-from-device.js}
+   *
    * @param data   - matrix data, in the order matching `layout`
    * @param rows   - number of rows
    * @param cols   - number of columns
    * @param lda    - leading dimension (default: `cols` for row-major, `rows` for column-major)
    * @param layout - storage layout (default: `'row-major'`)
-   *
-   * {@includeCode ../../examples/gpumatrix-from/gpumatrix-from.js}
-   *
-   * **Explicit device (multi-GPU):**
-   * {@includeCode ../../examples/gpumatrix-from-device/gpumatrix-from-device.js}
    */
   static from(data: Float32Array | Float64Array | Complex32Array | Complex64Array, rows: number, cols: number, lda?: number, layout?: 'row-major' | 'column-major'): GpuMatrix;
   /**

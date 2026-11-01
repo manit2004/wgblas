@@ -40,16 +40,23 @@ threads can work simultaneously. NVIDIA's
 <a href="https://docs.nvidia.com/cuda/cublas/">cuBLAS</a> is the canonical example;
 this library applies the same idea to the browser via WebGPU.</p>
 <h2 id="what-is-webgpu" class="tsd-anchor-link">What is WebGPU?<a href="#what-is-webgpu" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>WebGPU is the modern browser GPU API, shipping in Chrome 113+ and Firefox
-nightly. It lets JavaScript programs upload data to the GPU, run compute
-programs on it, and read results back — without plugins or native code.</p>
+<p>WebGPU is the modern GPU API for JavaScript — shipping in Chrome and Edge
+(113+), Safari (26+) and Firefox (141+, Windows first), and available in
+Node.js through Dawn (the <code>webgpu</code> npm package, which is what this
+library's tests and benchmarks run on). It lets JavaScript programs upload
+data to the GPU, run compute programs on it, and read results back —
+without plugins or native code.</p>
 <blockquote>
-<p><strong>Note:</strong> WGSL does not support <code>f64</code> natively, so this library currently
-implements single-precision (<code>f32</code>) routines only.</p>
+<p><strong>Note:</strong> WGSL has no native <code>f64</code>, so the double-precision <code>d*</code> routines
+emulate it with <em>double-double</em> arithmetic: each value is a pair of <code>f32</code>s
+(hi + lo), giving about 48 bits of significand but <code>f32</code>'s exponent range
+— close to, not identical to, IEEE double. See
+<code>devdocs/utility-functions/f64</code> for the host-side split and merge.</p>
 </blockquote>
 <h2 id="what-is-a-compute-shader" class="tsd-anchor-link">What is a compute shader?<a href="#what-is-a-compute-shader" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>Each routine runs a <strong>compute shader</strong> written in WGSL (a GPU program that
-runs thousands of instances in parallel, each processing one element). WebGPU
+runs thousands of instances in parallel, each handling a slice of the
+work — one element, a strided run of elements, or a tile). WebGPU
 has vertex and fragment shaders for graphics too — compute shaders are
 specifically for general computation. This library only uses compute shaders,
 so we call them simply &quot;shaders&quot; throughout.</p>

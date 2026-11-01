@@ -4,22 +4,38 @@
  *
  * ## JS — `helpers.mjs`
  *
- * Used by every `benchmarks/<routine>/benchmark.<routine>.js` for timing,
- * result persistence, table formatting, and GPU clock warm-up
- * ({@link warmClocks}, called before every measured configuration).
+ * Used by every `benchmarks/<routine>/wgblas/*.js` (and the roofline probes)
+ * for GPU clock warm-up, timing, result persistence and table formatting.
+ * Every function is documented individually below:
+ *
+ * - {@link warmClocks} — full clocks before every measured configuration
+ * - {@link median} — the recorded statistic
+ * - {@link saveResults} — writes the result JSON
+ * - {@link getGpuModel} — the GPU slug that names the results folder
+ * - {@link toColumnMajor} — feeds matrix benchmarks cuBLAS's native layout
+ * - {@link printHeader} / {@link printRow} — the console table while a run is in progress
  *
  * ## C — `helpers.h`
  *
- * A header-only C counterpart used by every `benchmarks/<routine>/cuda/benchmark.c`.
- * All functions are `static` so each translation unit gets its own copy.
+ * A header-only C counterpart used by every `benchmarks/<routine>/cuda/*.c`.
+ * All functions are `static` so each translation unit gets its own copy. It
+ * also defines `CUDA_CHECK` / `CUBLAS_CHECK`, which print the failing
+ * file:line and exit on any non-success status.
  *
  * | Function | Signature | What it does |
  * |---|---|---|
- * | `get_gpu_model` | `(char *dst, int maxlen) → void` | Fills `dst` with the CUDA device name normalised to the same slug format as `getGpuModel()` |
+ * | `warm_clocks` | `(cublasHandle_t handle) → void` | Brings the GPU to full clocks before a measurement — the counterpart of `warmClocks()`, using `cublasSscal` bursts over a zeroed 64 MB buffer since these files define no kernels of their own |
+ * | `median` | `(float *arr, int n) → float` | Returns the median of `arr`; copies before sorting so the original is unchanged |
+ * | `save_results` | `(const char *gpu_model, const char *folder, const char *file_name, const record_field *fields, int n_fields, float *med_times, float *gbs_vals, float *gflops_vals, int n) → void` | Writes `benchmarks/results/<gpu>/cuda/<folder>/<file_name>.json` in the same schema as `saveResults()`. Each `record_field` (`{ name, type, values }`, type `FIELD_INT`/`FIELD_FLOAT`/`FIELD_STRING`) is one swept key, written before the fixed `compute_ms`/`compute_GFLOPs`/`compute_GBs` fields, so any record shape needs no new function; pass `gflops_vals = NULL` to omit `compute_GFLOPs` |
+ * | `save_results_ex`, `_stride`, `_pad`, `_pad_ex`, `_uplo`, `_trans`, `_flag`, `_scalar` | — | Thin wrappers over `save_results` for the record shapes older call sites use: `{n}`, `{stride, n}`, `{pad, n}` (`_pad_ex` adds GFLOP/s), `{uplo, n}`, `{trans, n}`, and a caller-named string (`_flag`) or float (`_scalar`) key with optional GFLOP/s. New benchmarks should call `save_results` directly |
+ * | `get_gpu_model` | `(char *dst, int maxlen) → void` | Fills `dst` with the CUDA device name as a slug, so wgblas and cuBLAS results land in the same `benchmarks/results/<gpu>/` folder |
  * | `random_float_array` | `(int n, float low, float high) → float*` | Heap-allocates `n` random floats in `[low, high]`; caller must `free()` |
- * | `median` | `(float *arr, int n) → float` | Returns the median of `arr`; copies before sorting so original is unchanged |
- * | `save_results` | `(const char *routine, const char *gpu_model, int *sizes, float *med_times, float *gbs_vals, int n) → void` | Writes JSON to `benchmarks/results/<gpu>/cuda/<routine>.json` in the same schema as `saveResults()` |
- * | `warm_clocks` | `(cublasHandle_t handle) → void` | Brings the GPU to full clocks before a measurement — the counterpart of `warmClocks()` |
+ * | `host_bytes_available` | `(void) → size_t` | Available host RAM from `/proc/meminfo`, for benchmarks that stage large host copies (the f64 routines stage two); returns 0 if unknown, which callers treat as "don't skip" |
+ *
+ * The C slug in `get_gpu_model` maps each non-alphanumeric character to `-`
+ * one at a time, while `getGpuModel()` collapses runs and trims the ends —
+ * identical for every GPU benchmarked so far, but a name with consecutive or
+ * edge punctuation would split into two folders (tracked in `TODO.md`).
  *
  * @module benchmarks/utils
  */
@@ -31,7 +47,7 @@ import { getAdapter } from "../../src/init.mjs";
  * Returns the current GPU's model name normalised to a filesystem-safe slug
  * (lowercase, non-alphanumeric runs replaced with `-`, leading/trailing `-`
  * stripped). Used as the directory name under `benchmarks/results/`.
- * @returns the slug string, or `null` if the adapter exposes no device name
+ * @returns {string | null} the slug string, or `null` if the adapter exposes no device name
  */
 export function getGpuModel() {
   const device = getAdapter().info.device;
@@ -52,12 +68,14 @@ export function getGpuModel() {
  * `benchmarks/results/<gpuModel>/wgblas/<folder>/` instead, and `fileName`
  * to give each variant its own file within it — e.g.
  * `saveResults("saxpy", gpuModel, strideRecords, { folder: "saxpy", fileName: "stride.saxpy" })`
- * writes `.../wgblas/saxpy/stride.saxpy.json`. Omitting both keeps the
- * original flat layout every other routine still uses.
+ * writes `.../wgblas/saxpy/stride.saxpy.json`. Every routine now has at
+ * least one sweep, so every benchmark passes both; omitting them still writes
+ * the original flat `wgblas/<routineName>.json`.
  *
- * @param routineName - e.g. `"saxpy"`
- * @param gpuModel - slug from {@link getGpuModel}
- * @param results - array of `{ n, compute_ms, compute_GBs }` records
+ * @param {string} routineName - e.g. `"saxpy"`
+ * @param {string | null} gpuModel - slug from {@link getGpuModel}
+ * @param {Array<Record<string, number | string>>} results - array of `{ n, compute_ms, compute_GBs }` records,
+ *   plus the swept key(s) for a sweep (e.g. `stride`, `uplo`) and `compute_GFLOPs` where recorded
  * @param {{ folder?: string, fileName?: string }} [options]
  * @param options.folder - subfolder under `wgblas/` to nest the file in (default: none, flat layout)
  * @param options.fileName - file name without `.json` (default: `routineName`)
@@ -81,12 +99,13 @@ export function saveResults(routineName, gpuModel, results, options = {}) {
 /**
  * Transposes a flat row-major rows×cols array into flat column-major storage
  * (lda = rows) — column-major storage of A is just row-major storage of Aᵀ.
- * Used so the Level 2 benchmarks can feed genuinely column-major data to
+ * Used so the Level 2 and 3 benchmarks can feed genuinely column-major data to
  * `GpuMatrix.from(..., "column-major")`, matching cuBLAS's native layout.
- * @param A - Float32Array, row-major, rows×cols, densely packed (lda = cols)
- * @param rows - number of logical rows
- * @param cols - number of logical columns
- * @returns Float32Array, column-major, rows×cols, densely packed (lda = rows)
+ * @template {Float32Array | Float64Array} T
+ * @param {T} A - row-major, rows×cols, densely packed (lda = cols)
+ * @param {number} rows - number of logical rows
+ * @param {number} cols - number of logical columns
+ * @returns {T} the same array type, column-major, rows×cols, densely packed (lda = rows)
  */
 export function toColumnMajor(A, rows, cols) {
   const out = new A.constructor(rows * cols);
@@ -98,8 +117,8 @@ export function toColumnMajor(A, rows, cols) {
 /**
  * Returns the median value of a numeric array.
  * Copies the array before sorting so the original is not mutated.
- * @param arr - array of numbers
- * @returns the median value
+ * @param {number[]} arr - array of numbers
+ * @returns {number} the median value
  */
 export function median(arr) {
   const sorted = arr.slice().sort((a, b) => a - b);
@@ -115,7 +134,7 @@ function colWidth(label) {
 
 /**
  * Prints a formatted table header row followed by a separator row.
- * @param labels - column label strings, e.g. `["n", "compute_ms", "compute_GBs"]`
+ * @param {string[]} labels - column label strings, e.g. `["n", "compute_ms", "compute_GBs"]`
  */
 export function printHeader(labels) {
   console.log(labels.map((l) => l.padEnd(colWidth(l))).join("  "));
@@ -125,8 +144,8 @@ export function printHeader(labels) {
 /**
  * Prints one table data row. Floats are formatted to 4 decimal places;
  * integers are printed as-is. Column widths match those used by {@link printHeader}.
- * @param labels - column labels (used only for width calculation)
- * @param values - values to print, in the same order as `labels`
+ * @param {string[]} labels - column labels (used only for width calculation)
+ * @param {Array<number | string>} values - values to print, in the same order as `labels`
  */
 export function printRow(labels, values) {
   console.log(
@@ -201,8 +220,9 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
  * called right before each configuration's warmup; once the GPU is already
  * at full clocks it returns in ~12 ms. The first call per device runs at
  * least 300 ms to establish the full-clock reference.
- * @param {GPUDevice} device
+ * @param {GPUDevice} device - the device the benchmark will measure on
  * @param {{ maxMs?: number }} [options] - give up after this long (default 1000 ms)
+ * @returns {Promise<void>} resolves once clocks are at peak, or after `maxMs`
  */
 export async function warmClocks(device, { maxMs = 1000 } = {}) {
   const st = warmKernel(device);

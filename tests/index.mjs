@@ -1,6 +1,25 @@
 /**
- * Test suite for wgblas — 26 BLAS Level 1, 2, and 3 routines, each covered
- * by four kinds of test.
+ * Test suite for wgblas — all 43 BLAS Level 1, 2, and 3 routines (24 single
+ * precision, 18 double precision, and `cscal`), each covered by four kinds of
+ * test, plus `init()` and the internal utilities.
+ *
+ * ## Layout
+ *
+ * ```
+ * tests/
+ *   <routine>/
+ *     src/test.<routine>.js        — validation, fixtures and edge cases
+ *     src/gpustorage.<routine>.js  — GPU-resident coverage
+ *     edge-cases.json              — deterministic edge cases
+ *     edge-cases-column-major.json — the same for column-major storage (matrix routines)
+ *     helpers.js                   — the routine's error metric (most routines)
+ *   init/src/test.init*.js         — init(), device options, cleanup(), and simulated
+ *                                    browser / no-WebGPU environments
+ *   utils/test.<module>.js         — one file per src/util/ module, plus the classes and random
+ *   helpers/                       — shared: fixtures, validation, ulp, stdlib references, device
+ *   validation/params/*.json       — the param specs validation and fixtures read
+ *   kaggle/kernel.py               — the CI kernel that runs the suite on a Kaggle GPU
+ * ```
  *
  * ## Test Types
  *
@@ -16,15 +35,17 @@
  *    stay safe under WGSL's flush-to-zero (FTZ) rule.
  * 3. **edge cases** — deterministic checks for routine-specific behaviour:
  *    ties, strides, identity parameters, exact Pythagorean results, per-flag
- *    srotm paths. The 14 routines with a `layout` parameter (matrix
- *    routines that accept row-major or column-major storage) get a second
- *    edge-cases pass — `edge-cases-column-major.json` — run as its own test.
+ *    srotm paths. The 22 routines with a `layout` parameter (matrix
+ *    routines that accept row-major or column-major storage — 14 single, 8
+ *    double precision) get a second edge-cases pass —
+ *    `edge-cases-column-major.json` — run as its own test.
  * 4. **GPU-resident coverage** (`gpustorage.<routine>.js`) — the same
  *    fixtures inputs and stdlib oracle as test 2 and 3, but run through the
  *    `GpuVector`/`GpuMatrix`-resident overload instead of the plain-array
  *    one. Runs via `make test-gpu`/`make test-gpu-<routine>`, a separate
  *    invocation from `make test` — and not part of the Kaggle CI kernel,
- *    which only runs `make test`.
+ *    which runs the same `test.*.js` files as `make test` (under c8, for
+ *    coverage).
  *
  * ## Error Metrics
  *
@@ -42,7 +63,7 @@
  *   a routine-derived rounding-error bound instead of counting ULPs, so a
  *   legal FMA fusion or a cancellation-shrunk result doesn't read as a
  *   failure:
- *   $$\text{factor} = \max&#95;i \frac{|\text{err}&#95;i|}{\varepsilon \cdot \text{bound}&#95;i}, \qquad \varepsilon = 2^{-23}$$
+ *   $$\text{factor} = \max&#95;i \frac{|\text{err}&#95;i|}{\varepsilon \cdot \text{bound}&#95;i}, \qquad \varepsilon = 2^{-23} \text{ (f32)}, \; 2^{-48} \text{ (double-double)}$$
  *   `err_i = |gpu_i - ref_i|` at each output index `i` (or `i,j` for a
  *   matrix output) — `bound_i` is routine-specific; every routine's is in
  *   the Equation column of the table below.
@@ -56,6 +77,14 @@
  *   (`strsm`'s right-hand side is `\alpha B_{ij}`, indexed `i,j` — a matrix,
  *   not a vector `b`). `bound_i` is again routine-specific — `strsv`'s and
  *   `strsm`'s are in the table below, and differ for the reason given there.
+ *
+ * The double-precision routines use the same metric shapes with
+ * $\varepsilon = 2^{-48}$: double-double carries about 48 significand bits,
+ * not IEEE double's 53. Even `dcopy` and `dswap`, which do no arithmetic,
+ * get a forward-error factor rather than an exact match — the split into
+ * hi/lo halves and the merge back at the JS boundary is itself a rounding.
+ * Their thresholds are looser than the f32 ones (mostly 5), calibrated on
+ * real hardware; each test file says why.
  *
  * `n`/`k` below are each routine's own reduction length; `r` = `aOrder`, the
  * shared dimension `A` is read over (`m` for `side="left"`, `n` for
@@ -89,15 +118,37 @@
  * | ssymm | 3 | forwardFactor | 1 | $(r{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|+\|\beta\|\|C&#95;{ij}\|$ |
  * | strmm | 3 | forwardFactor | 1 | $(r{+}1)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|$ |
  * | strsm | 3 | backwardResidualFactor | 5 | $(r{+}1)\sum&#95;k\|A&#95;{ik}\|\|X&#95;{kj}\|$ |
+ * | cscal | 1 | forwardFactor (f32) | 1 | $\|\alpha&#95;{re}x&#95;{re}\|{+}\|\alpha&#95;{im}x&#95;{im}\|$ (re), $\|\alpha&#95;{re}x&#95;{im}\|{+}\|\alpha&#95;{im}x&#95;{re}\|$ (im) |
+ * | dcopy | 1 | forwardFactor | 2 | $\|x&#95;i\|$ |
+ * | dswap | 1 | forwardFactor | 2 | $\|y&#95;i\|$ (new x), $\|x&#95;i\|$ (new y) |
+ * | dscal | 1 | forwardFactor | 5 | $\|\alpha x&#95;i\|$ |
+ * | daxpy | 1 | forwardFactor | 5 | $\|\alpha x&#95;i\|+\|y&#95;i\|$ |
+ * | ddot | 1 | forwardFactor | 1 | $n\sum&#95;i\|x&#95;iy&#95;i\|$ |
+ * | dnrm2 | 1 | forwardFactor | 10 | $\|\text{ref}\|$ (relative error) |
+ * | drot | 1 | forwardFactor | 5 | as srot |
+ * | drotm | 1 | forwardFactor | 5 | as srotm |
+ * | dgemv | 2 | forwardFactor | 5 | as sgemv |
+ * | dsymv | 2 | forwardFactor | 5 | as ssymv |
+ * | dtrmv | 2 | forwardFactor | 5 | as strmv |
+ * | dger | 2 | forwardFactor | 5 | as sger |
+ * | dsyr | 2 | forwardFactor | 5 | as ssyr |
+ * | dsyr2 | 2 | forwardFactor | 5 | as ssyr2 |
+ * | dtrsv | 2 | backwardResidualFactor | 5 | as strsv |
+ * | dgemm | 3 | forwardFactor | 1 | $(k{+}2)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|+2\|\beta\|\|C&#95;{ij}\|$ — sgemm's, widened for the hi/lo split of A, B and C |
+ *
+ * `idamax` and `dasum`, the first two f64 routines, sit in the Level 1 block
+ * of the table above.
  *
  * ## Make Commands
  *
  * | Command | What it does |
  * |---|---|
- * | `make test` | Runs validation + fixtures + edge cases for all 26 routines (`test.*.js`) |
- * | `make test-<routine>` | Runs one routine's `test.<routine>.js`, e.g. `make test-saxpy` |
- * | `make test-gpu` | Runs GPU-resident coverage for all 26 routines (`gpustorage.*.js`) |
+ * | `make test` | Runs every `test.*.js` — all 43 routines' validation + fixtures + edge cases, plus `init` and the utility tests |
+ * | `make test-<routine>` | Runs one routine's `test.<routine>.js`, e.g. `make test-saxpy` (also `make test-init`) |
+ * | `make test-gpu` | Runs GPU-resident coverage for all 43 routines (`gpustorage.*.js`) |
  * | `make test-gpu-<routine>` | Runs one routine's `gpustorage.<routine>.js` |
+ * | `make test-utils` | Runs every `tests/utils/test.*.js` |
+ * | `make test-util-<module>` | Runs one, e.g. `make test-util-buffer` |
  *
  * Pass `ARGS=low-power` to prefer the integrated GPU on dual-GPU machines:
  * `make test-saxpy ARGS=low-power`. Node's test runner doesn't forward

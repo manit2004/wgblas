@@ -1,5 +1,3 @@
-/** @module devdocs/utility-functions/constants */
-
 /**
  * Single source of truth for every constant the JS dispatch side shares with a
  * shader.
@@ -14,6 +12,8 @@
  *
  * Every export below names the shader declaration it mirrors. Changing one
  * means changing both, and the test will tell you if you forget.
+ *
+ * @module devdocs/utility-functions/constants
  */
 
 // --- gemm block tiles ------------------------------------------------------
@@ -75,7 +75,7 @@ export const STRSM_SMALL_RHS_PER_WG = 4;
 export const DNRM2_PARTIAL_LEN = 7;
 
 /**
- * SPLITK_CHUNK_ROWS for the double-double kernels (dgemv_t.wgsl). JS-only.
+ * SPLITK_CHUNK_ROWS for the double-double kernels (dgemv_t.wgsl, dtrmv_t.wgsl). JS-only.
  * A DD row costs far more than an f32 one (five barriers per term in the
  * protected ops), so smaller chunks pay: more workgroups to hide barrier
  * latency, against a reduce pass that's still cheap next to the main one.

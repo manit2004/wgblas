@@ -9,10 +9,12 @@ const _pipelines = new WeakMap();
  * @param {GPUDevice} device
  * @param {string|string[]} shaderName - filename without `.wgsl` extension (e.g. `"sscal"`),
  *   or an array of filenames whose source gets concatenated into one module — WGSL has no
- *   `#include`, so this is how one shader's helper functions (e.g. f64add.wgsl's decode/
- *   encode/computeSum) get reused from another (e.g. dasum.wgsl) without duplicating them.
- * @param {string} [entryPoint="main"] - which `@compute` function to run; only needed when
- *   concatenating shaders whose entry points aren't both named "main"
+ *   `#include`, so this is how the double-double library (`f64/dekker`, `f64/utils/add`,
+ *   `f64/utils/multiply`, …) gets reused by every `d*` routine's shader without duplicating it,
+ *   e.g. `["f64/dekker", "f64/utils/abs", "f64/utils/add", "dasum"]`.
+ * @param {string} [entryPoint="main"] - which `@compute` function to run. Every module has
+ *   exactly one, so this is optional: left at `"main"`, it's omitted from the pipeline
+ *   descriptor and WebGPU picks the module's sole entry point, whatever it's named.
  * @returns {Promise<GPUComputePipeline>}
  */
 export async function getPipeline(device, shaderName, entryPoint = "main") {

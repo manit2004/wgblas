@@ -20,8 +20,9 @@
 <div class="tsd-signature tsd-anchor-link" id="mergedoubledouble"><span class="tsd-kind-call-signature">mergeDoubleDouble</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">hi</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">lo</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Float64Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span><a href="#mergedoubledouble" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Reassembles a (hi, lo) double-double pair back into a Float64Array — the
-inverse of splitDoubleDouble, used after reading a double-double GPU
-readback (GpuVector, GpuMatrix, dasum) back to the CPU.</p>
+inverse of splitDoubleDouble, used whenever a double-double result comes
+back to the CPU: every <code>d*</code> routine's readback, and <code>GpuVector</code>/<code>GpuMatrix</code>
+<code>read()</code> on f64 data.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -30,7 +31,7 @@ readback (GpuVector, GpuMatrix, dasum) back to the CPU.</p>
 <li><span><span class="tsd-kind-parameter">lo</span>: <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Float64Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/src/util/f64.mjs#L39">src/util/f64.mjs:39</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/3b9a6234a07a2cec7ef2d2c98d6ddb265a51ca53/src/util/f64.mjs#L40">src/util/f64.mjs:40</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

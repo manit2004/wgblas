@@ -17,29 +17,33 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="tocolumnmajor"><span class="tsd-kind-call-signature">toColumnMajor</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">A</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">rows</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">cols</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><a href="#tocolumnmajor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="tocolumnmajor"><span class="tsd-kind-call-signature">toColumnMajor</span><span class="tsd-signature-symbol">&lt;</span><br/>    <a class="tsd-signature-type tsd-kind-type-parameter" href="#tocolumnmajort">T</a> <span class="tsd-signature-keyword">extends</span> <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">Float64Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">A</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#tocolumnmajort">T</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">rows</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">cols</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#tocolumnmajort">T</a><a href="#tocolumnmajor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Transposes a flat row-major rows×cols array into flat column-major storage
 (lda = rows) — column-major storage of A is just row-major storage of Aᵀ.
-Used so the Level 2 benchmarks can feed genuinely column-major data to
+Used so the Level 2 and 3 benchmarks can feed genuinely column-major data to
 <code>GpuMatrix.from(..., &quot;column-major&quot;)</code>, matching cuBLAS's native layout.</p>
 </div>
+<section class="tsd-panel">
+<h4>Type Parameters</h4>
+<ul class="tsd-type-parameter-list">
+<li><span id="tocolumnmajort"><span class="tsd-kind-type-parameter">T</span> <span class="tsd-signature-keyword">extends</span> <span class="tsd-signature-type">Float32Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">Float64Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ArrayBufferLike</span><span class="tsd-signature-symbol">&gt;</span></span></li></ul></section>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">A</span>: <span class="tsd-signature-type">any</span></span>
-<div class="tsd-comment tsd-typography"><p>Float32Array, row-major, rows×cols, densely packed (lda = cols)</p>
+<li><span><span class="tsd-kind-parameter">A</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#tocolumnmajort">T</a></span>
+<div class="tsd-comment tsd-typography"><p>row-major, rows×cols, densely packed (lda = cols)</p>
 </div></li>
-<li><span><span class="tsd-kind-parameter">rows</span>: <span class="tsd-signature-type">any</span></span>
+<li><span><span class="tsd-kind-parameter">rows</span>: <span class="tsd-signature-type">number</span></span>
 <div class="tsd-comment tsd-typography"><p>number of logical rows</p>
 </div></li>
-<li><span><span class="tsd-kind-parameter">cols</span>: <span class="tsd-signature-type">any</span></span>
+<li><span><span class="tsd-kind-parameter">cols</span>: <span class="tsd-signature-type">number</span></span>
 <div class="tsd-comment tsd-typography"><p>number of logical columns</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><p>Float32Array, column-major, rows×cols, densely packed (lda = rows)</p>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#tocolumnmajort">T</a></h4><p>the same array type, column-major, rows×cols, densely packed (lda = rows)</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/benchmarks/utils/helpers.mjs#L91">benchmarks/utils/helpers.mjs:91</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/3b9a6234a07a2cec7ef2d2c98d6ddb265a51ca53/benchmarks/utils/helpers.mjs#L110">benchmarks/utils/helpers.mjs:110</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

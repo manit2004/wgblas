@@ -15,7 +15,18 @@
 <h1>Module devdocs/shaders</h1></div>
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><h2 id="structure" class="tsd-anchor-link">Structure<a href="#structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p><code>shaders/*.wgsl</code> — one WGSL compute shader per BLAS routine (sscal, saxpy, sdot, …).</p>
+<p><code>shaders/*.wgsl</code> — the compute shaders: one per routine for the simple cases (sscal, saxpy,
+sdot, …), several for routines that pick a kernel by shape or orientation (<code>sgemv_n</code>/<code>sgemv_t</code>,
+<code>sgemm_small</code>/<code>sgemm_large</code>, …), plus shared passes (<code>reduce_partials</code>, <code>gather_strided</code>,
+<code>scatter_strided</code>, <code>block_transfer</code>, …). Two subfolders hold code with no routine of its own:</p>
+<ul>
+<li><code>reduction/</code> — second-pass reductions over per-workgroup partials (<code>sum</code>, <code>argmax</code>,
+<code>scaledSum</code> and their <code>F64</code> versions).</li>
+<li><code>f64/</code> — the double-double library: <code>dekker.wgsl</code> (the DD type and error-free transforms)
+and <code>utils/</code> (<code>add</code>, <code>multiply</code>, <code>divide</code>, <code>sqrt</code>, <code>abs</code>, <code>greater</code>, <code>equal</code>). These have no
+<code>@compute</code> entry point; f64 routines concatenate the ones they need in front of their own
+kernel (see <code>getPipeline</code>'s <code>shaderName: string[]</code>).</li>
+</ul>
 <p><code>routineShaders</code> below is the single source of truth: routine name → the WGSL source(s)
 its <code>getPipeline()</code> calls actually reference, verified against every <code>src/&lt;routine&gt;/&lt;routine&gt;.mjs</code>
 rather than inferred from naming convention (see its doc comment for the exceptions). Each
@@ -28,15 +39,22 @@ browser's IIFE bundle via esbuild instead.</p>
 <h2 id="cross-shader-patterns" class="tsd-anchor-link">Cross-shader patterns<a href="#cross-shader-patterns" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p><strong>Single bind group.</strong> Every shader with bindings uses <code>@group(0)</code> only — the JS side always
 calls <code>pipeline.getBindGroupLayout(0)</code>, no secondary groups to track. Binding order is
-consistent too: any read-only storage buffers come before read_write ones, with the
-<code>uniform Params</code> struct always last. <code>@binding</code> indices match the position of each resource in
-the array passed to <code>createBindGroup</code>, which appends <code>resultBuffer</code> last.</p>
+consistent too: read-only storage buffers first, then read_write ones, then the
+<code>uniform Params</code> struct — with three exceptions, where an operand's binding number predates
+the convention: <code>srotm</code> and <code>drotm</code> put the read-only <code>param</code> array after the read_write
+<code>x</code>/<code>y</code>, and <code>strsm_small</code> binds <code>params</code> (2) between <code>B</code> (1) and its scratch <code>X</code> (3).
+<code>@binding</code> indices match the position of each resource in the array passed to
+<code>createBindGroup</code>, which numbers them in order from <code>startBinding</code> (default 0).</p>
 <p><strong>All counts and strides are <code>u32</code>.</strong> <code>n</code>, <code>x_inc</code>, <code>y_inc</code>, and every other index/count field
 in a <code>Params</code> struct is unsigned, avoiding implicit sign-extension in index expressions like
 <code>id * params.x_inc</code>.</p>
-<p><strong>Entry points don't have to be named <code>main</code>.</strong> <code>loadShader</code> (<code>util/pipeline.mjs</code>)
-auto-detects the sole <code>@compute</code> function in a module instead of requiring a fixed name, so
-<code>dasum_main</code>, <code>strsv_invert_block_main</code>, etc. work without renaming.</p>
+<p><strong>Entry points don't have to be named <code>main</code>.</strong> Every module has exactly one <code>@compute</code>
+function. When <code>getPipeline</code> is called with the default <code>entryPoint = &quot;main&quot;</code>, <code>loadShader</code>
+(<code>util/pipeline.mjs</code>) leaves <code>entryPoint</code> out of the pipeline descriptor entirely and WebGPU
+picks the module's sole entry point itself — so <code>dasum_main</code>, <code>strsv_invert_block_main</code>, etc.
+work without renaming. (Leaving it out is deliberate: passing it explicitly once produced wrong
+results on one backend — see the comment in <code>loadShader</code>.) Some f64 routines still pass their
+entry point's name explicitly (<code>dger_main</code>, <code>dsymv_main</code>, …), which also works.</p>
 </div></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Namespaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="namespaces">Namespaces<a href="#namespaces" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="routineshaders"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Namespace"><use href="../assets/icons.svg#icon-4"></use></svg><a href="devdocs_shaders.routineShaders.html">routineShaders</a><a href="#routineshaders" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>

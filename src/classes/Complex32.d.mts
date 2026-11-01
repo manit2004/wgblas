@@ -8,10 +8,11 @@
  */
 export declare class Complex32 {
   /**
-   * @param re - real component, rounded to the nearest f32
-   * @param im - imaginary component, rounded to the nearest f32
    *
    * {@includeCode ../../examples/complex32/complex32.js}
+   *
+   * @param re - real component, rounded to the nearest f32
+   * @param im - imaginary component, rounded to the nearest f32
    */
   constructor(re: number, im: number);
 
@@ -33,11 +34,12 @@ export declare class Complex32 {
  */
 export declare class Complex32Array extends Array<Complex32> {
   /**
+   *
+   * {@includeCode ../../examples/complex32array/complex32array.js}
+   *
    * @param arg - a length (fills with that many zero-valued Complex32
    *   entries), a flat interleaved `[re, im, re, im, ...]` list of numbers,
    *   or an iterable of existing Complex32 instances to copy
-   *
-   * {@includeCode ../../examples/complex32array/complex32array.js}
    */
   constructor(arg?: number | Iterable<number> | Iterable<Complex32>);
 }
