@@ -109,10 +109,16 @@ for (const alpha of ALPHAS) {
 
     if (times.length === 0) continue;
     const med = median(times);
-    const gflops = (n * n * n) / 1e9 / (med / 1e3);
+    // alpha = 0 skips the solve — B is just zeroed (see the header) — so it
+    // does no floating-point work; charging the solve's n^3 there reported
+    // up to ~11x the card's FMA peak. (cuBLAS's alpha.strsm.c keeps n^3:
+    // cuBLAS runs the full solve at alpha = 0, as its timings show.)
+    const flops = alpha === 0 ? 0 : n * n * n;
+    const gflops = flops / 1e9 / (med / 1e3);
     // Both metrics: L3 is compute-bound so GFLOP/s is the headline, but the
     // shared table builder keys off compute_GBs.
-    const bytes = (3 * n * n + 5 * n * n) * 4;
+    // Likewise its traffic: at alpha = 0 B is only written (n^2 floats).
+    const bytes = alpha === 0 ? n * n * 4 : (3 * n * n + 5 * n * n) * 4;
     const gbs = bytes / 1e9 / (med / 1e3);
     printRow(COLS, [alpha, n, med, gflops, gbs]);
     records.push({

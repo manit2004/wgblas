@@ -125,8 +125,13 @@ FLOPS = {
     "ssyr2":  lambda r, b: 2 * _d(r, "n") * (_d(r, "n") + 1),
     "strmv":  lambda r, b: _d(r, "n") ** 2,
     "strsv":  lambda r, b: _d(r, "n") ** 2,
-    "ssyrk":  lambda r, b: 2 * _d(r, "n") ** 2 * _d(r, "k", "n") + _d(r, "n") ** 2,
-    "ssyr2k": lambda r, b: 4 * _d(r, "n") ** 2 * _d(r, "k", "n") + _d(r, "n") ** 2,
+    # Rank-k updates write one triangle of C: k multiply-adds for each of its
+    # n(n+1)/2 elements (twice for syr2k) — the useful work the BLAS/LAPACK
+    # convention counts, and what the kernels run, skipping every tile wholly
+    # outside the triangle. A full-product count put them ~1.9x too high,
+    # above the measured FMA roof.
+    "ssyrk":  lambda r, b: _d(r, "n") * (_d(r, "n") + 1) * _d(r, "k", "n"),
+    "ssyr2k": lambda r, b: 2 * _d(r, "n") * (_d(r, "n") + 1) * _d(r, "k", "n"),
     "strsm":  lambda r, b: (lambda n: _d(r, "order", "m", "n") ** 2 * n if n else None)(
         _strsm_n(r, b)),
 }
@@ -142,8 +147,10 @@ def above_roof(rec, peak_flops, peak_bw):
     a few percent, because a short kernel runs in a turbo power state the
     probe's sustained load does not hold. Or the FLOP/byte count credited to
     the row may not describe the work that ran: alpha.strsm skips the
-    triangular solve at alpha=0 but is still charged the full order^2 * n
-    FLOPs, which scores 11x the card's peak.
+    triangular solve at alpha=0 and once charged the full order^2 * n FLOPs
+    there, scoring 11x the card's peak (it now records 0 for those rows), and
+    the rank-k updates were charged a full product while their kernels skip
+    the half of C outside the triangle — ~1.9x, past the FMA roof.
 
     The ratio separates them in practice — percent-level overshoot is the
     former, order-of-magnitude the latter — but that is a judgement for the
@@ -176,7 +183,10 @@ def load_records(gpu, backend="wgblas"):
             if not gbs:
                 continue
             gf = rec.get("compute_GFLOPs")
-            if gf:
+            # A recorded 0 is a measurement — no floating-point work ran (e.g.
+            # alpha.strsm at alpha = 0, where the solve is skipped) — not a
+            # missing value to re-derive from the FLOP table.
+            if gf is not None:
                 ai = gf / gbs
             else:
                 # Derive from the standard FLOP count and the recorded byte

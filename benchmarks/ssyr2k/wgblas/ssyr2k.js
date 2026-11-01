@@ -112,10 +112,12 @@ for (const size of SIZES) {
   if (times.length === 0) continue;
 
   const med = median(times);
-  // Two full-tile passes regardless of uplo (see header comment) — 2x
-  // sgemmtr's 2*n*n*k FMA cost, plus the alpha/beta step for the touched
-  // half of C (only paid once, on the first pass's beta*C read).
-  const flops = 2 * (2 * n * n * k) + n * n;
+  // Useful work, the BLAS/LAPACK convention: two rank-k terms, each k
+  // multiply-adds for every element of the n(n+1)/2 triangle — the same
+  // count cuBLAS's ssyr2k.c charges. Both sgemmtr passes skip every tile
+  // wholly outside the triangle, so this is what runs. (Charging two full
+  // 2*n*n*k products reported ~1.9x the real rate, past the FMA peak.)
+  const flops = 2 * n * (n + 1) * k;
   // A read + B read (both full, once each) + touched-half-of-C read + write
   const bytes = (n * k + n * k + n * n) * 4;
   const gflops = flops / 1e9 / (med / 1e3);
