@@ -32,7 +32,7 @@
 <circle class="s1" cx="116.3" cy="269.2" r="5"/>
 <circle class="s1" cx="92.3" cy="264.7" r="5"/>
 <circle class="s1" cx="116.3" cy="270.5" r="5"/>
-<circle class="s3" cx="503.2" cy="227.0" r="5"/>
+<circle class="s3" cx="462.2" cy="246.0" r="5"/>
 <circle class="s2" cx="157.4" cy="246.3" r="5"/>
 <circle class="s2" cx="116.3" cy="263.5" r="5"/>
 <circle class="s1" cx="157.4" cy="235.4" r="5"/>
@@ -42,12 +42,12 @@
 <circle class="s2" cx="198.4" cy="247.6" r="5"/>
 <circle class="s2" cx="116.3" cy="261.1" r="5"/>
 <circle class="s2" cx="157.4" cy="239.6" r="5"/>
-<circle class="s3" cx="544.3" cy="224.1" r="5"/>
+<circle class="s3" cx="503.2" cy="244.7" r="5"/>
 <circle class="s3" cx="445.1" cy="232.2" r="5"/>
 <circle class="s2" cx="157.3" cy="250.5" r="5"/>
 <circle class="s2" cx="157.3" cy="340.0" r="5"/>
-<text class="dl" x="552.3" y="228.1" text-anchor="start">ssyr2k</text>
-<text class="dl" x="511.2" y="242.0" text-anchor="start">sgemmtr</text>
+<text class="dl" x="511.2" y="248.7" text-anchor="start">ssyr2k</text>
+<text class="dl" x="470.2" y="261.0" text-anchor="start">sgemmtr</text>
 <text class="dl" x="453.1" y="236.2" text-anchor="start">strmm</text>
 <text class="dl" x="206.4" y="251.6" text-anchor="start">ssymv</text>
 <text class="dl" x="165.4" y="234.9" text-anchor="start">sgemv · snrm2 · ssyr2 · strmv</text>

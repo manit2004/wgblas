@@ -67,9 +67,10 @@ int main(void) {
         }
 
         float med = median(compute_times, BENCH_ITERS);
-        // cuBLAS's own internal accounting: 2x full n*n*k FMA cost (two rank-k
-        // terms) + n*n/2 for the alpha/beta step.
-        float flops = 2.0f * (2.0f * n * n * k) + (float)n * n;
+        // Useful work, the BLAS/LAPACK convention: two rank-k terms, each k
+        // multiply-adds for every element of the n(n+1)/2 triangle written.
+        // Same count as the .js counterpart.
+        float flops = 2.0f * n * (n + 1) * k;
         // A read + B read (both full) + touched-half-of-C read + write
         float bytes = (float)((size_t)(n * k + n * k + n * n)) * 4.0f;
         float gflops = (flops / 1e9f) / (med / 1e3f);

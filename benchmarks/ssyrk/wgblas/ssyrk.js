@@ -97,9 +97,12 @@ for (const size of SIZES) {
   if (times.length === 0) continue;
 
   const med = median(times);
-  // Full compute regardless of uplo (see header comment) — same cost as
-  // gemm's 2*n*n*k, plus the alpha/beta step for the ~half of C touched.
-  const flops = 2 * n * n * k + n * n;
+  // Useful work, the BLAS/LAPACK convention: k multiply-adds for each of the
+  // n(n+1)/2 elements of the triangle written — the same count cuBLAS's
+  // ssyrk.c charges, and what the kernel does: it skips every tile wholly
+  // outside the triangle. (Charging the full 2*n*n*k product reported ~1.9x
+  // the real rate, past the card's measured FMA peak.)
+  const flops = n * (n + 1) * k;
   // A read (full n*k) + touched-half-of-C read + touched-half-of-C write
   const bytes = (n * k + n * n) * 4;
   const gflops = flops / 1e9 / (med / 1e3);

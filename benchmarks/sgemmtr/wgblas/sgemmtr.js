@@ -15,8 +15,8 @@ import {
 // Same kernels as sgemm, write gated to one triangle by uplo — a confirmed
 // non-effect (see temp/scope_sgemmtr.mjs); other params inherited from
 // sgemm's own scoping (trans.sgemm.js/ldb.sgemm.js). No cuBLAS counterpart —
-// cuBLAS has no gemmt routine — so wgblas-only. flops/bytes reflect actual
-// work: full compute regardless of uplo, but only half of C's traffic.
+// cuBLAS has no gemmt routine — so wgblas-only. flops/bytes count the
+// triangle only: the kernels skip every tile wholly outside it.
 const WARMUP_ITERS = 3;
 const BENCH_ITERS = 20;
 const SIZES = [32, 64, 128, 256, 512, 1024];
@@ -118,10 +118,11 @@ for (const size of SIZES) {
   if (times.length === 0) continue;
 
   const med = median(times);
-  // Full tile compute regardless of uplo (see header comment) — same cost
-  // as sgemm's 2*m*n*k, plus the alpha/beta step only for the ~half of C
-  // that's actually touched.
-  const flops = 2 * m * n * k + m * n;
+  // Useful work (C is square here, m == n): k multiply-adds for each of the
+  // n(n+1)/2 elements of the triangle written — what the kernels do, since
+  // they skip every tile wholly outside it. (Charging the full 2*m*n*k
+  // product reported ~1.9x the real rate, past the card's FMA peak.)
+  const flops = n * (n + 1) * k;
   // A read + B read + touched-half-of-C read + touched-half-of-C write
   const bytes = (m * k + k * n + m * n) * 4;
   const gflops = flops / 1e9 / (med / 1e3);
