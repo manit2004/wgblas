@@ -1,4 +1,4 @@
-# wgblas-docs-mcp
+# wgblas-mcp
 
 An [MCP](https://modelcontextprotocol.io) server for the
 [wgblas](https://github.com/manit2004/wgblas) docs — the API reference and the
@@ -10,7 +10,7 @@ you write wgblas code.
 **Claude Code**
 
 ```bash
-claude mcp add wgblas-docs -- npx -y wgblas-docs-mcp
+claude mcp add wgblas-docs -- npx -y wgblas-mcp
 ```
 
 **Claude Desktop, Cursor, VS Code, or any MCP client** — add to its MCP config:
@@ -20,7 +20,7 @@ claude mcp add wgblas-docs -- npx -y wgblas-docs-mcp
   "mcpServers": {
     "wgblas-docs": {
       "command": "npx",
-      "args": ["-y", "wgblas-docs-mcp"]
+      "args": ["-y", "wgblas-mcp"]
     }
   }
 }
