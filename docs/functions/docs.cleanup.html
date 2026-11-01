@@ -25,15 +25,15 @@ Call when done (required in Node.js to prevent crash on exit).</p>
 just that one and leave the others usable — handy when driving several GPUs.
 Unknown or already-released devices are ignored, so this is safe to call
 more than once.</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">init</span><span class="hl-1">, </span><span class="hl-4">cleanup</span><span class="hl-1">, </span><span class="hl-4">gpuName</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;wgblas&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">init</span><span class="hl-1">();</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;GPU:&quot;</span><span class="hl-1">, </span><span class="hl-0">gpuName</span><span class="hl-1">().</span><span class="hl-4">description</span><span class="hl-1">);</span><br/><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-5">typeof</span><span class="hl-1"> </span><span class="hl-4">process</span><span class="hl-1"> !== </span><span class="hl-2">&quot;undefined&quot;</span><span class="hl-1">) </span><span class="hl-0">cleanup</span><span class="hl-1">(); </span><span class="hl-8">// Node.js only — browser cleanup is automatic</span>
+</code><button type="button">Copy</button></pre>
+
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">device</span>: <span class="tsd-signature-type">GPUDevice</span></span>
 <div class="tsd-comment tsd-typography"><p>the device to release; omit to release all of them.</p>
-<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">init</span><span class="hl-1">, </span><span class="hl-4">cleanup</span><span class="hl-1">, </span><span class="hl-4">gpuName</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;wgblas&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">init</span><span class="hl-1">();</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;GPU:&quot;</span><span class="hl-1">, </span><span class="hl-0">gpuName</span><span class="hl-1">().</span><span class="hl-4">description</span><span class="hl-1">);</span><br/><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-5">typeof</span><span class="hl-1"> </span><span class="hl-4">process</span><span class="hl-1"> !== </span><span class="hl-2">&quot;undefined&quot;</span><span class="hl-1">) </span><span class="hl-0">cleanup</span><span class="hl-1">(); </span><span class="hl-8">// Node.js only — browser cleanup is automatic</span>
-</code><button type="button">Copy</button></pre>
-
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography">
@@ -41,7 +41,7 @@ more than once.</p>
 <h4 class="tsd-anchor-link" id="see">See<a href="#see" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><a href="https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L56-L65">Source code: init.mjs</a></p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/index.d.mts#L115">index.d.mts:115</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/6e7302f742b20d70fb2fc9b88a44346e7933a805/index.d.mts#L116">index.d.mts:116</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

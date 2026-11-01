@@ -8,10 +8,14 @@
  * ## Input Generation
  *
  * `buildArb` constructs a fast-check arbitrary that produces a complete args
- * object for one test run. Scalar params (`n`, `incx`, `incy`, `alpha`, `c`,
- * `s`) are generated first; vectors `x` and `y` are then sized to exactly
- * `(n-1)*inc+1` elements so their length is always consistent with the
- * generated `n` and stride.
+ * object for one test run. Scalar and string params (`n`, `m`, `k`, `incx`,
+ * `alpha`, `uplo`, `trans`, …) are generated first, then each leading
+ * dimension (`lda`/`ldb`/`ldc`) at or above its minimum; arrays are then
+ * sized from their spec's `dependsOn` — exactly `(n-1)*inc+1` elements for a
+ * vector, enough rows × leading dimension for a matrix — so their length is
+ * always consistent with the generated shape and stride. Double-precision
+ * specs (`x64`, `alpha64`, …) generate genuine doubles via `float64Arb`, and
+ * complex ones `Complex32`/`Complex32Array` values.
  *
  * ## FTZ — Flush to Zero
  *
@@ -82,9 +86,9 @@ export function floatArb(min, max) {
 
 /**
  * A fast-check arbitrary for f64 scalars in `[min, max]`, excluding subnormals.
- * Used for dasum's x (Float64Array): the double-double kernel splits each
- * double into a (hi, lo) f32 pair, so the same FTZ-safety floor as `floatArb`
- * applies to both halves. hi/lo are always genuine f32 values (never raw
+ * Used for every f64 routine's arrays and scalars (the derived `…64` specs):
+ * the double-double kernels split each double into a (hi, lo) f32 pair, so
+ * the same FTZ-safety floor as `floatArb` applies to both halves. hi/lo are always genuine f32 values (never raw
  * bits), so no NaN-bit-pattern filter is needed here — see f64.mjs.
  * @returns fast-check arbitrary that generates usable f64 scalars
  * @public

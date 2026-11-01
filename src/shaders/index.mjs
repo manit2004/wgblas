@@ -1,7 +1,17 @@
 /**
  * ## Structure
  *
- * `shaders/*.wgsl` — one WGSL compute shader per BLAS routine (sscal, saxpy, sdot, …).
+ * `shaders/*.wgsl` — the compute shaders: one per routine for the simple cases (sscal, saxpy,
+ * sdot, …), several for routines that pick a kernel by shape or orientation (`sgemv_n`/`sgemv_t`,
+ * `sgemm_small`/`sgemm_large`, …), plus shared passes (`reduce_partials`, `gather_strided`,
+ * `scatter_strided`, `block_transfer`, …). Two subfolders hold code with no routine of its own:
+ *
+ * - `reduction/` — second-pass reductions over per-workgroup partials (`sum`, `argmax`,
+ *   `scaledSum` and their `F64` versions).
+ * - `f64/` — the double-double library: `dekker.wgsl` (the DD type and error-free transforms)
+ *   and `utils/` (`add`, `multiply`, `divide`, `sqrt`, `abs`, `greater`, `equal`). These have no
+ *   `@compute` entry point; f64 routines concatenate the ones they need in front of their own
+ *   kernel (see `getPipeline`'s `shaderName: string[]`).
  *
  * `routineShaders` below is the single source of truth: routine name → the WGSL source(s)
  * its `getPipeline()` calls actually reference, verified against every `src/<routine>/<routine>.mjs`
@@ -17,17 +27,24 @@
  *
  * **Single bind group.** Every shader with bindings uses `@group(0)` only — the JS side always
  * calls `pipeline.getBindGroupLayout(0)`, no secondary groups to track. Binding order is
- * consistent too: any read-only storage buffers come before read_write ones, with the
- * `uniform Params` struct always last. `@binding` indices match the position of each resource in
- * the array passed to `createBindGroup`, which appends `resultBuffer` last.
+ * consistent too: read-only storage buffers first, then read_write ones, then the
+ * `uniform Params` struct — with three exceptions, where an operand's binding number predates
+ * the convention: `srotm` and `drotm` put the read-only `param` array after the read_write
+ * `x`/`y`, and `strsm_small` binds `params` (2) between `B` (1) and its scratch `X` (3).
+ * `@binding` indices match the position of each resource in the array passed to
+ * `createBindGroup`, which numbers them in order from `startBinding` (default 0).
  *
  * **All counts and strides are `u32`.** `n`, `x_inc`, `y_inc`, and every other index/count field
  * in a `Params` struct is unsigned, avoiding implicit sign-extension in index expressions like
  * `id * params.x_inc`.
  *
- * **Entry points don't have to be named `main`.** `loadShader` (`util/pipeline.mjs`)
- * auto-detects the sole `@compute` function in a module instead of requiring a fixed name, so
- * `dasum_main`, `strsv_invert_block_main`, etc. work without renaming.
+ * **Entry points don't have to be named `main`.** Every module has exactly one `@compute`
+ * function. When `getPipeline` is called with the default `entryPoint = "main"`, `loadShader`
+ * (`util/pipeline.mjs`) leaves `entryPoint` out of the pipeline descriptor entirely and WebGPU
+ * picks the module's sole entry point itself — so `dasum_main`, `strsv_invert_block_main`, etc.
+ * work without renaming. (Leaving it out is deliberate: passing it explicitly once produced wrong
+ * results on one backend — see the comment in `loadShader`.) Some f64 routines still pass their
+ * entry point's name explicitly (`dger_main`, `dsymv_main`, …), which also works.
  *
  * @module devdocs/shaders
  */
@@ -41,8 +58,8 @@
  * - `sgemmtr`/`ssyrk`/`ssyr2k` all dispatch through `sgemm_small`/`sgemm_large` (`uplo` param).
  * - `strsm` shares `strsm_small` and `strsv_invert_block` with strsv, plus its own
  *   `block_transfer` and the shared `sgemm_small`/`sgemm_large`.
- * - `dasum`/`idamax` concatenate several f64 utility shaders with their own — see
- *   `getPipeline`'s `shaderName: string[]` behaviour.
+ * - Every `d*` routine concatenates the `f64/` double-double shaders it needs in front of its
+ *   own — see `getPipeline`'s `shaderName: string[]` behaviour.
  * - `random` has no entry — CPU-only, no `getPipeline()` call.
  *
  * Built up entry by entry so each import sits next to the mapping entry that uses it.

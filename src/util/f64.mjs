@@ -29,8 +29,9 @@ export function splitDoubleDouble(x) {
 
 /**
  * Reassembles a (hi, lo) double-double pair back into a Float64Array — the
- * inverse of splitDoubleDouble, used after reading a double-double GPU
- * readback (GpuVector, GpuMatrix, dasum) back to the CPU.
+ * inverse of splitDoubleDouble, used whenever a double-double result comes
+ * back to the CPU: every `d*` routine's readback, and `GpuVector`/`GpuMatrix`
+ * `read()` on f64 data.
  * @param {Float32Array} hi
  * @param {Float32Array} lo
  * @returns {Float64Array}

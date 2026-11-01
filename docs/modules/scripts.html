@@ -14,13 +14,50 @@
 <li><a href="" aria-current="page">scripts</a></li></ul>
 <h1>Module scripts</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Build tooling for the wgblas browser bundle.</p>
-<p><code>scripts/build-browser.mjs</code> uses <a href="https://esbuild.github.io/">esbuild</a> to
-bundle the entire library into a single minified IIFE file that the docs
-site loads via <code>&lt;script&gt;</code>. This is what makes the ▶ Run buttons in the docs
-work — the bundle registers <code>window.wgblas</code> so that <code>runner.js</code> can
-destructure any routine or utility from it.</p>
-<h2 id="bundle-configuration" class="tsd-anchor-link">Bundle Configuration<a href="#bundle-configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<div class="tsd-comment tsd-typography"><p>Build and docs tooling: the browser bundle, the docs site's extras, the
+benchmark results pages, the roofline analysis, and the docs MCP server.</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>What it does</th>
+<th>Run by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>build-browser.mjs</code></td>
+<td>Bundles the library into one IIFE file, <code>window.wgblas</code></td>
+<td><code>npm run build:browser</code>, <code>npm run docs</code>, <code>prepublishOnly</code></td>
+</tr>
+<tr>
+<td><code>gen-sitemap.mjs</code></td>
+<td>Writes <code>docs/sitemap.xml</code> and <code>robots.txt</code>; copies site-verification files into <code>docs/</code></td>
+<td><code>npm run docs</code></td>
+</tr>
+<tr>
+<td><code>gen-bench-tables.py</code></td>
+<td>Generates the per-GPU benchmark results pages and their charts</td>
+<td><code>make bench-tables</code></td>
+</tr>
+<tr>
+<td><code>roofline.py</code></td>
+<td>Roofline analysis over the benchmark results; writes <code>roofline.json</code> and the chart</td>
+<td>by hand</td>
+</tr>
+<tr>
+<td><code>docs-mcp.mjs</code></td>
+<td>Serves this checkout's <code>docs/api.json</code> over MCP</td>
+<td>an MCP client</td>
+</tr>
+</tbody>
+</table>
+<p><code>npm run docs</code> is <code>typedoc</code> → <code>gen-sitemap.mjs</code> → <code>build-browser.mjs</code>, in
+that order: TypeDoc wipes <code>docs/</code> on every build, so everything else that
+lives there has to be written after it.</p>
+<h2 id="-the-browser-bundle" class="tsd-anchor-link"><code>build-browser.mjs</code> — the browser bundle<a href="#-the-browser-bundle" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Uses <a href="https://esbuild.github.io/">esbuild</a> to bundle the whole library into
+a single minified IIFE that registers <code>window.wgblas</code>.</p>
 <table>
 <thead>
 <tr>
@@ -32,58 +69,84 @@ destructure any routine or utility from it.</p>
 <tbody>
 <tr>
 <td>Entry point</td>
-<td><code>src/index.mjs</code></td>
-<td>Re-exports every routine and utility</td>
+<td><code>index.mjs</code> (repo root)</td>
+<td>The package's public entry — every routine, class and utility it exports</td>
 </tr>
 <tr>
 <td>Format</td>
-<td><code>iife</code></td>
-<td>Wraps output in an immediately-invoked function expression</td>
+<td><code>iife</code>, global name <code>wgblas</code></td>
+<td>Wraps the output in one function that assigns the exports to <code>window.wgblas</code></td>
 </tr>
 <tr>
-<td>Global name</td>
-<td><code>wgblas</code></td>
-<td>Assigns the exports to <code>window.wgblas</code></td>
+<td>Shaders</td>
+<td><code>.wgsl</code> loaded as text</td>
+<td>Every shader is inlined, through <code>src/shaders/index.mjs</code>'s imports — no fetches at run time</td>
+</tr>
+<tr>
+<td>External</td>
+<td><code>webgpu</code>, <code>fs</code>, <code>url</code>, <code>path</code></td>
+<td>The Node-only code paths, never reached in a browser</td>
 </tr>
 <tr>
 <td>Output</td>
-<td><code>docs/wgblas.browser.js</code></td>
-<td>Loaded by <code>&lt;script&gt;</code> in the published docs</td>
+<td><code>docs/wgblas.browser.js</code>, copied to <code>dist/wgblas.browser.js</code></td>
+<td>The docs site loads the first; the second is published to npm</td>
 </tr>
 <tr>
 <td>Minified</td>
 <td>yes</td>
-<td>Reduces download size</td>
+<td>Reduces download size (<code>npm run size</code> checks it against a 50 KB brotli budget)</td>
 </tr>
 </tbody>
 </table>
-<h2 id="why-iife" class="tsd-anchor-link">Why IIFE<a href="#why-iife" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>The docs site is a static HTML tree — it cannot use ES module imports from
-a <code>&lt;script type=&quot;module&quot;&gt;</code> tag reliably across all browsers and hosting
-environments. An IIFE bundle is a single self-contained file: no import
-maps, no module resolution, no CORS restrictions. Everything the examples
-need is in one file assigned to a single global.</p>
-<h2 id="table-generation-" class="tsd-anchor-link">Table Generation — <code>gen-bench-tables.py</code><a href="#table-generation-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p><code>scripts/gen-bench-tables.py</code> reads GPU folder names from the local
-<code>benchmarks/results/</code> directory to discover which GPUs have results, then
-<strong>fetches the JSON files from GitHub</strong> (not local disk) so that
-skip-worktree'd local files are never used, falling back to local disk only
-if the fetch fails (e.g. results not pushed yet).</p>
-<p>For each GPU × routine pair it generates a <strong>TypeDoc module entry point</strong>
-at <code>benchmarks/bench-result/&lt;gpu&gt;/&lt;routine&gt;.mjs</code> (plus one <code>index.mjs</code> per
-GPU) — a JSDoc comment embedding a markdown results table and links to the
-chart images under <code>assets/benchmarks/&lt;gpu&gt;/&lt;routine&gt;/</code>, e.g.
-<code>gbps-default.svg</code> for the base sweep, <code>gbps-stride32.svg</code> /
-<code>gbps-transno-transpose.svg</code> / <code>gbps-lda-no-transpose-pad0.svg</code> etc. for
-each sweep companion. TypeDoc then nests these under the <code>benchmarks</code>
-module in the published docs. On NVIDIA GPUs the table includes cuBLAS
-columns and an efficiency column (<code>wgblas GB/s ÷ cuBLAS GB/s × 100</code>); on
-other GPUs it shows wgblas only.</p>
-<p>Routines are discovered by intersecting <code>src/&lt;routine&gt;/&lt;routine&gt;.mjs</code>
-existence with <code>results/&lt;gpu&gt;/wgblas/</code> having a matching JSON (flat or
-nested under <code>&lt;routine&gt;/&lt;routine&gt;.json</code>). By default, a routine already
-generated for a GPU (an existing <code>&lt;routine&gt;.mjs</code> there) is skipped — pass
-<code>--force</code> to regenerate anyway.</p>
+<p>The two copies serve two audiences:</p>
+<ul>
+<li><strong>The docs site</strong> — <code>assets/docs/runner.js</code> loads <code>docs/wgblas.browser.js</code>
+so the ▶ Run buttons run every example against this build. Examples are
+evaluated with <code>eval</code>, where <code>import</code> statements can't run, so the runner
+rewrites <code>import { … } from &quot;wgblas&quot;</code> into a destructure of
+<code>window.wgblas</code> — which needs a bundle that sets a global.</li>
+<li><strong>Users without a bundler</strong> — <code>dist/wgblas.browser.js</code> ships in the npm
+package (<code>files</code>, and the <code>wgblas/browser</code> export), so a page can load it
+with a plain <code>&lt;script&gt;</code> tag from unpkg; the examples' <code>web/&lt;routine&gt;.html</code>
+pages do exactly that.</li>
+</ul>
+<h2 id="-sitemap-and-site-verification-files" class="tsd-anchor-link"><code>gen-sitemap.mjs</code> — sitemap and site-verification files<a href="#-sitemap-and-site-verification-files" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Walks every <code>.html</code> page TypeDoc just built and writes <code>docs/sitemap.xml</code>
+(one URL each, under <code>https://manit2004.github.io/wgblas/</code>) and a
+<code>docs/robots.txt</code> that points crawlers at it. Also copies the files listed
+in its <code>STATIC_ROOT_FILES</code> — search-engine ownership verification files,
+currently Google's — from <code>assets/docs/</code> into <code>docs/</code>, since they must be
+served from the site root but TypeDoc would delete them there.</p>
+<h2 id="-benchmark-results-pages" class="tsd-anchor-link"><code>gen-bench-tables.py</code> — benchmark results pages<a href="#-benchmark-results-pages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Reads GPU folder names from the local <code>benchmarks/results/</code> directory to
+discover which GPUs have results, then <strong>fetches the JSON files from
+GitHub</strong> (the <code>main</code> branch, not local disk) so that skip-worktree'd local
+files are never used — falling back to local disk only if a fetch fails
+(e.g. results not pushed yet). Routines are every <code>src/&lt;routine&gt;/</code> that has
+a <code>&lt;routine&gt;.mjs</code>.</p>
+<p>For each GPU it writes, under <code>benchmarks/bench-result/&lt;gpu&gt;/</code>:</p>
+<ul>
+<li><strong><code>&lt;routine&gt;.mjs</code></strong> per routine with results — a TypeDoc module whose
+comment holds the default-size table, then one section per parameter
+sweep, each with links to its charts and its benchmark scripts. When the
+GPU has a <code>cuda/</code> results folder the tables add cuBLAS columns and an
+efficiency column (<code>wgblas GB/s ÷ cuBLAS GB/s × 100</code>); otherwise they show
+wgblas only.</li>
+<li><strong><code>index.mjs</code></strong> — the GPU's own page, including its roofline section when
+<code>roofline.py</code> has produced a <code>roofline.json</code> for it.</li>
+</ul>
+<p>Charts go to <code>assets/benchmarks/&lt;gpu&gt;/&lt;routine&gt;/</code>, a GB/s and a ms chart
+per table, named <code>&lt;metric&gt;-&lt;variant&gt;.svg</code>: <code>gbps-default.svg</code> for the
+default sizes, then e.g. <code>gbps-stride32.svg</code>, <code>gbps-alpha0.svg</code>,
+<code>gbps-trans-no-transpose-transpose.svg</code>, <code>gbps-ldb-transpose-pad8.svg</code>.
+TypeDoc nests the generated modules under <code>benchmarks</code> and copies the
+charts they link into <code>docs/media/</code>.</p>
+<p>By default, a routine already generated for a GPU (an existing
+<code>&lt;routine&gt;.mjs</code> there) is skipped, and a GPU with nothing left to generate
+is skipped entirely — its <code>index.mjs</code> included. After new results or a
+fresh <code>roofline.py</code> run, pass <code>--force</code> (or <code>--routine</code>) so the pages
+actually change.</p>
 <h3 id="arguments" class="tsd-anchor-link">Arguments<a href="#arguments" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <table>
 <thead>
@@ -107,9 +170,63 @@ generated for a GPU (an existing <code>&lt;routine&gt;.mjs</code> there) is skip
 </tr>
 </tbody>
 </table>
-<pre><code class="sh"><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1">                  </span><span class="hl-8"># generate everything not yet generated</span><br/><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1"> </span><span class="hl-5">--force</span><span class="hl-1">           </span><span class="hl-8"># regenerate everything</span><br/><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1"> </span><span class="hl-5">--routine</span><span class="hl-1"> </span><span class="hl-2">saxpy</span><span class="hl-1">   </span><span class="hl-8"># just saxpy, on every GPU with results</span><br/><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1"> </span><span class="hl-5">--local</span><span class="hl-1">           </span><span class="hl-8"># use benchmarks/results/ on disk, not GitHub</span>
+<pre><code class="sh"><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1">                  </span><span class="hl-8"># generate everything not yet generated</span><br/><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1"> </span><span class="hl-5">--force</span><span class="hl-1">          </span><span class="hl-8"># regenerate everything</span><br/><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1"> </span><span class="hl-5">--routine</span><span class="hl-1"> </span><span class="hl-2">saxpy</span><span class="hl-1">  </span><span class="hl-8"># just saxpy, on every GPU with results</span><br/><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/gen-bench-tables.py</span><span class="hl-1"> </span><span class="hl-5">--local</span><span class="hl-1">          </span><span class="hl-8"># use benchmarks/results/ on disk, not GitHub</span>
 </code><button type="button">Copy</button></pre>
 
+<h2 id="-roofline-analysis" class="tsd-anchor-link"><code>roofline.py</code> — roofline analysis<a href="#-roofline-analysis" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Places every routine at its arithmetic intensity against what it achieved,
+under a memory roof and a compute roof measured by
+<code>benchmarks/roofline/wgblas/bandwidth.js</code> and <code>fma.js</code> (see the
+<code>benchmarks</code> module's Roofline section for the method). Reads the local
+<code>benchmarks/results/</code> tree; a GPU without both probe results is skipped.
+For each GPU it prints a report and writes
+<code>benchmarks/results/&lt;gpu&gt;/wgblas/roofline/roofline.json</code>, which
+<code>gen-bench-tables.py</code> turns into the GPU page's roofline section.</p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--gpu SLUG</code></td>
+<td>Only this GPU (default: every one under <code>benchmarks/results/</code>)</td>
+</tr>
+<tr>
+<td><code>--svg</code></td>
+<td>Also write the chart, <code>assets/benchmarks/&lt;gpu&gt;/roofline/roofline.svg</code></td>
+</tr>
+<tr>
+<td><code>--empirical-roof</code></td>
+<td>Use the best observed rates as the roofs instead of the probes (circular — sgemm then scores 100% of a roof it set)</td>
+</tr>
+<tr>
+<td><code>--peak-flops N</code> / <code>--peak-bw N</code></td>
+<td>Override the compute roof (GFLOP/s) / memory roof (GB/s)</td>
+</tr>
+<tr>
+<td><code>-v</code>, <code>--verbose</code></td>
+<td>List every excluded row</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="sh"><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/roofline.py</span><span class="hl-1"> </span><span class="hl-5">--svg</span><span class="hl-1">                                  </span><span class="hl-8"># every GPU, with charts</span><br/><span class="hl-0">python3</span><span class="hl-1"> </span><span class="hl-2">scripts/roofline.py</span><span class="hl-1"> </span><span class="hl-5">--gpu</span><span class="hl-1"> </span><span class="hl-2">nvidia-geforce-gtx-1650</span><span class="hl-1"> </span><span class="hl-5">--svg</span><span class="hl-1">   </span><span class="hl-8"># one GPU</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="-the-docs-mcp-server-against-this-checkout" class="tsd-anchor-link"><code>docs-mcp.mjs</code> — the docs MCP server, against this checkout<a href="#-the-docs-mcp-server-against-this-checkout" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>A thin wrapper around <code>mcp/docs-mcp.mjs</code> (published to npm as
+<code>wgblas-docs-mcp</code>) that points it at this checkout's <code>docs/api.json</code> —
+TypeDoc's JSON output, written by <code>npm run docs</code> — with no network access,
+so doc changes are queryable before they're deployed:</p>
+<pre><code class="sh"><span class="hl-0">claude</span><span class="hl-1"> </span><span class="hl-2">mcp</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">wgblas-docs</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">node</span><span class="hl-1"> </span><span class="hl-2">scripts/docs-mcp.mjs</span>
+</code><button type="button">Copy</button></pre>
+
+<p>It serves four tools: <code>search_docs</code>, <code>get_doc</code>, <code>list_modules</code> and
+<code>get_benchmarks</code>. It reads <code>api.json</code> once at startup, so reconnect the
+server after <code>npm run docs</code> to pick up changes. See <code>mcp/README.md</code> for
+the published package.</p>
 </div></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
@@ -125,9 +242,9 @@ generated for a GPU (an existing <code>&lt;routine&gt;.mjs</code> there) is skip
 <div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
 <details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h3>On This Page</h3></summary>
-<div class="tsd-accordion-details"><a href="#bundle-configuration"><span>Bundle <wbr/>Configuration</span></a><a href="#why-iife"><span>Why <wbr/>IIFE</span></a><a href="#table-generation-"><span>Table <wbr/>Generation — </span></a>
+<div class="tsd-accordion-details"><a href="#-the-browser-bundle"><span> — the browser bundle</span></a><a href="#-sitemap-and-site-verification-files"><span> — sitemap and site-<wbr/>verification files</span></a><a href="#-benchmark-results-pages"><span> — benchmark results pages</span></a>
 <ul>
-<li><a href="#arguments"><span>Arguments</span></a></li></ul></div></details></div>
+<li><a href="#arguments"><span>Arguments</span></a></li></ul><a href="#-roofline-analysis"><span> — roofline analysis</span></a><a href="#-the-docs-mcp-server-against-this-checkout"><span> — the docs <wbr/>MCP server, against this checkout</span></a></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

@@ -14,24 +14,55 @@
 <li><a href="" aria-current="page">examples</a></li></ul>
 <h1>Module examples</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Runnable examples for all BLAS routines — one plain Float32Array variant
-and one GPU-resident variant (<code>GpuVector</code>, or <code>GpuMatrix</code> for routines
-whose GPU-resident overload doesn't involve a vector at all, e.g. sgemm)
-per routine. Run locally with <code>make example-&lt;routine&gt;</code> or
-<code>make example-gpu-&lt;routine&gt;</code>.</p>
+<div class="tsd-comment tsd-typography"><p>Runnable examples for every BLAS routine and every other public API —
+each one a small, self-contained script that prints what it computed.</p>
+<h2 id="whats-here" class="tsd-anchor-link">What's Here<a href="#whats-here" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong>Routines</strong> (<code>examples/&lt;routine&gt;/</code>, all 43) — three variants each:</p>
+<ul>
+<li><code>&lt;routine&gt;.js</code> — the plain variant, on host typed arrays
+(<code>Float32Array</code> for <code>s*</code>, <code>Float64Array</code> for <code>d*</code>, <code>Complex32Array</code>
+for <code>cscal</code>).</li>
+<li><code>gpu.&lt;routine&gt;.js</code> — the GPU-resident variant: operands built with
+<code>GpuVector.from()</code> / <code>GpuMatrix.from()</code> (or <code>GpuMatrix</code> alone, for
+routines like sgemm whose GPU-resident overload has no vector), result
+read back with <code>read()</code>.</li>
+<li><code>web/&lt;routine&gt;.html</code> — the plain variant as a standalone browser page.</li>
+</ul>
+<p><strong>Everything else</strong> — one plain script per API, in a folder named after it:
+<code>init</code>, <code>init-benchmark</code>, <code>init-low-power</code>, <code>init-two-gpus</code>, <code>cleanup</code>;
+<code>gpuvector-from</code>, <code>-from-device</code>, <code>-read</code>, <code>-destroy</code> and the same four for
+<code>gpumatrix</code>; <code>complex32</code>, <code>complex32array</code>, <code>complex64</code>, <code>complex64array</code>;
+and the random generators (<code>randomfloat32array</code>, <code>-custom</code>, <code>-seeded</code>, the
+same three for <code>randomfloat64array</code>, and <code>randomtriangularfloat32array</code>
+plus its <code>-columnmajor</code> variant).</p>
+<h2 id="how-the-docs-use-them" class="tsd-anchor-link">How the Docs Use Them<a href="#how-the-docs-use-them" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Every example file is pulled into the API reference with <code>{@includeCode}</code>
+from the matching <code>.d.mts</code> — a routine's page shows all three variants, an
+API's page its scripts (<code>init</code>'s shows all four <code>init*</code> ones) — so the code
+in the docs is always the code in this folder, never a hand-copied
+duplicate. On the docs site,
+<code>assets/docs/runner.js</code> makes each one live: the JS variants get a ▶ Run
+button that runs them against the site's own <code>wgblas.browser.js</code>, and the
+HTML page renders in an editable <code>&lt;iframe&gt;</code> preview.</p>
 <h2 id="the-cleanup-guard" class="tsd-anchor-link">The Cleanup Guard<a href="#the-cleanup-guard" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <pre><code class="js"><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-5">typeof</span><span class="hl-1"> </span><span class="hl-4">process</span><span class="hl-1"> !== </span><span class="hl-2">&quot;undefined&quot;</span><span class="hl-1">) </span><span class="hl-0">cleanup</span><span class="hl-1">();</span>
 </code><button type="button">Copy</button></pre>
 
 <p><code>cleanup()</code> releases the WebGPU device. In Node it is necessary — without it
 the process hangs because the GPU event loop keeps running. In the browser
-it would destroy the shared device that the page's ▶ Run buttons reuse, so
-the guard skips it there.</p>
-<h2 id="per-routine-html-stubs" class="tsd-anchor-link">Per-Routine HTML Stubs<a href="#per-routine-html-stubs" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>Each routine has a <code>examples/&lt;routine&gt;/web/&lt;routine&gt;.html</code> file — a minimal
-HTML page that loads <code>wgblas.browser.js</code> and embeds the plain-pattern example
-inline. These stubs are used by the docs site to host the live playground for
-each routine.</p>
+the docs' ▶ Run button already calls <code>cleanup()</code> once an example finishes
+(see <code>assets/docs/runner.js</code>), so the guard leaves it to that. Examples that
+never call <code>init()</code> — the complex classes and the random generators — have
+no device to release and no guard.</p>
+<p>The standalone <code>web/&lt;routine&gt;.html</code> pages call <code>cleanup()</code> unconditionally
+at the end: nothing else will.</p>
+<h2 id="the-html-pages-load-the-published-release" class="tsd-anchor-link">The HTML Pages Load the Published Release<a href="#the-html-pages-load-the-published-release" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Each <code>web/&lt;routine&gt;.html</code> loads <code>wgblas</code> from unpkg
+(<code>https://unpkg.com/wgblas/dist/wgblas.browser.js</code>), the latest version
+published to npm — not this checkout. They show what a user gets from a
+<code>&lt;script&gt;</code> tag, so local changes to <code>src/</code> don't reach them until a
+release; use the Node examples (or the docs site built with
+<code>npm run docs</code>, which runs against the local bundle) to try local changes.</p>
 <h2 id="make-commands" class="tsd-anchor-link">Make Commands<a href="#make-commands" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <table>
 <thead>
@@ -43,30 +74,33 @@ each routine.</p>
 <tbody>
 <tr>
 <td><code>make example</code></td>
-<td>Runs the plain <code>&lt;routine&gt;.js</code> for all routines in sequence</td>
+<td>Runs every plain <code>&lt;name&gt;.js</code> in sequence — routines and the other APIs; a failing one doesn't stop the rest</td>
 </tr>
 <tr>
-<td><code>make example-&lt;routine&gt;</code></td>
-<td>Runs the plain example for one routine, e.g. <code>make example-saxpy</code></td>
+<td><code>make example-&lt;name&gt;</code></td>
+<td>Runs one plain example, e.g. <code>make example-saxpy</code> or <code>make example-init</code></td>
 </tr>
 <tr>
 <td><code>make example-gpu</code></td>
-<td>Runs <code>gpu.&lt;routine&gt;.js</code> for all routines in sequence</td>
+<td>Runs every <code>gpu.&lt;routine&gt;.js</code> in sequence</td>
 </tr>
 <tr>
 <td><code>make example-gpu-&lt;routine&gt;</code></td>
-<td>Runs the GPU-resident example for one routine, e.g. <code>make example-gpu-saxpy</code></td>
+<td>Runs one GPU-resident example, e.g. <code>make example-gpu-saxpy</code></td>
 </tr>
 <tr>
 <td><code>make example-&lt;routine&gt;-web</code></td>
-<td>Opens one routine's HTML stub in Vite dev server</td>
+<td>Opens one routine's HTML page in the Vite dev server</td>
 </tr>
 <tr>
 <td><code>make example-web</code></td>
-<td>Starts Vite on port 5173 and opens all routine HTML stubs at once</td>
+<td>Starts Vite on port 5173 and opens every routine's HTML page at once</td>
 </tr>
 </tbody>
 </table>
+<p><code>init-two-gpus</code> is meant for a machine with both a discrete and an
+integrated GPU — it opens one device on each (<code>powerPreference: &quot;high-performance&quot;</code> and <code>&quot;low-power&quot;</code>) and runs on both at once. On a
+single-GPU machine both requests may land on the same adapter.</p>
 </div></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
@@ -82,7 +116,7 @@ each routine.</p>
 <div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
 <details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h3>On This Page</h3></summary>
-<div class="tsd-accordion-details"><a href="#the-cleanup-guard"><span>The <wbr/>Cleanup <wbr/>Guard</span></a><a href="#per-routine-html-stubs"><span>Per-<wbr/>Routine <wbr/>HTML <wbr/>Stubs</span></a><a href="#make-commands"><span>Make <wbr/>Commands</span></a></div></details></div>
+<div class="tsd-accordion-details"><a href="#whats-here"><span>What&#39;s <wbr/>Here</span></a><a href="#how-the-docs-use-them"><span>How the <wbr/>Docs <wbr/>Use <wbr/>Them</span></a><a href="#the-cleanup-guard"><span>The <wbr/>Cleanup <wbr/>Guard</span></a><a href="#the-html-pages-load-the-published-release"><span>The <wbr/>HTML <wbr/>Pages <wbr/>Load the <wbr/>Published <wbr/>Release</span></a><a href="#make-commands"><span>Make <wbr/>Commands</span></a></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">wgblas</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

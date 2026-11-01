@@ -64,18 +64,6 @@ export { strsm } from "./src/strsm/strsm.mjs";
  * buffers cannot cross devices, so a `GpuVector`/`GpuMatrix` from one is
  * rejected by another. {@link cleanup} releases them all.
  *
- * @param options.powerPreference - GPU power preference (default: `"high-performance"`).
- *   This is a hint to the browser: on dual-GPU systems, `"high-performance"` typically favors the discrete GPU
- *   and `"low-power"` favors the integrated one.
- *   See [MDN: GPU.requestAdapter()](https://developer.mozilla.org/en-US/docs/Web/API/GPU/requestAdapter).
- * @param options.benchmark - enable GPU timestamp queries; BLAS functions then also return `gpuTimeMs`
- *   alongside their normal result (e.g. sscal returns `{ x, gpuTimeMs }`, saxpy returns `{ y, gpuTimeMs }`) —
- *   see each routine's own docs for its exact return shape (default: `false`)
- * @param options.dumpShaders - Node-only. Forwards Dawn's `dump_shaders` debug toggle, printing
- *   each pipeline's WGSL and compiled backend IR (SPIR-V/Vulkan, MSL/Metal, or HLSL/D3D12,
- *   whichever Dawn picked) to stderr as it compiles. A Dawn passthrough, not a wgblas format —
- *   no effect in the browser, which gives pages no API to request compiled shader IR (default: `false`)
- *
  * **Default (high-performance GPU):**
  * {@includeCode examples/init/init.js}
  *
@@ -87,6 +75,18 @@ export { strsm } from "./src/strsm/strsm.mjs";
  *
  * **Two GPUs at once:**
  * {@includeCode examples/init-two-gpus/init-two-gpus.js}
+ *
+ * @param options.powerPreference - GPU power preference (default: `"high-performance"`).
+ *   This is a hint to the browser: on dual-GPU systems, `"high-performance"` typically favors the discrete GPU
+ *   and `"low-power"` favors the integrated one.
+ *   See [MDN: GPU.requestAdapter()](https://developer.mozilla.org/en-US/docs/Web/API/GPU/requestAdapter).
+ * @param options.benchmark - enable GPU timestamp queries; BLAS functions then also return `gpuTimeMs`
+ *   alongside their normal result (e.g. sscal returns `{ x, gpuTimeMs }`, saxpy returns `{ y, gpuTimeMs }`) —
+ *   see each routine's own docs for its exact return shape (default: `false`)
+ * @param options.dumpShaders - Node-only. Forwards Dawn's `dump_shaders` debug toggle, printing
+ *   each pipeline's WGSL and compiled backend IR (SPIR-V/Vulkan, MSL/Metal, or HLSL/D3D12,
+ *   whichever Dawn picked) to stderr as it compiles. A Dawn passthrough, not a wgblas format —
+ *   no effect in the browser, which gives pages no API to request compiled shader IR (default: `false`)
  *
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
  * @category Core
@@ -106,9 +106,10 @@ export declare function init(options?: {
  * Unknown or already-released devices are ignored, so this is safe to call
  * more than once.
  *
+ * {@includeCode examples/cleanup/cleanup.js}
+ *
  * @param device - the device to release; omit to release all of them.
  *
- * {@includeCode examples/cleanup/cleanup.js}
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L56-L65)
  * @category Core
  */
@@ -117,10 +118,11 @@ export declare function cleanup(device?: GPUDevice): void;
 /**
  * Returns the GPU device name from the WebGPU adapter info. Must be called after `init()`.
  *
+ * {@includeCode examples/init/init.js}
+ *
  * @param device - which device to report on; defaults to the one from the first
  *   `init()` call. Pass it explicitly when driving more than one GPU.
  *
- * {@includeCode examples/init/init.js}
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L81-L87)
  * @category Core
  */

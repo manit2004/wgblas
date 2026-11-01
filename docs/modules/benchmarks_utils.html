@@ -17,12 +17,22 @@
 <div class="tsd-comment tsd-typography"><p>Shared utilities for wgblas benchmark scripts — a JS module and a
 parallel C header covering the same operations for the cuBLAS benchmarks.</p>
 <h2 id="js-" class="tsd-anchor-link">JS — <code>helpers.mjs</code><a href="#js-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>Used by every <code>benchmarks/&lt;routine&gt;/benchmark.&lt;routine&gt;.js</code> for timing,
-result persistence, table formatting, and GPU clock warm-up
-(<a href="../functions/benchmarks_utils.warmClocks.html" class="tsd-kind-function">warmClocks</a>, called before every measured configuration).</p>
+<p>Used by every <code>benchmarks/&lt;routine&gt;/wgblas/*.js</code> (and the roofline probes)
+for GPU clock warm-up, timing, result persistence and table formatting.
+Every function is documented individually below:</p>
+<ul>
+<li><a href="../functions/benchmarks_utils.warmClocks.html" class="tsd-kind-function">warmClocks</a> — full clocks before every measured configuration</li>
+<li><a href="../functions/benchmarks_utils.median.html" class="tsd-kind-function">median</a> — the recorded statistic</li>
+<li><a href="../functions/benchmarks_utils.saveResults.html" class="tsd-kind-function">saveResults</a> — writes the result JSON</li>
+<li><a href="../functions/benchmarks_utils.getGpuModel.html" class="tsd-kind-function">getGpuModel</a> — the GPU slug that names the results folder</li>
+<li><a href="../functions/benchmarks_utils.toColumnMajor.html" class="tsd-kind-function">toColumnMajor</a> — feeds matrix benchmarks cuBLAS's native layout</li>
+<li><a href="../functions/benchmarks_utils.printHeader.html" class="tsd-kind-function">printHeader</a> / <a href="../functions/benchmarks_utils.printRow.html" class="tsd-kind-function">printRow</a> — the console table while a run is in progress</li>
+</ul>
 <h2 id="c-" class="tsd-anchor-link">C — <code>helpers.h</code><a href="#c-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>A header-only C counterpart used by every <code>benchmarks/&lt;routine&gt;/cuda/benchmark.c</code>.
-All functions are <code>static</code> so each translation unit gets its own copy.</p>
+<p>A header-only C counterpart used by every <code>benchmarks/&lt;routine&gt;/cuda/*.c</code>.
+All functions are <code>static</code> so each translation unit gets its own copy. It
+also defines <code>CUDA_CHECK</code> / <code>CUBLAS_CHECK</code>, which print the failing
+file:line and exit on any non-success status.</p>
 <table>
 <thead>
 <tr>
@@ -33,9 +43,29 @@ All functions are <code>static</code> so each translation unit gets its own copy
 </thead>
 <tbody>
 <tr>
+<td><code>warm_clocks</code></td>
+<td><code>(cublasHandle_t handle) → void</code></td>
+<td>Brings the GPU to full clocks before a measurement — the counterpart of <code>warmClocks()</code>, using <code>cublasSscal</code> bursts over a zeroed 64 MB buffer since these files define no kernels of their own</td>
+</tr>
+<tr>
+<td><code>median</code></td>
+<td><code>(float *arr, int n) → float</code></td>
+<td>Returns the median of <code>arr</code>; copies before sorting so the original is unchanged</td>
+</tr>
+<tr>
+<td><code>save_results</code></td>
+<td><code>(const char *gpu_model, const char *folder, const char *file_name, const record_field *fields, int n_fields, float *med_times, float *gbs_vals, float *gflops_vals, int n) → void</code></td>
+<td>Writes <code>benchmarks/results/&lt;gpu&gt;/cuda/&lt;folder&gt;/&lt;file_name&gt;.json</code> in the same schema as <code>saveResults()</code>. Each <code>record_field</code> (<code>{ name, type, values }</code>, type <code>FIELD_INT</code>/<code>FIELD_FLOAT</code>/<code>FIELD_STRING</code>) is one swept key, written before the fixed <code>compute_ms</code>/<code>compute_GFLOPs</code>/<code>compute_GBs</code> fields, so any record shape needs no new function; pass <code>gflops_vals = NULL</code> to omit <code>compute_GFLOPs</code></td>
+</tr>
+<tr>
+<td><code>save_results_ex</code>, <code>_stride</code>, <code>_pad</code>, <code>_pad_ex</code>, <code>_uplo</code>, <code>_trans</code>, <code>_flag</code>, <code>_scalar</code></td>
+<td>—</td>
+<td>Thin wrappers over <code>save_results</code> for the record shapes older call sites use: <code>{n}</code>, <code>{stride, n}</code>, <code>{pad, n}</code> (<code>_pad_ex</code> adds GFLOP/s), <code>{uplo, n}</code>, <code>{trans, n}</code>, and a caller-named string (<code>_flag</code>) or float (<code>_scalar</code>) key with optional GFLOP/s. New benchmarks should call <code>save_results</code> directly</td>
+</tr>
+<tr>
 <td><code>get_gpu_model</code></td>
 <td><code>(char *dst, int maxlen) → void</code></td>
-<td>Fills <code>dst</code> with the CUDA device name normalised to the same slug format as <code>getGpuModel()</code></td>
+<td>Fills <code>dst</code> with the CUDA device name as a slug, so wgblas and cuBLAS results land in the same <code>benchmarks/results/&lt;gpu&gt;/</code> folder</td>
 </tr>
 <tr>
 <td><code>random_float_array</code></td>
@@ -43,22 +73,16 @@ All functions are <code>static</code> so each translation unit gets its own copy
 <td>Heap-allocates <code>n</code> random floats in <code>[low, high]</code>; caller must <code>free()</code></td>
 </tr>
 <tr>
-<td><code>median</code></td>
-<td><code>(float *arr, int n) → float</code></td>
-<td>Returns the median of <code>arr</code>; copies before sorting so original is unchanged</td>
-</tr>
-<tr>
-<td><code>save_results</code></td>
-<td><code>(const char *routine, const char *gpu_model, int *sizes, float *med_times, float *gbs_vals, int n) → void</code></td>
-<td>Writes JSON to <code>benchmarks/results/&lt;gpu&gt;/cuda/&lt;routine&gt;.json</code> in the same schema as <code>saveResults()</code></td>
-</tr>
-<tr>
-<td><code>warm_clocks</code></td>
-<td><code>(cublasHandle_t handle) → void</code></td>
-<td>Brings the GPU to full clocks before a measurement — the counterpart of <code>warmClocks()</code></td>
+<td><code>host_bytes_available</code></td>
+<td><code>(void) → size_t</code></td>
+<td>Available host RAM from <code>/proc/meminfo</code>, for benchmarks that stage large host copies (the f64 routines stage two); returns 0 if unknown, which callers treat as &quot;don't skip&quot;</td>
 </tr>
 </tbody>
 </table>
+<p>The C slug in <code>get_gpu_model</code> maps each non-alphanumeric character to <code>-</code>
+one at a time, while <code>getGpuModel()</code> collapses runs and trims the ends —
+identical for every GPU benchmarked so far, but a name with consecutive or
+edge punctuation would split into two folders (tracked in <code>TODO.md</code>).</p>
 </div></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Functions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="functions">Functions<a href="#functions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="getgpumodel"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/benchmarks_utils.getGpuModel.html">getGpuModel</a><a href="#getgpumodel" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="median"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/benchmarks_utils.median.html">median</a><a href="#median" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="printheader"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/benchmarks_utils.printHeader.html">printHeader</a><a href="#printheader" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="printrow"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/benchmarks_utils.printRow.html">printRow</a><a href="#printrow" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="saveresults"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/benchmarks_utils.saveResults.html">saveResults</a><a href="#saveresults" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="tocolumnmajor"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/benchmarks_utils.toColumnMajor.html">toColumnMajor</a><a href="#tocolumnmajor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="warmclocks"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/benchmarks_utils.warmClocks.html">warmClocks</a><a href="#warmclocks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>

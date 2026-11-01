@@ -15,29 +15,29 @@
 <h1>Module devdocs/blas-routines</h1></div>
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><h1 id="blas-routine-patterns" class="tsd-anchor-link">BLAS Routine Patterns<a href="#blas-routine-patterns" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
-<p>Every routine in this library follows the same structure. Understanding it once means you can read any routine file. BLAS reference spec lives at</p>
-<ul>
-<li><a href="https://www.netlib.org/blas/">netlib.org/blas</a>.</li>
-</ul>
+<p>Every routine in this library follows the same structure. Understanding it once means you can read any routine file. The BLAS reference spec lives at <a href="https://www.netlib.org/blas/">netlib.org/blas</a>.</p>
 <h2 id="the-general-flow" class="tsd-anchor-link">The general flow<a href="#the-general-flow" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<ol>
-<li><strong>Compile</strong> — the WGSL shader is loaded and compiled into a compute pipeline by name (e.g. <code>getPipeline(device, &quot;saxpy&quot;)</code>)</li>
-<li><strong>Upload</strong> — input <code>Float32Array</code>s are written to GPU storage buffers</li>
-<li><strong>Bind</strong> — buffers are grouped into a bind group so the shader can access them</li>
-<li><strong>Dispatch</strong> — the pipeline runs the shader with enough workgroups to cover all <code>n</code> elements; if benchmarking was enabled at <code>init()</code> time, a timestamp query is attached to this pass to record GPU start and end times</li>
-<li><strong>Read back</strong> — the result buffer is mapped to CPU memory and copied into a <code>Float32Array</code>; if benchmarking is active, the resolved timestamp query set is read back alongside the result and converted to a duration in milliseconds</li>
-<li><strong>Destroy</strong> — GPU buffers are explicitly freed via <code>destroyBuffers</code> (WebGPU does not garbage-collect them)</li>
+<ol start="0">
+<li><strong>Validate</strong> — <code>requireGpuDevice</code> and <code>requireSameDevice</code> first, then the routine's own argument checks, all before any GPU work</li>
+<li><strong>Compile</strong> — the WGSL shader is loaded and compiled into a compute pipeline by name, cached per device (e.g. <code>getPipeline(device, &quot;saxpy&quot;)</code>; f64 routines pass an array of shader files, concatenated into one module)</li>
+<li><strong>Upload</strong> — host arrays are written to GPU storage buffers with <code>uploadBuffer</code> (f64 data split into hi/lo <code>f32</code> halves first), skipped for operands already on the GPU (<code>GpuVector</code>/<code>GpuMatrix</code>); scalars and sizes go into a uniform buffer via <code>createParamsBuffer</code></li>
+<li><strong>Bind</strong> — buffers are grouped into a bind group with <code>createBindGroup</code>, in the order the shader declares its <code>@binding</code>s</li>
+<li><strong>Dispatch</strong> — <code>runComputePass</code> (or <code>runComputePasses</code> for dependent multi-pass routines, one command encoder) dispatches enough workgroups to cover the work, sized by <code>calcWorkgroups</code>; if benchmarking was enabled at <code>init()</code> time, timestamp writes bracket the pass(es) to record GPU start and end times</li>
+<li><strong>Read back</strong> — <code>stageReadback</code> encodes a copy into a pooled <code>MAP_READ</code> buffer, <code>submit</code> sends the encoder, and <code>extractResult</code> maps it and copies the result out (merging hi/lo back into <code>f64</code> for double precision); with benchmarking on, <code>extractTimestamp</code> turns the timestamps into <code>gpuTimeMs</code>. Skipped when the output is a GPU-resident operand</li>
+<li><strong>Destroy</strong> — temporary GPU buffers are freed in a <code>finally</code> via <code>destroyBuffers</code> (WebGPU does not garbage-collect them); GPU-resident operands are left alone</li>
 </ol>
 <p>All routines are <code>async</code> because GPU operations — dispatching and mapping — are asynchronous by nature.</p>
 <h2 id="naming" class="tsd-anchor-link">Naming<a href="#naming" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>This follows the BLAS naming convention:</p>
 <ul>
 <li><code>s</code> — single precision (f32)</li>
-<li><code>d</code> — double precision (f64, not yet supported — WGSL has no native f64)</li>
-<li><code>c</code> / <code>z</code> — complex (not implemented yet)</li>
+<li><code>d</code> — double precision, emulated with double-double arithmetic (WGSL has no native f64)</li>
+<li><code>c</code> — single-precision complex (<code>cscal</code> so far)</li>
+<li><code>z</code> — double-precision complex (not implemented yet)</li>
+<li><code>i</code> — returns an index (<code>isamax</code>, <code>idamax</code>)</li>
 </ul>
 <h2 id="inputs" class="tsd-anchor-link">Inputs<a href="#inputs" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>Routines accept either <code>Float32Array</code> (raw arrays) or <code>GpuVector</code> (a wrapper that keeps buffers alive on the GPU between calls). Use <code>GpuVector</code> when calling the same routine repeatedly on the same data to avoid re-uploading on every call.</p>
+<p>Routines accept either host typed arrays — <code>Float32Array</code> for <code>s</code>, <code>Float64Array</code> for <code>d</code>, <code>Complex32Array</code> for <code>c</code> — or GPU-resident operands: <code>GpuVector</code> for vectors and <code>GpuMatrix</code> for matrices, wrappers that keep buffers alive on the GPU between calls. Use the GPU-resident forms when calling routines repeatedly on the same data, to avoid re-uploading on every call; their results stay on the GPU too.</p>
 <h2 id="utility-functions" class="tsd-anchor-link">Utility functions<a href="#utility-functions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>The boilerplate — creating buffers, bind groups, pipelines, and compute passes — is factored into <a href="devdocs_utility-functions.html" class="tsd-kind-module"> devdocs/utility-functions</a>. Each step maps to one utility function rather than raw WebGPU objects inline.</p>
 </div></section></div>

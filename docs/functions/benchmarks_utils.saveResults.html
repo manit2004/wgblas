@@ -17,7 +17,7 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="saveresults"><span class="tsd-kind-call-signature">saveResults</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">routineName</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">gpuModel</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">results</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">fileName</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">folder</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#saveresults" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="saveresults"><span class="tsd-kind-call-signature">saveResults</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">routineName</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">gpuModel</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">results</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">fileName</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">folder</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#saveresults" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Writes <code>results</code> to <code>benchmarks/results/&lt;gpuModel&gt;/wgblas/&lt;routineName&gt;.json</code>,
 creating the directory if needed. No-ops with a warning when <code>gpuModel</code> is null.</p>
@@ -26,20 +26,22 @@ alongside the main unit-stride one) pass <code>folder</code> to nest both under
 <code>benchmarks/results/&lt;gpuModel&gt;/wgblas/&lt;folder&gt;/</code> instead, and <code>fileName</code>
 to give each variant its own file within it — e.g.
 <code>saveResults(&quot;saxpy&quot;, gpuModel, strideRecords, { folder: &quot;saxpy&quot;, fileName: &quot;stride.saxpy&quot; })</code>
-writes <code>.../wgblas/saxpy/stride.saxpy.json</code>. Omitting both keeps the
-original flat layout every other routine still uses.</p>
+writes <code>.../wgblas/saxpy/stride.saxpy.json</code>. Every routine now has at
+least one sweep, so every benchmark passes both; omitting them still writes
+the original flat <code>wgblas/&lt;routineName&gt;.json</code>.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">routineName</span>: <span class="tsd-signature-type">any</span></span>
+<li><span><span class="tsd-kind-parameter">routineName</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>e.g. <code>&quot;saxpy&quot;</code></p>
 </div></li>
-<li><span><span class="tsd-kind-parameter">gpuModel</span>: <span class="tsd-signature-type">any</span></span>
+<li><span><span class="tsd-kind-parameter">gpuModel</span>: <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></span>
 <div class="tsd-comment tsd-typography"><p>slug from <a href="benchmarks_utils.getGpuModel.html" class="tsd-kind-function">getGpuModel</a></p>
 </div></li>
-<li><span><span class="tsd-kind-parameter">results</span>: <span class="tsd-signature-type">any</span></span>
-<div class="tsd-comment tsd-typography"><p>array of <code>{ n, compute_ms, compute_GBs }</code> records</p>
+<li><span><span class="tsd-kind-parameter">results</span>: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></span>
+<div class="tsd-comment tsd-typography"><p>array of <code>{ n, compute_ms, compute_GBs }</code> records,
+plus the swept key(s) for a sweep (e.g. <code>stride</code>, <code>uplo</code>) and <code>compute_GFLOPs</code> where recorded</p>
 </div></li>
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">options</span>: <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">fileName</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">folder</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></span>
 <ul class="tsd-parameters">
@@ -53,7 +55,7 @@ original flat layout every other routine still uses.</p>
 </div></li></ul></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/benchmarks/utils/helpers.mjs#L65">benchmarks/utils/helpers.mjs:65</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/6e7302f742b20d70fb2fc9b88a44346e7933a805/benchmarks/utils/helpers.mjs#L83">benchmarks/utils/helpers.mjs:83</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

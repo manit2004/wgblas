@@ -10,7 +10,7 @@ import { WGS } from "./constants.mjs";
  * row, so a non-unit stride repeats the scattered gather n times; packing
  * first costs one O(n) pass and lets the O(n²) kernel run at unit stride.
  *
- * Returns the pass (for {@link runComputePasses}) plus the buffers the
+ * Returns the pass (for `runComputePasses` in `compute`) plus the buffers the
  * caller must destroy.
  * @param {GPUDevice} device
  * @param {GPUBuffer} src - the strided vector's buffer

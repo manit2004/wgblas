@@ -3,6 +3,7 @@ import { beginTimestamp, resolveTimestamp } from "./benchmark.mjs";
 
 /**
  * Finalises `commandEncoder` into a command buffer and submits it to the GPU queue.
+ * @param {GPUDevice} device
  * @param {GPUCommandEncoder} commandEncoder
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUQueue/submit GPUQueue.submit()}
  */
@@ -15,6 +16,7 @@ export function submit(device, commandEncoder) {
  * benchmarking is enabled) — the pairing every routine needs before encoding
  * its first pass, whether that's `runComputePass`'s single pass or a
  * multi-pass routine (e.g. strsv's blocked solve) encoding several by hand.
+ * @param {GPUDevice} device
  * @returns {{ commandEncoder: GPUCommandEncoder, querySet: GPUQuerySet|null, passDescriptor: object|undefined }}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
  */
@@ -64,19 +66,11 @@ export function encodePass(
 }
 
 /**
- * Encodes and submits a single compute pass: sets the pipeline and bind group,
- * dispatches workgroups, and optionally wraps the pass in GPU timestamp queries.
- * @param {GPUComputePipeline} pipeline
- * @param {GPUBindGroup} bindGroup
- * @param {number | { x: number, y: number, z?: number }} workgroups - workgroup count;
- *   number for 1D dispatch, `{x, y}` for 2D, `{x, y, z}` for 3D (z defaults to 1)
- * @returns {{ commandEncoder: GPUCommandEncoder, ts: any }} encoded commands and timestamp handle
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
- */
-/**
  * Encodes several dependent passes on one command encoder (guaranteed to run
  * in order) and times them as one span: the first pass writes the begin
- * timestamp, the last pass the end one.
+ * timestamp, the last pass the end one. A single pass is handed straight to
+ * {@link runComputePass}. Like it, this only encodes: the caller adds any
+ * readback copy, then calls {@link submit}.
  * @param {GPUDevice} device
  * @param {{ pipeline: GPUComputePipeline, bindGroup: GPUBindGroup, workgroups: number|{x:number,y:number,z?:number} }[]} passes
  * @returns {{ commandEncoder: GPUCommandEncoder, ts: object|null }}
@@ -99,6 +93,21 @@ export function runComputePasses(device, passes) {
   return { commandEncoder, ts };
 }
 
+/**
+ * Encodes a single compute pass on a fresh command encoder: sets the pipeline
+ * and bind group, dispatches workgroups, and — with benchmarking on — wraps the
+ * pass in GPU timestamp writes and encodes their resolve. Does not submit: the
+ * caller encodes any readback copy (`stageReadback`) onto the returned encoder,
+ * then calls {@link submit}.
+ * @param {GPUDevice} device
+ * @param {GPUComputePipeline} pipeline
+ * @param {GPUBindGroup} bindGroup
+ * @param {number | { x: number, y: number, z?: number }} workgroups - workgroup count;
+ *   number for 1D dispatch, `{x, y}` for 2D, `{x, y, z}` for 3D (z defaults to 1)
+ * @returns {{ commandEncoder: GPUCommandEncoder, ts: object|null }} the encoder, and the
+ *   timestamp handle to pass to `extractTimestamp` (null with benchmarking off)
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createCommandEncoder GPUDevice.createCommandEncoder()}
+ */
 export function runComputePass(device, pipeline, bindGroup, workgroups) {
   const { commandEncoder, querySet, passDescriptor } =
     beginTimedEncoder(device);

@@ -21,9 +21,9 @@
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Creates a GPU storage buffer and uploads <code>data</code> into it with
 <code>queue.writeBuffer</code> — a byte copy, so bits are preserved as-is regardless
-of element type (e.g. a Uint32Array's raw bit patterns — critical for
-dasum's aux half, which must never pass through a Float32Array view and
-risk NaN-bit-pattern canonicalization).</p>
+of element type (e.g. a Uint32Array's raw bit patterns survive intact,
+where a round trip through a Float32Array view could canonicalize a NaN
+bit pattern).</p>
 <p>Not <code>mappedAtCreation</code>: creating a CPU-mappable buffer costs ~230 µs on
 Dawn/Vulkan (GTX 1650) against ~12 µs for a plain one, which dominated
 small calls. writeBuffer is ordered on the queue, so the data is in place
@@ -53,7 +53,7 @@ before any later submit reads it.</p>
 </ul>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/src/util/buffer.mjs#L58">src/util/buffer.mjs:58</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/6e7302f742b20d70fb2fc9b88a44346e7933a805/src/util/buffer.mjs#L58">src/util/buffer.mjs:58</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

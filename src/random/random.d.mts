@@ -1,14 +1,6 @@
 /**
  * Returns a Float32Array of n random values uniformly sampled from [low, high).
  *
- * @param n - number of elements
- * @param low - lower bound (default: -1)
- * @param high - upper bound (default: 1)
- * @param seed - omit for genuine randomness (`Math.random`, the default);
- *   pass any number for a deterministic, reproducible sequence (mulberry32) —
- *   useful for regression tests that need "random-looking" data without
- *   flaking between runs
- *
  * **Default range [-1, 1):**
  * {@includeCode ../../examples/randomfloat32array/randomfloat32array.js}
  *
@@ -17,6 +9,15 @@
  *
  * **Seeded (deterministic):**
  * {@includeCode ../../examples/randomfloat32array-seeded/randomfloat32array-seeded.js}
+ *
+ * @param n - number of elements
+ * @param low - lower bound (default: -1)
+ * @param high - upper bound (default: 1)
+ * @param seed - omit for genuine randomness (`Math.random`, the default);
+ *   pass any number for a deterministic, reproducible sequence (mulberry32) —
+ *   useful for regression tests that need "random-looking" data without
+ *   flaking between runs
+ *
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L1">Source code: random.mjs (L1)</a>
  * @category Utilities
  */
@@ -30,14 +31,6 @@ export declare function randomFloat32Array(
 /**
  * Returns a Float64Array of n random values uniformly sampled from [low, high).
  *
- * @param n - number of elements
- * @param low - lower bound (default: -1)
- * @param high - upper bound (default: 1)
- * @param seed - omit for genuine randomness (`Math.random`, the default);
- *   pass any number for a deterministic, reproducible sequence (mulberry32) —
- *   useful for regression tests that need "random-looking" data without
- *   flaking between runs
- *
  * **Default range [-1, 1):**
  * {@includeCode ../../examples/randomfloat64array/randomfloat64array.js}
  *
@@ -46,6 +39,15 @@ export declare function randomFloat32Array(
  *
  * **Seeded (deterministic):**
  * {@includeCode ../../examples/randomfloat64array-seeded/randomfloat64array-seeded.js}
+ *
+ * @param n - number of elements
+ * @param low - lower bound (default: -1)
+ * @param high - upper bound (default: 1)
+ * @param seed - omit for genuine randomness (`Math.random`, the default);
+ *   pass any number for a deterministic, reproducible sequence (mulberry32) —
+ *   useful for regression tests that need "random-looking" data without
+ *   flaking between runs
+ *
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L7">Source code: random.mjs (L7)</a>
  * @category Utilities
  */
@@ -68,6 +70,11 @@ export declare function randomFloat64Array(
  * (row, col) maps to changes between layouts (`A[row*lda+col]` for
  * row-major, `A[col*lda+row]` for column-major).
  *
+ * {@includeCode ../../examples/randomtriangularfloat32array/randomtriangularfloat32array.js}
+ *
+ * **Column-major storage:**
+ * {@includeCode ../../examples/randomtriangularfloat32array-columnmajor/randomtriangularfloat32array-columnmajor.js}
+ *
  * @param n - matrix order (rows/cols read by the triangular routine)
  * @param lda - leading dimension; throws if `lda < n`
  * @param uplo - `'lower'` to fill the lower triangle, `'upper'` to fill the upper triangle (default: `'lower'`)
@@ -77,10 +84,6 @@ export declare function randomFloat64Array(
  * @param diagHigh - upper bound for diagonal entries (default: 15)
  * @param layout - `'row-major'` or `'column-major'` storage order (default: `'row-major'`)
  *
- * {@includeCode ../../examples/randomtriangularfloat32array/randomtriangularfloat32array.js}
- *
- * **Column-major storage:**
- * {@includeCode ../../examples/randomtriangularfloat32array-columnmajor/randomtriangularfloat32array-columnmajor.js}
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/random/random.mjs#L13">Source code: random.mjs (L13)</a>
  * @category Utilities
  */

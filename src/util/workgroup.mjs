@@ -22,6 +22,7 @@ import {
  * - 2D (pass both `rows` and `cols`): returns `{ x, y }` for `dispatchWorkgroups(x, y)`.
  *   `rows` maps to the y dimension and `cols` maps to the x dimension.
  *
+ * @param {GPUDevice} device - whose `maxComputeWorkgroupsPerDimension` applies
  * @param {number} rows - row count (1D: element count)
  * @param {number} [cols] - column count; omit for a 1D dispatch
  * @returns {number | { x: number, y: number }}
@@ -45,6 +46,7 @@ export function calcWorkgroups(device, rows, cols) {
  * grid-stride fallback: silently clamping those computes only part of the
  * result and reports success, so a refusal is the safer failure.
  *
+ * @param {GPUDevice} device - whose `maxComputeWorkgroupsPerDimension` applies
  * @param {number} count - workgroups this dispatch requires in one dimension
  * @param {string} routine - routine name, for the error message
  * @param {string} [dim] - dimension label ("x"/"y"), for the error message
@@ -66,6 +68,7 @@ export function requireWorkgroupCount(device, count, routine, dim = "x") {
  * {@link calcWorkgroups} with the clamp replaced by a throw — same arguments
  * and same return shape, for shaders without a grid-stride fallback.
  *
+ * @param {GPUDevice} device - whose `maxComputeWorkgroupsPerDimension` applies
  * @param {string} routine - routine name, for the error message
  * @param {number} rows - row count (1D: element count)
  * @param {number} [cols] - column count; omit for a 1D dispatch

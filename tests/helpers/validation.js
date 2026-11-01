@@ -10,7 +10,7 @@
  *
  * ```json
  * {
- *   "type": "integer" | "float" | "float32array" | "float64array",
+ *   "type": "integer" | "float" | "float32array" | "string" | "srotm_param" | "complex32" | "complex32array",
  *   "baseline": 1,
  *   "dependsOn": ["n"],
  *   "range": { "min": 1, "max": 4 },
@@ -27,12 +27,18 @@
  *
  * Each entry in `invalid` must cause the routine to throw with a message
  * containing the specified `error` string. Each entry in `edge` must not throw.
+ * The full schema — every `type`, `range` shape, special and scenario — is
+ * documented in the `tests/validation` module.
+ *
+ * Double-precision specs aren't stored: `loadParam("x64")` derives one from
+ * `x.json` (see `derive64`).
  *
  * ## How runValidation Works
  *
  * A baseline args object is built from each spec's `"baseline"` field (scalars
- * used as-is, arrays wrapped as `Float32Array`). `float32array` params without a
- * baseline are sized automatically via `resolveNdArray` using `dependsOn`.
+ * used as-is, arrays built as the spec's typed array — `Float32Array`,
+ * `Float64Array` or `Complex32Array`). Array params without a baseline are
+ * sized automatically via `resolveNdArray` using `dependsOn`.
  * Then for each test case, exactly one param is replaced with the invalid or edge
  * value while the rest stay at baseline — isolating the parameter under test.
  *

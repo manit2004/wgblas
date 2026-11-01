@@ -33,16 +33,13 @@
  * correct. Use the forward error factor from `tests/<routine>/helpers.js`
  * instead. See `tests/helpers/fixtures.js` for which metric each routine uses.
  *
- * For f64-emulated routines (e.g. dasum), a huge ULP64 count from a tiny
- * absolute error used to come from `aux` (the packed extra bits — see
- * src/util/f64pack.mjs) landing on a NaN/Infinity bit pattern: any ordinary
- * double, or any intermediate sum during a reduction, can produce this — not
- * just unusual inputs — and a real Float32Array silently canonicalizes
- * (quiets) a NaN bit pattern on any round trip, corrupting it. That's now
- * fixed at the source: aux is transported exclusively as raw u32 bits (never
- * an actual float value) throughout f64pack.mjs, GpuVector, and the WGSL f64
- * shaders, so this class of corruption can't happen at all — raw ULP64 is a
- * meaningful metric and is what dasum's own tests use.
+ * For the f64 routines, which emulate double precision with double-double
+ * arithmetic (a value is a pair of f32s, hi + lo — see `src/util/f64.mjs`),
+ * results carry about 48 significand bits, not IEEE double's 53, so a
+ * one-unit double-double rounding error is already about 2^5 = 32 ULP64.
+ * `dasum` uses raw `ulpDiff64` anyway, with a threshold of 64; `idamax`
+ * compares indices exactly; every other f64 routine uses a forward-error
+ * factor with ε = 2^-48 from its own `tests/<routine>/helpers.js`.
  *
  * @module tests/helpers/ulp
  */

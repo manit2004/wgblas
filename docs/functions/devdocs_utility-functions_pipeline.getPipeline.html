@@ -29,16 +29,18 @@ Pipelines are cached per device so reinitialization (new device) always recompil
 <li><span><span class="tsd-kind-parameter">shaderName</span>: <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></span>
 <div class="tsd-comment tsd-typography"><p>filename without <code>.wgsl</code> extension (e.g. <code>&quot;sscal&quot;</code>),
 or an array of filenames whose source gets concatenated into one module — WGSL has no
-<code>#include</code>, so this is how one shader's helper functions (e.g. f64add.wgsl's decode/
-encode/computeSum) get reused from another (e.g. dasum.wgsl) without duplicating them.</p>
+<code>#include</code>, so this is how the double-double library (<code>f64/dekker</code>, <code>f64/utils/add</code>,
+<code>f64/utils/multiply</code>, …) gets reused by every <code>d*</code> routine's shader without duplicating it,
+e.g. <code>[&quot;f64/dekker&quot;, &quot;f64/utils/abs&quot;, &quot;f64/utils/add&quot;, &quot;dasum&quot;]</code>.</p>
 </div></li>
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">entryPoint</span>: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &quot;main&quot;</span></span>
-<div class="tsd-comment tsd-typography"><p>which <code>@compute</code> function to run; only needed when
-concatenating shaders whose entry points aren't both named &quot;main&quot;</p>
+<div class="tsd-comment tsd-typography"><p>which <code>@compute</code> function to run. Every module has
+exactly one, so this is optional: left at <code>&quot;main&quot;</code>, it's omitted from the pipeline
+descriptor and WebGPU picks the module's sole entry point, whatever it's named.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">GPUComputePipeline</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/1969e2ff01d68ef5aefe6937da2914ed4ad73a8a/src/util/pipeline.mjs#L18">src/util/pipeline.mjs:18</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/6e7302f742b20d70fb2fc9b88a44346e7933a805/src/util/pipeline.mjs#L20">src/util/pipeline.mjs:20</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

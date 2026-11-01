@@ -37,9 +37,9 @@ function requireStorageSize(device, byteSize, label) {
 /**
  * Creates a GPU storage buffer and uploads `data` into it with
  * `queue.writeBuffer` — a byte copy, so bits are preserved as-is regardless
- * of element type (e.g. a Uint32Array's raw bit patterns — critical for
- * dasum's aux half, which must never pass through a Float32Array view and
- * risk NaN-bit-pattern canonicalization).
+ * of element type (e.g. a Uint32Array's raw bit patterns survive intact,
+ * where a round trip through a Float32Array view could canonicalize a NaN
+ * bit pattern).
  *
  * Not `mappedAtCreation`: creating a CPU-mappable buffer costs ~230 µs on
  * Dawn/Vulkan (GTX 1650) against ~12 µs for a plain one, which dominated
@@ -256,6 +256,7 @@ function vec4FallbackBuffer(device) {
  * a component the vector path would actually read. Buffers smaller than one
  * vec4 element get a shared dummy storage buffer bound instead — the shader
  * never dereferences it on those shapes.
+ * @param {GPUDevice} device - owns the shared dummy buffer used for tiny operands
  * @param {GPUBuffer|{buffer: GPUBuffer, offset?: number, size?: number}} entry - whole buffer or sub-range, matching what the scalar slot binds
  * @returns {{buffer: GPUBuffer, offset: number, size: number}}
  */

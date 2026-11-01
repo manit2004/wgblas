@@ -23,8 +23,8 @@ dedicated shader at all:</p>
 <li><code>sgemmtr</code>/<code>ssyrk</code>/<code>ssyr2k</code> all dispatch through <code>sgemm_small</code>/<code>sgemm_large</code> (<code>uplo</code> param).</li>
 <li><code>strsm</code> shares <code>strsm_small</code> and <code>strsv_invert_block</code> with strsv, plus its own
 <code>block_transfer</code> and the shared <code>sgemm_small</code>/<code>sgemm_large</code>.</li>
-<li><code>dasum</code>/<code>idamax</code> concatenate several f64 utility shaders with their own — see
-<code>getPipeline</code>'s <code>shaderName: string[]</code> behaviour.</li>
+<li>Every <code>d*</code> routine concatenates the <code>f64/</code> double-double shaders it needs in front of its
+own — see <code>getPipeline</code>'s <code>shaderName: string[]</code> behaviour.</li>
 <li><code>random</code> has no entry — CPU-only, no <code>getPipeline()</code> call.</li>
 </ul>
 <p>Built up entry by entry so each import sits next to the mapping entry that uses it.</p>

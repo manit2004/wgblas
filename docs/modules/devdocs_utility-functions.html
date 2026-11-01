@@ -18,9 +18,69 @@
 compile a pipeline, encode a compute pass, and map results back to the CPU. Writing that inline
 for each BLAS routine means dozens of near-identical code paths that are hard to read, test,
 or change consistently.</p>
-<p>These utilities factor out each concern into a focused function. A routine calls
-<code>createStorageBuffer</code>, <code>createBindGroup</code>, <code>loadShader</code>, <code>runComputePass</code>, and <code>extractResult</code>
-— one line per step — rather than managing raw WebGPU objects directly.</p>
+<p>These utilities factor out each concern into a focused function. A typical routine calls
+<code>getPipeline</code>, <code>uploadBuffer</code> and <code>createParamsBuffer</code>, <code>createBindGroup</code>, <code>runComputePass</code>,
+<code>stageReadback</code> and <code>submit</code>, <code>extractResult</code>, then <code>destroyBuffers</code> — one line per step —
+rather than managing raw WebGPU objects directly. The <code>blas-routines</code> page walks through
+those steps in order; each module below documents one concern:</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Concern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pipeline</code></td>
+<td>compiling and caching pipelines, concatenating shader files</td>
+</tr>
+<tr>
+<td><code>buffer</code></td>
+<td>storage, params, result and readback buffers; the readback pool; vec4 views</td>
+</tr>
+<tr>
+<td><code>bindgroup</code></td>
+<td>binding buffers in <code>@binding</code> order</td>
+</tr>
+<tr>
+<td><code>compute</code></td>
+<td>encoding passes and submitting them, single- or multi-pass</td>
+</tr>
+<tr>
+<td><code>workgroup</code></td>
+<td>dispatch sizes, clamped or checked against the device limit</td>
+</tr>
+<tr>
+<td><code>result</code></td>
+<td>mapping a readback buffer and copying the result out</td>
+</tr>
+<tr>
+<td><code>benchmark</code></td>
+<td>timestamp queries behind <code>gpuTimeMs</code></td>
+</tr>
+<tr>
+<td><code>device</code></td>
+<td>the guards every routine runs first</td>
+</tr>
+<tr>
+<td><code>constants</code></td>
+<td>values the JS dispatch side shares with shaders</td>
+</tr>
+<tr>
+<td><code>strided</code></td>
+<td>packing a strided vector before an O(n²) Level 2 kernel</td>
+</tr>
+<tr>
+<td><code>f64</code></td>
+<td>splitting <code>Float64Array</code>s into double-double halves and back</td>
+</tr>
+<tr>
+<td><code>complex</code></td>
+<td>interleaving complex arrays for upload and back</td>
+</tr>
+</tbody>
+</table>
 </div></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
