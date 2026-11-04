@@ -66,6 +66,7 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsymv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyr2.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyrk.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dtrmv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dtrsv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.gpuName.html</loc></url>
@@ -263,6 +264,7 @@
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsymv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyr2.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyrk.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dtrmv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dtrsv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.html</loc></url>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dsyrk — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dsyrk, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // Entry (i,j) of C is the dot product of rows i and j of A; only the
+        // upper triangle is written.
+        const n = 3, k = 2;
+        const A = new Float64Array([1, 0,
+                                    0, 1,
+                                    1, 1]);
+        const C = new Float64Array(n * n);
+
+        const { C: result } = await dsyrk(device, "upper", "no-transpose", n, k, 1, A, k, 0, C, n);
+
+        document.getElementById("out").textContent = [
+          "A =",
+          "  [" + A.slice(0, 2).join(", ") + "]",
+          "  [" + A.slice(2, 4).join(", ") + "]",
+          "  [" + A.slice(4, 6).join(", ") + "]",
+          "C = upper(A*A^T) =",
+          "  [" + result.slice(0, 3).join(", ") + "]",
+          "  [" + result.slice(3, 6).join(", ") + "]",
+          "  [" + result.slice(6, 9).join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>

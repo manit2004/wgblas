@@ -56,7 +56,7 @@
  * dedicated shader at all:
  *
  * - `sgemmtr`/`ssyrk`/`ssyr2k` all dispatch through `sgemm_small`/`sgemm_large` (`uplo` param),
- *   and `dgemmtr` through `dgemm_small`/`dgemm_large` the same way.
+ *   and `dgemmtr`/`dsyrk` through `dgemm_small`/`dgemm_large` the same way.
  * - `strsm` shares `strsm_small` and `strsv_invert_block` with strsv, plus its own
  *   `block_transfer` and the shared `sgemm_small`/`sgemm_large`.
  * - Every `d*` routine concatenates the `f64/` double-double shaders it needs in front of its
@@ -313,6 +313,7 @@ routineShaders.dgemm = {
   dgemm_large,
 }; // one or the other, picked by the same tile-size threshold as sgemm
 routineShaders.dgemmtr = routineShaders.dgemm; // dgemm's kernels with their triangle mask (uplo), as sgemmtr rides on sgemm's
+routineShaders.dsyrk = routineShaders.dgemm; // no shader of its own — rides on dgemmtr's (dgemm's), as ssyrk does on sgemm's
 
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";
