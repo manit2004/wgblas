@@ -257,6 +257,7 @@ export async function dgemm(
         { value: transB === "transpose" ? 1 : 0, type: "u32" },
         { value: useVecA ? 1 : 0, type: "u32" },
         { value: useVecB ? 1 : 0, type: "u32" },
+        { value: 0, type: "u32" }, // uplo: full C (dgemmtr passes 1/2)
       ],
       "dgemm-params",
     );

@@ -47,6 +47,7 @@ struct Params {
   transB:  u32,
   useVecA: u32, // 1 = AHi's vec4 view covers every in-bounds element (see vec4Usable)
   useVecB: u32, // 1 = BHi's vec4 view covers every in-bounds element
+  uplo:    u32, // 0 = full C; dgemmtr masks: 1 = lower (col <= row), 2 = upper (col >= row)
 }
 
 @group(0) @binding(8) var<uniform> params: Params;
@@ -64,6 +65,12 @@ fn main(
 ) {
   let blockRow = wid.y * BM;
   let blockCol = wid.x * BN;
+  // dgemmtr: a tile entirely outside the requested triangle writes nothing,
+  // so skip it outright — about half the grid. The test depends only on the
+  // workgroup id and a uniform, so the whole workgroup exits together: no
+  // thread is left waiting at the protected ops' barriers.
+  if (params.uplo == 1u && blockCol > blockRow + BM - 1u) { return; }
+  if (params.uplo == 2u && blockCol + BN - 1u < blockRow) { return; }
   let threadCol = lid.x;
   let threadRow = lid.y;
 
@@ -238,7 +245,13 @@ fn main(
     for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
       let row = blockRow + threadRow * TM + resIdxM;
       let col = blockCol + threadCol * TN + resIdxN;
-      let inBounds = row < params.m && col < params.n;
+      // dgemmtr: tiles straddling the diagonal write only their triangle.
+      // Gates the store only — the protected ops above still run for every
+      // thread, keeping their barrier counts uniform.
+      let inTriangle = params.uplo == 0u
+        || (params.uplo == 1u && col <= row)
+        || (params.uplo == 2u && col >= row);
+      let inBounds = row < params.m && col < params.n && inTriangle;
       let cIdx = min(row, params.m - 1u) * params.ldc + min(col, params.n - 1u);
 
       let acc = ddMulProtected(alpha, threadResults[resIdxM * TN + resIdxN], tid);

@@ -419,6 +419,10 @@ export const dgemmReference = makeMatMatReference(stdlibDgemm, (a) => [
 
 export const sgemmtrReference = makeMatMatTriangularReference(sgemmReference);
 
+// dgemmtr: dgemm's full product, masked to the uplo triangle — same wrapper
+// sgemmtr uses (it copies C with .slice(), so the Float64Array type carries).
+export const dgemmtrReference = makeMatMatTriangularReference(dgemmReference);
+
 // ssyrk: C := uplo(alpha*op(A)*op(A)^T + beta*C) — reuses sgemmReference with
 // B := A (same mapping ssyrk.mjs itself uses: transB is the opposite of
 // trans, m := n since C is always square), then masks to the uplo triangle.

@@ -175,6 +175,10 @@
       "types": "./src/dgemm/dgemm.d.mts",
       "import": "./src/dgemm/dgemm.mjs"
     },
+    "./dgemmtr": {
+      "types": "./src/dgemmtr/dgemmtr.d.mts",
+      "import": "./src/dgemmtr/dgemmtr.mjs"
+    },
     "./sgemm": {
       "types": "./src/sgemm/sgemm.d.mts",
       "import": "./src/sgemm/sgemm.mjs"
