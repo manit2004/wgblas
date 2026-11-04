@@ -55,6 +55,7 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dcopy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.ddot.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dgemm.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dgemmtr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dgemv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dger.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dnrm2.html</loc></url>
@@ -251,6 +252,7 @@
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dcopy.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.ddot.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dgemm.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dgemmtr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dgemv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dger.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dnrm2.html</loc></url>
