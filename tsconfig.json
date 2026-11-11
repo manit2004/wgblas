@@ -59,6 +59,7 @@
       "wgblas/dtrsv": ["./src/dtrsv/dtrsv.d.mts"],
       "wgblas/dgemm": ["./src/dgemm/dgemm.d.mts"],
       "wgblas/dgemmtr": ["./src/dgemmtr/dgemmtr.d.mts"],
+      "wgblas/dsyrk": ["./src/dsyrk/dsyrk.d.mts"],
       "wgblas/sgemm": ["./src/sgemm/sgemm.d.mts"],
       "wgblas/sgemmtr": ["./src/sgemmtr/sgemmtr.d.mts"],
       "wgblas/ssyrk": ["./src/ssyrk/ssyrk.d.mts"],

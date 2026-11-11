@@ -75,7 +75,12 @@
  * - **GPU time, not wall time** — `init({ benchmark: true })` enables WebGPU
  *   timestamp queries, and each call returns its `gpuTimeMs`, so the JS
  *   benchmark measures GPU execution, not the CPU-side await overhead. The
- *   cuBLAS side times each call with a `cudaEventRecord` pair.
+ *   cuBLAS side times each call with a `cudaEventRecord` pair. Reductions
+ *   (`dot`/`asum`/`nrm2`/`iamax`) run in device pointer mode
+ *   (`cublasSetPointerMode(…, CUBLAS_POINTER_MODE_DEVICE)`), so their result
+ *   stays on the GPU — in the default host mode the scalar's copy back to the
+ *   host and the implicit sync would land inside the event window, while the
+ *   wgblas timestamps exclude readback.
  * - **Full clocks before every configuration** — each size (and each sweep
  *   value) calls `warmClocks(device)` (JS) / `warm_clocks(handle)` (C) just
  *   before its warmup loop. The timed loops wait on every call, so with short

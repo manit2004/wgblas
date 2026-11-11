@@ -179,6 +179,10 @@
       "types": "./src/dgemmtr/dgemmtr.d.mts",
       "import": "./src/dgemmtr/dgemmtr.mjs"
     },
+    "./dsyrk": {
+      "types": "./src/dsyrk/dsyrk.d.mts",
+      "import": "./src/dsyrk/dsyrk.mjs"
+    },
     "./sgemm": {
       "types": "./src/sgemm/sgemm.d.mts",
       "import": "./src/sgemm/sgemm.mjs"
