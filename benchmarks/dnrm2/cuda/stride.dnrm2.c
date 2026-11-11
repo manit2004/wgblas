@@ -72,17 +72,23 @@ int main(void) {
             CUDA_CHECK(cudaEventCreate(&stop));
 
             // warm up
-            double nrm2_result;
+            // Result stays on the GPU (device pointer mode), so the timed window
+            // covers the reduction only — no D2H copy + implicit sync, matching
+            // wgblas's timestamps, which exclude readback. warm_clocks passes a
+            // host scalar, so it runs before the switch.
+            double *d_result;
+            CUDA_CHECK(cudaMalloc((void **)&d_result, sizeof(double)));
             warm_clocks(handle); /* full clocks first — see helpers.h */
+            CUBLAS_CHECK(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
             for (int i = 0; i < WARMUP_ITERS; i++) {
-                CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, stride, &nrm2_result));
+                CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, stride, d_result));
             }
             CUDA_CHECK(cudaDeviceSynchronize());
 
             float compute_times[BENCH_ITERS];
             for (int i = 0; i < BENCH_ITERS; i++) {
                 CUDA_CHECK(cudaEventRecord(start, 0));
-                CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, stride, &nrm2_result));
+                CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, stride, d_result));
                 CUDA_CHECK(cudaEventRecord(stop, 0));
                 CUDA_CHECK(cudaEventSynchronize(stop));
                 CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
@@ -103,6 +109,8 @@ int main(void) {
 
             CUDA_CHECK(cudaEventDestroy(start));
             CUDA_CHECK(cudaEventDestroy(stop));
+            CUBLAS_CHECK(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST)); // back for the next warm_clocks
+            cudaFree(d_result);
             cudaFree(d_x);
             free(h_x);
             free(h_x_f32);
