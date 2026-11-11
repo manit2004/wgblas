@@ -9,6 +9,7 @@ import {
   printRow,
   getGpuModel,
   saveResults,
+  toColumnMajor,
   warmClocks,
 } from "../../utils/helpers.mjs";
 
@@ -65,7 +66,16 @@ for (const size of SIZES) {
     continue;
   }
 
-  const AGpu = GpuMatrix.from(triangular(n, lda), n, n, lda, "row-major");
+  // Generated row-major then transposed to genuine column-major storage of
+  // the same logical matrix (the diagonal stays put), matching dtrsv.c and
+  // strsv.js — layout picks the kernel path, so both sides must share it.
+  const AGpu = GpuMatrix.from(
+    toColumnMajor(triangular(n, lda), n, n),
+    n,
+    n,
+    lda,
+    "column-major",
+  );
   const b = randomFloat64Array(n);
 
   // dtrsv solves in place, so reset x to b before every call, or later

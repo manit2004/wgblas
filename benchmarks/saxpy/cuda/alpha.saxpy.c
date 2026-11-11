@@ -18,7 +18,7 @@ int main(void) {
     cublasHandle_t handle;
     CUBLAS_CHECK(cublasCreate(&handle));
 
-    int sizes[] = { 32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216 };
+    int sizes[] = { 1024, 65536, 1048576, 16777216 }; // same 4 as the .js counterpart
     int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
     float alphas[] = { 0.0f, 1.0f, 2.5f, -3.75f, 1e-38f };
     int num_alpha = (int)(sizeof(alphas) / sizeof(alphas[0]));
