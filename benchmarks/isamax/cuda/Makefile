@@ -1,16 +1,14 @@
 CC = nvcc
 BIN = bin
+HDRS = ../../utils/helpers.h ../../utils/harness.h ../../utils/params.h
 
-all: $(BIN)/isamax $(BIN)/stride.isamax
+all: $(BIN)/isamax
 
 $(BIN):
 	mkdir -p $(BIN)
 
-$(BIN)/isamax: isamax.c ../../utils/helpers.h | $(BIN)
+$(BIN)/isamax: isamax.c $(HDRS) | $(BIN)
 	$(CC) isamax.c -o $(BIN)/isamax -lcublas
-
-$(BIN)/stride.isamax: stride.isamax.c ../../utils/helpers.h | $(BIN)
-	$(CC) stride.isamax.c -o $(BIN)/stride.isamax -lcublas
 
 clean:
 	rm -rf $(BIN)

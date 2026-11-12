@@ -91,7 +91,8 @@ typedef struct {
 
 /**
  * Writes one JSON record per index in `[0, n)` to
- * `benchmarks/results/<gpu_model>/cuda/<folder>/<file_name>.json`, creating
+ * `<bench_results_root>/<gpu_model>/cuda/<folder>/<file_name>.json`
+ * (root `benchmarks/results` by default), creating
  * directories as needed:
  * `{ <fields[0].name>: ..., ..., "compute_ms": ..., ["compute_GFLOPs": ...,] "compute_GBs": ... }`
  *
@@ -117,15 +118,18 @@ typedef struct {
  *                    the `compute_GFLOPs` key entirely
  * @param n           number of records (length of every per-record array above)
  */
+/** Results root `save_results` writes under; `--out=<dir>` (harness.h) points it elsewhere. */
+static const char *bench_results_root = "benchmarks/results";
+
 static void save_results(const char *gpu_model, const char *folder, const char *file_name,
                           const record_field *fields, int n_fields,
                           float *med_times, float *gbs_vals, float *gflops_vals, int n) {
     char *gpu_dir, *base_dir, *out_dir, *file_path;
-    asprintf(&gpu_dir,   "benchmarks/results/%s", gpu_model);
+    asprintf(&gpu_dir,   "%s/%s", bench_results_root, gpu_model);
     asprintf(&base_dir,  "%s/cuda", gpu_dir);
     asprintf(&out_dir,   "%s/%s", base_dir, folder);
     asprintf(&file_path, "%s/%s.json", out_dir, file_name);
-    mkdir("benchmarks/results", 0755); // 0755: owner rwx
+    mkdir(bench_results_root, 0755); // 0755: owner rwx
     mkdir(gpu_dir, 0755);
     mkdir(base_dir, 0755);
     mkdir(out_dir, 0755);

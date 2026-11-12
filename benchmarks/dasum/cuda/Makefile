@@ -1,16 +1,14 @@
 CC = nvcc
 BIN = bin
+HDRS = ../../utils/helpers.h ../../utils/harness.h ../../utils/params.h
 
-all: $(BIN)/dasum $(BIN)/stride.dasum
+all: $(BIN)/dasum
 
 $(BIN):
 	mkdir -p $(BIN)
 
-$(BIN)/dasum: dasum.c ../../utils/helpers.h | $(BIN)
+$(BIN)/dasum: dasum.c $(HDRS) | $(BIN)
 	$(CC) dasum.c -o $(BIN)/dasum -lcublas
-
-$(BIN)/stride.dasum: stride.dasum.c ../../utils/helpers.h | $(BIN)
-	$(CC) stride.dasum.c -o $(BIN)/stride.dasum -lcublas
 
 clean:
 	rm -rf $(BIN)
