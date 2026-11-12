@@ -12,7 +12,7 @@ import {
   warmClocks,
 } from "../../utils/helpers.mjs";
 
-// Same kernels as dgemm (dgemm_small/dgemm_large), write gated to one
+// Same kernel as dgemm (dgemm_small), write gated to one
 // triangle by uplo; the swept params mirror sgemmtr's (see uplo.dgemmtr.js
 // and its siblings). No cuBLAS counterpart — cuBLAS has no gemmt routine —
 // so wgblas-only. flops/bytes count the triangle only: the kernels skip

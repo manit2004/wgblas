@@ -15,17 +15,11 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
-import {
-  BM_SMALL,
-  BN_SMALL,
-  BM_LARGE,
-  BN_LARGE,
-  LARGE_TILE_WORKGROUP_THRESHOLD,
-} from "../util/constants.mjs";
+import { BM_SMALL, BN_SMALL } from "../util/constants.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dsyrk: C := uplo(alpha*op(A)*op(A)^T + beta*C), double-double f64 emulation
-// of ssyrk. No dedicated shader — dgemmtr's kernels (dgemm_small/dgemm_large
+// of ssyrk. No dedicated shader — dgemmtr's kernel (dgemm_small
 // with their uplo triangle mask) with A duplicated into a separate B buffer
 // (B := A), the same relationship ssyrk has to sgemmtr.
 export async function dsyrk(
@@ -139,15 +133,14 @@ export async function dsyrk(
     uploEff = uploEff === "lower" ? "upper" : "lower";
   }
 
-  // Shape-based auto-select — same threshold as dgemm/dgemmtr, m=n=n (square C).
-  const largeWgX = Math.ceil(n / BN_LARGE);
-  const largeWgY = Math.ceil(n / BM_LARGE);
-  const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
+  // Always dgemm_small: dgemm_large (BM=BN=64), sgemm's large-tile split
+  // carried over, measured ~2x slower at every size from 128 to 2048 on a
+  // GTX 1650 — double-double tiles need twice the registers and smem.
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(
     device,
-    [...f64Deps, useLargeTile ? "dgemm_large" : "dgemm_small"],
+    [...f64Deps, "dgemm_small"],
     "main",
   );
 
@@ -244,25 +237,10 @@ export async function dsyrk(
       paramsBuffer,
     ]);
 
-    const wgCount = useLargeTile
-      ? {
-          x: requireWorkgroupCount(device, largeWgX, "dsyrk", "x"),
-          y: requireWorkgroupCount(device, largeWgY, "dsyrk", "y"),
-        }
-      : {
-          x: requireWorkgroupCount(
-            device,
-            Math.ceil(n / BN_SMALL),
-            "dsyrk",
-            "x",
-          ),
-          y: requireWorkgroupCount(
-            device,
-            Math.ceil(n / BM_SMALL),
-            "dsyrk",
-            "y",
-          ),
-        };
+    const wgCount = {
+      x: requireWorkgroupCount(device, Math.ceil(n / BN_SMALL), "dsyrk", "x"),
+      y: requireWorkgroupCount(device, Math.ceil(n / BM_SMALL), "dsyrk", "y"),
+    };
     // Manual encoder (not runComputePass) so the A->B duplicate copies land
     // on the same command encoder, strictly before the compute pass reads B.
     const { commandEncoder, querySet, passDescriptor } =

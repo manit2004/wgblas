@@ -11,7 +11,7 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * - `trans='transpose'`:    op(A) = A^T (A stored k×n), computes alpha*A^T*A + beta*C
  *
  * No dedicated kernel — this is `dgemmtr`'s exact kernel
- * (`dgemm_small.wgsl`/`dgemm_large.wgsl` in triangle mode) with `A` duplicated into
+ * (`dgemm_small.wgsl` in triangle mode) with `A` duplicated into
  * both operand slots (`B := A`).
  *
  * {@includeCode ../../examples/dsyrk/dsyrk.js}

@@ -200,12 +200,11 @@ test("dgemmtr edge cases", async (t) => {
   }
 });
 
-// Same reasoning as dgemm's: the large-tile kernel only runs once
-// ceil(n/64)*ceil(m/64) >= LARGE_TILE_WORKGROUP_THRESHOLD, which no fixture
-// or edge case reaches. 400×400 clears it and, not being a multiple of 64,
-// also exercises edge-tile masking. Both uplo values get their own case since
+// Same reasoning as dgemm's: no fixture or edge case spans more than one
+// 32×32 tile; 400×400 spans 13×13 and, not being a multiple of 32, also
+// exercises edge-tile masking. Both uplo values get their own case since
 // the triangle boundary masking differs between them.
-test("dgemmtr large-tile path (regression)", async (t) => {
+test("dgemmtr large-n path (regression)", async (t) => {
   const M = 400,
     N = 400,
     K = 8;
@@ -267,9 +266,8 @@ test("dgemmtr large-tile path (regression)", async (t) => {
   }
 });
 
-// dgemmtr skips tiles wholly outside the triangle. The large-tile test above
-// covers that for the 64-tile kernel; fixtures (n <= 20) never span more than
-// one 32-tile, so this covers the small kernel's skipping, plus non-square C
+// dgemmtr skips tiles wholly outside the triangle. Fixtures (n <= 20) never
+// span more than one 32-tile, so this covers that skipping, plus non-square C
 // (the triangle of an m×n grid), in both layouts (column-major flips uplo
 // internally). forwardFactor only checks the requested triangle, so the other
 // one is also asserted to come back unchanged — up to C's own DD round trip,

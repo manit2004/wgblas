@@ -183,12 +183,10 @@ test("dgemm edge cases", async (t) => {
   }
 });
 
-// Same reasoning as sgemm's: the large-tile kernel only runs once
-// ceil(n/64)*ceil(m/64) >= LARGE_TILE_WORKGROUP_THRESHOLD, which no fixture
-// or edge case reaches. 400×400 clears it and, not being a multiple of 64,
-// also exercises edge-tile masking. One case per transA/transB combo, since
-// each takes a different load path.
-test("dgemm large-tile path (regression)", async (t) => {
+// No fixture or edge case spans more than one 32×32 tile; 400×400 spans 13×13
+// and, not being a multiple of 32, also exercises edge-tile masking. One
+// case per transA/transB combo, since each takes a different load path.
+test("dgemm large-n path (regression)", async (t) => {
   const M = 400,
     N = 400,
     K = 8;

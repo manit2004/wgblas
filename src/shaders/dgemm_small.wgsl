@@ -1,7 +1,7 @@
 // dgemm_small: C = alpha * op(A) * op(B) + beta * C — double-double (Dekker)
 // f64 emulation of sgemm_small.wgsl, same tile config and structure:
-// BM=BN=32, BK=8, TM=TN=2, 256 threads. Paired with dgemm_large.wgsl in the
-// same two-tier dispatch sgemm uses (see dgemm.mjs).
+// BM=BN=32, BK=8, TM=TN=2, 256 threads. Used at every size — unlike sgemm,
+// there is no large-tile tier (dgemm_large.wgsl measured ~2x slower; see dgemm.mjs).
 //
 // Two unavoidable differences from sgemm_small.wgsl:
 //   1. Only the Hi halves get vec4 views (AHi4/BHi4). Vectorizing Lo too

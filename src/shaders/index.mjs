@@ -56,7 +56,7 @@
  * dedicated shader at all:
  *
  * - `sgemmtr`/`ssyrk`/`ssyr2k` all dispatch through `sgemm_small`/`sgemm_large` (`uplo` param),
- *   and `dgemmtr`/`dsyrk` through `dgemm_small`/`dgemm_large` the same way.
+ *   and `dgemmtr`/`dsyrk`/`dsyr2k` through `dgemm_small` alone (`dgemm_large` measured slower).
  * - `strsm` shares `strsm_small` and `strsv_invert_block` with strsv, plus its own
  *   `block_transfer` and the shared `sgemm_small`/`sgemm_large`.
  * - Every `d*` routine concatenates the `f64/` double-double shaders it needs in front of its
@@ -304,16 +304,17 @@ routineShaders.dtrsv = {
 };
 
 import dgemm_small from "./dgemm_small.wgsl"; // f64 sibling of sgemm_small — same tile config; vec4 on Hi halves only (Lo too would exceed 8 storage buffers)
-import dgemm_large from "./dgemm_large.wgsl"; // f64 sibling of sgemm_large — same tile config and caveats as dgemm_small
+// dgemm_large.wgsl (the f64 sibling of sgemm_large) isn't registered or
+// dispatched: ~2x slower than dgemm_small at every size measured (see dgemm.mjs).
 routineShaders.dgemm = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   dgemm_small,
-  dgemm_large,
-}; // one or the other, picked by the same tile-size threshold as sgemm
+}; // dgemm_small at every size, unlike sgemm's small/large split
 routineShaders.dgemmtr = routineShaders.dgemm; // dgemm's kernels with their triangle mask (uplo), as sgemmtr rides on sgemm's
 routineShaders.dsyrk = routineShaders.dgemm; // no shader of its own — rides on dgemmtr's (dgemm's), as ssyrk does on sgemm's
+routineShaders.dsyr2k = routineShaders.dgemm; // two dgemmtr passes, as ssyr2k does on sgemm's
 
 import sgemm_small from "./sgemm_small.wgsl";
 import sgemm_large from "./sgemm_large.wgsl";

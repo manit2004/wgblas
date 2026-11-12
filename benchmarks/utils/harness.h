@@ -44,7 +44,7 @@
 
 /** A point's parameters — the fields a spec's axes, defaults and calls use. */
 typedef struct {
-    int n, m, inc, stride, lda, pad;
+    int n, m, k, inc, stride, lda, ldb, ldc, pad;
     int x_len, y_len;                /* derived vector lengths (gemv) */
     double alpha, beta, c, s;
     cuComplex calpha;                /* complex alpha (cscal) */
@@ -56,9 +56,12 @@ typedef enum { K_INT, K_REAL, K_COMPLEX, K_STRING } bench_kind;
 static const struct { const char *name; size_t off; bench_kind kind; } BENCH_FIELDS[] = {
     { "n", offsetof(bench_params, n), K_INT },
     { "m", offsetof(bench_params, m), K_INT },
+    { "k", offsetof(bench_params, k), K_INT },
     { "inc", offsetof(bench_params, inc), K_INT },
     { "stride", offsetof(bench_params, stride), K_INT },
     { "lda", offsetof(bench_params, lda), K_INT },
+    { "ldb", offsetof(bench_params, ldb), K_INT },
+    { "ldc", offsetof(bench_params, ldc), K_INT },
     { "pad", offsetof(bench_params, pad), K_INT },
     { "x_len", offsetof(bench_params, x_len), K_INT },
     { "y_len", offsetof(bench_params, y_len), K_INT },
@@ -154,7 +157,10 @@ typedef struct {
     double (*flops)(const bench_params *p); /* override the spec's */
 } bench_sweep;
 
-#define BENCH_MAX_SWEEPS 8
+#define BENCH_MAX_SWEEPS 12
+/* A spec's sweeps, up to the first without a name or the array's end. */
+#define FOR_EACH_SWEEP(sw, spec) \
+    for (const bench_sweep *sw = (spec)->sweeps; sw < (spec)->sweeps + BENCH_MAX_SWEEPS && sw->name; sw++)
 
 typedef struct {
     const char *routine;
@@ -506,13 +512,13 @@ static int run_benchmark(int argc, char **argv, const bench_spec *spec) {
     }
 
     int matched = 0;
-    for (const bench_sweep *sw = spec->sweeps; sw->name; sw++) matched += bench_selected(only, sw->name);
+    FOR_EACH_SWEEP(sw, spec) matched += bench_selected(only, sw->name);
     if (!matched) { fprintf(stderr, "%s: no sweep matches --sweeps=%s\n", spec->routine, only); return 2; }
 
     if (plan || check) {
         bool ok = true;
         char file[128], text[256];
-        for (const bench_sweep *sw = spec->sweeps; sw->name; sw++) {
+        FOR_EACH_SWEEP(sw, spec) {
             if (!bench_selected(only, sw->name)) continue;
             if (check) { ok &= bench_check_sweep(spec, sw, check); continue; }
             int cap = bench_point_cap(sw);
@@ -533,7 +539,7 @@ static int run_benchmark(int argc, char **argv, const bench_spec *spec) {
     get_gpu_model(gpu_model, sizeof(gpu_model));
     cublasHandle_t device;
     CUBLAS_CHECK(cublasCreate(&device));
-    for (const bench_sweep *sw = spec->sweeps; sw->name; sw++)
+    FOR_EACH_SWEEP(sw, spec)
         if (bench_selected(only, sw->name)) bench_run_sweep(device, gpu_model, spec, sw);
     cublasDestroy(device);
     return 0;

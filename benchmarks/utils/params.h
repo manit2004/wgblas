@@ -1,6 +1,6 @@
 #pragma once
 /*
- * Sizes and swept values shared by the Level 1 cuBLAS benchmarks — the C
+ * Sizes and swept values shared by the cuBLAS benchmarks — the C
  * twin of params.mjs. Keep the two identical so wgblas and cuBLAS results
  * cover the same points (`--check` on either side verifies against the
  * committed results).
@@ -38,3 +38,16 @@ static const double BETAS[] = { 0.0, 1.0, 2.5, -3.75 };
 static const char *const TRANSES[] = { "no-transpose", "transpose" };
 static const char *const UPLOS[] = { "lower", "upper" };
 static const char *const DIAGS[] = { "non-unit", "unit" };
+
+/** Level 3 base sizes: square n = k, 32 to 1024. */
+static const int L3_SIZES[] = { 32, 64, 128, 256, 512, 1024 };
+
+/** Level 3 parameter-sweep sizes (alpha, beta, uplo, ldb, ldc): 64 to 2048. */
+static const int L3_SWEEP_SIZES[] = { 64, 128, 256, 512, 1024, 2048 };
+
+/** Level 3 `trans` sweep sizes: the larger half, where operand reads dominate. */
+static const int L3_TRANS_SIZES[] = { 256, 512, 1024, 2048 };
+
+/** Level 3 `lda` sweep (trans × size × pad): three sizes, six pads. */
+static const int L3_LDA_SIZES[] = { 512, 1024, 2048 };
+static const int L3_LDA_PADS[] = { 0, 1, 8, 16, 32, 64 };
