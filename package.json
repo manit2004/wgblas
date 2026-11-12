@@ -183,6 +183,10 @@
       "types": "./src/dsyrk/dsyrk.d.mts",
       "import": "./src/dsyrk/dsyrk.mjs"
     },
+    "./dsyr2k": {
+      "types": "./src/dsyr2k/dsyr2k.d.mts",
+      "import": "./src/dsyr2k/dsyr2k.mjs"
+    },
     "./sgemm": {
       "types": "./src/sgemm/sgemm.d.mts",
       "import": "./src/sgemm/sgemm.mjs"

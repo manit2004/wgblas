@@ -1,5 +1,5 @@
 /**
- * Sizes and swept values shared by the Level 1 benchmark files, so every
+ * Sizes and swept values shared by the benchmark files, so every
  * routine and every sweep uses the same points. The cuBLAS twins in
  * `benchmarks/<routine>/cuda/*.c` must use the same values (checked by
  * `node <file> --check` against each GPU's committed results).
@@ -34,3 +34,16 @@ export const PADS = [0, 1, 8, 16, 32, 48, 64, 128];
 
 /** Real beta values: 0 (lets a kernel skip reading y), 1, and two ordinary values. */
 export const BETAS = [0, 1, 2.5, -3.75];
+
+/** Level 3 base sizes: square n = k, 32 to 1024. */
+export const L3_SIZES = [32, 64, 128, 256, 512, 1024];
+
+/** Level 3 parameter-sweep sizes (alpha, beta, uplo, layout, ldb, ldc): 64 to 2048. */
+export const L3_SWEEP_SIZES = [64, 128, 256, 512, 1024, 2048];
+
+/** Level 3 `trans` sweep sizes: the larger half, where operand reads dominate. */
+export const L3_TRANS_SIZES = [256, 512, 1024, 2048];
+
+/** Level 3 `lda` sweep (trans × size × pad): three sizes, six pads. */
+export const L3_LDA_SIZES = [512, 1024, 2048];
+export const L3_LDA_PADS = [0, 1, 8, 16, 32, 64];

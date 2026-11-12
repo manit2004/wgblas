@@ -175,8 +175,8 @@ test("dsyrk edge cases", async (t) => {
 });
 
 // Fixtures cap n at 20 (one tile), so dsyrk's multi-tile path — dgemm's
-// kernels with whole-tile triangle skipping — only runs here: n=150 uses the
-// small kernel across several tiles, n=400 the large one.
+// kernel with whole-tile triangle skipping — only runs here, at n=150 and
+// n=400 (5×5 and 13×13 tiles, neither a multiple of 32).
 test("dsyrk multi-tile path (regression)", async (t) => {
   const K = 9;
   for (const layout of ["row-major", "column-major"])

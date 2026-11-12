@@ -1,7 +1,10 @@
 // dgemm_large: C = alpha * op(A) * op(B) + beta * C — double-double (Dekker)
 // f64 emulation of sgemm_large.wgsl, same tile config and structure:
-// BM=BN=64, BK=8, TM=8, TN=4, 128 threads. Paired with dgemm_small.wgsl in
-// the same two-tier dispatch sgemm uses (see dgemm.mjs).
+// BM=BN=64, BK=8, TM=8, TN=4, 128 threads.
+//
+// NOT DISPATCHED: ~2x slower than dgemm_small.wgsl at every size from 128 to
+// 2048 on a GTX 1650 (see dgemm.mjs). Kept, unregistered, to re-measure on
+// other GPUs.
 //
 // Same two unavoidable differences from sgemm_large.wgsl as dgemm_small.wgsl
 // has from sgemm_small.wgsl: vec4 views on the Hi halves only (Lo too would

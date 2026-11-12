@@ -508,6 +508,44 @@ export const ssyr2kReference = makeMatMatTriangularReference((a) => {
   });
 });
 
+// dsyr2k: ssyr2k's two-term mapping on dgemmReference (term 2 accumulates
+// onto term 1's full result with beta=1), masked to the uplo triangle.
+export const dsyr2kReference = makeMatMatTriangularReference((a) => {
+  const transOther = a.trans === "no-transpose" ? "transpose" : "no-transpose";
+  const { C: afterTerm1 } = dgemmReference({
+    transA: a.trans,
+    transB: transOther,
+    m: a.n,
+    n: a.n,
+    k: a.k,
+    alpha: a.alpha,
+    A: a.A,
+    lda: a.lda,
+    B: a.B,
+    ldb: a.ldb,
+    beta: a.beta,
+    C: a.C,
+    ldc: a.ldc,
+    layout: a.layout,
+  });
+  return dgemmReference({
+    transA: a.trans,
+    transB: transOther,
+    m: a.n,
+    n: a.n,
+    k: a.k,
+    alpha: a.alpha,
+    A: a.B,
+    lda: a.ldb,
+    B: a.A,
+    ldb: a.lda,
+    beta: 1.0,
+    C: afterTerm1,
+    ldc: a.ldc,
+    layout: a.layout,
+  });
+});
+
 // Mirror-expands a symmetric matrix's `uplo` triangle into a full order×order
 // dense array, tightly packed row-major. Since the result is symmetric and
 // square with ld === order, that same flat array is *also* valid

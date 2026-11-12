@@ -14,8 +14,8 @@ import {
 
 // O(n^3) compute vs sgemv's O(n^2), so far fewer/smaller sizes and
 // iterations than the Level 1/2 benchmarks, to keep total runtime
-// reasonable. Uses the autotuned two-tier tiled/register-blocked dispatch
-// (dgemm_small/dgemm_large, see those shaders) — trans="no-transpose" for
+// reasonable. Uses the tiled/register-blocked dgemm_small kernel at every
+// size (see dgemm.mjs for why not dgemm_large) — trans="no-transpose" for
 // both operands and lda/ldb/ldc tight throughout; see trans.dgemm.js for
 // the transA/transB effect (transB dominates, transA is small/mixed — an
 // asymmetry from B's tile dimension (BN=64) spanning a full warp where

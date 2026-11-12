@@ -12,7 +12,7 @@ import {
   warmClocks,
 } from "../../utils/helpers.mjs";
 
-// Same kernels as dgemmtr (dgemm_small/dgemm_large in triangle mode), A
+// Same kernel as dgemmtr (dgemm_small in triangle mode), A
 // duplicated into both operand slots; the swept params mirror ssyrk's (see
 // trans.dsyrk.js and its siblings). trans="no-transpose" used below to match
 // BLAS/cuBLAS convention. Bytes are 8 per element (a hi and a lo f32).

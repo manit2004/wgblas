@@ -14,13 +14,7 @@ import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
 import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
-import {
-  BM_SMALL,
-  BN_SMALL,
-  BM_LARGE,
-  BN_LARGE,
-  LARGE_TILE_WORKGROUP_THRESHOLD,
-} from "../util/constants.mjs";
+import { BM_SMALL, BN_SMALL } from "../util/constants.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dgemm: C := alpha * op(A) * op(B) + beta * C, double-double (Dekker) f64
@@ -176,15 +170,14 @@ export async function dgemm(
     [m, n] = [n, m];
   }
 
-  // Shape-based auto-select — same threshold as sgemm (see dgemm_small.wgsl/dgemm_large.wgsl).
-  const largeWgX = Math.ceil(n / BN_LARGE);
-  const largeWgY = Math.ceil(m / BM_LARGE);
-  const useLargeTile = largeWgX * largeWgY >= LARGE_TILE_WORKGROUP_THRESHOLD;
+  // Always dgemm_small: dgemm_large (BM=BN=64), sgemm's large-tile split
+  // carried over, measured ~2x slower at every size from 128 to 2048 on a
+  // GTX 1650 — double-double tiles need twice the registers and smem.
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(
     device,
-    [...f64Deps, useLargeTile ? "dgemm_large" : "dgemm_small"],
+    [...f64Deps, "dgemm_small"],
     "main",
   );
 
@@ -274,25 +267,10 @@ export async function dgemm(
       paramsBuffer,
     ]);
 
-    const wgCount = useLargeTile
-      ? {
-          x: requireWorkgroupCount(device, largeWgX, "dgemm", "x"),
-          y: requireWorkgroupCount(device, largeWgY, "dgemm", "y"),
-        }
-      : {
-          x: requireWorkgroupCount(
-            device,
-            Math.ceil(n / BN_SMALL),
-            "dgemm",
-            "x",
-          ),
-          y: requireWorkgroupCount(
-            device,
-            Math.ceil(m / BM_SMALL),
-            "dgemm",
-            "y",
-          ),
-        };
+    const wgCount = {
+      x: requireWorkgroupCount(device, Math.ceil(n / BN_SMALL), "dgemm", "x"),
+      y: requireWorkgroupCount(device, Math.ceil(m / BM_SMALL), "dgemm", "y"),
+    };
     const { commandEncoder, ts } = runComputePass(
       device,
       pipeline,

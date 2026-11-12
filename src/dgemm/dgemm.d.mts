@@ -7,10 +7,10 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * - `transA/transB='no-transpose'`: op(A) = A (m×k), op(B) = B (k×n)
  * - `transA/transB='transpose'`:    op(A) = A^T,     op(B) = B^T
  *
- * A, B, C are row-major or column-major (see `layout`) — backed by one of
- * two shared-memory-tiled, register-blocked kernels chosen by shape, same
- * split as `sgemm`: `dgemm_small.wgsl` (BM=BN=32) below a 6x6 workgroup grid,
- * `dgemm_large.wgsl` (BM=BN=64) above it.
+ * A, B, C are row-major or column-major (see `layout`) — backed by one
+ * shared-memory-tiled, register-blocked kernel, `dgemm_small.wgsl`
+ * (BM=BN=32), at every size: unlike `sgemm`, the 64×64 large tile measured
+ * ~2x slower for double-double.
  *
  * {@includeCode ../../examples/dgemm/dgemm.js}
  *
