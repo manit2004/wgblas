@@ -1,102 +1,66 @@
-import { init, cleanup } from "wgblas";
 import { strmv } from "wgblas/strmv";
-import { GpuVector } from "wgblas/classes/GpuVector";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, vector, matrix } from "../../utils/harness.mjs";
+import { L2_SIZES, PADS, STRIDES } from "../../utils/params.mjs";
 
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 100;
-// Square n×n triangular matrix; lower triangle stored.
-// Max 4096 gives 4096²=16,777,216 total elements ≈ 16.8M (same range as ssymv).
-const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
-
-const COLS = ["n", "compute_ms", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const n = size;
-  const lda = n;
-
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(n * n), n, n),
-    n,
-    n,
-    lda,
-    "column-major",
-  );
-  const xGpu = GpuVector.from(randomFloat32Array(n));
-  const yGpu = GpuVector.from(new Float32Array(n));
-
-  // warm up — trans="no-transpose", uplo="lower", diag="non-unit", lda tight.
-  // See trans.strmv.js (dominant effect, grows with n) and lda.strmv.js
-  // (real, but only for transpose). uplo and diag were scoped and found
-  // to be non-effects — not swept separately.
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await strmv(
+await runBenchmark({
+  routine: "strmv",
+  warmup: 5,
+  iters: 100,
+  defaults: {
+    uplo: "lower",
+    trans: "no-transpose",
+    diag: "non-unit",
+    inc: 1,
+    pad: 0,
+    layout: "row-major",
+  },
+  derive: (p) => ({ ...p, lda: p.n + p.pad }),
+  operands: (p) => ({
+    A: matrix(Float32Array, p.n, p.n, p.lda, p.layout, "triangular"),
+    x: vector(Float32Array, p.n * p.inc),
+    y: vector(Float32Array, p.n * p.inc),
+  }),
+  call: (device, p, o) =>
+    strmv(
       device,
-      "lower",
-      "no-transpose",
-      "non-unit",
-      n,
-      AGpu,
-      lda,
-      xGpu,
-      1,
-      yGpu,
-      1,
-    );
-  }
+      p.uplo,
+      p.trans,
+      p.diag,
+      p.n,
+      o.A,
+      p.lda,
+      o.x,
+      p.inc,
+      o.y,
+      p.inc,
+    ),
+  // One triangle of A + x read + y written
+  bytes: (p) => ((p.n * (p.n + 1)) / 2 + 2 * p.n) * 4,
+  sweeps: {
+    // Column-major A (cuBLAS's native layout), unit stride, every size.
+    base: { axes: { n: L2_SIZES }, fixed: { layout: "column-major" } },
 
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await strmv(
-      device,
-      "lower",
-      "no-transpose",
-      "non-unit",
-      n,
-      AGpu,
-      lda,
-      xGpu,
-      1,
-      yGpu,
-      1,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
+    // Non-unit incx/incy, as when x/y are rows/columns of a larger matrix.
+    stride: {
+      axes: { stride: STRIDES, n: L2_SIZES },
+      derive: (p) => ({ ...p, inc: p.stride }),
+    },
 
-  AGpu.destroy();
-  xGpu.destroy();
-  yGpu.destroy();
+    // Padding on A's leading dimension, both ways round (row-major).
+    lda: {
+      axes: { trans: ["no-transpose", "transpose"], pad: PADS, n: L2_SIZES },
+    },
 
-  if (times.length === 0) continue;
+    // Row- vs column-major A (wgblas only: cuBLAS is column-major).
+    layout: { axes: { layout: ["row-major", "column-major"], n: L2_SIZES } },
 
-  const med = median(times);
-  // lower triangle A read + x read + y write
-  const bytes = ((n * (n + 1)) / 2 + n + n) * 4;
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [n, med, gbs]);
-  records.push({ n, compute_ms: med, compute_GBs: gbs });
-}
+    // op(A) = A vs Aᵀ.
+    trans: { axes: { trans: ["no-transpose", "transpose"], n: L2_SIZES } },
 
-saveResults("strmv", gpuModel, records, { folder: "strmv" });
+    // Lower vs upper triangle of A.
+    uplo: { axes: { uplo: ["lower", "upper"], n: L2_SIZES } },
 
-cleanup();
+    // Non-unit vs unit diagonal.
+    diag: { axes: { diag: ["non-unit", "unit"], n: L2_SIZES } },
+  },
+});

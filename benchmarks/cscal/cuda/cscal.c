@@ -1,81 +1,53 @@
-#include <stdio.h>
-#include "../../utils/helpers.h"
+// cscal: cuBLAS twin of benchmarks/cscal/wgblas/cscal.js.
+#include "../../utils/harness.h"
 
-#define STRIDE 1 // unit stride — coalesced, best case. See stride.cscal.c for incx > 1.
-#define WARMUP_ITERS 5
-#define BENCH_ITERS  100
+static const cuComplex ALPHAS_C[] = { { 0, 0 }, { 1, 0 }, { 2.5f, -3.75f }, { 0, 1 }, { 1e-38f, 0 } };
 
-int main(void) {
-    char gpu_model[256];
-    get_gpu_model(gpu_model, sizeof(gpu_model));
-
-    cublasHandle_t handle;
-    CUBLAS_CHECK(cublasCreate(&handle));
-
-    int bench_ns[] = { 32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216 };
-    int num_ns = (int)(sizeof(bench_ns) / sizeof(bench_ns[0]));
-
-    float med_times[num_ns];
-    float gbs_vals[num_ns];
-
-    printf("%-10s  %-12s  %-12s\n", "n", "compute_ms", "compute_GBs");
-    printf("%-10s  %-12s  %-12s\n", "----------", "------------", "------------");
-
-    cuComplex alpha = make_cuComplex(2.0f, 3.0f);
-
-    for (int si = 0; si < num_ns; si++) {
-        int n = bench_ns[si];
-
-        float *re = random_float_array(n, -1.0f, 1.0f);
-        float *im = random_float_array(n, -1.0f, 1.0f);
-        cuComplex *h_x = (cuComplex *)malloc((size_t)n * sizeof(cuComplex));
-        for (int i = 0; i < n; i++) h_x[i] = make_cuComplex(re[i], im[i]);
-        free(re);
-        free(im);
-
-        cuComplex *d_x;
-        CUDA_CHECK(cudaMalloc((void **)&d_x, (size_t)n * sizeof(cuComplex)));
-        CUDA_CHECK(cudaMemcpy(d_x, h_x, (size_t)n * sizeof(cuComplex), cudaMemcpyHostToDevice));
-
-        cudaEvent_t start, stop;
-        CUDA_CHECK(cudaEventCreate(&start));
-        CUDA_CHECK(cudaEventCreate(&stop));
-
-        // warm up
-        warm_clocks(handle); /* full clocks first — see helpers.h */
-        for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasCscal(handle, n, &alpha, d_x, STRIDE));
-        }
-        CUDA_CHECK(cudaDeviceSynchronize());
-
-        float compute_times[BENCH_ITERS];
-        for (int i = 0; i < BENCH_ITERS; i++) {
-            CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasCscal(handle, n, &alpha, d_x, STRIDE));
-            CUDA_CHECK(cudaEventRecord(stop, 0));
-            CUDA_CHECK(cudaEventSynchronize(stop));
-            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
-        }
-
-        float med_compute = median(compute_times, BENCH_ITERS);
-
-        // throughput: x read + x written (in-place); cuComplex is 8 bytes (re+im, f32 each)
-        float bytes = 2.0f * n * sizeof(cuComplex);
-        float compute_gbs = (bytes / 1e9f) / (med_compute / 1e3f);
-
-        printf("%-10d  %-12.4f  %-12.4f\n", n, med_compute, compute_gbs);
-        med_times[si] = med_compute;
-        gbs_vals[si]  = compute_gbs;
-
-        CUDA_CHECK(cudaEventDestroy(start));
-        CUDA_CHECK(cudaEventDestroy(stop));
-        cudaFree(d_x);
-        free(h_x);
-    }
-
-    cublasDestroy(handle);
-
-    save_results_ex("cscal", gpu_model, "cscal", "cscal", bench_ns, med_times, gbs_vals, num_ns);
-
-    return 0;
+// %g%+gi label, matching the wgblas side's alpha keys.
+static void label(const bench_params *p, char *buf, size_t len) {
+    snprintf(buf, len, "%g%+gi", p->calpha.x, p->calpha.y);
 }
+
+static int operands(const bench_params *p, bench_operand *o) {
+    o[0] = vector(DT_C32, (size_t)p->n * p->inc); // x
+    return 1;
+}
+
+static void call(cublasHandle_t device, const bench_params *p, bench_operand *o) {
+    CUBLAS_CHECK(cublasCscal(device, p->n, &p->calpha, o[0].ptr, p->inc));
+}
+
+// x read + written in place, 8 B each (re + im)
+static double bytes(const bench_params *p) { return 2.0 * p->n * 8; }
+
+static const bench_spec spec = {
+    .routine = "cscal",
+    .warmup = 5,
+    .iters = 100,
+    .defaults = { .calpha = { 2.0f, 3.0f }, .inc = 1 },
+    .operands = operands,
+    .call = call,
+    .bytes = bytes,
+    .sweeps = {
+        // Unit stride (coalesced, best case) at every size.
+        { .name = "base", .axes = { AXIS(n, L1_SIZES) } },
+
+        // Non-unit stride, as when the op runs on a matrix row/column (inc = lda).
+        // 4/32/256 sample each coalescing regime; 5/33/255 isolate misalignment.
+        {
+            .name = "stride",
+            .axes = { AXIS(stride, STRIDES), AXIS(n, L1_SIZES) },
+            .skip = stride_exceeds_n, // not meaningful
+            .derive = inc_from_stride,
+        },
+
+        // Values a kernel could special-case: 0, 1, general, imaginary, denormal.
+        {
+            .name = "alpha",
+            .axes = { AXIS_AS("alpha", calpha, ALPHAS_C), AXIS(n, L1_SWEEP_SIZES) },
+            .format = { { "alpha", label } },
+        },
+    },
+};
+
+int main(int argc, char **argv) { return run_benchmark(argc, argv, &spec); }

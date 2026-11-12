@@ -1,103 +1,63 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "../../utils/helpers.h"
+// sgemv: cuBLAS twin of benchmarks/sgemv/wgblas/sgemv.js.
+#include "../../utils/harness.h"
 
-#define WARMUP_ITERS 5
-#define BENCH_ITERS  100
-
-int main(void) {
-    char gpu_model[256];
-    get_gpu_model(gpu_model, sizeof(gpu_model));
-
-    cublasHandle_t handle;
-    CUBLAS_CHECK(cublasCreate(&handle));
-
-    int sizes[] = { 32, 64, 128, 256, 512, 1024, 1280 , 2048, 4096 };
-    int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
-
-    float med_times[num_sizes];
-    float gflops_vals[num_sizes];
-    float gbs_vals[num_sizes];
-
-    printf("%-10s  %-10s  %-12s  %-14s  %-12s\n",
-           "m", "n", "compute_ms", "compute_GFLOPs", "compute_GBs");
-    printf("%-10s  %-10s  %-12s  %-14s  %-12s\n",
-           "----------", "----------", "------------", "--------------", "------------");
-
-    const float alpha = 1.0f;
-    const float beta  = 0.0f;
-
-    for (int si = 0; si < num_sizes; si++) {
-        int m = sizes[si];
-        int n = sizes[si];
-        int lda = m; // column-major, dense — cuBLAS's native layout
-
-        float *h_A = random_float_array(m * n, -1.0f, 1.0f);
-        float *h_x = random_float_array(n, -1.0f, 1.0f);
-        float *h_y = random_float_array(m, -1.0f, 1.0f);
-
-        float *d_A, *d_x, *d_y;
-        CUDA_CHECK(cudaMalloc((void **)&d_A, (size_t)m * n * sizeof(float)));
-        CUDA_CHECK(cudaMalloc((void **)&d_x, n * sizeof(float)));
-        CUDA_CHECK(cudaMalloc((void **)&d_y, m * sizeof(float)));
-        CUDA_CHECK(cudaMemcpy(d_A, h_A, (size_t)m * n * sizeof(float), cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_y, h_y, m * sizeof(float), cudaMemcpyHostToDevice));
-
-        cudaEvent_t start, stop;
-        CUDA_CHECK(cudaEventCreate(&start));
-        CUDA_CHECK(cudaEventCreate(&stop));
-
-        // warm up
-        // d_A is genuinely column-major m×n (lda=m) — cuBLAS's native layout,
-        // so a plain CUBLAS_OP_N call computes y = alpha*A*x + beta*y directly.
-        warm_clocks(handle); /* full clocks first — see helpers.h */
-        for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_N, m, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
-        }
-        CUDA_CHECK(cudaDeviceSynchronize());
-
-        float compute_times[BENCH_ITERS];
-        for (int i = 0; i < BENCH_ITERS; i++) {
-            CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_N, m, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
-            CUDA_CHECK(cudaEventRecord(stop, 0));
-            CUDA_CHECK(cudaEventSynchronize(stop));
-            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
-        }
-
-        float med = median(compute_times, BENCH_ITERS);
-        // 2*m*n multiply-adds for the dot products, plus 2*m for the alpha/beta step
-        float flops = 2.0f * m * n + 2.0f * m;
-        // A read + x read + y read + y write
-        float bytes = (float)((size_t)(m * n + n + 2 * m)) * 4.0f;
-        float gflops = (flops / 1e9f) / (med / 1e3f);
-        float gbs = (bytes / 1e9f) / (med / 1e3f);
-
-        med_times[si]  = med;
-        gflops_vals[si] = gflops;
-        gbs_vals[si]   = gbs;
-
-        printf("%-10d  %-10d  %-12.4f  %-14.4f  %-12.4f\n",
-               m, n, med, gflops, gbs);
-
-        CUDA_CHECK(cudaEventDestroy(start));
-        CUDA_CHECK(cudaEventDestroy(stop));
-        cudaFree(d_A);
-        cudaFree(d_x);
-        cudaFree(d_y);
-        free(h_A);
-        free(h_x);
-        free(h_y);
-    }
-
-    // write JSON results
-    record_field fields[] = {
-        { "m", FIELD_INT, sizes },
-        { "n", FIELD_INT, sizes },
-    };
-    save_results(gpu_model, "sgemv", "sgemv", fields, 2, med_times, gbs_vals, gflops_vals, num_sizes);
-
-    cublasDestroy(handle);
-    return 0;
+static void derive(bench_params *p) {
+    if (!p->m) p->m = p->n;
+    p->lda = p->m + p->pad; // column-major: lda >= m
+    bool no_trans = strcmp(p->trans, "no-transpose") == 0;
+    p->x_len = no_trans ? p->n : p->m;
+    p->y_len = no_trans ? p->m : p->n;
 }
+
+static int operands(const bench_params *p, bench_operand *o) {
+    o[0] = matrix(DT_F32, p->m, p->n, p->lda, FILL_RANDOM); // A
+    o[1] = vector(DT_F32, (size_t)p->x_len * p->inc);     // x
+    o[2] = vector(DT_F32, (size_t)p->y_len * p->inc);     // y
+    return 3;
+}
+
+static void call(cublasHandle_t device, const bench_params *p, bench_operand *o) {
+    float alpha = (float)p->alpha, beta = (float)p->beta;
+    CUBLAS_CHECK(cublasSgemv(device, op_of(p->trans), p->m, p->n, &alpha, o[0].ptr, p->lda, o[1].ptr, p->inc, &beta, o[2].ptr, p->inc));
+}
+
+// A read + x read + y read + y written
+static double bytes(const bench_params *p) { return ((double)p->m * p->n + p->x_len + 2.0 * p->y_len) * 4; }
+
+// These sweeps count A + x + y once.
+static double bytes_square(const bench_params *p) { return ((double)p->n * p->n + 2.0 * p->n) * 4; }
+
+// The base sweep also records GFLOP/s: 2mn multiply-adds + 2m for the scaling.
+static double flops(const bench_params *p) { return 2.0 * p->m * p->n + 2.0 * p->m; }
+
+static const bench_spec spec = {
+    .routine = "sgemv",
+    .warmup = 5,
+    .iters = 100,
+    .defaults = { .trans = "no-transpose", .alpha = 1.0, .inc = 1 },
+    .derive = derive,
+    .operands = operands,
+    .call = call,
+    .bytes = bytes,
+    .sweeps = {
+        // Column-major A (cuBLAS's native layout), unit stride, every size.
+        { .name = "base", .axes = { AXIS(n, L2_SIZES) }, .record = { "m", "n" }, .flops = flops },
+
+        // Non-unit incx/incy, as when x/y are rows/columns of a larger matrix.
+        { .name = "stride", .axes = { AXIS(stride, STRIDES), AXIS(n, L2_SIZES) }, .derive = inc_from_stride, .record = { "stride", "m", "n" } },
+
+        // Padding on A's leading dimension; same logical work.
+        { .name = "lda", .axes = { AXIS(pad, PADS), AXIS(n, L2_SIZES) }, .fixed = { .alpha = 2.0 }, .bytes = bytes_square },
+
+        // Every (m, n) pair both ways: transposed reads depend on aspect ratio.
+        { .name = "trans", .axes = { AXIS(trans, TRANSES), AXIS(m, L2_SIZES), AXIS(n, L2_SIZES) } },
+
+        // alpha values, including 0 and 1, which a kernel could special-case.
+        { .name = "alpha", .axes = { AXIS(alpha, ALPHAS), AXIS(n, L2_SIZES) }, .bytes = bytes_square },
+
+        // beta = 0 lets a kernel skip reading y; a step at 0 is that shortcut.
+        { .name = "beta", .axes = { AXIS(beta, BETAS), AXIS(n, L2_SIZES) }, .fixed = { .alpha = 2.0 }, .bytes = bytes_square },
+    },
+};
+
+int main(int argc, char **argv) { return run_benchmark(argc, argv, &spec); }

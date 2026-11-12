@@ -76,19 +76,21 @@ export function getGpuModel() {
  * @param {string | null} gpuModel - slug from {@link getGpuModel}
  * @param {Array<Record<string, number | string>>} results - array of `{ n, compute_ms, compute_GBs }` records,
  *   plus the swept key(s) for a sweep (e.g. `stride`, `uplo`) and `compute_GFLOPs` where recorded
- * @param {{ folder?: string, fileName?: string }} [options]
+ * @param {{ folder?: string, fileName?: string, root?: string }} [options]
  * @param options.folder - subfolder under `wgblas/` to nest the file in (default: none, flat layout)
  * @param options.fileName - file name without `.json` (default: `routineName`)
+ * @param options.root - results root (default: `"benchmarks/results"`); a
+ *   scratch root keeps a trial run out of the published results
  */
 export function saveResults(routineName, gpuModel, results, options = {}) {
-  const { folder, fileName } = options;
+  const { folder, fileName, root = "benchmarks/results" } = options;
   if (!gpuModel) {
     console.warn("Warning: couldn't fetch GPU model — skipping result save.");
     return;
   }
   const outDir = folder
-    ? `benchmarks/results/${gpuModel}/wgblas/${folder}`
-    : `benchmarks/results/${gpuModel}/wgblas`;
+    ? `${root}/${gpuModel}/wgblas/${folder}`
+    : `${root}/${gpuModel}/wgblas`;
   mkdirSync(outDir, { recursive: true });
   writeFileSync(
     `${outDir}/${fileName ?? routineName}.json`,

@@ -1,65 +1,29 @@
-import { init, cleanup } from "wgblas";
 import { dswap } from "wgblas/dswap";
-import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat64Array } from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, vector } from "../../utils/harness.mjs";
+import { L1_SIZES, STRIDES } from "../../utils/params.mjs";
 
-const STRIDE = 1; // unit stride — coalesced, best case. See stride.dswap.js for incx/incy > 1.
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 100;
-const SIZES = [
-  32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304,
-  16777216,
-];
+await runBenchmark({
+  routine: "dswap",
+  warmup: 5,
+  iters: 100,
+  defaults: { inc: 1 },
+  operands: (p) => ({
+    x: vector(Float64Array, p.n * p.inc),
+    y: vector(Float64Array, p.n * p.inc),
+  }),
+  call: (device, p, o) => dswap(device, p.n, o.x, p.inc, o.y, p.inc),
+  // x, y each read + written, 8 B each (hi + lo)
+  bytes: (p) => 4 * p.n * 8,
+  sweeps: {
+    // Unit stride (coalesced, best case) at every size.
+    base: { axes: { n: L1_SIZES } },
 
-const COLS = ["n", "compute_ms", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const n of SIZES) {
-  const xGpu = GpuVector.from(randomFloat64Array(n));
-  const yGpu = GpuVector.from(randomFloat64Array(n));
-
-  // warm up
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await dswap(device, n, xGpu, STRIDE, yGpu, STRIDE);
-  }
-
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await dswap(device, n, xGpu, STRIDE, yGpu, STRIDE);
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
-
-  xGpu.destroy();
-  yGpu.destroy();
-
-  if (times.length === 0) continue;
-  const med = median(times);
-  // x read + x written + y read + y written, double-double (hi, lo) f32
-  // pairs — 8 bytes/element, matching the memory traffic a real f64 buffer
-  // needs.
-  const bytes = 4 * n * 8;
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [n, med, gbs]);
-  records.push({ n, compute_ms: med, compute_GBs: gbs });
-}
-
-saveResults("dswap", gpuModel, records, { folder: "dswap" });
-
-cleanup();
+    // Non-unit stride, as when the op runs on a matrix row/column (inc = lda).
+    // 4/32/256 sample each coalescing regime; 5/33/255 isolate misalignment.
+    stride: {
+      axes: { stride: STRIDES, n: L1_SIZES },
+      skip: (p) => p.stride > p.n, // not meaningful
+      derive: (p) => ({ ...p, inc: p.stride }),
+    },
+  },
+});

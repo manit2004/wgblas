@@ -1,84 +1,41 @@
-import { init, cleanup } from "wgblas";
 import { dsyr } from "wgblas/dsyr";
-import { GpuVector } from "wgblas/classes/GpuVector";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat64Array } from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, vector, matrix } from "../../utils/harness.mjs";
+import { L2_SIZES, PADS, STRIDES, ALPHAS } from "../../utils/params.mjs";
 
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 100;
-// Square n×n symmetric matrix; lower triangle stored. Same size range as ssyr's own.
-const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
+await runBenchmark({
+  routine: "dsyr",
+  warmup: 5,
+  iters: 100,
+  defaults: { uplo: "lower", alpha: 1.0, inc: 1, pad: 0, layout: "row-major" },
+  derive: (p) => ({ ...p, lda: p.n + p.pad }),
+  operands: (p) => ({
+    A: matrix(Float64Array, p.n, p.n, p.lda, p.layout),
+    x: vector(Float64Array, p.n * p.inc),
+  }),
+  call: (device, p, o) =>
+    dsyr(device, p.uplo, p.n, p.alpha, o.x, p.inc, o.A, p.lda),
+  // One triangle of A read + written + x read
+  bytes: (p) => (p.n * (p.n + 1) + p.n) * 8,
+  sweeps: {
+    // Column-major A (cuBLAS's native layout), unit stride, every size.
+    base: { axes: { n: L2_SIZES }, fixed: { layout: "column-major" } },
 
-const COLS = ["n", "compute_ms", "compute_GBs"];
+    // Non-unit incx/incy, as when x/y are rows/columns of a larger matrix.
+    stride: {
+      axes: { stride: STRIDES, n: L2_SIZES },
+      derive: (p) => ({ ...p, inc: p.stride }),
+    },
 
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
+    // Padding on A's leading dimension (row-major); same logical work.
+    lda: { axes: { pad: PADS, n: L2_SIZES } },
 
-const gpuModel = getGpuModel();
-const records = [];
+    // Row- vs column-major A (wgblas only: cuBLAS is column-major).
+    layout: { axes: { layout: ["row-major", "column-major"], n: L2_SIZES } },
 
-printHeader(COLS);
+    // Lower vs upper triangle of A.
+    uplo: { axes: { uplo: ["lower", "upper"], n: L2_SIZES } },
 
-for (const size of SIZES) {
-  const n = size;
-  const lda = n;
-  const alpha = 1.0;
-
-  const xGpu = GpuVector.from(randomFloat64Array(n));
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat64Array(n * n), n, n),
-    n,
-    n,
-    lda,
-    "column-major",
-  );
-
-  // warm up — uplo="lower", lda tight; see uplo.dsyr.js (no real effect,
-  // unlike ssyr) and lda.dsyr.js (a real but gradual ~2x decline as pad
-  // grows, not ssyr's sharp 128-byte-boundary split).
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await dsyr(device, "lower", n, alpha, xGpu, 1, AGpu, lda);
-  }
-
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await dsyr(
-      device,
-      "lower",
-      n,
-      alpha,
-      xGpu,
-      1,
-      AGpu,
-      lda,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
-
-  xGpu.destroy();
-  AGpu.destroy();
-
-  if (times.length === 0) continue;
-
-  const med = median(times);
-  // lower triangle A read + A write + x read — 8 bytes/element (double-double).
-  const bytes = (n * (n + 1) + n) * 8;
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [n, med, gbs]);
-  records.push({ n, compute_ms: med, compute_GBs: gbs });
-}
-
-saveResults("dsyr", gpuModel, records, { folder: "dsyr" });
-
-cleanup();
+    // No branch on alpha in the kernel, so expect a flat row.
+    alpha: { axes: { alpha: ALPHAS, n: L2_SIZES } },
+  },
+});

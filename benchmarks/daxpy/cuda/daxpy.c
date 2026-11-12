@@ -1,86 +1,43 @@
-#include <stdio.h>
-#include "../../utils/helpers.h"
+// daxpy: cuBLAS twin of benchmarks/daxpy/wgblas/daxpy.js.
+#include "../../utils/harness.h"
 
-#define STRIDE 1 // unit stride — coalesced, best case. See stride.daxpy.c for incx/incy > 1.
-#define WARMUP_ITERS 5
-#define BENCH_ITERS  100
-
-int main(void) {
-    char gpu_model[256];
-    get_gpu_model(gpu_model, sizeof(gpu_model));
-
-    cublasHandle_t handle;
-    CUBLAS_CHECK(cublasCreate(&handle));
-
-    int bench_ns[] = { 32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216 };
-    int num_ns = (int)(sizeof(bench_ns) / sizeof(bench_ns[0]));
-
-    float med_times[num_ns];
-    float gbs_vals[num_ns];
-
-    printf("%-10s  %-12s  %-12s\n", "n", "compute_ms", "compute_GBs");
-    printf("%-10s  %-12s  %-12s\n", "----------", "------------", "------------");
-
-    double alpha = 2.0;
-
-    for (int si = 0; si < num_ns; si++) {
-        int n = bench_ns[si];
-
-        float *h_x_f32 = random_float_array(n, -1.0f, 1.0f);
-        float *h_y_f32 = random_float_array(n, -1.0f, 1.0f);
-        double *h_x = malloc((size_t)n * sizeof(double));
-        double *h_y = malloc((size_t)n * sizeof(double));
-        for (int i = 0; i < n; i++) { h_x[i] = (double)h_x_f32[i]; h_y[i] = (double)h_y_f32[i]; }
-
-        double *d_x, *d_y;
-        CUDA_CHECK(cudaMalloc((void **)&d_x, (size_t)n * sizeof(double)));
-        CUDA_CHECK(cudaMalloc((void **)&d_y, (size_t)n * sizeof(double)));
-        CUDA_CHECK(cudaMemcpy(d_x, h_x, (size_t)n * sizeof(double), cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_y, h_y, (size_t)n * sizeof(double), cudaMemcpyHostToDevice));
-
-        cudaEvent_t start, stop;
-        CUDA_CHECK(cudaEventCreate(&start));
-        CUDA_CHECK(cudaEventCreate(&stop));
-
-        // warm up
-        warm_clocks(handle); /* full clocks first — see helpers.h */
-        for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasDaxpy(handle, n, &alpha, d_x, STRIDE, d_y, STRIDE));
-        }
-        CUDA_CHECK(cudaDeviceSynchronize());
-
-        float compute_times[BENCH_ITERS];
-        for (int i = 0; i < BENCH_ITERS; i++) {
-            CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasDaxpy(handle, n, &alpha, d_x, STRIDE, d_y, STRIDE));
-            CUDA_CHECK(cudaEventRecord(stop, 0));
-            CUDA_CHECK(cudaEventSynchronize(stop));
-            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
-        }
-
-        float med_compute = median(compute_times, BENCH_ITERS);
-
-        // throughput: x read + y read + y written = 3 * n * 8 bytes
-        float bytes = 3.0f * n * sizeof(double);
-        float compute_gbs = (bytes / 1e9f) / (med_compute / 1e3f);
-
-        printf("%-10d  %-12.4f  %-12.4f\n", n, med_compute, compute_gbs);
-        med_times[si] = med_compute;
-        gbs_vals[si]  = compute_gbs;
-
-        CUDA_CHECK(cudaEventDestroy(start));
-        CUDA_CHECK(cudaEventDestroy(stop));
-        cudaFree(d_x);
-        cudaFree(d_y);
-        free(h_x);
-        free(h_y);
-        free(h_x_f32);
-        free(h_y_f32);
-    }
-
-    cublasDestroy(handle);
-
-    save_results_ex("daxpy", gpu_model, "daxpy", "daxpy", bench_ns, med_times, gbs_vals, num_ns);
-
-    return 0;
+static int operands(const bench_params *p, bench_operand *o) {
+    o[0] = vector(DT_F64, (size_t)p->n * p->inc); // x
+    o[1] = vector(DT_F64, (size_t)p->n * p->inc); // y
+    return 2;
 }
+
+static void call(cublasHandle_t device, const bench_params *p, bench_operand *o) {
+    CUBLAS_CHECK(cublasDaxpy(device, p->n, &p->alpha, o[0].ptr, p->inc, o[1].ptr, p->inc));
+}
+
+// x read + y read + y written, 8 B each (hi + lo)
+static double bytes(const bench_params *p) { return 3.0 * p->n * 8; }
+
+static const bench_spec spec = {
+    .routine = "daxpy",
+    .warmup = 5,
+    .iters = 100,
+    .defaults = { .alpha = 2.0, .inc = 1 },
+    .operands = operands,
+    .call = call,
+    .bytes = bytes,
+    .sweeps = {
+        // Unit stride (coalesced, best case) at every size.
+        { .name = "base", .axes = { AXIS(n, L1_SIZES) } },
+
+        // Non-unit stride, as when the op runs on a matrix row/column (inc = lda).
+        // 4/32/256 sample each coalescing regime; 5/33/255 isolate misalignment.
+        {
+            .name = "stride",
+            .axes = { AXIS(stride, STRIDES), AXIS(n, L1_SIZES) },
+            .skip = stride_exceeds_n, // not meaningful
+            .derive = inc_from_stride,
+        },
+
+        // No branch on alpha in the kernel, so expect a flat row.
+        { .name = "alpha", .axes = { AXIS(alpha, ALPHAS), AXIS(n, L1_SWEEP_SIZES) } },
+    },
+};
+
+int main(int argc, char **argv) { return run_benchmark(argc, argv, &spec); }

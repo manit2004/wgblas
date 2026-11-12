@@ -1,106 +1,95 @@
-import { init, cleanup } from "wgblas";
 import { sgemv } from "wgblas/sgemv";
-import { GpuVector } from "wgblas/classes/GpuVector";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, vector, matrix } from "../../utils/harness.mjs";
+import { L2_SIZES, PADS, STRIDES, ALPHAS, BETAS } from "../../utils/params.mjs";
 
-const STRIDE = 1; // unit stride — coalesced, best case. See stride.sgemv.js for incx/incy > 1.
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 100;
-// Square matrices m=n; covers sub-tile (m<64), tiled (m>=64) paths.
-// Max 4096 gives 4096²=16,777,216 total matrix elements ≈ 16.8M.
-const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
-
-const COLS = ["m", "n", "compute_ms", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const m = size;
-  const n = size;
-  const lda = m; // column-major: lda >= m, matching cuBLAS's native layout
-  const alpha = 1.0;
-  const beta = 0.0;
-
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(m * n), m, n),
-    m,
-    n,
-    lda,
-    "column-major",
-  );
-  const xGpu = GpuVector.from(randomFloat32Array(n));
-  const yGpu = GpuVector.from(new Float32Array(m));
-
-  // warm up — trans="no-transpose" only; see trans.sgemv.js for
-  // trans="transpose" and its much stronger aspect-ratio sensitivity.
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await sgemv(
-      device,
-      "no-transpose",
+await runBenchmark({
+  routine: "sgemv",
+  warmup: 5,
+  iters: 100,
+  defaults: {
+    trans: "no-transpose",
+    alpha: 1.0,
+    beta: 0.0,
+    inc: 1,
+    pad: 0,
+    layout: "row-major",
+  },
+  derive: (p) => {
+    const m = p.m ?? p.n;
+    const noTrans = p.trans === "no-transpose";
+    return {
+      ...p,
       m,
-      n,
-      alpha,
-      AGpu,
-      lda,
-      xGpu,
-      STRIDE,
-      beta,
-      yGpu,
-      STRIDE,
-    );
-  }
-
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await sgemv(
+      lda: (p.layout === "column-major" ? m : p.n) + p.pad,
+      xLen: noTrans ? p.n : m,
+      yLen: noTrans ? m : p.n,
+    };
+  },
+  operands: (p) => ({
+    A: matrix(Float32Array, p.m, p.n, p.lda, p.layout),
+    x: vector(Float32Array, p.xLen * p.inc),
+    y: vector(Float32Array, p.yLen * p.inc),
+  }),
+  call: (device, p, o) =>
+    sgemv(
       device,
-      "no-transpose",
-      m,
-      n,
-      alpha,
-      AGpu,
-      lda,
-      xGpu,
-      STRIDE,
-      beta,
-      yGpu,
-      STRIDE,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
+      p.trans,
+      p.m,
+      p.n,
+      p.alpha,
+      o.A,
+      p.lda,
+      o.x,
+      p.inc,
+      p.beta,
+      o.y,
+      p.inc,
+    ),
+  // A read + x read + y read + y written
+  bytes: (p) => (p.m * p.n + p.xLen + 2 * p.yLen) * 4,
+  sweeps: {
+    // Column-major A (cuBLAS's native layout), unit stride, every size.
+    base: {
+      axes: { n: L2_SIZES },
+      fixed: { layout: "column-major" },
+      record: ["m", "n"],
+    },
 
-  AGpu.destroy();
-  xGpu.destroy();
-  yGpu.destroy();
+    // Non-unit incx/incy, as when x/y are rows/columns of a larger matrix.
+    stride: {
+      axes: { stride: STRIDES, n: L2_SIZES },
+      fixed: { layout: "column-major" },
+      derive: (p) => ({ ...p, inc: p.stride }),
+      record: ["stride", "m", "n"],
+    },
 
-  if (times.length === 0) continue;
+    // Padding on A's leading dimension (row-major); same logical work.
+    lda: {
+      axes: { pad: PADS, n: L2_SIZES },
+      bytes: (p) => (p.n * p.n + 2 * p.n) * 4, // these sweeps count y once
+    },
 
-  const med = median(times);
-  // A read + x read + y read + y write
-  const bytes = (m * n + n + 2 * m) * 4;
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [m, n, med, gbs]);
-  records.push({ m, n, compute_ms: med, compute_GBs: gbs });
-}
+    // Row- vs column-major A (wgblas only: cuBLAS is column-major).
+    layout: {
+      axes: { layout: ["row-major", "column-major"], n: L2_SIZES },
+      bytes: (p) => (p.n * p.n + 2 * p.n) * 4, // these sweeps count y once
+    },
 
-saveResults("sgemv", gpuModel, records, { folder: "sgemv" });
+    // Every (m, n) pair both ways: transposed reads depend on aspect ratio.
+    trans: {
+      axes: { trans: ["no-transpose", "transpose"], m: L2_SIZES, n: L2_SIZES },
+    },
 
-cleanup();
+    // No branch on alpha in the kernel, so expect a flat row.
+    alpha: {
+      axes: { alpha: ALPHAS, n: L2_SIZES },
+      bytes: (p) => (p.n * p.n + 2 * p.n) * 4, // these sweeps count y once
+    },
+
+    // beta = 0 lets a kernel skip reading y; a step at 0 is that shortcut.
+    beta: {
+      axes: { beta: BETAS, n: L2_SIZES },
+      bytes: (p) => (p.n * p.n + 2 * p.n) * 4, // these sweeps count y once
+    },
+  },
+});

@@ -1,16 +1,14 @@
 CC = nvcc
 BIN = bin
+HDRS = ../../utils/helpers.h ../../utils/harness.h ../../utils/params.h
 
-all: $(BIN)/ddot $(BIN)/stride.ddot
+all: $(BIN)/ddot
 
 $(BIN):
 	mkdir -p $(BIN)
 
-$(BIN)/ddot: ddot.c ../../utils/helpers.h | $(BIN)
+$(BIN)/ddot: ddot.c $(HDRS) | $(BIN)
 	$(CC) ddot.c -o $(BIN)/ddot -lcublas
-
-$(BIN)/stride.ddot: stride.ddot.c ../../utils/helpers.h | $(BIN)
-	$(CC) stride.ddot.c -o $(BIN)/stride.ddot -lcublas
 
 clean:
 	rm -rf $(BIN)

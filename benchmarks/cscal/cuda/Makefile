@@ -1,19 +1,14 @@
 CC = nvcc
 BIN = bin
+HDRS = ../../utils/helpers.h ../../utils/harness.h ../../utils/params.h
 
-all: $(BIN)/alpha.cscal $(BIN)/cscal $(BIN)/stride.cscal
+all: $(BIN)/cscal
 
 $(BIN):
 	mkdir -p $(BIN)
 
-$(BIN)/alpha.cscal: alpha.cscal.c ../../utils/helpers.h | $(BIN)
-	$(CC) alpha.cscal.c -o $(BIN)/alpha.cscal -lcublas
-
-$(BIN)/cscal: cscal.c ../../utils/helpers.h | $(BIN)
+$(BIN)/cscal: cscal.c $(HDRS) | $(BIN)
 	$(CC) cscal.c -o $(BIN)/cscal -lcublas
-
-$(BIN)/stride.cscal: stride.cscal.c ../../utils/helpers.h | $(BIN)
-	$(CC) stride.cscal.c -o $(BIN)/stride.cscal -lcublas
 
 clean:
 	rm -rf $(BIN)
