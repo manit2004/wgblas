@@ -1,71 +1,37 @@
-import { init, cleanup } from "wgblas";
 import { saxpy } from "wgblas/saxpy";
-import { GpuVector } from "wgblas/classes/GpuVector";
-import { randomFloat32Array } from "wgblas/random";
+import { runBenchmark, vector } from "../../utils/harness.mjs";
 import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+  L1_SIZES,
+  L1_SWEEP_SIZES,
+  STRIDES,
+  ALPHAS,
+} from "../../utils/params.mjs";
 
-const STRIDE = 1; // unit stride — coalesced, best case. See stride.saxpy.js for incx/incy > 1.
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 100;
-const SIZES = [
-  32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304,
-  16777216,
-];
+await runBenchmark({
+  routine: "saxpy",
+  warmup: 5,
+  iters: 100,
+  defaults: { alpha: 2.0, inc: 1 },
+  operands: (p) => ({
+    x: vector(Float32Array, p.n * p.inc),
+    y: vector(Float32Array, p.n * p.inc),
+  }),
+  call: (device, p, o) => saxpy(device, p.n, p.alpha, o.x, p.inc, o.y, p.inc),
+  // x read + y read + y written
+  bytes: (p) => 3 * p.n * 4,
+  sweeps: {
+    // Unit stride (coalesced, best case) at every size.
+    base: { axes: { n: L1_SIZES } },
 
-const COLS = ["n", "compute_ms", "compute_GBs"];
+    // Non-unit stride, as when the op runs on a matrix row/column (inc = lda).
+    // 4/32/256 sample each coalescing regime; 5/33/255 isolate misalignment.
+    stride: {
+      axes: { stride: STRIDES, n: L1_SIZES },
+      skip: (p) => p.stride > p.n, // not meaningful
+      derive: (p) => ({ ...p, inc: p.stride }),
+    },
 
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const n of SIZES) {
-  const alpha = 2.0;
-  const xGpu = GpuVector.from(randomFloat32Array(n));
-  const yGpu = GpuVector.from(randomFloat32Array(n));
-
-  // warm up
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await saxpy(device, n, alpha, xGpu, STRIDE, yGpu, STRIDE);
-  }
-
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await saxpy(
-      device,
-      n,
-      alpha,
-      xGpu,
-      STRIDE,
-      yGpu,
-      STRIDE,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
-
-  xGpu.destroy();
-  yGpu.destroy();
-
-  if (times.length === 0) continue;
-  const med = median(times);
-  const bytes = 3 * n * 4; // x read + y read + y written
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [n, med, gbs]);
-  records.push({ n, compute_ms: med, compute_GBs: gbs });
-}
-
-saveResults("saxpy", gpuModel, records, { folder: "saxpy" });
-
-cleanup();
+    // No branch on alpha in the kernel, so expect a flat row.
+    alpha: { axes: { alpha: ALPHAS, n: L1_SWEEP_SIZES } },
+  },
+});

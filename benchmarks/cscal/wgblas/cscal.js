@@ -1,63 +1,46 @@
-import { init, cleanup } from "wgblas";
 import { cscal } from "wgblas/cscal";
-import { GpuVector } from "wgblas/classes/GpuVector";
 import { Complex32, Complex32Array } from "wgblas/classes/Complex32";
-import { randomFloat32Array } from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, vector } from "../../utils/harness.mjs";
+import { L1_SIZES, L1_SWEEP_SIZES, STRIDES } from "../../utils/params.mjs";
 
-const STRIDE = 1; // unit stride — coalesced, best case. See stride.cscal.js for incx > 1.
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 100;
-const SIZES = [
-  32, 64, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304,
-  16777216,
-];
+// %g-style label matching alpha.cscal.c (%g%+gi), so cuBLAS rows pair up.
+const g = (v) => Number(v.toPrecision(6)).toString();
+const fmt = (z) => `${g(z.re)}${z.im < 0 ? "" : "+"}${g(z.im)}i`;
 
-const COLS = ["n", "compute_ms", "compute_GBs"];
+await runBenchmark({
+  routine: "cscal",
+  warmup: 5,
+  iters: 100,
+  defaults: { alpha: new Complex32(2, 3), inc: 1 },
+  operands: (p) => ({ x: vector(Complex32Array, p.n * p.inc) }),
+  call: (device, p, o) => cscal(device, p.n, p.alpha, o.x, p.inc),
+  // x read + written in place, 8 B each (re + im)
+  bytes: (p) => 2 * p.n * 8,
+  sweeps: {
+    // Unit stride (coalesced, best case) at every size.
+    base: { axes: { n: L1_SIZES } },
 
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
+    // Non-unit stride, as when the op runs on a matrix row/column (inc = lda).
+    // 4/32/256 sample each coalescing regime; 5/33/255 isolate misalignment.
+    stride: {
+      axes: { stride: STRIDES, n: L1_SIZES },
+      skip: (p) => p.stride > p.n, // not meaningful
+      derive: (p) => ({ ...p, inc: p.stride }),
+    },
 
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-const alpha = new Complex32(2, 3);
-
-for (const n of SIZES) {
-  const xGpu = GpuVector.from(new Complex32Array(randomFloat32Array(2 * n)));
-
-  // warm up
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await cscal(device, n, alpha, xGpu, STRIDE);
-  }
-
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await cscal(device, n, alpha, xGpu, STRIDE);
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
-
-  xGpu.destroy();
-
-  if (times.length === 0) continue;
-  const med = median(times);
-  const bytes = 2 * n * 8; // x read + x written (in-place); 8 bytes/element (re+im, f32 each)
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [n, med, gbs]);
-  records.push({ n, compute_ms: med, compute_GBs: gbs });
-}
-
-saveResults("cscal", gpuModel, records, { folder: "cscal" });
-
-cleanup();
+    // Values a kernel could special-case: 0, 1, general, imaginary, denormal.
+    alpha: {
+      axes: {
+        alpha: [
+          new Complex32(0, 0),
+          new Complex32(1, 0),
+          new Complex32(2.5, -3.75),
+          new Complex32(0, 1),
+          new Complex32(1e-38, 0),
+        ],
+        n: L1_SWEEP_SIZES,
+      },
+      format: { alpha: fmt },
+    },
+  },
+});
