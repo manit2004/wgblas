@@ -25,6 +25,13 @@ struct Params {
 
 const WGS: u32 = 64u;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v != 0.0` can come out false for NaN (seen on NVIDIA/Mesa
+// in the double-double kernels) — and a NaN entry must not skip its row.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 @compute @workgroup_size(64)
 fn dsyr_main(
   @builtin(workgroup_id)        wgid: vec3u,
@@ -37,6 +44,14 @@ fn dsyr_main(
     let ix = row * params.incx;
     let xi = ddMulProtected(alpha, DD(xHi[ix], xLo[ix]), lid.x);
     let row_base = row * params.lda;
+    // Reference BLAS (and stdlib) skips a row whose x entry is 0 — leaving A's
+    // row as it is, even where the other vector holds ±Infinity or NaN that
+    // Infinity · 0 would turn into NaN. Row here is the row-major frame's row:
+    // for column-major A the routine swaps the vectors (dger) or reads the
+    // transpose (dsyr, dsyr2), which is the column BLAS skips there.
+    // The arithmetic still runs (its barriers stay uniform); only the
+    // writes are skipped.
+    let keep = !(isZeroBits(xHi[ix]) && isZeroBits(xLo[ix]));
 
     // Stored-triangle column range for this row: lower [0,row], upper [row,n).
     var colStart: u32;
@@ -64,8 +79,10 @@ fn dsyr_main(
       let ic = col * params.incx;
       let prod = ddMulProtected(xi, DD(xHi[ic], xLo[ic]), lid.x);
       let result = ddAddProtected(prod, DD(AHi[idx], ALo[idx]), lid.x);
-      AHi[idx] = result.hi;
-      ALo[idx] = result.lo;
+      if (keep) {
+        AHi[idx] = result.hi;
+        ALo[idx] = result.lo;
+      }
     }
 
     for (var iter = 0u; iter < hasTail; iter++) {
@@ -75,7 +92,7 @@ fn dsyr_main(
       let ic = select(0u, col * params.incx, valid);
       let prod = ddMulProtected(xi, DD(xHi[ic], xLo[ic]), lid.x);
       let result = ddAddProtected(prod, DD(AHi[idx], ALo[idx]), lid.x);
-      if (valid) {
+      if (valid && keep) {
         AHi[idx] = result.hi;
         ALo[idx] = result.lo;
       }

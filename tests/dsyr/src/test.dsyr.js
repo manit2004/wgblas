@@ -346,3 +346,52 @@ test("dsyr f32 exponent range (regression)", async (t) => {
       });
     }
 });
+
+// The reference BLAS (and stdlib) skips the row of a zero vector entry —
+// the column, for column-major A — so Infinity · 0 never happens there and
+// that part of A is left as it is, NaN or ±Infinity in the other vector
+// notwithstanding. Zeros sit next to ±Infinity and NaN here; n = 300 and a
+// stride of 2 reach the larger kernels' paths.
+test("dsyr zero vector entries skip their row (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const n of [7, 300])
+        await t.test(`${layout} ${uplo} n=${n}`, async () => {
+          const inc = 2;
+          const len = (n - 1) * inc + 1;
+          const x = randomFloat64Array(len, -1, 1, 1);
+          const y = randomFloat64Array(len, -1, 1, 2);
+          for (const i of [0, 3, 5]) x[i * inc] = 0;
+          for (const i of [1, 3, 6]) y[i * inc] = 0; // 3: both zero
+          x[1 * inc] = Infinity;
+          x[6 * inc] = -Infinity;
+          y[5 * inc] = NaN;
+          const A = randomFloat64Array(n * n, -1, 1, 3);
+          const got = await dsyr(
+            device,
+            uplo,
+            n,
+            1.5,
+            x,
+            inc,
+            A.slice(),
+            n,
+            layout,
+          );
+          assertIeeeMatch(
+            got.A,
+            stdlibReference({
+              uplo,
+              n,
+              alpha: 1.5,
+              x,
+              incx: inc,
+              A,
+              lda: n,
+              layout,
+            }).A,
+            "A",
+            1e-12,
+          );
+        });
+});

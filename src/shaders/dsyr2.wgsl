@@ -28,6 +28,13 @@ struct Params {
 
 const WGS: u32 = 64u;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v != 0.0` can come out false for NaN (seen on NVIDIA/Mesa
+// in the double-double kernels) — and a NaN entry must not skip its row.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 @compute @workgroup_size(64)
 fn dsyr2_main(
   @builtin(workgroup_id)        wgid: vec3u,
@@ -42,6 +49,14 @@ fn dsyr2_main(
     let xi = ddMulProtected(alpha, DD(xHi[ix], xLo[ix]), lid.x);
     let yi = ddMulProtected(alpha, DD(yHi[iy], yLo[iy]), lid.x);
     let row_base = row * params.lda;
+    // Reference BLAS (and stdlib) skips a row whose x and y entries are both 0 — leaving A's
+    // row as it is, even where the other vector holds ±Infinity or NaN that
+    // Infinity · 0 would turn into NaN. Row here is the row-major frame's row:
+    // for column-major A the routine swaps the vectors (dger) or reads the
+    // transpose (dsyr, dsyr2), which is the column BLAS skips there.
+    // The arithmetic still runs (its barriers stay uniform); only the
+    // writes are skipped.
+    let keep = !(isZeroBits(xHi[ix]) && isZeroBits(xLo[ix]) && isZeroBits(yHi[iy]) && isZeroBits(yLo[iy]));
 
     // Stored-triangle column range for this row: lower [0,row], upper [row,n).
     var colStart: u32;
@@ -93,14 +108,16 @@ fn dsyr2_main(
       let prod1 = ddMul4Protected(dd4Splat(xi), yv, lid.x);
       let prod2 = ddMul4Protected(dd4Splat(yi), xv, lid.x);
       let result = ddAdd4Protected(ddAdd4Protected(prod1, prod2, lid.x), av, lid.x);
-      AHi[idx] = result.hi.x;
-      ALo[idx] = result.lo.x;
-      AHi[idx + WGS] = result.hi.y;
-      ALo[idx + WGS] = result.lo.y;
-      AHi[idx + 2u * WGS] = result.hi.z;
-      ALo[idx + 2u * WGS] = result.lo.z;
-      AHi[idx + 3u * WGS] = result.hi.w;
-      ALo[idx + 3u * WGS] = result.lo.w;
+      if (keep) {
+        AHi[idx] = result.hi.x;
+        ALo[idx] = result.lo.x;
+        AHi[idx + WGS] = result.hi.y;
+        ALo[idx + WGS] = result.lo.y;
+        AHi[idx + 2u * WGS] = result.hi.z;
+        ALo[idx + 2u * WGS] = result.lo.z;
+        AHi[idx + 3u * WGS] = result.hi.w;
+        ALo[idx + 3u * WGS] = result.lo.w;
+      }
     }
 
     // The last mainIters % 4 full iterations, one at a time.
@@ -113,8 +130,10 @@ fn dsyr2_main(
       let prod2 = ddMulProtected(yi, DD(xHi[jc_x], xLo[jc_x]), lid.x);
       let sum1 = ddAddProtected(prod1, prod2, lid.x);
       let result = ddAddProtected(sum1, DD(AHi[idx], ALo[idx]), lid.x);
-      AHi[idx] = result.hi;
-      ALo[idx] = result.lo;
+      if (keep) {
+        AHi[idx] = result.hi;
+        ALo[idx] = result.lo;
+      }
     }
 
     for (var iter = 0u; iter < hasTail; iter++) {
@@ -127,7 +146,7 @@ fn dsyr2_main(
       let prod2 = ddMulProtected(yi, DD(xHi[jc_x], xLo[jc_x]), lid.x);
       let sum1 = ddAddProtected(prod1, prod2, lid.x);
       let result = ddAddProtected(sum1, DD(AHi[idx], ALo[idx]), lid.x);
-      if (valid) {
+      if (valid && keep) {
         AHi[idx] = result.hi;
         ALo[idx] = result.lo;
       }

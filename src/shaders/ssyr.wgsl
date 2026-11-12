@@ -27,6 +27,12 @@ fn update(idx: u32, xi: f32, col: u32) {
   A[idx] = xi * x[col * params.incx] + A[idx];
 }
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v != 0.0` can come out false for NaN — and a NaN entry must not skip its row.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 @compute @workgroup_size(64)
 fn main(
   @builtin(workgroup_id)        wgid: vec3u,
@@ -35,6 +41,12 @@ fn main(
 ) {
   for (var row = wgid.x; row < params.n; row += nwg.x) {
     let xi = params.alpha * x[row * params.incx];
+    // Reference BLAS (and stdlib) skips a row whose x entry is 0 — leaving A's
+    // row as it is, even where the other vector holds ±Infinity or NaN that
+    // Infinity · 0 would turn into NaN. Row here is the row-major frame's row:
+    // for column-major A the routine swaps the vectors (ger) or reads the
+    // transpose (syr, syr2), which is the column BLAS skips there.
+    if (isZeroBits(x[row * params.incx])) { continue; }
     let row_base = row * params.lda;
 
     // Stored-triangle column range for this row: lower [0,row], upper [row,n).

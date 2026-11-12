@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { sger } from "wgblas/sger";
+import { assertIeeeMatch } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -208,4 +209,56 @@ test("sger edge cases (column-major)", async (t) => {
       assert.deepEqual(got.A, expected.A);
     });
   }
+});
+
+// The reference BLAS (and stdlib) skips the row of a zero vector entry —
+// the column, for column-major A — so Infinity · 0 never happens there and
+// that part of A is left as it is, NaN or ±Infinity in the other vector
+// notwithstanding. Zeros sit next to ±Infinity and NaN here; n = 300 and a
+// stride of 2 reach the larger kernels' paths.
+test("sger zero vector entries skip their row (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const n of [7, 300])
+      await t.test(`${layout} n=${n}`, async () => {
+        const inc = 2;
+        const len = (n - 1) * inc + 1;
+        const x = randomFloat32Array(len, -1, 1, 1);
+        const y = randomFloat32Array(len, -1, 1, 2);
+        for (const i of [0, 3, 5]) x[i * inc] = 0;
+        for (const i of [1, 3, 6]) y[i * inc] = 0; // 3: both zero
+        x[1 * inc] = Infinity;
+        x[6 * inc] = -Infinity;
+        y[5 * inc] = NaN;
+        const A = randomFloat32Array(n * n, -1, 1, 3);
+        const got = await sger(
+          device,
+          n,
+          n,
+          1.5,
+          x,
+          inc,
+          y,
+          inc,
+          A.slice(),
+          n,
+          layout,
+        );
+        assertIeeeMatch(
+          got.A,
+          stdlibReference({
+            m: n,
+            n,
+            alpha: 1.5,
+            x,
+            incx: inc,
+            y,
+            incy: inc,
+            A,
+            lda: n,
+            layout,
+          }).A,
+          "A",
+          1e-5,
+        );
+      });
 });
