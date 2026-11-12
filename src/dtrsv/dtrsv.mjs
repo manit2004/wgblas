@@ -134,7 +134,7 @@ export async function dtrsv(
   );
   const stepPipeline = await getPipeline(
     device,
-    [...f64Deps, "dtrsv_step"],
+    [...f64Deps, "f64/utils/batch", "dtrsv_step"],
     "dtrsv_step_main",
   );
 

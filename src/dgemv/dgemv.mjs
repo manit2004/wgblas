@@ -122,11 +122,12 @@ export async function dgemv(
     );
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
+  const batchDeps = ["f64/utils/batch"]; // four-lane ops, both kernels
   const shaderName = isNoTrans ? "dgemv_n" : "dgemv_t";
   const entryPoint = isNoTrans ? "dgemv_n_main" : "dgemv_t_main";
   const pipeline = await getPipeline(
     device,
-    [...f64Deps, shaderName],
+    [...f64Deps, ...batchDeps, shaderName],
     entryPoint,
   );
   // Transpose: rows split into chunks for parallelism (dgemv_t.wgsl).

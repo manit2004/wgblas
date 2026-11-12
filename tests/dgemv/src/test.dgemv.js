@@ -268,6 +268,64 @@ test("dgemv split-K transpose (regression)", async (t) => {
   }
 });
 
+// Fixtures cap n at 50, so the no-transpose kernel's batched column loop
+// (four 64-wide strides per op, from 256 columns) never runs there. 600
+// columns give two batches, one leftover stride and a ragged tail; 256 is
+// exactly one batch; 319 is one batch plus a tail. Row-major no-transpose
+// reaches dgemv_n.
+test("dgemv long rows, no-transpose (regression)", async (t) => {
+  // [columns, rows, inc, beta]
+  for (const [n, m, inc, beta] of [
+    [600, 70, 1, 0.75],
+    [600, 70, 2, 0.75],
+    [600, 70, 1, 0],
+    [256, 33, 1, 0.75],
+    [319, 33, 3, 0.75],
+  ]) {
+    await t.test(`n=${n} m=${m} inc=${inc} beta=${beta}`, async () => {
+      const lda = n + 3;
+      const y = randomFloat64Array((m - 1) * inc + 1, -1, 1, 317);
+      if (beta === 0) for (let i = 0; i < m; i++) y[i * inc] = NaN;
+      const a = {
+        trans: "no-transpose",
+        m,
+        n,
+        alpha: 1.5,
+        A: randomFloat64Array(m * lda, -1, 1, 311),
+        lda,
+        x: randomFloat64Array((n - 1) * inc + 1, -1, 1, 313),
+        incx: inc,
+        beta,
+        y,
+        incy: inc,
+        layout: "row-major",
+      };
+      const got = await dgemv(
+        device,
+        a.trans,
+        a.m,
+        a.n,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.x,
+        a.incx,
+        a.beta,
+        a.y,
+        a.incy,
+        a.layout,
+      );
+      // The reference and bound see y = 0 where beta = 0 discards NaN.
+      const aRef = beta === 0 ? { ...a, y: new Float64Array(y.length) } : a;
+      const factor = forwardFactor(got, stdlibReference(aRef), aRef);
+      assert.ok(factor <= THRESHOLD, `forward factor ${factor} > ${THRESHOLD}`);
+      for (let i = 0; i < y.length; i++)
+        if (i % inc !== 0)
+          assert.equal(got.y[i], y[i], `y gap element ${i} changed`);
+    });
+  }
+});
+
 // Small hand-picked scenarios loaded from edge-cases-column-major.json.
 test("dgemv edge cases (column-major)", async (t) => {
   for (const tc of edgeCasesColumnMajor) {

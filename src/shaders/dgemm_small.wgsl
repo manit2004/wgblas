@@ -16,7 +16,7 @@ const BM: u32 = 32u;
 const BN: u32 = 32u;
 const BK: u32 = 8u;
 const TM: u32 = 2u;
-const TN: u32 = 2u;
+const TN: u32 = 2u; // TM×TN = 4: one DD4 of results per thread — the batched loop assumes it
 const THREADS_X: u32 = BN / TN;
 const THREADS_Y: u32 = BM / TM;
 const NUM_THREADS: u32 = THREADS_X * THREADS_Y; // 256
@@ -79,12 +79,10 @@ fn main(
   let innerRowB = tid / BN;
   let innerColB = tid % BN;
 
-  var threadResults: array<DD, TM * TN>;
-  for (var i = 0u; i < TM * TN; i++) {
-    threadResults[i] = DD(0.0, 0.0);
-  }
-  var regM: array<DD, TM>;
-  var regN: array<DD, TN>;
+  // The thread's TM×TN = 2×2 results as one four-lane value, lane
+  // resIdxM*TN + resIdxN, so each k-step is one batched multiply-add
+  // (f64/utils/batch.wgsl): 5 barriers for the four products, not 20.
+  var acc = DD4(vec4<f32>(0.0), vec4<f32>(0.0));
 
   let numTiles = (params.k + BK - 1u) / BK;
   for (var t = 0u; t < numTiles; t++) {
@@ -217,21 +215,13 @@ fn main(
     workgroupBarrier();
 
     for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
-      for (var i = 0u; i < TM; i++) {
-        let idx = (threadRow * TM + i) * BK + dotIdx;
-        regM[i] = DD(AsHi[idx], AsLo[idx]);
-      }
-      for (var i = 0u; i < TN; i++) {
-        let idx = dotIdx * BN + threadCol * TN + i;
-        regN[i] = DD(BsHi[idx], BsLo[idx]);
-      }
-      for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
-        for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
-          let ri = resIdxM * TN + resIdxN;
-          let prod = ddMulProtected(regM[resIdxM], regN[resIdxN], tid);
-          threadResults[ri] = ddAddProtected(threadResults[ri], prod, tid);
-        }
-      }
+      let ia = threadRow * TM * BK + dotIdx;
+      let ib = dotIdx * BN + threadCol * TN;
+      let m0 = DD(AsHi[ia], AsLo[ia]);
+      let m1 = DD(AsHi[ia + BK], AsLo[ia + BK]);
+      let n0 = DD(BsHi[ib], BsLo[ib]);
+      let n1 = DD(BsHi[ib + 1u], BsLo[ib + 1u]);
+      acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(m0, m0, m1, m1), dd4Of(n0, n1, n0, n1), tid), tid);
     }
 
     workgroupBarrier();
@@ -241,28 +231,37 @@ fn main(
   let beta = DD(params.betaHi, params.betaLo);
   let betaIsZero = params.betaHi == 0.0 && params.betaLo == 0.0;
 
-  for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
-    for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
-      let row = blockRow + threadRow * TM + resIdxM;
-      let col = blockCol + threadCol * TN + resIdxN;
-      // dgemmtr: tiles straddling the diagonal write only their triangle.
-      // Gates the store only — the protected ops above still run for every
-      // thread, keeping their barrier counts uniform.
-      let inTriangle = params.uplo == 0u
-        || (params.uplo == 1u && col <= row)
-        || (params.uplo == 2u && col >= row);
-      let inBounds = row < params.m && col < params.n && inTriangle;
-      let cIdx = min(row, params.m - 1u) * params.ldc + min(col, params.n - 1u);
+  // C's four elements, lane resIdxM*TN + resIdxN (clamped in range).
+  var cIdx: array<u32, 4>;
+  for (var l = 0u; l < 4u; l++) {
+    let row = blockRow + threadRow * TM + l / TN;
+    let col = blockCol + threadCol * TN + l % TN;
+    cIdx[l] = min(row, params.m - 1u) * params.ldc + min(col, params.n - 1u);
+  }
+  let cOld = dd4Of(
+    DD(CHi[cIdx[0]], CLo[cIdx[0]]),
+    DD(CHi[cIdx[1]], CLo[cIdx[1]]),
+    DD(CHi[cIdx[2]], CLo[cIdx[2]]),
+    DD(CHi[cIdx[3]], CLo[cIdx[3]]),
+  );
+  let scaled = ddMul4Protected(dd4Splat(alpha), acc, tid);
+  // BLAS beta==0 semantics: C is written, not accumulated — select rather
+  // than multiply so stale NaN/Inf in C can't survive as 0 * NaN.
+  let betaTerm = ddMul4Protected(dd4Splat(beta), cOld, tid);
+  let withBeta = ddAdd4Protected(scaled, betaTerm, tid);
 
-      let acc = ddMulProtected(alpha, threadResults[resIdxM * TN + resIdxN], tid);
-      // BLAS beta==0 semantics: C is written, not accumulated — select rather
-      // than multiply so stale NaN/Inf in C can't survive as 0 * NaN.
-      let betaTerm = ddMulProtected(beta, DD(CHi[cIdx], CLo[cIdx]), tid);
-      let withBeta = ddAddProtected(acc, betaTerm, tid);
-      if (inBounds) {
-        CHi[cIdx] = select(withBeta.hi, acc.hi, betaIsZero);
-        CLo[cIdx] = select(withBeta.lo, acc.lo, betaIsZero);
-      }
+  for (var l = 0u; l < 4u; l++) {
+    let row = blockRow + threadRow * TM + l / TN;
+    let col = blockCol + threadCol * TN + l % TN;
+    // dgemmtr: tiles straddling the diagonal write only their triangle.
+    // Gates the store only — the protected ops above ran for every thread,
+    // keeping their barrier counts uniform.
+    let inTriangle = params.uplo == 0u
+      || (params.uplo == 1u && col <= row)
+      || (params.uplo == 2u && col >= row);
+    if (row < params.m && col < params.n && inTriangle) {
+      CHi[cIdx[l]] = select(withBeta.hi[l], scaled.hi[l], betaIsZero);
+      CLo[cIdx[l]] = select(withBeta.lo[l], scaled.lo[l], betaIsZero);
     }
   }
 }

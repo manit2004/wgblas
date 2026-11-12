@@ -58,7 +58,9 @@ fn dgemv_t_main(
   let jStart = wid.y * params.chunkRows;
   let jEnd   = min(jStart + params.chunkRows, params.m);
 
-  var acc = DD(0.0, 0.0);
+  // Four rows per batched op (f64/utils/batch.wgsl): lane l sums rows
+  // j ≡ l (mod 4) of each tile, one barrier per four products.
+  var acc4 = DD4(vec4<f32>(0.0), vec4<f32>(0.0));
 
   let tiles = (jEnd - jStart) / WGS;
   for (var t = 0u; t < tiles; t++) {
@@ -70,13 +72,20 @@ fn dgemv_t_main(
     xTile[lid.x] = DD(xHi[ix], xLo[ix]);
     workgroupBarrier();
 
-    for (var j = 0u; j < WGS; j++) {
+    for (var j = 0u; j < WGS; j += 4u) {
       let ia = (base + j) * params.lda + safeCol;
-      let prod = ddMulProtected(DD(AHi[ia], ALo[ia]), xTile[j], lid.x);
-      acc = ddAddProtected(acc, prod, lid.x);
+      let a = dd4Of(
+        DD(AHi[ia], ALo[ia]),
+        DD(AHi[ia + params.lda], ALo[ia + params.lda]),
+        DD(AHi[ia + 2u * params.lda], ALo[ia + 2u * params.lda]),
+        DD(AHi[ia + 3u * params.lda], ALo[ia + 3u * params.lda]),
+      );
+      let xv = dd4Of(xTile[j], xTile[j + 1u], xTile[j + 2u], xTile[j + 3u]);
+      acc4 = ddAdd4Protected(acc4, ddMul4Protected(a, xv, lid.x), lid.x);
     }
     workgroupBarrier();
   }
+  var acc = dd4Sum(acc4, lid.x);
 
   // Remainder rows (only the last chunk, when m isn't a multiple of WGS):
   // the count is the same for every thread regardless of col, so this loop

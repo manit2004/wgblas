@@ -59,9 +59,8 @@ fn ddMask(a: DD, keep: bool) -> DD {
 
 // Row r's four quarter sums, every thread (the protected adds need it).
 fn sumParts(r: u32, tid: u32) -> DD {
-  return ddAddProtected(
-    ddAddProtected(part[r], part[BLOCK_SIZE + r], tid),
-    ddAddProtected(part[2u * BLOCK_SIZE + r], part[3u * BLOCK_SIZE + r], tid),
+  return dd4Sum(
+    dd4Of(part[r], part[BLOCK_SIZE + r], part[2u * BLOCK_SIZE + r], part[3u * BLOCK_SIZE + r]),
     tid,
   );
 }
@@ -101,11 +100,12 @@ fn dtrsv_step_main(
       let ia = ainvBase + (q * SPAN + u) * BLOCK_SIZE;
       av[u] = DD(AinvHi[ia], AinvLo[ia]);
     }
-    var acc = DD(0.0, 0.0);
-    for (var u = 0u; u < SPAN; u++) {
-      acc = ddAddProtected(acc, ddMulProtected(av[u], xr[q * SPAN + u], tid), tid);
-    }
-    part[q * BLOCK_SIZE + r] = acc;
+    let xb = q * SPAN;
+    var acc = ddMul4Protected(dd4Of(av[0], av[1], av[2], av[3]), dd4Of(xr[xb], xr[xb + 1u], xr[xb + 2u], xr[xb + 3u]), tid);
+    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[4], av[5], av[6], av[7]), dd4Of(xr[xb + 4u], xr[xb + 5u], xr[xb + 6u], xr[xb + 7u]), tid), tid);
+    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[8], av[9], av[10], av[11]), dd4Of(xr[xb + 8u], xr[xb + 9u], xr[xb + 10u], xr[xb + 11u]), tid), tid);
+    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[12], av[13], av[14], av[15]), dd4Of(xr[xb + 12u], xr[xb + 13u], xr[xb + 14u], xr[xb + 15u]), tid), tid);
+    part[q * BLOCK_SIZE + r] = dd4Sum(acc, tid);
     workgroupBarrier();
     let v = sumParts(lane, tid);
     if (tid < BLOCK_SIZE) {
@@ -151,12 +151,15 @@ fn dtrsv_step_main(
       av[u] = ddMask(DD(AHi[ia], ALo[ia]), j < blockLen);
     }
   }
-  var acc = DD(0.0, 0.0);
-  for (var u = 0u; u < SPAN; u++) {
-    let j = select(q + u * SPLIT, q * SPAN + u, params.trans != 0u);
-    acc = ddAddProtected(acc, ddMulProtected(av[u], xs[j], tid), tid);
-  }
-  part[q * TILE_ROWS + r] = acc;
+  // xs index of term u: q + 4u (interleaved) or q·16 + u (blocked).
+  let tr = params.trans != 0u;
+  let x0 = select(q, q * SPAN, tr);
+  let xd = select(SPLIT, 1u, tr);
+  var acc = ddMul4Protected(dd4Of(av[0], av[1], av[2], av[3]), dd4Of(xs[x0], xs[x0 + xd], xs[x0 + 2u * xd], xs[x0 + 3u * xd]), tid);
+  acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[4], av[5], av[6], av[7]), dd4Of(xs[x0 + 4u * xd], xs[x0 + 5u * xd], xs[x0 + 6u * xd], xs[x0 + 7u * xd]), tid), tid);
+  acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[8], av[9], av[10], av[11]), dd4Of(xs[x0 + 8u * xd], xs[x0 + 9u * xd], xs[x0 + 10u * xd], xs[x0 + 11u * xd]), tid), tid);
+  acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[12], av[13], av[14], av[15]), dd4Of(xs[x0 + 12u * xd], xs[x0 + 13u * xd], xs[x0 + 14u * xd], xs[x0 + 15u * xd]), tid), tid);
+  part[q * TILE_ROWS + r] = dd4Sum(acc, tid);
   workgroupBarrier();
 
   let local = wid.x * TILE_ROWS + lane;

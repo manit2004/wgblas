@@ -63,7 +63,48 @@ fn dsyr2_main(
     let mainIters = (range_floor - colStart) / WGS;
     let hasTail = select(0u, 1u, range_floor < colEnd);
 
-    for (var iter = 0u; iter < mainIters; iter++) {
+    // Four column strides per batched op (f64/utils/batch.wgsl): lane l
+    // takes iteration 4g + l — 10 barriers per four elements, not one.
+    for (var g = 0u; g < mainIters / 4u; g++) {
+      let col = colStart + lid.x + g * 4u * WGS;
+      let idx = row_base + col;
+      let jx = col * params.incx;
+      let jy = col * params.incy;
+      let sx = WGS * params.incx;
+      let sy = WGS * params.incy;
+      let yv = dd4Of(
+        DD(yHi[jy], yLo[jy]),
+        DD(yHi[jy + sy], yLo[jy + sy]),
+        DD(yHi[jy + 2u * sy], yLo[jy + 2u * sy]),
+        DD(yHi[jy + 3u * sy], yLo[jy + 3u * sy]),
+      );
+      let xv = dd4Of(
+        DD(xHi[jx], xLo[jx]),
+        DD(xHi[jx + sx], xLo[jx + sx]),
+        DD(xHi[jx + 2u * sx], xLo[jx + 2u * sx]),
+        DD(xHi[jx + 3u * sx], xLo[jx + 3u * sx]),
+      );
+      let av = dd4Of(
+        DD(AHi[idx], ALo[idx]),
+        DD(AHi[idx + WGS], ALo[idx + WGS]),
+        DD(AHi[idx + 2u * WGS], ALo[idx + 2u * WGS]),
+        DD(AHi[idx + 3u * WGS], ALo[idx + 3u * WGS]),
+      );
+      let prod1 = ddMul4Protected(dd4Splat(xi), yv, lid.x);
+      let prod2 = ddMul4Protected(dd4Splat(yi), xv, lid.x);
+      let result = ddAdd4Protected(ddAdd4Protected(prod1, prod2, lid.x), av, lid.x);
+      AHi[idx] = result.hi.x;
+      ALo[idx] = result.lo.x;
+      AHi[idx + WGS] = result.hi.y;
+      ALo[idx + WGS] = result.lo.y;
+      AHi[idx + 2u * WGS] = result.hi.z;
+      ALo[idx + 2u * WGS] = result.lo.z;
+      AHi[idx + 3u * WGS] = result.hi.w;
+      ALo[idx + 3u * WGS] = result.lo.w;
+    }
+
+    // The last mainIters % 4 full iterations, one at a time.
+    for (var iter = mainIters / 4u * 4u; iter < mainIters; iter++) {
       let col = colStart + lid.x + iter * WGS;
       let idx = row_base + col;
       let jc_x = col * params.incx;
