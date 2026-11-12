@@ -3,7 +3,14 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dtrsv } from "wgblas/dtrsv";
-import { assertIeeeMatch, at } from "../../helpers/specials.js";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  at,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
 import { dtrsvReference } from "../../helpers/stdlib.js";
 import {
   fullPrecisionFrom,
@@ -355,4 +362,49 @@ test("dtrsv IEEE special values (regression)", async (t) => {
             );
             assertIeeeMatch(got.x, dtrsvReference(a).x, "x", 1e-9);
           });
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dtrsv f32 exponent range (regression)", async (t) => {
+  // 1e300 in b reads as Infinity — and, like a real Infinity, takes the
+  // substitution path at n = 300 (util/finite.mjs) to match stdlib; 1e300 in
+  // the unreferenced triangle is never read.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      await t.test(`${uplo} n=${n}`, async () => {
+        const A = values(n * n, 1);
+        for (let i = 0; i < n; i++) A[at(n, i, i)] += n + 4;
+        const [r, c] = uplo === "lower" ? [1, 4] : [4, 1];
+        const a = {
+          uplo,
+          trans: "no-transpose",
+          diag: "non-unit",
+          n,
+          A: withValues(A, { [at(n, r, c)]: 1e300, [at(n, c, r)]: 1e-50 }),
+          lda: n,
+          x: withValues(values(n, 2), { [Math.floor(n / 2)]: 1e300, 2: 1e-50 }),
+          incx: 1,
+        };
+        const got = await dtrsv(
+          device,
+          a.uplo,
+          a.trans,
+          a.diag,
+          a.n,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+        );
+        assertIeeeMatch(
+          got.x,
+          saturate(dtrsvReference(argsInF32Range(a)).x),
+          "x",
+          1e-9,
+        );
+      });
 });

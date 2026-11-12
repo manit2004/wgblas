@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dasum } from "wgblas/dasum";
-import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { dasumReference as stdlibReference } from "../../helpers/stdlib.js";
@@ -107,4 +113,26 @@ test("dasum IEEE special values (regression)", async () => {
     const got = await dasum(device, a.n, a.x, a.incx);
     assertIeeeMatch(got.asum, stdlibReference(a), `n=${n} asum`);
   }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dasum f32 exponent range (regression)", async (t) => {
+  for (const [label, x] of [
+    ["an input past f32's range", withValues(values(7, 1), { 2: -1e300 })],
+    ["an input below f32's range", withValues(values(7, 1), { 2: 1e-50 })],
+    ["a sum past f32's range", new Float64Array([1e38, 1e38, 1e38, 1e38])],
+  ])
+    await t.test(label, async () => {
+      const a = { n: x.length, x, incx: 1 };
+      const got = await dasum(device, a.n, a.x, a.incx);
+      assertIeeeMatch(
+        got.asum,
+        saturate(stdlibReference(argsInF32Range(a))),
+        "asum",
+      );
+    });
 });

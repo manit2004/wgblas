@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dnrm2 } from "wgblas/dnrm2";
-import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Fixtures use a relative-error forward factor against double-double's own
@@ -213,4 +219,30 @@ test("dnrm2 IEEE special values (regression)", async () => {
     const got = await dnrm2(device, a.n, a.x, a.incx);
     assertIeeeMatch(got.nrm2, stdlibReference(a), `n=${n} nrm2`);
   }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dnrm2 f32 exponent range (regression)", async (t) => {
+  // stdlib's own tests: real f64 gives 2e150 and 2e-155 here.
+  for (const [label, x] of [
+    ["inputs past f32's range", new Float64Array([1e150, 1e150, 1e150, 1e150])],
+    [
+      "inputs below f32's range",
+      new Float64Array([1e-155, 1e-155, 1e-155, 1e-155]),
+    ],
+    ["one input below f32's range", new Float64Array([3, 1e-50, 4])],
+  ])
+    await t.test(label, async () => {
+      const a = { n: x.length, x, incx: 1 };
+      const got = await dnrm2(device, a.n, a.x, a.incx);
+      assertIeeeMatch(
+        got.nrm2,
+        saturate(stdlibReference(argsInF32Range(a))),
+        "nrm2",
+      );
+    });
 });

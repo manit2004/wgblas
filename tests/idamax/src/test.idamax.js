@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { idamax } from "wgblas/idamax";
-import { withValues, values } from "../../helpers/specials.js";
+import { argsInF32Range, values, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { idamaxReference as stdlibReference } from "../../helpers/stdlib.js";
@@ -129,5 +129,22 @@ test("idamax IEEE special values (regression)", async () => {
     const a = { n, x: withValues(values(n, 1), entries), incx: 1 };
     const got = await idamax(device, a.n, a.x, a.incx);
     assert.equal(got.index, stdlibReference(a), `n=${n} index`);
+  }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("idamax f32 exponent range (regression)", async () => {
+  // 1e300 and 1e301 both read as Infinity, so the first wins (f64: index 1).
+  for (const x of [
+    new Float64Array([1e300, 1e301, 5]),
+    new Float64Array([1e-50, 0.5]),
+  ]) {
+    const a = { n: x.length, x, incx: 1 };
+    const got = await idamax(device, a.n, a.x, a.incx);
+    assert.equal(got.index, stdlibReference(argsInF32Range(a)));
   }
 });

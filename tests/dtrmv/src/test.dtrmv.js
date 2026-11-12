@@ -4,10 +4,12 @@ import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dtrmv } from "wgblas/dtrmv";
 import {
+  argsInF32Range,
   assertIeeeMatch,
-  withValues,
-  values,
   at,
+  saturate,
+  values,
+  withValues,
 } from "../../helpers/specials.js";
 import {
   fullPrecisionFrom,
@@ -334,5 +336,53 @@ test("dtrmv IEEE special values (regression)", async (t) => {
           a.incy,
         );
         assertIeeeMatch(got.y, stdlibReference(a).y, "y");
+      });
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dtrmv f32 exponent range (regression)", async (t) => {
+  // 1e300 in the unreferenced triangle is never read.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      await t.test(`${uplo} n=${n}`, async () => {
+        const [r, c] = uplo === "lower" ? [4, 1] : [1, 4];
+        const a = {
+          uplo,
+          trans: "no-transpose",
+          diag: "non-unit",
+          n,
+          A: withValues(values(n * n, 1), {
+            [at(n, r, c)]: 1e300,
+            [at(n, c, r)]: -1e300,
+            [at(n, 5, 5)]: 1e-50,
+          }),
+          lda: n,
+          x: values(n, 2),
+          incx: 1,
+          y: values(n, 3),
+          incy: 1,
+        };
+        const got = await dtrmv(
+          device,
+          a.uplo,
+          a.trans,
+          a.diag,
+          a.n,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.y,
+          a.incy,
+        );
+        assertIeeeMatch(
+          got.y,
+          saturate(stdlibReference(argsInF32Range(a)).y),
+          "y",
+        );
       });
 });

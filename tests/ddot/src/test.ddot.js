@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ddot } from "wgblas/ddot";
-import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Two reasons a raw f64 comparison against stdlib is the wrong oracle here:
@@ -137,5 +143,33 @@ test("ddot IEEE special values (regression)", async (t) => {
         const got = await ddot(device, a.n, a.x, a.incx, a.y, a.incy);
         assertIeeeMatch(got.dot, stdlibReference(a), `n=${n} dot`);
       }
+    });
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("ddot f32 exponent range (regression)", async (t) => {
+  for (const [label, xs, ys] of [
+    ["an input past f32's range", { 2: 1e300 }, {}],
+    ["inputs below f32's range", { 2: 1e-50 }, { 4: -1e-50 }],
+    ["a product past f32's range", { 2: 1e20 }, { 2: 1e20 }],
+  ])
+    await t.test(label, async () => {
+      const a = {
+        n: 7,
+        x: withValues(values(7, 1), xs),
+        incx: 1,
+        y: withValues(values(7, 2), ys),
+        incy: 1,
+      };
+      const got = await ddot(device, a.n, a.x, a.incx, a.y, a.incy);
+      assertIeeeMatch(
+        got.dot,
+        saturate(stdlibReference(argsInF32Range(a))),
+        "dot",
+      );
     });
 });

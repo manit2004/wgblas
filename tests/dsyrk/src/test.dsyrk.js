@@ -4,10 +4,12 @@ import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dsyrk } from "wgblas/dsyrk";
 import {
+  argsInF32Range,
   assertIeeeMatch,
-  withValues,
-  values,
   at,
+  saturate,
+  values,
+  withValues,
 } from "../../helpers/specials.js";
 import {
   fullPrecisionFrom,
@@ -431,5 +433,86 @@ test("dsyrk IEEE special values (regression)", async () => {
         stdlibReference({ ...a, C: C0 }).C,
         `${uplo} n=${n} C`,
       );
+    }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dsyrk f32 exponent range (regression)", async (t) => {
+  // Out-of-range inputs and an overflowing result are separate cases: an
+  // intermediate past f32's range is already Infinity here where f64 still
+  // holds it, so mixed with another Infinity it can give NaN where f64
+  // doesn't.
+  // An out-of-range value in C's other triangle reads as Infinity even
+  // though dsyrk never touches it.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 150]) {
+      await t.test(`${uplo} n=${n}: out-of-range inputs`, async () => {
+        const a = {
+          uplo,
+          trans: "no-transpose",
+          n,
+          k: n,
+          alpha: 1.5,
+          A: withValues(values(n * n, 1), {
+            [at(n, 4, 2)]: 1e300,
+            [at(n, 5, 5)]: 1e-50,
+          }),
+          lda: n,
+
+          beta: 0.5,
+          C: withValues(values(n * n, 3), {
+            [at(n, 0, n - 1)]: 1e300,
+            [at(n, n - 1, 0)]: -1e300,
+          }),
+          ldc: n,
+        };
+        const got = await dsyrk(
+          device,
+          a.uplo,
+          a.trans,
+          a.n,
+          a.k,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.beta,
+          a.C,
+          a.ldc,
+        );
+        assertIeeeMatch(got.C, stdlibReference(argsInF32Range(a)).C, "C", 1e-9);
+      });
+      await t.test(`${uplo} n=${n}: a result past f32's range`, async () => {
+        const a = {
+          uplo,
+          trans: "no-transpose",
+          n,
+          k: n,
+          alpha: 10,
+          A: withValues(values(n * n, 1), { [at(n, 3, 3)]: 3e38 }),
+          lda: n,
+
+          beta: 0.5,
+          C: values(n * n, 3),
+          ldc: n,
+        };
+        const got = await dsyrk(
+          device,
+          a.uplo,
+          a.trans,
+          a.n,
+          a.k,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.beta,
+          a.C,
+          a.ldc,
+        );
+        assertIeeeMatch(got.C, saturate(stdlibReference(a).C), "C", 1e-9);
+      });
     }
 });

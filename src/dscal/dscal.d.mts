@@ -9,6 +9,14 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * bits of mantissa — more than a single f32 (24 bits) but less than true
  * f64 (52 bits), so results are not bit-exact with a CPU double.
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
+ *
  * {@includeCode ../../examples/dscal/dscal.js}
  *
  * **Browser (standalone HTML):**
@@ -32,6 +40,14 @@ export declare function dscal(
 
 /**
  * Scales a double-precision vector by a constant: $$x \leftarrow \alpha x$$
+ *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
  *
  * {@includeCode ../../examples/dscal/gpu.dscal.js}
  *

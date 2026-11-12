@@ -6,6 +6,13 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * — double-double (Dekker) f64 emulation of {@link snrm2}, since WGSL has
  * no native f64 type.
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU), and a result or
+ * intermediate past ±3.4e38 overflows to ±Infinity, where real f64 would
+ * stay finite.
+ *
  * {@includeCode ../../examples/dnrm2/dnrm2.js}
  *
  * **Browser (standalone HTML):**
@@ -31,6 +38,13 @@ export declare function dnrm2(
  * $$\text{result} = \sqrt{\sum_{i} x_i^2}$$
  * — GPU-resident overload; see the Float64Array overload above for the
  * routine itself.
+ *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU), and a result or
+ * intermediate past ±3.4e38 overflows to ±Infinity, where real f64 would
+ * stay finite.
  *
  * {@includeCode ../../examples/dnrm2/gpu.dnrm2.js}
  *

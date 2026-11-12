@@ -4,10 +4,12 @@ import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dgemv } from "wgblas/dgemv";
 import {
+  argsInF32Range,
   assertIeeeMatch,
-  withValues,
-  values,
   at,
+  saturate,
+  values,
+  withValues,
 } from "../../helpers/specials.js";
 import {
   fullPrecisionFrom,
@@ -466,4 +468,81 @@ test("dgemv IEEE special values (regression)", async (t) => {
         const want = stdlibReference({ ...a, y: new Float64Array(n) });
         assertIeeeMatch(got.y, want.y, "y");
       });
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dgemv f32 exponent range (regression)", async (t) => {
+  // Out-of-range inputs and an overflowing result are separate cases: an
+  // intermediate past f32's range is already Infinity here where f64 still
+  // holds it, so mixed with another Infinity it can give NaN where f64 doesn't.
+  for (const trans of ["no-transpose", "transpose"])
+    for (const n of [7, 300]) {
+      await t.test(`${trans} n=${n}: out-of-range inputs`, async () => {
+        const a = {
+          trans,
+          m: n,
+          n,
+          alpha: 1.5,
+          A: withValues(values(n * n, 1), {
+            [at(n, 1, 2)]: 1e300,
+            [at(n, 3, 4)]: 1e-50,
+          }),
+          lda: n,
+          x: withValues(values(n, 2), { 6: 1e-50 }),
+          incx: 1,
+          beta: 0.5,
+          y: withValues(values(n, 3), { 0: -1e300 }),
+          incy: 1,
+        };
+        const got = await dgemv(
+          device,
+          a.trans,
+          a.m,
+          a.n,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.beta,
+          a.y,
+          a.incy,
+        );
+        assertIeeeMatch(got.y, stdlibReference(argsInF32Range(a)).y, "y", 1e-9);
+      });
+      await t.test(`${trans} n=${n}: a result past f32's range`, async () => {
+        const a = {
+          trans,
+          m: n,
+          n,
+          alpha: 1e10,
+          A: values(n * n, 1),
+          lda: n,
+          x: withValues(values(n, 2), { 5: 1e30 }),
+          incx: 1,
+          beta: 0.5,
+          y: values(n, 3),
+          incy: 1,
+        };
+        const got = await dgemv(
+          device,
+          a.trans,
+          a.m,
+          a.n,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.beta,
+          a.y,
+          a.incy,
+        );
+        assertIeeeMatch(got.y, saturate(stdlibReference(a).y), "y", 1e-9);
+      });
+    }
 });

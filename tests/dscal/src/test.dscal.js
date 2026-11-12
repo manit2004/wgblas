@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dscal } from "wgblas/dscal";
-import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
 import {
   fullPrecisionFrom,
   assertBitIdentical,
@@ -142,4 +148,20 @@ test("dscal IEEE special values (regression)", async () => {
     const got = await dscal(device, a.n, a.alpha, a.x, a.incx);
     assertIeeeMatch(got.x, stdlibReference(a).x, `n=${n} x`);
   }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dscal f32 exponent range (regression)", async () => {
+  const a = {
+    n: 6,
+    alpha: 1e20,
+    x: withValues(values(6, 1), { 1: 1e300, 2: -1e300, 3: 1e-50, 4: 1e20 }),
+    incx: 1,
+  };
+  const got = await dscal(device, a.n, a.alpha, a.x, a.incx);
+  assertIeeeMatch(got.x, saturate(stdlibReference(argsInF32Range(a)).x), "x");
 });

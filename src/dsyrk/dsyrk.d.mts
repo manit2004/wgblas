@@ -14,6 +14,14 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * (`dgemm_small.wgsl` in triangle mode) with `A` duplicated into
  * both operand slots (`B := A`).
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
+ *
  * {@includeCode ../../examples/dsyrk/dsyrk.js}
  *
  * **Browser (standalone HTML):**
@@ -60,6 +68,14 @@ export declare function dsyrk(
  * `GpuMatrix.from` time) determines the operation — there is no separate
  * `layout` argument here. A must be a GpuMatrix whenever C is, and vice
  * versa — mixing a GpuMatrix with a plain Float64Array is not supported.
+ *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
  *
  * {@includeCode ../../examples/dsyrk/gpu.dsyrk.js}
  *

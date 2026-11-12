@@ -18,6 +18,13 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * index of the largest non-NaN element. `+-Infinity` compares normally and is
  * selected as the maximum.
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — so values past the
+ * range all compare equal, and the first of them wins where real f64 would
+ * pick the largest.
+ *
  * {@includeCode ../../examples/idamax/idamax.js}
  *
  * **Browser (standalone HTML):**
@@ -50,6 +57,13 @@ export declare function idamax(
  * returns `0` however large the later elements are, whereas this returns the
  * index of the largest non-NaN element. `+-Infinity` compares normally and is
  * selected as the maximum.
+ *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — so values past the
+ * range all compare equal, and the first of them wins where real f64 would
+ * pick the largest.
  *
  * {@includeCode ../../examples/idamax/gpu.idamax.js}
  *

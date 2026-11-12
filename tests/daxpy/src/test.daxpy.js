@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { daxpy } from "wgblas/daxpy";
-import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
 import {
   fullPrecisionFrom,
   assertBitIdentical,
@@ -163,4 +169,43 @@ test("daxpy IEEE special values (regression)", async () => {
     const got = await daxpy(device, a.n, a.alpha, a.x, a.incx, a.y, a.incy);
     assertIeeeMatch(got.y, stdlibReference(a).y, `n=${n} y`);
   }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("daxpy f32 exponent range (regression)", async (t) => {
+  await t.test(
+    "out-of-range inputs, and an untouched one in a stride gap",
+    async () => {
+      const a = {
+        n: 6,
+        alpha: 1.5,
+        x: withValues(values(6, 1), { 1: 1e300, 3: 1e-50 }),
+        incx: 1,
+        y: withValues(values(11, 2), { 1: -1e300, 4: 1e-50 }),
+        incy: 2,
+      };
+      const got = await daxpy(device, a.n, a.alpha, a.x, a.incx, a.y, a.incy);
+      assertIeeeMatch(
+        got.y,
+        saturate(stdlibReference(argsInF32Range(a)).y),
+        "y",
+      );
+    },
+  );
+  await t.test("a result past f32's range", async () => {
+    const a = {
+      n: 4,
+      alpha: 1e20,
+      x: withValues(values(4, 3), { 2: 1e20 }),
+      incx: 1,
+      y: values(4, 4),
+      incy: 1,
+    };
+    const got = await daxpy(device, a.n, a.alpha, a.x, a.incx, a.y, a.incy);
+    assertIeeeMatch(got.y, saturate(stdlibReference(argsInF32Range(a)).y), "y");
+  });
 });

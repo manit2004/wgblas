@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { drotm } from "wgblas/drotm";
-import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
 import {
   fullPrecisionFrom,
   assertBitIdentical,
@@ -162,4 +168,24 @@ test("drotm IEEE special values (regression)", async () => {
     assertIeeeMatch(got.x, want.x, `n=${n} x`);
     assertIeeeMatch(got.y, want.y, `n=${n} y`);
   }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("drotm f32 exponent range (regression)", async () => {
+  const a = {
+    n: 6,
+    x: withValues(values(6, 1), { 1: 1e300, 3: 1e-50, 4: 3e38 }),
+    incx: 1,
+    y: withValues(values(6, 2), { 2: -1e300, 4: 3e38 }),
+    incy: 1,
+    param: new Float64Array([-1, 0.5, 0.25, -0.75, 2]),
+  };
+  const got = await drotm(device, a.n, a.x, a.incx, a.y, a.incy, a.param);
+  const want = stdlibReference(argsInF32Range(a));
+  assertIeeeMatch(saturate(got.x), saturate(want.x), "x");
+  assertIeeeMatch(saturate(got.y), saturate(want.y), "y");
 });

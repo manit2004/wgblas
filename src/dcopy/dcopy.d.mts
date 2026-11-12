@@ -4,6 +4,14 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * Performs the operation $$y \leftarrow x$$ — double-double (Dekker) f64
  * emulation of {@link scopy}, since WGSL has no native f64 type.
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
+ *
  * {@includeCode ../../examples/dcopy/dcopy.js}
  *
  * **Browser (standalone HTML):**
@@ -30,6 +38,14 @@ export declare function dcopy(
 /**
  * Performs the operation $$y \leftarrow x$$ — GPU-resident overload; see the
  * Float64Array overload above for the routine itself.
+ *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
  *
  * {@includeCode ../../examples/dcopy/gpu.dcopy.js}
  *

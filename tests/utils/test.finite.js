@@ -32,3 +32,15 @@ test("triangleHasNonFinite skips the diagonal when it's unit", () => {
   A[1] = -Infinity;
   assert.equal(triangleHasNonFinite(A, 2, 2, false, true), true);
 });
+
+test("a double beyond f32's range counts as non-finite (the GPU sees ±Infinity)", () => {
+  assert.equal(hasNonFinite(new Float64Array([1, 1e300]), 2), true);
+  assert.equal(
+    hasNonFinite(new Float64Array([1, 1e-300]), 2),
+    false,
+    "underflow is 0, finite",
+  );
+  const A = new Float64Array([1, 0, -1e39, 2]);
+  assert.equal(triangleHasNonFinite(A, 2, 2, true, false), true);
+  assert.equal(triangleHasNonFinite(A, 2, 2, false, false), false);
+});

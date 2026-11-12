@@ -4,10 +4,12 @@ import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dger } from "wgblas/dger";
 import {
+  argsInF32Range,
   assertIeeeMatch,
-  withValues,
-  values,
   at,
+  saturate,
+  values,
+  withValues,
 } from "../../helpers/specials.js";
 import {
   fullPrecisionFrom,
@@ -336,5 +338,78 @@ test("dger IEEE special values (regression)", async () => {
       a.lda,
     );
     assertIeeeMatch(got.A, stdlibReference(a).A, `n=${n} A`);
+  }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dger f32 exponent range (regression)", async (t) => {
+  // Out-of-range inputs and an overflowing result are separate cases: an
+  // intermediate past f32's range is already Infinity here where f64 still
+  // holds it, so mixed with another Infinity it can give NaN where f64
+  // doesn't. No input reads as 0 next to one that reads as Infinity: the
+  // reference BLAS skips zero vector entries, so Infinity · 0 never happens
+  // there, while the GPU computes it (NaN).
+  for (const n of [7, 300]) {
+    await t.test(`n=${n}: out-of-range inputs`, async () => {
+      const a = {
+        m: n,
+        n,
+        alpha: 1.5,
+        x: withValues(values(n, 1), { 2: 1e300 }),
+        incx: 1,
+        y: values(n, 2),
+        incy: 1,
+        A: withValues(values(n * n, 3), {
+          [at(n, 5, 5)]: -1e300,
+          [at(n, 6, 1)]: 1e-50,
+        }),
+        lda: n,
+      };
+      const got = await dger(
+        device,
+        a.m,
+        a.n,
+        a.alpha,
+        a.x,
+        a.incx,
+        a.y,
+        a.incy,
+        a.A,
+        a.lda,
+      );
+      assertIeeeMatch(got.A, stdlibReference(argsInF32Range(a)).A, "A", 1e-9);
+    });
+    await t.test(`n=${n}: a result past f32's range`, async () => {
+      // Only the final product passes f32's range (1e10 · 1e15 · 1e15): an
+      // intermediate past it would already be Infinity, where f64 holds it.
+      const a = {
+        m: n,
+        n,
+        alpha: 1e10,
+        x: withValues(values(n, 1), { 2: 1e15 }),
+        incx: 1,
+        y: withValues(values(n, 2), { 4: 1e15 }),
+        incy: 1,
+        A: values(n * n, 3),
+        lda: n,
+      };
+      const got = await dger(
+        device,
+        a.m,
+        a.n,
+        a.alpha,
+        a.x,
+        a.incx,
+        a.y,
+        a.incy,
+        a.A,
+        a.lda,
+      );
+      assertIeeeMatch(got.A, saturate(stdlibReference(a).A), "A", 1e-9);
+    });
   }
 });

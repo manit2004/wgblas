@@ -18,6 +18,14 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * reaches a later row of its 64-row block along several paths can give
  * ±Infinity where substitution gives NaN (Inf − Inf).
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
+ *
  * {@includeCode ../../examples/dtrsv/dtrsv.js}
  *
  * **Browser (standalone HTML):**
@@ -67,6 +75,14 @@ export declare function dtrsv(
  * the faster blocked path above n = 128, where an Infinity in b that
  * reaches a later row of its 64-row block along several paths can give
  * ±Infinity where substitution gives NaN (Inf − Inf).
+ *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
  *
  * {@includeCode ../../examples/dtrsv/gpu.dtrsv.js}
  *
