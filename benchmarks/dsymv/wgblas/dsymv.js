@@ -1,89 +1,80 @@
-import { init, cleanup } from "wgblas";
 import { dsymv } from "wgblas/dsymv";
-import { GpuVector } from "wgblas/classes/GpuVector";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat64Array } from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, vector, matrix } from "../../utils/harness.mjs";
+import { L2_SIZES, STRIDES, ALPHAS, BETAS } from "../../utils/params.mjs";
 
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 100;
-// Square n×n symmetric matrix; lower triangle stored. Same size range as ssymv's own.
-const SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
-const LDA_PAD = 0; // tight lda. See lda.dsymv.js for lda padding effects.
+// Fewer pads than the other lda sweeps.
+const SYMV_PADS = [0, 1, 8, 32, 64, 128];
 
-const COLS = ["n", "compute_ms", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const n = size;
-  const lda = n + LDA_PAD;
-  const alpha = 1.0;
-  const beta = 0.0;
-
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat64Array(n * n), n, n),
-    n,
-    n,
-    lda,
-    "column-major",
-  );
-  const xGpu = GpuVector.from(randomFloat64Array(n));
-  const yGpu = GpuVector.from(new Float64Array(n));
-
-  // warm up
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await dsymv(device, "lower", n, alpha, AGpu, lda, xGpu, 1, beta, yGpu, 1);
-  }
-
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await dsymv(
+await runBenchmark({
+  routine: "dsymv",
+  warmup: 5,
+  iters: 100,
+  defaults: {
+    uplo: "lower",
+    alpha: 1.0,
+    beta: 0.0,
+    inc: 1,
+    pad: 0,
+    layout: "row-major",
+  },
+  derive: (p) => ({ ...p, lda: p.n + p.pad }),
+  operands: (p) => ({
+    A: matrix(Float64Array, p.n, p.n, p.lda, p.layout),
+    x: vector(Float64Array, p.n * p.inc),
+    y: vector(Float64Array, p.n * p.inc),
+  }),
+  call: (device, p, o) =>
+    dsymv(
       device,
-      "lower",
-      n,
-      alpha,
-      AGpu,
-      lda,
-      xGpu,
-      1,
-      beta,
-      yGpu,
-      1,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
+      p.uplo,
+      p.n,
+      p.alpha,
+      o.A,
+      p.lda,
+      o.x,
+      p.inc,
+      p.beta,
+      o.y,
+      p.inc,
+    ),
+  // One triangle of A + x read + y read + y written
+  bytes: (p) => ((p.n * (p.n + 1)) / 2 + p.n + 2 * p.n) * 8,
+  sweeps: {
+    // Column-major A (cuBLAS's native layout), unit stride, every size.
+    base: { axes: { n: L2_SIZES }, fixed: { layout: "column-major" } },
 
-  AGpu.destroy();
-  xGpu.destroy();
-  yGpu.destroy();
+    // Non-unit incx/incy, as when x/y are rows/columns of a larger matrix.
+    stride: {
+      axes: { stride: STRIDES, n: L2_SIZES },
+      derive: (p) => ({ ...p, inc: p.stride }),
+      bytes: (p) => ((p.n * (p.n + 1)) / 2 + 2 * p.n) * 8, // these sweeps count y once
+    },
 
-  if (times.length === 0) continue;
+    // Padding on A's leading dimension (row-major); same logical work.
+    lda: { axes: { pad: SYMV_PADS, n: L2_SIZES } },
 
-  const med = median(times);
-  // lower triangle A read + x read + y read + y write — 8 bytes/element (double-double).
-  const bytes = ((n * (n + 1)) / 2 + n + 2 * n) * 8;
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [n, med, gbs]);
-  records.push({ n, compute_ms: med, compute_GBs: gbs });
-}
+    // Row- vs column-major A (wgblas only: cuBLAS is column-major).
+    layout: {
+      axes: { layout: ["row-major", "column-major"], n: L2_SIZES },
+      bytes: (p) => ((p.n * (p.n + 1)) / 2 + 2 * p.n) * 8, // these sweeps count y once
+    },
 
-saveResults("dsymv", gpuModel, records, { folder: "dsymv" });
+    // Lower vs upper triangle of A.
+    uplo: {
+      axes: { uplo: ["lower", "upper"], n: L2_SIZES },
+      bytes: (p) => ((p.n * (p.n + 1)) / 2 + 2 * p.n) * 8, // these sweeps count y once
+    },
 
-cleanup();
+    // No branch on alpha in the kernel, so expect a flat row.
+    alpha: {
+      axes: { alpha: ALPHAS, n: L2_SIZES },
+      bytes: (p) => ((p.n * (p.n + 1)) / 2 + 2 * p.n) * 8, // these sweeps count y once
+    },
+
+    // beta = 0 lets a kernel skip reading y; a step at 0 is that shortcut.
+    beta: {
+      axes: { beta: BETAS, n: L2_SIZES },
+      bytes: (p) => ((p.n * (p.n + 1)) / 2 + 2 * p.n) * 8, // these sweeps count y once
+    },
+  },
+});

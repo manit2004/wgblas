@@ -25,3 +25,12 @@ export const STRIDES = [4, 5, 32, 33, 255, 256];
 
 /** Real alpha-sweep values: 0 and 1 (what a kernel could special-case), two ordinary values, and a denormal-producing 1e-38. */
 export const ALPHAS = [0, 1, 2.5, -3.75, 1e-38];
+
+/** Level 2 sizes: square m = n, 32 to 4096 (4096² ≈ Level 1's largest n), plus 1280. */
+export const L2_SIZES = [32, 64, 128, 256, 512, 1024, 1280, 2048, 4096];
+
+/** Leading-dimension padding for the `lda` sweeps (lda = n + pad). */
+export const PADS = [0, 1, 8, 16, 32, 48, 64, 128];
+
+/** Real beta values: 0 (lets a kernel skip reading y), 1, and two ordinary values. */
+export const BETAS = [0, 1, 2.5, -3.75];
