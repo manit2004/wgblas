@@ -19,13 +19,17 @@
  *       },
  *   };
  *
- * Each point is `defaults` with the axis values set (outermost axis first),
- * then `derive`d; `skip` drops it silently. Optional sweep fields: `record`
- * (JSON keys if not the axes'), `format` (display per key), `before_each`
- * (untimed, per call), `warmup`/`iters`. Points that won't fit in free
- * device memory or host RAM are skipped. An operand made by
- * `device_result()` gets no data and runs the timed calls in device pointer
- * mode, so no result copy is timed.
+ * Each point is `defaults`, then the sweep's `fixed` (its non-zero / non-NULL
+ * fields — C can't tell "unset" from zero), then the axis values (outermost
+ * first), then the spec's `derive`, then the sweep's; `skip` drops it
+ * silently. Optional sweep fields: `fixed`, `derive`, `skip`, `record` (JSON
+ * keys if not the axes'), `format` (display per key), `before_each`
+ * (untimed, per call — e.g. `bench_refresh(&o[1])`), `warmup`/`iters`, and
+ * `bytes`/`flops` to override the spec's. Operands are `vector()`,
+ * `matrix()` (column-major) or `device_result()`. Points that won't fit in
+ * free device memory or host RAM are skipped. A `device_result()` operand
+ * gets no data and runs the timed calls in device pointer mode, so no result
+ * copy is timed.
  *
  * Flags: `--sweeps=a,b` (subset), `--plan` (list points, no GPU),
  * `--check[=<gpu-slug>]` (diff points against committed results),
@@ -40,25 +44,42 @@
 
 /** A point's parameters — the fields a spec's axes, defaults and calls use. */
 typedef struct {
-    int n, inc, stride;
-    double alpha, c, s;
-    cuComplex calpha; /* complex alpha (cscal) */
+    int n, m, inc, stride, lda, pad;
+    int x_len, y_len;                /* derived vector lengths (gemv) */
+    double alpha, beta, c, s;
+    cuComplex calpha;                /* complex alpha (cscal) */
+    const char *trans, *uplo, *diag; /* "no-transpose" / "lower" / "non-unit" style */
 } bench_params;
 
-typedef enum { K_INT, K_REAL, K_COMPLEX } bench_kind;
+typedef enum { K_INT, K_REAL, K_COMPLEX, K_STRING } bench_kind;
 
 static const struct { const char *name; size_t off; bench_kind kind; } BENCH_FIELDS[] = {
     { "n", offsetof(bench_params, n), K_INT },
+    { "m", offsetof(bench_params, m), K_INT },
     { "inc", offsetof(bench_params, inc), K_INT },
     { "stride", offsetof(bench_params, stride), K_INT },
+    { "lda", offsetof(bench_params, lda), K_INT },
+    { "pad", offsetof(bench_params, pad), K_INT },
+    { "x_len", offsetof(bench_params, x_len), K_INT },
+    { "y_len", offsetof(bench_params, y_len), K_INT },
     { "alpha", offsetof(bench_params, alpha), K_REAL },
+    { "beta", offsetof(bench_params, beta), K_REAL },
     { "c", offsetof(bench_params, c), K_REAL },
     { "s", offsetof(bench_params, s), K_REAL },
     { "calpha", offsetof(bench_params, calpha), K_COMPLEX },
+    { "trans", offsetof(bench_params, trans), K_STRING },
+    { "uplo", offsetof(bench_params, uplo), K_STRING },
+    { "diag", offsetof(bench_params, diag), K_STRING },
 };
+#define BENCH_N_FIELDS ((int)(sizeof BENCH_FIELDS / sizeof BENCH_FIELDS[0]))
+
+/* cuBLAS enums from a point's string parameters. */
+static cublasOperation_t op_of(const char *t) { return strcmp(t, "transpose") == 0 ? CUBLAS_OP_T : CUBLAS_OP_N; }
+static cublasFillMode_t fill_of(const char *u) { return strcmp(u, "upper") == 0 ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER; }
+static cublasDiagType_t diag_of(const char *d) { return strcmp(d, "unit") == 0 ? CUBLAS_DIAG_UNIT : CUBLAS_DIAG_NON_UNIT; }
 
 static int bench_field(const char *name) {
-    for (int i = 0; i < (int)(sizeof BENCH_FIELDS / sizeof BENCH_FIELDS[0]); i++)
+    for (int i = 0; i < BENCH_N_FIELDS; i++)
         if (strcmp(BENCH_FIELDS[i].name, name) == 0) return i;
     fprintf(stderr, "harness.h: no bench_params field \"%s\"\n", name);
     exit(2);
@@ -71,20 +92,33 @@ typedef enum { DT_F32, DT_F64, DT_C32 } bench_dtype;
 typedef struct {
     bool is_result;  /* device_result(): no data, enables device pointer mode */
     bench_dtype dtype;
-    size_t length;   /* elements (vector) or bytes (result) */
+    size_t length;   /* elements (vector / matrix) or bytes (result) */
     void *ptr;       /* device pointer, filled by the runner */
+    int rows, ld;    /* matrix only; 0 for vectors */
+    bool triangular; /* matrix only: diagonal set to 8 + rows */
 } bench_operand;
 
 #define BENCH_MAX_OPERANDS 4
 
 /** A device vector of `length` random [-1, 1] elements. */
 static bench_operand vector(bench_dtype dtype, size_t length) {
-    return (bench_operand){ false, dtype, length, NULL };
+    return (bench_operand){ false, dtype, length, NULL, 0, 0, false };
+}
+
+typedef enum { FILL_RANDOM, FILL_TRIANGULAR } bench_fill;
+
+/**
+ * A column-major `rows`×`cols` device matrix with leading dimension `ld`,
+ * random [-1, 1] — `FILL_TRIANGULAR` sets the diagonal to `8 + rows`, keeping
+ * triangular solves well conditioned.
+ */
+static bench_operand matrix(bench_dtype dtype, int rows, int cols, int ld, bench_fill fill) {
+    return (bench_operand){ false, dtype, (size_t)cols * ld, NULL, rows, ld, fill == FILL_TRIANGULAR };
 }
 
 /** A `bytes`-sized device buffer the call writes its scalar result to. */
 static bench_operand device_result(size_t bytes) {
-    return (bench_operand){ true, DT_F32, bytes, NULL };
+    return (bench_operand){ true, DT_F32, bytes, NULL, 0, 0, false };
 }
 
 static size_t bench_elem_size(bench_dtype dt) { return dt == DT_F32 ? sizeof(float) : 8; }
@@ -109,12 +143,15 @@ typedef void (*bench_format_fn)(const bench_params *p, char *buf, size_t len);
 typedef struct {
     const char *name;      /* "base" → <routine>.json, else <name>.<routine>.json */
     bench_axis axes[4];    /* outermost first; ends at the first without a key */
+    bench_params fixed;    /* its non-zero / non-NULL fields override defaults */
     bool (*skip)(const bench_params *p);
     void (*derive)(bench_params *p);
     const char *record[4]; /* JSON keys (field names) if not the axes'; NULL-ended */
     struct { const char *key; bench_format_fn fn; } format[2];
     void (*before_each)(const bench_params *p, bench_operand *o);
     int warmup, iters;     /* 0: the spec's */
+    double (*bytes)(const bench_params *p); /* override the spec's */
+    double (*flops)(const bench_params *p); /* override the spec's */
 } bench_sweep;
 
 #define BENCH_MAX_SWEEPS 8
@@ -123,6 +160,7 @@ typedef struct {
     const char *routine;
     int warmup, iters;
     bench_params defaults;
+    void (*derive)(bench_params *p); /* every point, before the sweep's */
     int (*operands)(const bench_params *p, bench_operand *o); /* fills o[], returns count */
     void (*call)(cublasHandle_t device, const bench_params *p, bench_operand *o);
     double (*bytes)(const bench_params *p);
@@ -160,7 +198,8 @@ static bench_format_fn bench_format_of(const bench_sweep *sw, const char *key) {
 }
 
 static bool bench_is_string(const bench_sweep *sw, const char *key, int f) {
-    return bench_format_of(sw, key) || BENCH_FIELDS[f].kind == K_COMPLEX;
+    return bench_format_of(sw, key) || BENCH_FIELDS[f].kind == K_COMPLEX ||
+           BENCH_FIELDS[f].kind == K_STRING;
 }
 
 /* One key's value: display text, and its JSON fragment as save_results writes it. */
@@ -169,7 +208,10 @@ static void bench_value(const bench_sweep *sw, const char *key, const char *fiel
     int f = bench_field(field);
     const char *base = (const char *)p + BENCH_FIELDS[f].off;
     bench_format_fn fmt = bench_format_of(sw, key);
-    if (bench_is_string(sw, key, f)) {
+    if (!fmt && BENCH_FIELDS[f].kind == K_STRING) {
+        snprintf(shown, slen, "%s", *(const char *const *)base);
+        snprintf(json, jlen, "\"%s\": \"%s\", ", key, shown);
+    } else if (bench_is_string(sw, key, f)) {
         if (fmt) fmt(p, shown, slen);
         else snprintf(shown, slen, "%g%+gi", ((const cuComplex *)base)->x, ((const cuComplex *)base)->y);
         snprintf(json, jlen, "\"%s\": \"%s\", ", key, shown);
@@ -193,14 +235,29 @@ static int bench_points(const bench_spec *spec, const bench_sweep *sw, bench_par
     int na = bench_n_axes(sw), idx[4] = { 0, 0, 0, 0 }, n = 0;
     for (;;) {
         bench_params p = spec->defaults;
+        for (int f = 0; f < BENCH_N_FIELDS; f++) { /* sweep.fixed: set fields only */
+            const char *src = (const char *)&sw->fixed + BENCH_FIELDS[f].off;
+            char *dst = (char *)&p + BENCH_FIELDS[f].off;
+            switch (BENCH_FIELDS[f].kind) {
+                case K_INT: if (*(const int *)src) *(int *)dst = *(const int *)src; break;
+                case K_REAL: if (*(const double *)src) *(double *)dst = *(const double *)src; break;
+                case K_STRING: if (*(const char *const *)src) *(const char **)dst = *(const char *const *)src; break;
+                case K_COMPLEX: {
+                    const cuComplex *z = (const cuComplex *)src;
+                    if (z->x || z->y) *(cuComplex *)dst = *z;
+                } break;
+            }
+        }
         for (int a = 0; a < na; a++) {
             const bench_axis *ax = &sw->axes[a];
             int f = bench_field(ax->field);
             char *dst = (char *)&p + BENCH_FIELDS[f].off;
             if (BENCH_FIELDS[f].kind == K_INT) *(int *)dst = ((const int *)ax->values)[idx[a]];
             else if (BENCH_FIELDS[f].kind == K_REAL) *(double *)dst = ((const double *)ax->values)[idx[a]];
+            else if (BENCH_FIELDS[f].kind == K_STRING) *(const char **)dst = ((const char *const *)ax->values)[idx[a]];
             else *(cuComplex *)dst = ((const cuComplex *)ax->values)[idx[a]];
         }
+        if (spec->derive) spec->derive(&p);
         if (sw->derive) sw->derive(&p);
         if (!(sw->skip && sw->skip(&p)) && n < cap) out[n++] = p;
         int a = na - 1; /* odometer: innermost axis fastest */
@@ -284,24 +341,31 @@ static bool bench_check_sweep(const bench_spec *spec, const bench_sweep *sw, con
     return ok;
 }
 
-/* Uploads `length` random [-1, 1] elements; host copies freed before returning. */
-static void *bench_upload(bench_dtype dt, size_t length) {
-    size_t floats = dt == DT_C32 ? 2 * length : length; /* cuComplex = 2 floats */
+/* Fills an operand's device buffer (allocating it if needed) with random
+ * [-1, 1] data — plus the triangular diagonal for such matrices. Host copies
+ * are freed before returning. */
+static void bench_fill_operand(bench_operand *o) {
+    size_t floats = o->dtype == DT_C32 ? 2 * o->length : o->length; /* cuComplex = 2 floats */
     float *h = random_float_array((int)floats, -1.0f, 1.0f);
-    void *src = h, *d;
+    void *src = h;
     size_t bytes = floats * sizeof(float);
-    if (dt == DT_F64) {
-        double *hd = malloc(length * sizeof(double));
-        for (size_t i = 0; i < length; i++) hd[i] = (double)h[i];
+    if (o->dtype == DT_F64) {
+        double *hd = malloc(o->length * sizeof(double));
+        for (size_t i = 0; i < o->length; i++) hd[i] = (double)h[i];
+        if (o->triangular) for (int i = 0; i < o->rows; i++) hd[(size_t)i * o->ld + i] = 8.0 + o->rows;
         src = hd;
-        bytes = length * sizeof(double);
+        bytes = o->length * sizeof(double);
+    } else if (o->triangular) {
+        for (int i = 0; i < o->rows; i++) h[(size_t)i * o->ld + i] = 8.0f + o->rows;
     }
-    CUDA_CHECK(cudaMalloc(&d, bytes));
-    CUDA_CHECK(cudaMemcpy(d, src, bytes, cudaMemcpyHostToDevice));
+    if (!o->ptr) CUDA_CHECK(cudaMalloc(&o->ptr, bytes));
+    CUDA_CHECK(cudaMemcpy(o->ptr, src, bytes, cudaMemcpyHostToDevice));
     if (src != h) free(src);
     free(h);
-    return d;
 }
+
+/** Refills an operand with fresh data — for `before_each` in in-place routines. */
+static void bench_refresh(bench_operand *o) { bench_fill_operand(o); }
 
 static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
                             const bench_spec *spec, const bench_sweep *sw) {
@@ -323,14 +387,16 @@ static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
         col_str[k] = calloc(cap, sizeof(char *));
     }
     float *med_times = malloc(cap * sizeof(float)), *gbs_vals = malloc(cap * sizeof(float));
-    float *gflops_vals = spec->flops ? malloc(cap * sizeof(float)) : NULL;
+    double (*bytes_fn)(const bench_params *) = sw->bytes ? sw->bytes : spec->bytes;
+    double (*flops_fn)(const bench_params *) = sw->flops ? sw->flops : spec->flops;
+    float *gflops_vals = flops_fn ? malloc(cap * sizeof(float)) : NULL;
     float *times = malloc(iters * sizeof(float));
     char file[128], text[256], shown[64], json[96];
     bench_file_name(spec, sw, file, sizeof file);
 
     printf("\n=== %s ===\n", file);
     for (int k = 0; k < nk; k++) printf("%-16s  ", keys[k]);
-    printf("%-12s  %s%-12s\n", "compute_ms", spec->flops ? "compute_GFLOPs  " : "", "compute_GBs");
+    printf("%-12s  %s%-12s\n", "compute_ms", flops_fn ? "compute_GFLOPs  " : "", "compute_GBs");
 
     for (int i = 0; i < npts; i++) {
         bench_params *p = &pts[i];
@@ -362,7 +428,7 @@ static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
         bool device_mode = false;
         for (int j = 0; j < no; j++) {
             if (o[j].is_result) { CUDA_CHECK(cudaMalloc(&o[j].ptr, o[j].length)); device_mode = true; }
-            else o[j].ptr = bench_upload(o[j].dtype, o[j].length);
+            else { o[j].ptr = NULL; bench_fill_operand(&o[j]); }
         }
         cudaEvent_t start, stop;
         CUDA_CHECK(cudaEventCreate(&start));
@@ -386,7 +452,7 @@ static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
         if (device_mode) CUBLAS_CHECK(cublasSetPointerMode(device, CUBLAS_POINTER_MODE_HOST));
 
         float med = median(times, iters);
-        float gbs = ((float)spec->bytes(p) / 1e9f) / (med / 1e3f);
+        float gbs = ((float)bytes_fn(p) / 1e9f) / (med / 1e3f);
         for (int k = 0; k < nk; k++) {
             bench_value(sw, keys[k], fields[k], p, shown, sizeof shown, json, sizeof json);
             printf("%-16s  ", shown);
@@ -399,7 +465,7 @@ static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
         med_times[nrec] = med;
         gbs_vals[nrec] = gbs;
         if (gflops_vals) {
-            gflops_vals[nrec] = ((float)spec->flops(p) / 1e9f) / (med / 1e3f);
+            gflops_vals[nrec] = ((float)flops_fn(p) / 1e9f) / (med / 1e3f);
             printf("%-12.4f  %-14.4f  %-12.4f\n", med, gflops_vals[nrec], gbs);
         } else {
             printf("%-12.4f  %-12.4f\n", med, gbs);

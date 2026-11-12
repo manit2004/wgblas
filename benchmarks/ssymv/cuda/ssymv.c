@@ -1,91 +1,56 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "../../utils/helpers.h"
+// ssymv: cuBLAS twin of benchmarks/ssymv/wgblas/ssymv.js.
+#include "../../utils/harness.h"
 
-#define WARMUP_ITERS 5
-#define BENCH_ITERS  100
+static const int SYMV_PADS[] = { 0, 1, 8, 32, 64, 128 }; // fewer pads than the other lda sweeps
 
-int main(void) {
-    char gpu_model[256];
-    get_gpu_model(gpu_model, sizeof(gpu_model));
+static void derive(bench_params *p) { p->lda = p->n + p->pad; }
 
-    cublasHandle_t handle;
-    CUBLAS_CHECK(cublasCreate(&handle));
-
-    int sizes[] = { 32, 64, 128, 256, 512, 1024, 1280, 2048, 4096 };
-    int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
-
-    float med_times[num_sizes];
-    float gbs_vals[num_sizes];
-
-    printf("%-10s  %-12s  %-12s\n", "n", "compute_ms", "compute_GBs");
-    printf("%-10s  %-12s  %-12s\n", "----------", "------------", "------------");
-
-    const float alpha = 1.0f;
-    const float beta  = 0.0f;
-
-    for (int si = 0; si < num_sizes; si++) {
-        int n = sizes[si];
-        int lda = n;
-
-        float *h_A = random_float_array(n * n, -1.0f, 1.0f);
-        float *h_x = random_float_array(n, -1.0f, 1.0f);
-        float *h_y = random_float_array(n, -1.0f, 1.0f);
-
-        float *d_A, *d_x, *d_y;
-        CUDA_CHECK(cudaMalloc((void **)&d_A, (size_t)n * n * sizeof(float)));
-        CUDA_CHECK(cudaMalloc((void **)&d_x, n * sizeof(float)));
-        CUDA_CHECK(cudaMalloc((void **)&d_y, n * sizeof(float)));
-        CUDA_CHECK(cudaMemcpy(d_A, h_A, (size_t)n * n * sizeof(float), cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_y, h_y, n * sizeof(float), cudaMemcpyHostToDevice));
-
-        cudaEvent_t start, stop;
-        CUDA_CHECK(cudaEventCreate(&start));
-        CUDA_CHECK(cudaEventCreate(&stop));
-
-        // warm up
-        // d_A is genuinely column-major — cuBLAS's native layout, so
-        // FILL_MODE_LOWER reads the same triangle wgblas's "lower" reads.
-        warm_clocks(handle); /* full clocks first — see helpers.h */
-        for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasSsymv(handle, CUBLAS_FILL_MODE_LOWER, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
-        }
-        CUDA_CHECK(cudaDeviceSynchronize());
-
-        float compute_times[BENCH_ITERS];
-        for (int i = 0; i < BENCH_ITERS; i++) {
-            CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSsymv(handle, CUBLAS_FILL_MODE_LOWER, n, &alpha, d_A, lda, d_x, 1, &beta, d_y, 1));
-            CUDA_CHECK(cudaEventRecord(stop, 0));
-            CUDA_CHECK(cudaEventSynchronize(stop));
-            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
-        }
-
-        float med = median(compute_times, BENCH_ITERS);
-        // lower triangle A read + x read + y read + y write
-        float bytes = ((float)(n * (n + 1) / 2) + 3.0f * n) * 4.0f;
-        float gbs = (bytes / 1e9f) / (med / 1e3f);
-
-        med_times[si] = med;
-        gbs_vals[si]  = gbs;
-
-        printf("%-10d  %-12.4f  %-12.4f\n", n, med, gbs);
-
-        CUDA_CHECK(cudaEventDestroy(start));
-        CUDA_CHECK(cudaEventDestroy(stop));
-        CUDA_CHECK(cudaFree(d_A));
-        CUDA_CHECK(cudaFree(d_x));
-        CUDA_CHECK(cudaFree(d_y));
-        free(h_A);
-        free(h_x);
-        free(h_y);
-    }
-
-    // write JSON results
-    record_field fields[] = { { "n", FIELD_INT, sizes } };
-    save_results(gpu_model, "ssymv", "ssymv", fields, 1, med_times, gbs_vals, NULL, num_sizes);
-
-    CUBLAS_CHECK(cublasDestroy(handle));
-    return 0;
+static int operands(const bench_params *p, bench_operand *o) {
+    o[0] = matrix(DT_F32, p->n, p->n, p->lda, FILL_RANDOM); // A
+    o[1] = vector(DT_F32, (size_t)p->n * p->inc);           // x
+    o[2] = vector(DT_F32, (size_t)p->n * p->inc);           // y
+    return 3;
 }
+
+static void call(cublasHandle_t device, const bench_params *p, bench_operand *o) {
+    float alpha = (float)p->alpha, beta = (float)p->beta;
+    CUBLAS_CHECK(cublasSsymv(device, fill_of(p->uplo), p->n, &alpha, o[0].ptr, p->lda, o[1].ptr, p->inc, &beta, o[2].ptr, p->inc));
+}
+
+// One triangle of A + x read + y read + y written
+static double bytes(const bench_params *p) { return ((double)(p->n * (p->n + 1) / 2) + 3.0 * p->n) * 4; }
+
+// These sweeps count y once.
+static double bytes_y_once(const bench_params *p) { return ((double)p->n * (p->n + 1) / 2 + 2.0 * p->n) * 4; }
+
+static const bench_spec spec = {
+    .routine = "ssymv",
+    .warmup = 5,
+    .iters = 100,
+    .defaults = { .uplo = "lower", .alpha = 1.0, .inc = 1 },
+    .derive = derive,
+    .operands = operands,
+    .call = call,
+    .bytes = bytes,
+    .sweeps = {
+        // Column-major A (cuBLAS's native layout), unit stride, every size.
+        { .name = "base", .axes = { AXIS(n, L2_SIZES) } },
+
+        // Non-unit incx/incy, as when x/y are rows/columns of a larger matrix.
+        { .name = "stride", .axes = { AXIS(stride, STRIDES), AXIS(n, L2_SIZES) }, .derive = inc_from_stride, .fixed = { .alpha = 2.0 }, .bytes = bytes_y_once },
+
+        // Padding on A's leading dimension; same logical work.
+        { .name = "lda", .axes = { AXIS(pad, SYMV_PADS), AXIS(n, L2_SIZES) } },
+
+        // Lower vs upper triangle of A.
+        { .name = "uplo", .axes = { AXIS(uplo, UPLOS), AXIS(n, L2_SIZES) }, .fixed = { .alpha = 2.0 }, .bytes = bytes_y_once },
+
+        // alpha values, including 0 and 1, which a kernel could special-case.
+        { .name = "alpha", .axes = { AXIS(alpha, ALPHAS), AXIS(n, L2_SIZES) }, .bytes = bytes_y_once },
+
+        // beta = 0 lets a kernel skip reading y; a step at 0 is that shortcut.
+        { .name = "beta", .axes = { AXIS(beta, BETAS), AXIS(n, L2_SIZES) }, .fixed = { .alpha = 2.0 }, .bytes = bytes_y_once },
+    },
+};
+
+int main(int argc, char **argv) { return run_benchmark(argc, argv, &spec); }

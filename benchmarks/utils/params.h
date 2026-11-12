@@ -24,3 +24,17 @@ static const double ALPHAS[] = { 0.0, 1.0, 2.5, -3.75, 1e-38 };
 
 /** Rotation c / s sweep values; 0.70710678 is cos(pi/4). */
 static const double ROT_VALUES[] = { 0.0, 0.5, 0.70710678, 1.0, -0.75 };
+
+/** Level 2 sizes: square m = n, 32 to 4096, plus 1280. */
+static const int L2_SIZES[] = { 32, 64, 128, 256, 512, 1024, 1280, 2048, 4096 };
+
+/** Leading-dimension padding for the `lda` sweeps (lda = n + pad). */
+static const int PADS[] = { 0, 1, 8, 16, 32, 48, 64, 128 };
+
+/** Real beta values: 0 (lets a kernel skip reading y), 1, two ordinary values. */
+static const double BETAS[] = { 0.0, 1.0, 2.5, -3.75 };
+
+/** String-valued axes, recorded as JSON strings. */
+static const char *const TRANSES[] = { "no-transpose", "transpose" };
+static const char *const UPLOS[] = { "lower", "upper" };
+static const char *const DIAGS[] = { "non-unit", "unit" };
