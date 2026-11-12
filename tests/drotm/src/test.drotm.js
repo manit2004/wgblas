@@ -3,6 +3,12 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { drotm } from "wgblas/drotm";
+import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures, rotmParamArb } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as
@@ -124,4 +130,36 @@ test("drotm zero-dimension (regression)", async () => {
 
   assert.deepEqual(Array.from(got.x), Array.from(beforeX));
   assert.deepEqual(Array.from(got.y), Array.from(beforeY));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("drotm exactness (regression)", async () => {
+  const full = fullPrecisionFrom(950);
+  const x = full(13);
+  const y = full(13);
+  const param = new Float64Array([-1, 0.5, 0.25, -0.75, 2]);
+  const got = await drotm(device, 5, x, 3, y, 3, param);
+  assertBitIdentical(got.x, x, gaps(5, 3), "x stride gaps");
+  assertBitIdentical(got.y, y, gaps(5, 3), "y stride gaps");
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("drotm IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      n,
+      x: withValues(values(n, 1), { 1: Infinity, 3: NaN }),
+      incx: 1,
+      y: withValues(values(n, 2), { 4: -Infinity }),
+      incy: 1,
+      param: new Float64Array([-1, 0.5, 0.25, -0.75, 2]),
+    };
+    const got = await drotm(device, a.n, a.x, a.incx, a.y, a.incy, a.param);
+    const want = stdlibReference(a);
+    assertIeeeMatch(got.x, want.x, `n=${n} x`);
+    assertIeeeMatch(got.y, want.y, `n=${n} y`);
+  }
 });

@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dcopy } from "wgblas/dcopy";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as
@@ -112,4 +117,19 @@ test("dcopy zero-dimension (regression)", async () => {
   const got = await dcopy(device, 0, x, 1, y, 1);
 
   assert.deepEqual(Array.from(got.y), Array.from(before));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dcopy exactness (regression)", async () => {
+  // Copied elements are x's doubles bit for bit; y's gaps are untouched.
+  const full = fullPrecisionFrom(920);
+  const x = full(12);
+  const y = full(18);
+  const got = await dcopy(device, 6, x, 2, y, 3);
+  const want = Float64Array.from(y, (v, i) =>
+    i % 3 === 0 ? x[(i / 3) * 2] : v,
+  );
+  assertBitIdentical(got.y, want, all(y.length), "y");
 });

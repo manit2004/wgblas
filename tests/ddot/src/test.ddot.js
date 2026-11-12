@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ddot } from "wgblas/ddot";
+import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Two reasons a raw f64 comparison against stdlib is the wrong oracle here:
@@ -113,4 +114,28 @@ test("ddot zero-dimension (regression)", async () => {
   const { dot: got } = await ddot(device, 0, x, 1, y, 1);
 
   assert.strictEqual(got, 0);
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("ddot IEEE special values (regression)", async (t) => {
+  for (const [label, entries] of [
+    ["Infinity", { 2: Infinity }],
+    ["-Infinity", { 2: -Infinity }],
+    ["NaN", { 2: NaN }],
+    ["Infinity - Infinity", { 1: Infinity, 4: -Infinity }],
+  ])
+    await t.test(label, async () => {
+      for (const n of [7, 5000]) {
+        const a = {
+          n,
+          x: withValues(values(n, 1), entries),
+          incx: 1,
+          y: values(n, 2).map(Math.abs),
+          incy: 1,
+        };
+        const got = await ddot(device, a.n, a.x, a.incx, a.y, a.incy);
+        assertIeeeMatch(got.dot, stdlibReference(a), `n=${n} dot`);
+      }
+    });
 });

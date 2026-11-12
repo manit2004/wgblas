@@ -3,6 +3,12 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { drot } from "wgblas/drot";
+import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // GPU may fuse multiply-add (FMA, one rounding) while CPU stdlib does two
@@ -119,4 +125,36 @@ test("drot zero-dimension (regression)", async () => {
 
   assert.deepEqual(Array.from(got.x), Array.from(beforeX));
   assert.deepEqual(Array.from(got.y), Array.from(beforeY));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("drot exactness (regression)", async () => {
+  const full = fullPrecisionFrom(940);
+  const x = full(13);
+  const y = full(13);
+  const got = await drot(device, 5, x, 3, y, 3, 0.6, 0.8);
+  assertBitIdentical(got.x, x, gaps(5, 3), "x stride gaps");
+  assertBitIdentical(got.y, y, gaps(5, 3), "y stride gaps");
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("drot IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      n,
+      x: withValues(values(n, 1), { 1: Infinity, 3: NaN }),
+      incx: 1,
+      y: withValues(values(n, 2), { 4: -Infinity }),
+      incy: 1,
+      c: 0.6,
+      s: 0.8,
+    };
+    const got = await drot(device, a.n, a.x, a.incx, a.y, a.incy, a.c, a.s);
+    const want = stdlibReference(a);
+    assertIeeeMatch(got.x, want.x, `n=${n} x`);
+    assertIeeeMatch(got.y, want.y, `n=${n} y`);
+  }
 });

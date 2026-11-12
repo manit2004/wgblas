@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { strsv } from "wgblas/strsv";
+import { assertIeeeMatch, at } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { strsvReference as stdlibReference } from "../../helpers/stdlib.js";
@@ -301,4 +302,61 @@ test("strsv edge cases (column-major)", async (t) => {
       assert.deepEqual(got, expected);
     });
   }
+});
+
+// Host-array calls put ±Infinity and NaN exactly where stdlib does, at any
+// size: with a non-finite value in b or A's referenced triangle they take the
+// substitution path (util/finite.mjs), since applying a block's inverse can
+// leave ±Infinity where substitution's Inf - Inf gives NaN. Covers an
+// Infinity at the start, middle and end of b, Infinity in A's referenced
+// triangle (a diagonal and an off-diagonal block), and NaN in the
+// unreferenced triangle (never read). n = 300 is past the inverse threshold.
+test("strsv IEEE special values (regression)", async (t) => {
+  for (const uplo of ["lower", "upper"])
+    for (const trans of ["no-transpose", "transpose"])
+      for (const n of [7, 300])
+        for (const [label, setup] of [
+          ["Infinity early in b", (A, x) => (x[1] = Infinity)],
+          ["Infinity mid-b", (A, x) => (x[Math.floor(n / 2)] = Infinity)],
+          ["Infinity late in b", (A, x) => (x[n - 2] = -Infinity)],
+          [
+            "Infinity in A",
+            (A) =>
+              (A[uplo === "lower" ? at(n, n - 1, 2) : at(n, 2, n - 1)] =
+                Infinity),
+          ],
+          [
+            "Infinity in A near the diagonal",
+            (A) => (A[uplo === "lower" ? at(n, 5, 4) : at(n, 4, 5)] = Infinity),
+          ],
+        ])
+          await t.test(`${uplo} ${trans} n=${n}: ${label}`, async () => {
+            const A = randomFloat32Array(n * n, -1, 1, 1);
+            for (let i = 0; i < n; i++) A[at(n, i, i)] += n + 4;
+            A[uplo === "lower" ? at(n, 1, 4) : at(n, 4, 1)] = NaN;
+            const x = randomFloat32Array(n, -1, 1, 2);
+            setup(A, x);
+            const a = {
+              uplo,
+              trans,
+              diag: "non-unit",
+              n,
+              A,
+              lda: n,
+              x,
+              incx: 1,
+            };
+            const got = await strsv(
+              device,
+              a.uplo,
+              a.trans,
+              a.diag,
+              a.n,
+              a.A,
+              a.lda,
+              x.slice(),
+              a.incx,
+            );
+            assertIeeeMatch(got.x, stdlibReference(a).x, "x", 1e-4);
+          });
 });

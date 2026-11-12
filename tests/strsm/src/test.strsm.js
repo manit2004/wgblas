@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { strsm } from "wgblas/strsm";
+import { assertIeeeMatch, at } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { backwardResidualFactor } from "../helpers.js";
@@ -510,4 +511,68 @@ test("strsm exercises more than one block (aOrder > BLOCK_SIZE)", async (t) => {
       );
     });
   }
+});
+
+// Host-array calls put ±Infinity and NaN exactly where stdlib does, at any
+// size: with a non-finite value in B or A's referenced triangle they take the
+// substitution path (util/finite.mjs), since applying a block's inverse
+// (through sgemm, whose kTri 5/6 keeps structural zeros out of it) can leave
+// ±Infinity where substitution's Inf - Inf gives NaN. Covers Infinity early,
+// mid and late along the triangular dimension of B, Infinity in A's
+// referenced triangle, and NaN in the unreferenced one (never read).
+// m = 600 is past the inverse threshold.
+test("strsm IEEE special values (regression)", async (t) => {
+  const n = 5;
+  for (const uplo of ["lower", "upper"])
+    for (const transA of ["no-transpose", "transpose"])
+      for (const m of [7, 600])
+        for (const [label, setup] of [
+          ["Infinity early in B", (A, B) => (B[at(n, 1, 2)] = Infinity)],
+          [
+            "Infinity mid-B",
+            (A, B) => (B[at(n, Math.floor(m / 2), 0)] = Infinity),
+          ],
+          ["Infinity late in B", (A, B) => (B[at(n, m - 2, 4)] = -Infinity)],
+          [
+            "Infinity in A",
+            (A) =>
+              (A[uplo === "lower" ? at(m, m - 1, 2) : at(m, 2, m - 1)] =
+                Infinity),
+          ],
+        ])
+          await t.test(`${uplo} ${transA} m=${m}: ${label}`, async () => {
+            const A = randomFloat32Array(m * m, -1, 1, 1);
+            for (let i = 0; i < m; i++) A[at(m, i, i)] += m + 4;
+            A[uplo === "lower" ? at(m, 1, 4) : at(m, 4, 1)] = NaN;
+            const B = randomFloat32Array(m * n, -1, 1, 2);
+            setup(A, B);
+            const a = {
+              side: "left",
+              uplo,
+              transA,
+              diag: "non-unit",
+              m,
+              n,
+              alpha: 1,
+              A,
+              lda: m,
+              B: B.slice(),
+              ldb: n,
+            };
+            const got = await strsm(
+              device,
+              a.side,
+              a.uplo,
+              a.transA,
+              a.diag,
+              a.m,
+              a.n,
+              a.alpha,
+              a.A,
+              a.lda,
+              B.slice(),
+              a.ldb,
+            );
+            assertIeeeMatch(got.B, stdlibReference(a).B, "B", 1e-4);
+          });
 });

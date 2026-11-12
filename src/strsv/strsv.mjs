@@ -5,6 +5,7 @@ import {
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
+import { hasNonFinite, triangleHasNonFinite } from "../util/finite.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
@@ -124,7 +125,17 @@ export async function strsv(
   const numBlocks = blockStarts.length;
 
   const stride = device.limits.minUniformBufferOffsetAlignment;
-  const useSubstitution = numBlocks <= SUBSTITUTION_MAX_BLOCKS;
+  // Host arrays holding ±Infinity/NaN take substitution at any size, so the
+  // special values land where stdlib and the reference BLAS put them (see
+  // util/finite.mjs). GPU-resident data can't be checked without a readback,
+  // so it keeps the inverse path — the difference its docs describe.
+  // Only scanned when the size would otherwise take the inverse path.
+  const nonFinite =
+    numBlocks > SUBSTITUTION_MAX_BLOCKS &&
+    !xIsGpu &&
+    (hasNonFinite(x, n, incx) ||
+      triangleHasNonFinite(A, n, lda, isLower, isUnit));
+  const useSubstitution = numBlocks <= SUBSTITUTION_MAX_BLOCKS || nonFinite;
 
   // Every block's step params are fixed by its natural index regardless of
   // traversal direction, so the packed buffer is indexed by blockIndex

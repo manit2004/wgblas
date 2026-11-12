@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dswap } from "wgblas/dswap";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as
@@ -114,4 +119,21 @@ test("dswap zero-dimension (regression)", async () => {
 
   assert.deepEqual(Array.from(got.x), Array.from(beforeX));
   assert.deepEqual(Array.from(got.y), Array.from(beforeY));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dswap exactness (regression)", async () => {
+  // Swapped elements are the other vector's doubles bit for bit; gaps untouched.
+  const full = fullPrecisionFrom(930);
+  const x = full(11);
+  const y = full(16);
+  const got = await dswap(device, 6, x, 2, y, 3);
+  for (let i = 0; i < 6; i++) {
+    assert.ok(Object.is(got.x[i * 2], y[i * 3]), `x[${i * 2}]`);
+    assert.ok(Object.is(got.y[i * 3], x[i * 2]), `y[${i * 3}]`);
+  }
+  assertBitIdentical(got.x, x, gaps(6, 2), "x gaps");
+  assertBitIdentical(got.y, y, gaps(6, 3), "y gaps");
 });

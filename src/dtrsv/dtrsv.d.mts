@@ -10,6 +10,14 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * A is an n×n triangular matrix stored in row-major order. Only the triangle
  * specified by `uplo` is referenced; the other triangle is not accessed.
  *
+ * **Infinity and NaN** land exactly where substitution-based BLAS (stdlib,
+ * the reference BLAS) puts them for Float64Array calls: with a non-finite
+ * value in b or A's referenced triangle, the solve uses substitution at any
+ * size. GPU-resident data can't be checked without a readback, so it keeps
+ * the faster blocked path above n = 128, where an Infinity in b that
+ * reaches a later row of its 64-row block along several paths can give
+ * ±Infinity where substitution gives NaN (Inf − Inf).
+ *
  * {@includeCode ../../examples/dtrsv/dtrsv.js}
  *
  * **Browser (standalone HTML):**
@@ -51,6 +59,14 @@ export declare function dtrsv(
  * x is kept resident on the GPU (mutated in place). A must be a GpuMatrix
  * (Float64Array-backed); its own `layout` (set at `GpuMatrix.from` time)
  * determines the operation — there is no separate `layout` argument here.
+ *
+ * **Infinity and NaN** land exactly where substitution-based BLAS (stdlib,
+ * the reference BLAS) puts them for Float64Array calls: with a non-finite
+ * value in b or A's referenced triangle, the solve uses substitution at any
+ * size. GPU-resident data can't be checked without a readback, so it keeps
+ * the faster blocked path above n = 128, where an Infinity in b that
+ * reaches a later row of its 64-row block along several paths can give
+ * ±Infinity where substitution gives NaN (Inf − Inf).
  *
  * {@includeCode ../../examples/dtrsv/gpu.dtrsv.js}
  *

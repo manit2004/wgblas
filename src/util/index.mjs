@@ -23,6 +23,7 @@
  * | `constants` | values the JS dispatch side shares with shaders |
  * | `strided` | packing a strided vector before an O(n²) Level 2 kernel |
  * | `f64` | splitting `Float64Array`s into double-double halves and back |
+ * | `finite` | non-finite checks that steer triangular solves to substitution |
  * | `complex` | interleaving complex arrays for upload and back |
  *
  * @module devdocs/utility-functions

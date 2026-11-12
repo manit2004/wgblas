@@ -41,5 +41,9 @@ fn ddDivProtected(a: DD, b: DD, threadSlot: u32) -> DD {
   let r1 = ddSubProtected(a, p1, threadSlot);
   let q2 = r1.hi / safeB.hi;
   let refined = ddAddProtected(DD(q1, 0.0), DD(q2, 0.0), threadSlot);
-  return DD(select(refined.hi, q1, bIsZero), select(refined.lo, 0.0, bIsZero));
+  // q1 alone where the refinement would go through Inf - Inf or 0 * Inf: a
+  // zero divisor, an infinite or NaN quotient, or an infinite divisor (whose
+  // quotient is exactly 0 or NaN) — the IEEE f32 result is already exact.
+  let direct = bIsZero || !isFiniteF(q1) || !isFiniteF(b.hi);
+  return DD(select(refined.hi, q1, direct), select(refined.lo, 0.0, direct));
 }

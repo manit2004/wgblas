@@ -3,14 +3,22 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dsyrk } from "wgblas/dsyrk";
+import {
+  assertIeeeMatch,
+  withValues,
+  values,
+  at,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+  offTriangle,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
 import { dsyrkReference as stdlibReference } from "../../helpers/stdlib.js";
-import {
-  splitDoubleDouble,
-  mergeDoubleDouble,
-} from "../../../src/util/f64.mjs";
 import edgeCases from "../edge-cases.json" with { type: "json" };
 import edgeCasesColumnMajor from "../edge-cases-column-major.json" with { type: "json" };
 
@@ -24,14 +32,6 @@ before(async () => {
 after(() => {
   cleanup();
 });
-
-// What the GPU hands back for a cell it never writes: C's own value after the
-// split into (hi, lo) f32 halves and the merge back — exact for any double
-// with ≤ 48 significant bits, a rounding for full-precision random doubles.
-function ddRoundTrip(x) {
-  const { hi, lo } = splitDoubleDouble(x);
-  return mergeDoubleDouble(hi, lo);
-}
 
 // A's "level-3" override isn't run through derive64 (it's a nested key), so
 // build the f64/L3 spec by hand — same construction as test.dgemmtr.js.
@@ -224,15 +224,14 @@ test("dsyrk multi-tile path (regression)", async (t) => {
               );
               // The metric only covers the requested triangle — the other one
               // must come back unchanged (where a wrong skip/mask would write),
-              // up to C's own DD round trip, since the GPU never writes it.
-              const cRoundTrip = ddRoundTrip(a.C);
+              // bit for bit, since the GPU never writes it.
               for (let i = 0; i < N; i++)
                 for (let j = 0; j < N; j++) {
                   if (uplo === "lower" ? j <= i : j >= i) continue;
                   const idx = cm ? j * N + i : i * N + j;
                   assert.equal(
                     got.C[idx],
-                    cRoundTrip[idx],
+                    a.C[idx],
                     `C(${i},${j}) outside the triangle changed`,
                   );
                 }
@@ -247,8 +246,8 @@ test("dsyrk multi-tile path (regression)", async (t) => {
 // tests/helpers/validation.js) only asserts that calls don't throw, so this
 // test checks actual per-element values: via forwardFactor inside the
 // triangle (C's DD round trip caps precision at ~48 bits, so a plain f64
-// beta*C isn't bit-reproducible — as in dgemmtr's k=0 test) and against the
-// round-tripped C outside it.
+// beta*C isn't bit-reproducible — as in dgemmtr's k=0 test) and against C
+// itself, bit for bit, outside it.
 test("dsyrk zero-dimension (k=0) (regression)", async (t) => {
   const N = 4,
     K = 0;
@@ -287,13 +286,12 @@ test("dsyrk zero-dimension (k=0) (regression)", async (t) => {
       );
       const factor = forwardFactor(got, stdlibReference(a), a);
       assert.ok(factor <= THRESHOLD, `forward factor ${factor} > ${THRESHOLD}`);
-      const cRoundTrip = ddRoundTrip(a.C);
       for (let row = 0; row < N; row++)
         for (let col = 0; col < N; col++) {
           const inTriangle = uplo === "lower" ? col <= row : col >= row;
           if (inTriangle) continue;
           const i = row * N + col;
-          assert.equal(got.C[i], cRoundTrip[i], `row=${row}, col=${col}`);
+          assert.equal(got.C[i], a.C[i], `row=${row}, col=${col}`);
         }
     });
   }
@@ -334,4 +332,104 @@ test("dsyrk edge cases (column-major)", async (t) => {
       assert.deepEqual(got.C, expected.C);
     });
   }
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dsyrk exactness (regression)", async (t) => {
+  const full = fullPrecisionFrom(1050);
+  const n = 7;
+  // k = 0 still needs a non-empty A buffer; lda at its minimum.
+  for (const [label, alpha, k] of [
+    ["alpha=0", 0, 3],
+    ["k=0", 1.5, 0],
+  ])
+    await t.test(`${label}, beta=1 returns C untouched`, async () => {
+      const A = k === 0 ? new Float64Array(n) : full(n * k);
+      const C = full(n * n);
+      const want = Float64Array.from(C);
+      const got = await dsyrk(
+        device,
+        "lower",
+        "no-transpose",
+        n,
+        k,
+        alpha,
+        A,
+        Math.max(k, 1),
+        1,
+        C,
+        n,
+      );
+      assert.equal(got.C, C);
+      assertBitIdentical(got.C, want, all(n * n), "C");
+    });
+  for (const uplo of ["lower", "upper"])
+    await t.test(`the unreferenced triangle (${uplo})`, async () => {
+      const C = full(n * n);
+      const got = await dsyrk(
+        device,
+        uplo,
+        "no-transpose",
+        n,
+        3,
+        1.5,
+        full(n * 3),
+        3,
+        0.5,
+        C,
+        n,
+      );
+      assertBitIdentical(got.C, C, offTriangle(n, uplo), "C");
+    });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dsyrk IEEE special values (regression)", async () => {
+  // beta = 0 must ignore NaN/Inf in C's triangle; the other triangle keeps
+  // whatever it held, NaN included.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 150]) {
+      const a = {
+        uplo,
+        trans: "no-transpose",
+        n,
+        k: n,
+        alpha: 1.5,
+        A: withValues(values(n * n, 1), { [at(n, 4, 2)]: Infinity }),
+        lda: n,
+        beta: 0,
+        C: withValues(values(n * n, 3), {
+          [at(n, 2, 2)]: NaN,
+          [at(n, 0, n - 1)]: NaN,
+          [at(n, n - 1, 0)]: Infinity,
+        }),
+        ldc: n,
+      };
+      const got = await dsyrk(
+        device,
+        a.uplo,
+        a.trans,
+        a.n,
+        a.k,
+        a.alpha,
+        a.A,
+        a.lda,
+        a.beta,
+        a.C,
+        a.ldc,
+      );
+      // The reference sees C's triangle zeroed (beta = 0 ignores it), the rest as given.
+      const C0 = Float64Array.from(a.C);
+      for (let i = 0; i < n; i++)
+        for (let j = 0; j < n; j++)
+          if (uplo === "lower" ? j <= i : j >= i) C0[at(n, i, j)] = 0;
+      assertIeeeMatch(
+        got.C,
+        stdlibReference({ ...a, C: C0 }).C,
+        `${uplo} n=${n} C`,
+      );
+    }
 });

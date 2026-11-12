@@ -7,7 +7,8 @@
 // lane-wise to vec4s. The barrier only has to separate a thread's store from
 // its own load, so one barrier serves all four lanes. ddMulProtected costs 3
 // barriers and ddAddProtected 2; ddMul4Protected/ddAdd4Protected cost the
-// same for four results.
+// same for four results. Inf/NaN results carry a 0 error term, as in the
+// scalar ops (isFiniteF in add.wgsl).
 //
 // Same uniformity contract as the scalar ops: `threadSlot` unique per thread
 // (local_invocation_index), every thread calls each op the same number of
@@ -27,6 +28,11 @@ fn fsub4(a: vec4<f32>, b: vec4<f32>) -> vec4<f32> {
   return a + negf4(b);
 }
 
+// Lane-wise isFiniteF: false for ±Inf and NaN, whose error terms are 0.
+fn isFinite4(x: vec4<f32>) -> vec4<bool> {
+  return (bitcast<vec4<u32>>(x) & vec4<u32>(0x7f800000u)) != vec4<u32>(0x7f800000u);
+}
+
 // Rounds v to stored f32s the compiler can't re-derive or re-fuse.
 fn materialize4(v: vec4<f32>, threadSlot: u32) -> vec4<f32> {
   dekkerScratch4[threadSlot] = v;
@@ -38,13 +44,13 @@ fn twoSum4Protected(a: vec4<f32>, b: vec4<f32>, threadSlot: u32) -> DD4 {
   let s = materialize4(a + b, threadSlot);
   let v = fsub4(s, a);
   let e = fsub4(a, fsub4(s, v)) + fsub4(b, v);
-  return DD4(s, e);
+  return DD4(s, select(vec4<f32>(0.0), e, isFinite4(s)));
 }
 
 fn fastTwoSum4Protected(a: vec4<f32>, b: vec4<f32>, threadSlot: u32) -> DD4 {
   let s = materialize4(a + b, threadSlot);
   let e = fsub4(b, fsub4(s, a));
-  return DD4(s, e);
+  return DD4(s, select(vec4<f32>(0.0), e, isFinite4(s)));
 }
 
 // Four ddAddProtected at once.
@@ -65,7 +71,7 @@ fn twoProdBit4(a: vec4<f32>, b: vec4<f32>) -> DD4 {
   let as_ = bitSplit4(a);
   let bs = bitSplit4(b);
   let e = fsub4(fsub4(fsub4(fsub4(s, as_.hi * bs.hi), as_.lo * bs.hi), as_.hi * bs.lo), as_.lo * bs.lo);
-  return DD4(s, negf4(e));
+  return DD4(s, select(vec4<f32>(0.0), negf4(e), isFinite4(s)));
 }
 
 // Four ddMulProtected at once: p.lo materialized before it feeds the cross
@@ -74,7 +80,7 @@ fn twoProdBit4(a: vec4<f32>, b: vec4<f32>) -> DD4 {
 fn ddMul4Protected(a: DD4, b: DD4, threadSlot: u32) -> DD4 {
   let p = twoProdBit4(a.hi, b.hi);
   let pLo = materialize4(p.lo, threadSlot);
-  let crossAndLo = pLo + (a.hi * b.lo + a.lo * b.hi);
+  let crossAndLo = select(vec4<f32>(0.0), pLo + (a.hi * b.lo + a.lo * b.hi), isFinite4(p.hi));
   let rawHi = materialize4(p.hi, threadSlot);
   return fastTwoSum4Protected(rawHi, crossAndLo, threadSlot);
 }

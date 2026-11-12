@@ -11,7 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dscal: x := alpha * x, double-double (Dekker) f64 emulation of sscal — x
@@ -104,7 +104,7 @@ export async function dscal(device, n, alpha, x, incx) {
     readHiBuffer = null; // extractResult already destroyed it
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    const result = mergeDoubleDoubleExact(hi, lo, x);
     if (gpuTimeMs !== undefined) return { x: result, gpuTimeMs };
     return { x: result };
   } finally {

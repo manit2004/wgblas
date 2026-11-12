@@ -57,6 +57,14 @@ fn ddMask(a: DD, keep: bool) -> DD {
   return DD(select(0.0, a.hi, keep), select(0.0, a.lo, keep));
 }
 
+// xr[c] as row r's term of Ainv · xr, or 0 at the inverse's structural zeros
+// (c > r for a lower-triangular inverse, c < r for upper): those must add
+// exactly 0, where 0 · Inf or 0 · NaN from an Infinity or NaN in x would
+// otherwise reach rows the true solve never touches.
+fn solveTerm(r: u32, c: u32, lowerInv: bool) -> DD {
+  return ddMask(xr[c], select(c >= r, c <= r, lowerInv));
+}
+
 // Row r's four quarter sums, every thread (the protected adds need it).
 fn sumParts(r: u32, tid: u32) -> DD {
   return dd4Sum(
@@ -101,10 +109,13 @@ fn dtrsv_step_main(
       av[u] = DD(AinvHi[ia], AinvLo[ia]);
     }
     let xb = q * SPAN;
-    var acc = ddMul4Protected(dd4Of(av[0], av[1], av[2], av[3]), dd4Of(xr[xb], xr[xb + 1u], xr[xb + 2u], xr[xb + 3u]), tid);
-    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[4], av[5], av[6], av[7]), dd4Of(xr[xb + 4u], xr[xb + 5u], xr[xb + 6u], xr[xb + 7u]), tid), tid);
-    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[8], av[9], av[10], av[11]), dd4Of(xr[xb + 8u], xr[xb + 9u], xr[xb + 10u], xr[xb + 11u]), tid), tid);
-    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[12], av[13], av[14], av[15]), dd4Of(xr[xb + 12u], xr[xb + 13u], xr[xb + 14u], xr[xb + 15u]), tid), tid);
+    // Forward solves update the rows after the block, so their inverse is
+    // lower triangular; backward ones (rangeStart = 0) upper.
+    let lowerInv = params.rangeStart == params.blockEnd;
+    var acc = ddMul4Protected(dd4Of(av[0], av[1], av[2], av[3]), dd4Of(solveTerm(r, xb, lowerInv), solveTerm(r, xb + 1u, lowerInv), solveTerm(r, xb + 2u, lowerInv), solveTerm(r, xb + 3u, lowerInv)), tid);
+    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[4], av[5], av[6], av[7]), dd4Of(solveTerm(r, xb + 4u, lowerInv), solveTerm(r, xb + 5u, lowerInv), solveTerm(r, xb + 6u, lowerInv), solveTerm(r, xb + 7u, lowerInv)), tid), tid);
+    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[8], av[9], av[10], av[11]), dd4Of(solveTerm(r, xb + 8u, lowerInv), solveTerm(r, xb + 9u, lowerInv), solveTerm(r, xb + 10u, lowerInv), solveTerm(r, xb + 11u, lowerInv)), tid), tid);
+    acc = ddAdd4Protected(acc, ddMul4Protected(dd4Of(av[12], av[13], av[14], av[15]), dd4Of(solveTerm(r, xb + 12u, lowerInv), solveTerm(r, xb + 13u, lowerInv), solveTerm(r, xb + 14u, lowerInv), solveTerm(r, xb + 15u, lowerInv)), tid), tid);
     part[q * BLOCK_SIZE + r] = dd4Sum(acc, tid);
     workgroupBarrier();
     let v = sumParts(lane, tid);

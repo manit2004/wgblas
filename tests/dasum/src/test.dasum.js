@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dasum } from "wgblas/dasum";
+import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { dasumReference as stdlibReference } from "../../helpers/stdlib.js";
@@ -91,4 +92,19 @@ test("dasum zero-dimension (regression)", async () => {
   const { asum: got } = await dasum(device, 0, x, 1);
 
   assert.strictEqual(got, 0);
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dasum IEEE special values (regression)", async () => {
+  for (const [entries, n] of [
+    [{ 2: Infinity }, 7],
+    [{ 3: -Infinity }, 5000],
+    [{ 2: NaN }, 7],
+    [{ 4000: NaN }, 5000],
+  ]) {
+    const a = { n, x: withValues(values(n, 1), entries), incx: 1 };
+    const got = await dasum(device, a.n, a.x, a.incx);
+    assertIeeeMatch(got.asum, stdlibReference(a), `n=${n} asum`);
+  }
 });

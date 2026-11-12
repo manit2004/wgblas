@@ -41,5 +41,8 @@ fn ddSqrtProtected(a: DD, threadSlot: u32) -> DD {
   let safeDenom = select(2.0 * x0, 1.0, isZero);
   let correction = r.hi / safeDenom;
   let result = ddAddProtected(DD(x0, 0.0), DD(correction, 0.0), threadSlot);
-  return DD(select(result.hi, 0.0, isZero), select(result.lo, 0.0, isZero));
+  // sqrt(+Inf) = +Inf and sqrt(NaN or negative) = NaN are exact as x0 —
+  // refining them would go through Inf - Inf.
+  let direct = isZero || !isFiniteF(x0);
+  return DD(select(result.hi, x0, direct), select(result.lo, 0.0, direct));
 }

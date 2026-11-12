@@ -18,6 +18,15 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * block (order <= 64) is one dispatch. A near-zero diagonal entry amplifies
  * error, same as any triangular solve.
  *
+ * **Infinity and NaN** land exactly where substitution-based BLAS (stdlib,
+ * the reference BLAS) puts them for Float32Array calls: with a non-finite
+ * value in B or A's referenced triangle, the solve uses substitution at any
+ * size. GPU-resident data can't be checked without a readback, so it keeps
+ * the faster blocked path above 512 along the triangular dimension, where
+ * an Infinity in B that reaches a later row (column, for `side='right'`) of
+ * its 64-wide block along several paths can give ±Infinity where
+ * substitution gives NaN (Inf − Inf).
+ *
  * {@includeCode ../../examples/strsm/strsm.js}
  *
  * **Browser (standalone HTML):**
@@ -69,6 +78,15 @@ export declare function strsm(
  * `GpuMatrix.from` time) determines the operation — there is no separate
  * `layout` argument here. A and B must both be GpuMatrix or both be
  * Float32Array — mixing is not supported.
+ *
+ * **Infinity and NaN** land exactly where substitution-based BLAS (stdlib,
+ * the reference BLAS) puts them for Float32Array calls: with a non-finite
+ * value in B or A's referenced triangle, the solve uses substitution at any
+ * size. GPU-resident data can't be checked without a readback, so it keeps
+ * the faster blocked path above 512 along the triangular dimension, where
+ * an Infinity in B that reaches a later row (column, for `side='right'`) of
+ * its 64-wide block along several paths can give ±Infinity where
+ * substitution gives NaN (Inf − Inf).
  *
  * {@includeCode ../../examples/strsm/gpu.strsm.js}
  *

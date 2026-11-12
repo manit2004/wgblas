@@ -30,7 +30,8 @@ fn twoProdBit(a: f32, b: f32) -> DD {
   let aSplit = bitSplit(a);
   let bSplit = bitSplit(b);
   let e = fsub(fsub(fsub(fsub(s, aSplit.hi * bSplit.hi), aSplit.lo * bSplit.hi), aSplit.hi * bSplit.lo), aSplit.lo * bSplit.lo);
-  return DD(s, negf(e));
+  // Inf/NaN product: no error term (see isFiniteF in add.wgsl).
+  return DD(s, select(0.0, negf(e), isFiniteF(s)));
 }
 
 // ── Unsafe historical reference — do not use ────────────────────────────
@@ -80,7 +81,8 @@ fn ddMulRaw(a: DD, b: DD, threadSlot: u32) -> DD {
   dekkerScratch[threadSlot] = p.lo;
   workgroupBarrier();
   let pLo = dekkerScratch[threadSlot];
-  let crossAndLo = pLo + (a.hi * b.lo + a.lo * b.hi);
+  // Inf/NaN product: the cross terms would add Inf*0 = NaN (see isFiniteF).
+  let crossAndLo = select(0.0, pLo + (a.hi * b.lo + a.lo * b.hi), isFiniteF(p.hi));
   return DD(p.hi, crossAndLo);
 }
 

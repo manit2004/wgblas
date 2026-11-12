@@ -3,6 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dsyr } from "wgblas/dsyr";
+import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+  offTriangle,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -213,4 +220,53 @@ test("dsyr edge cases (column-major)", async (t) => {
       assert.deepEqual(got.A, expected.A);
     });
   }
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dsyr exactness (regression)", async (t) => {
+  const full = fullPrecisionFrom(1010);
+  const n = 7;
+  await t.test("alpha=0 returns A untouched", async () => {
+    const A = full(n * n);
+    const want = Float64Array.from(A);
+    const got = await dsyr(device, "upper", n, 0, full(n), 1, A, n);
+    assert.equal(got.A, A);
+    assertBitIdentical(got.A, want, all(n * n), "A");
+  });
+  for (const uplo of ["lower", "upper"])
+    await t.test(`the unreferenced triangle (${uplo})`, async () => {
+      const A = full(n * n);
+      const got = await dsyr(device, uplo, n, 1.5, full(n), 1, A, n);
+      assertBitIdentical(got.A, A, offTriangle(n, uplo), "A");
+    });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dsyr IEEE special values (regression)", async () => {
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300]) {
+      const a = {
+        uplo,
+        n,
+        alpha: 1.5,
+        x: withValues(values(n, 1), { 2: Infinity, 5: NaN }),
+        incx: 1,
+        A: values(n * n, 2),
+        lda: n,
+      };
+      const got = await dsyr(
+        device,
+        a.uplo,
+        a.n,
+        a.alpha,
+        a.x,
+        a.incx,
+        a.A,
+        a.lda,
+      );
+      assertIeeeMatch(got.A, stdlibReference(a).A, `${uplo} n=${n} A`);
+    }
 });

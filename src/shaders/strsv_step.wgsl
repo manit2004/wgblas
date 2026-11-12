@@ -48,6 +48,14 @@ var<workgroup> xr: array<f32, 64>;          // this block's unsolved x
 var<workgroup> xs: array<f32, 64>;          // this block's solution
 var<workgroup> part: array<f32, 256>;       // partial sums, [quarter][row]
 
+// xr[c] as row r's term of Ainv · xr, or 0 at the inverse's structural zeros
+// (c > r for a lower-triangular inverse, c < r for upper): those must add
+// exactly 0, where 0 · Inf or 0 · NaN from an Infinity or NaN in x would
+// otherwise reach rows the true solve never touches.
+fn solveTerm(r: u32, c: u32, lowerInv: bool) -> f32 {
+  return select(0.0, xr[c], select(c >= r, c <= r, lowerInv));
+}
+
 @compute @workgroup_size(256)
 fn main(
   @builtin(workgroup_id)           wid: vec3u,
@@ -79,12 +87,15 @@ fn main(
     var a1 = 0.0f;
     var a2 = 0.0f;
     var a3 = 0.0f;
+    // Forward solves update the rows after the block, so their inverse is
+    // lower triangular; backward ones (rangeStart = 0) upper.
+    let lowerInv = params.rangeStart == params.blockEnd;
     for (var u = 0u; u < SPAN; u += 4u) {
       let c = q * SPAN + u;
-      a0 += Ainv[ainvBase + c * BLOCK_SIZE + r]        * xr[c];
-      a1 += Ainv[ainvBase + (c + 1u) * BLOCK_SIZE + r] * xr[c + 1u];
-      a2 += Ainv[ainvBase + (c + 2u) * BLOCK_SIZE + r] * xr[c + 2u];
-      a3 += Ainv[ainvBase + (c + 3u) * BLOCK_SIZE + r] * xr[c + 3u];
+      a0 += Ainv[ainvBase + c * BLOCK_SIZE + r]        * solveTerm(r, c, lowerInv);
+      a1 += Ainv[ainvBase + (c + 1u) * BLOCK_SIZE + r] * solveTerm(r, c + 1u, lowerInv);
+      a2 += Ainv[ainvBase + (c + 2u) * BLOCK_SIZE + r] * solveTerm(r, c + 2u, lowerInv);
+      a3 += Ainv[ainvBase + (c + 3u) * BLOCK_SIZE + r] * solveTerm(r, c + 3u, lowerInv);
     }
     part[q * BLOCK_SIZE + r] = (a0 + a1) + (a2 + a3);
     workgroupBarrier();

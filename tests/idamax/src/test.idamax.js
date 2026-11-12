@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { idamax } from "wgblas/idamax";
+import { withValues, values } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { idamaxReference as stdlibReference } from "../../helpers/stdlib.js";
@@ -114,4 +115,19 @@ test("idamax NaN handling", async (t) => {
     assert.equal(await run([1, Inf, 2, 3]), 1);
     assert.equal(await run([1, -Inf, 2, 3]), 1);
   });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("idamax IEEE special values (regression)", async () => {
+  // The first ±Infinity wins, as |Inf| is the largest magnitude.
+  for (const [entries, n] of [
+    [{ 2: Infinity }, 7],
+    [{ 3: -Infinity, 5: Infinity }, 7],
+    [{ 4000: -Infinity }, 5000],
+  ]) {
+    const a = { n, x: withValues(values(n, 1), entries), incx: 1 };
+    const got = await idamax(device, a.n, a.x, a.incx);
+    assert.equal(got.index, stdlibReference(a), `n=${n} index`);
+  }
 });

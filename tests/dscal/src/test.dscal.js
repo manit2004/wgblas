@@ -3,6 +3,12 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dscal } from "wgblas/dscal";
+import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as ddot's
@@ -111,4 +117,29 @@ test("dscal zero-dimension (regression)", async () => {
   const got = await dscal(device, 0, 2.5, x, 1);
 
   assert.deepEqual(Array.from(got.x), Array.from(before));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dscal exactness (regression)", async () => {
+  const full = fullPrecisionFrom(910);
+  const x = full(13);
+  const got = await dscal(device, 5, 1.5, x, 3);
+  assertBitIdentical(got.x, x, gaps(5, 3), "x stride gaps");
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dscal IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      n,
+      alpha: 2.5,
+      x: withValues(values(n, 1), { 1: Infinity, 3: NaN, 4: -Infinity }),
+      incx: 1,
+    };
+    const got = await dscal(device, a.n, a.alpha, a.x, a.incx);
+    assertIeeeMatch(got.x, stdlibReference(a).x, `n=${n} x`);
+  }
 });

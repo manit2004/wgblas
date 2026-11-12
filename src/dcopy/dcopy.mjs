@@ -11,7 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dcopy: y := x, double-double (Dekker) f64 emulation of scopy — x and y are
@@ -123,7 +123,10 @@ export async function dcopy(device, n, x, incx, y, incy) {
     readHiBuffer = null; // extractResult already destroyed it
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    // Each copied element is x's value, bit for bit.
+    const yBefore = Float64Array.from(y);
+    for (let i = 0; i < n; i++) yBefore[i * incy] = x[i * incx];
+    const result = mergeDoubleDoubleExact(hi, lo, yBefore);
     if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
     return { y: result };
   } finally {

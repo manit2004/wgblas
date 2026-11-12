@@ -3,6 +3,18 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dger } from "wgblas/dger";
+import {
+  assertIeeeMatch,
+  withValues,
+  values,
+  at,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+  ldPadding,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -272,5 +284,57 @@ test("dger edge cases (column-major)", async (t) => {
       const expected = stdlibReference(a);
       assert.deepEqual(got.A, expected.A);
     });
+  }
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dger exactness (regression)", async (t) => {
+  const full = fullPrecisionFrom(1000);
+  const [m, n] = [4, 5];
+  await t.test("alpha=0 returns A untouched", async () => {
+    const A = full(m * n);
+    const want = Float64Array.from(A);
+    const got = await dger(device, m, n, 0, full(m), 1, full(n), 1, A, n);
+    assert.equal(got.A, A);
+    assertBitIdentical(got.A, want, all(m * n), "A");
+  });
+  await t.test("lda padding", async () => {
+    const lda = n + 3;
+    const A = full(m * lda);
+    const got = await dger(device, m, n, 1.5, full(m), 1, full(n), 1, A, lda);
+    assertBitIdentical(got.A, A, ldPadding(m, n, lda), "A");
+  });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dger IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      m: n,
+      n,
+      alpha: 1.5,
+      x: withValues(values(n, 1), { 2: Infinity }),
+      incx: 1,
+      y: withValues(values(n, 2), { 3: NaN }),
+      incy: 1,
+      A: withValues(values(n * n, 3), { [at(n, 5, 5)]: -Infinity }),
+      lda: n,
+    };
+    const got = await dger(
+      device,
+      a.m,
+      a.n,
+      a.alpha,
+      a.x,
+      a.incx,
+      a.y,
+      a.incy,
+      a.A,
+      a.lda,
+    );
+    assertIeeeMatch(got.A, stdlibReference(a).A, `n=${n} A`);
   }
 });

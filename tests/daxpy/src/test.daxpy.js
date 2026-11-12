@@ -3,6 +3,13 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { daxpy } from "wgblas/daxpy";
+import { assertIeeeMatch, withValues, values } from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as
@@ -119,4 +126,41 @@ test("daxpy zero-dimension (regression)", async () => {
   const got = await daxpy(device, 0, 2.5, x, 1, y, 1);
 
   assert.deepEqual(Array.from(got.y), Array.from(before));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("daxpy exactness (regression)", async (t) => {
+  const full = fullPrecisionFrom(900);
+  await t.test("alpha=0 returns y untouched, even with NaN in x", async () => {
+    const y = full(6);
+    const want = Float64Array.from(y);
+    const x = full(6).fill(NaN, 0, 2);
+    const got = await daxpy(device, 6, 0, x, 1, y, 1);
+    assert.equal(got.y, y);
+    assertBitIdentical(got.y, want, all(6), "y");
+  });
+  await t.test("stride gaps in y", async () => {
+    const y = full(13);
+    const got = await daxpy(device, 5, 1.5, full(13), 3, y, 3);
+    assertBitIdentical(got.y, y, gaps(5, 3), "y");
+  });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("daxpy IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      n,
+      alpha: 1.5,
+      x: withValues(values(n, 1), { 1: Infinity, 3: NaN, 4: -Infinity }),
+      incx: 1,
+      y: withValues(values(n, 2), { 5: Infinity }),
+      incy: 1,
+    };
+    const got = await daxpy(device, a.n, a.alpha, a.x, a.incx, a.y, a.incy);
+    assertIeeeMatch(got.y, stdlibReference(a).y, `n=${n} y`);
+  }
 });

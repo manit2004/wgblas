@@ -3,6 +3,18 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dgemv } from "wgblas/dgemv";
+import {
+  assertIeeeMatch,
+  withValues,
+  values,
+  at,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -363,4 +375,95 @@ test("dgemv edge cases (column-major)", async (t) => {
       assert.deepEqual(got.y, expected.y);
     });
   }
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dgemv exactness (regression)", async (t) => {
+  const full = fullPrecisionFrom(960);
+  const n = 5;
+  for (const trans of ["no-transpose", "transpose"])
+    await t.test(`alpha=0, beta=1 returns y untouched (${trans})`, async () => {
+      const y = full(n);
+      const want = Float64Array.from(y);
+      const got = await dgemv(
+        device,
+        trans,
+        n,
+        n,
+        0,
+        full(n * n),
+        n,
+        full(n),
+        1,
+        1,
+        y,
+        1,
+      );
+      assert.equal(got.y, y);
+      assertBitIdentical(got.y, want, all(n), "y");
+    });
+  for (const beta of [0, 0.5])
+    await t.test(`stride gaps in y (beta=${beta})`, async () => {
+      const y = full(13);
+      const got = await dgemv(
+        device,
+        "no-transpose",
+        n,
+        n,
+        1.5,
+        full(n * n),
+        n,
+        full(13),
+        3,
+        beta,
+        y,
+        3,
+      );
+      assertBitIdentical(got.y, y, gaps(n, 3), "y");
+    });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dgemv IEEE special values (regression)", async (t) => {
+  // n = 300 reaches the batched column loop (no-transpose) and the split-K
+  // path (transpose); beta = 0 must ignore NaN/Inf already in y.
+  for (const trans of ["no-transpose", "transpose"])
+    for (const n of [7, 300])
+      await t.test(`${trans} n=${n}`, async () => {
+        const a = {
+          trans,
+          m: n,
+          n,
+          alpha: 1.5,
+          A: withValues(values(n * n, 1), {
+            [at(n, 1, 2)]: Infinity,
+            [at(n, 3, 4)]: NaN,
+          }),
+          lda: n,
+          x: withValues(values(n, 2), { 5: -Infinity }),
+          incx: 1,
+          beta: 0,
+          y: withValues(values(n, 3), { 0: NaN, 6: Infinity }),
+          incy: 1,
+        };
+        const got = await dgemv(
+          device,
+          a.trans,
+          a.m,
+          a.n,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.beta,
+          a.y,
+          a.incy,
+        );
+        const want = stdlibReference({ ...a, y: new Float64Array(n) });
+        assertIeeeMatch(got.y, want.y, "y");
+      });
 });

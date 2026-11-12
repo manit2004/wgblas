@@ -12,7 +12,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dsyr2: A := alpha * x * y^T + alpha * y * x^T + A, double-double (Dekker)
@@ -104,6 +104,10 @@ export async function dsyr2(
   const effLayout = AIsGpu ? A.layout : layout;
   const isLower =
     effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
+
+  // Reference BLAS quick return (alpha = 0 leaves A as it is): no GPU
+  // round trip, which would also round full-precision doubles.
+  if (alpha === 0) return AIsGpu ? {} : { A };
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(
@@ -237,7 +241,7 @@ export async function dsyr2(
     readHiBuffer = null;
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    const result = mergeDoubleDoubleExact(hi, lo, A);
     if (gpuTimeMs !== undefined) return { A: result, gpuTimeMs };
     return { A: result };
   } finally {
