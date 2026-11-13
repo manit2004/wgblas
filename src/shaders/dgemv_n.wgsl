@@ -4,10 +4,9 @@
 // type. Same one-workgroup-per-output-row shape as sgemv_n.wgsl (grid-stride
 // over rows), but the per-row dot product is reduced via a full
 // within-workgroup DD tree reduction — the same reduction ddot.wgsl uses to
-// combine 64 lanes down to one — rather than sgemv_n.wgsl's 4-way ILP
-// unroll + shared-memory tree (ddMulProtected/ddAddProtected each carry a
-// workgroupBarrier(), so unrolling would pay that barrier four times over
-// per iteration for no benefit). Since each row is handled by exactly one
+// combine 64 lanes down to one. The column loop runs four strides per
+// batched op (ddMul4Protected/ddAdd4Protected), since the protected ops'
+// barriers, not memory, bound it. Since each row is handled by exactly one
 // workgroup, no separate cross-workgroup reduction pass (ddot's reduce_f64)
 // is needed here — the tree reduction alone finishes the row.
 
@@ -53,9 +52,35 @@ fn dgemv_n_main(
 
   for (var row = wgid.x; row < params.m; row += nwg.x) {
     let row_base = row * params.lda;
+    // Four column strides per batched op (f64/utils/batch.wgsl): lane l
+    // takes iteration 4g + l, one barrier per four products.
+    var acc4 = DD4(vec4<f32>(0.0), vec4<f32>(0.0));
+    for (var g = 0u; g < mainIters / 4u; g++) {
+      let j = lid.x + g * 4u * WGS;
+      let ia = row_base + j;
+      let ix = j * params.incx;
+      let xs = WGS * params.incx;
+      let a = dd4Of(
+        DD(AHi[ia], ALo[ia]),
+        DD(AHi[ia + WGS], ALo[ia + WGS]),
+        DD(AHi[ia + 2u * WGS], ALo[ia + 2u * WGS]),
+        DD(AHi[ia + 3u * WGS], ALo[ia + 3u * WGS]),
+      );
+      let xv = dd4Of(
+        DD(xHi[ix], xLo[ix]),
+        DD(xHi[ix + xs], xLo[ix + xs]),
+        DD(xHi[ix + 2u * xs], xLo[ix + 2u * xs]),
+        DD(xHi[ix + 3u * xs], xLo[ix + 3u * xs]),
+      );
+      acc4 = ddAdd4Protected(acc4, ddMul4Protected(a, xv, lid.x), lid.x);
+    }
     var acc = DD(0.0, 0.0);
+    // Uniform (params only), so the barriers inside stay legal; skipped
+    // when there was no batch, where it would only add barriers.
+    if (mainIters >= 4u) { acc = dd4Sum(acc4, lid.x); }
 
-    for (var iter = 0u; iter < mainIters; iter++) {
+    // The last mainIters % 4 full iterations, one at a time.
+    for (var iter = mainIters / 4u * 4u; iter < mainIters; iter++) {
       let j  = lid.x + iter * WGS;
       let ia = row_base + j;
       let ix = j * params.incx;

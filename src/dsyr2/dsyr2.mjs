@@ -108,7 +108,7 @@ export async function dsyr2(
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(
     device,
-    [...f64Deps, "dsyr2"],
+    [...f64Deps, "f64/utils/batch", "dsyr2"],
     "dsyr2_main",
   );
 

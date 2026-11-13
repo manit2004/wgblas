@@ -121,7 +121,11 @@ export async function dsymv(
   // 0.026 ms).
   const useTiles = n >= TILE_KERNEL_MIN_N;
   const pipeline = useTiles
-    ? await getPipeline(device, [...f64Deps, "dsymv_tile"], "dsymv_tile_main")
+    ? await getPipeline(
+        device,
+        [...f64Deps, "f64/utils/batch", "dsymv_tile"],
+        "dsymv_tile_main",
+      )
     : await getPipeline(device, [...f64Deps, "dsymv"], "dsymv_main");
   const reducePipeline = useTiles
     ? await getPipeline(

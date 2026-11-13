@@ -177,7 +177,7 @@ export async function dgemm(
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(
     device,
-    [...f64Deps, "dgemm_small"],
+    [...f64Deps, "f64/utils/batch", "dgemm_small"],
     "main",
   );
 

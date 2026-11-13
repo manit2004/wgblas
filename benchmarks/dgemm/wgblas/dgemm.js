@@ -16,11 +16,10 @@ import {
 // iterations than the Level 1/2 benchmarks, to keep total runtime
 // reasonable. Uses the tiled/register-blocked dgemm_small kernel at every
 // size (see dgemm.mjs for why not dgemm_large) — trans="no-transpose" for
-// both operands and lda/ldb/ldc tight throughout; see trans.dgemm.js for
-// the transA/transB effect (transB dominates, transA is small/mixed — an
-// asymmetry from B's tile dimension (BN=64) spanning a full warp where
-// A's (BK=8) doesn't) and ldb.dgemm.js for the lda/ldb/ldc-padding effect
-// (only ldb matters, and only when transB="transpose"). Shape/aspect-ratio
+// both operands and lda/ldb/ldc tight throughout. trans.dgemm.js,
+// ldb.dgemm.js, ldc.dgemm.js and layout.dgemm.js all measure flat (within
+// ~3%): the double-double arithmetic, not memory access, bounds the kernel,
+// so neither read direction nor padding shows. Shape/aspect-ratio
 // (m vs n skew) was scoped and found to be shape-robust here, unlike
 // sgemv — not swept separately.
 const WARMUP_ITERS = 3;

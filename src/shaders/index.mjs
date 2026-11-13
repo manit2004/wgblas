@@ -118,6 +118,7 @@ routineShaders.dasum = {
 };
 
 import ddMulUtil from "./f64/utils/multiply.wgsl";
+import ddBatchUtil from "./f64/utils/batch.wgsl"; // four protected ops per barrier
 import ddot from "./ddot.wgsl";
 // multiply.wgsl needs dekker's DD struct and add.wgsl's fsub/negf and
 // fastTwoSumProtected, so those two precede it here.
@@ -252,6 +253,7 @@ routineShaders.dsyr2 = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
+  "f64/utils/batch": ddBatchUtil,
   dsyr2,
   gather_strided, // packs strided vectors once (both DD halves), as ssyr2 does
 };
@@ -263,6 +265,7 @@ routineShaders.dgemv = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
+  "f64/utils/batch": ddBatchUtil,
   dgemv_n,
   dgemv_t,
   reduce_partials_f64,
@@ -274,6 +277,7 @@ routineShaders.dsymv = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
+  "f64/utils/batch": ddBatchUtil,
   dsymv,
   dsymv_tile,
   reduce_partials_f64,
@@ -298,6 +302,7 @@ routineShaders.dtrsv = {
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
   "f64/utils/divide": ddDivUtil,
+  "f64/utils/batch": ddBatchUtil, // dtrsv_step's four-lane dot products
   dtrsv_small,
   dtrsv_step,
   scatter_strided, // copies the contiguous solution back into a strided x, once per DD half
@@ -310,6 +315,7 @@ routineShaders.dgemm = {
   "f64/dekker": dekker,
   "f64/utils/add": ddAddUtil,
   "f64/utils/multiply": ddMulUtil,
+  "f64/utils/batch": ddBatchUtil,
   dgemm_small,
 }; // dgemm_small at every size, unlike sgemm's small/large split
 routineShaders.dgemmtr = routineShaders.dgemm; // dgemm's kernels with their triangle mask (uplo), as sgemmtr rides on sgemm's
