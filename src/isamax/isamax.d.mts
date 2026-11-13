@@ -22,7 +22,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param n - number of elements (must be a positive integer)
  * @param x - Float32Array input vector
  * @param incx - stride for x (must be a positive integer)
- * @returns 0-based index of max |x[i]|
+ * @returns 0-based index of max |x[i]|, or -1 when n < 1 (no element)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/isamax/isamax.mjs#L18">Source code: isamax.mjs (L18)</a>
  * @category BLAS Level 1
  */
@@ -52,7 +52,7 @@ export declare function isamax(
  * @param n - number of elements (must be a positive integer)
  * @param x - GpuVector input vector
  * @param incx - stride for x (must be a positive integer)
- * @returns 0-based index of max |x[i]|
+ * @returns 0-based index of max |x[i]|, or -1 when n < 1 (no element)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/isamax/isamax.mjs#L18">Source code: isamax.mjs (L18)</a>
  * @category BLAS Level 1
  */

@@ -70,7 +70,7 @@ test("isamax edge cases", async (t) => {
   }
 });
 
-// n<=0 is special-cased in isamax.mjs to `return { index: 0 }` before ever
+// n<=0 is special-cased in isamax.mjs to `return { index: -1 }` before ever
 // touching the GPU — no pipeline, no dispatch, nothing to scribble on. The
 // edge-cases block above only asserts "does not throw" for n<=0 entries, so
 // this pins the actual returned value instead.
@@ -82,7 +82,13 @@ test("isamax zero-dimension (regression)", async () => {
     1,
   );
 
-  assert.strictEqual(got, 0);
+  // -1, as stdlib: 0 would be a valid index (BLAS's 1-based 0, made 0-based).
+  assert.strictEqual(got, -1);
+  for (const n of [0, -3])
+    assert.strictEqual(
+      (await isamax(device, n, new Float32Array([1, 2]), 1)).index,
+      stdlibReference({ n, x: new Float32Array([1, 2]), incx: 1 }),
+    );
 });
 
 // NaN behaviour is documented in isamax.d.mts, so pin it: the search compares

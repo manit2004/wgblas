@@ -40,6 +40,11 @@ export async function dscal(device, n, alpha, x, incx) {
   // Concatenated with f64/dekker.wgsl (DD struct), f64/utils/add.wgsl
   // (fsub/negf/fastTwoSumProtected), and f64/utils/multiply.wgsl
   // (ddMulProtected) — WGSL has no #include.
+  // Reference BLAS (and stdlib) quick return: alpha = 1 leaves x as it is —
+  // no GPU round trip, which would also round full-precision doubles and
+  // turn values past f32's range into ±Infinity.
+  if (alpha === 1) return xIsGpu ? {} : { x };
+
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(device, [...f64Deps, "dscal"]);
 

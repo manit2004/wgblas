@@ -25,7 +25,9 @@ export async function isamax(device, n, x, incx) {
   if (incx <= 0) throw new Error("incx must be positive.");
   if (!xIsGpu && !(x instanceof Float32Array))
     throw new Error("x must be a Float32Array or GpuVector.");
-  if (n <= 0) return { index: 0 };
+  // No element to pick: -1, as stdlib (BLAS's 1-based 0 for "none", made
+  // 0-based) — 0 would be a valid index.
+  if (n <= 0) return { index: -1 };
   if (x.length < (n - 1) * incx + 1)
     throw new Error(
       "x does not have enough elements for the given n and incx.",

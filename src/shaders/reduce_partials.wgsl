@@ -31,7 +31,9 @@ fn main(
     }
     let yi = i * params.incy;
     // BLAS beta==0 semantics: y is written, not accumulated — must not read y.
-    let acc = params.alpha * s;
+    // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+    // operands then — so NaN or ±Infinity in them can't reach the result.
+    let acc = select(params.alpha * s, 0.0, params.alpha == 0.0);
     y[yi] = select(acc, acc + params.beta * y[yi], params.beta != 0.0);
   }
 }

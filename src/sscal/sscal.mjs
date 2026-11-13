@@ -32,6 +32,10 @@ export async function sscal(device, n, alpha, x, incx) {
       "x does not have enough elements for the given n and incx.",
     );
 
+  // Reference BLAS (and stdlib) quick return: alpha = 1 leaves x as it is —
+  // no GPU round trip.
+  if (alpha === 1) return xIsGpu ? {} : { x };
+
   const pipeline = await getPipeline(device, "sscal");
 
   let xBuffer = null;

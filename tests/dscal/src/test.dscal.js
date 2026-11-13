@@ -165,3 +165,18 @@ test("dscal f32 exponent range (regression)", async () => {
   const got = await dscal(device, a.n, a.alpha, a.x, a.incx);
   assertIeeeMatch(got.x, saturate(stdlibReference(argsInF32Range(a)).x), "x");
 });
+
+// alpha = 1: reference BLAS (and stdlib) returns x as it is, without a pass
+// over it — every element bit for bit, values past f32's range included.
+test("dscal alpha = 1 leaves x as it is (regression)", async () => {
+  const x = withValues(randomFloat64Array(6, -1, 1, 1), {
+    1: NaN,
+    2: -0,
+    3: 1e300,
+  });
+  const want = x.slice();
+  const got = await dscal(device, 6, 1, x, 1);
+  assert.equal(got.x, x);
+  for (let i = 0; i < 6; i++)
+    assert.ok(Object.is(got.x[i], want[i]), `x[${i}]`);
+});

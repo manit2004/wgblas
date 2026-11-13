@@ -50,7 +50,11 @@ fn reduce_partials_f64(
     }
 
     let yi = si * params.incy;
-    let scaled = ddMulProtected(alpha, s, lid.x);
+    // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+    // operands then — so NaN or ±Infinity in them can't reach the result.
+    let scaledRaw = ddMulProtected(alpha, s, lid.x);
+    let alphaIsZero = params.alphaHi == 0.0 && params.alphaLo == 0.0;
+    let scaled = DD(select(scaledRaw.hi, 0.0, alphaIsZero), select(scaledRaw.lo, 0.0, alphaIsZero));
     let betaTimesY = ddMulProtected(beta, DD(yHi[yi], yLo[yi]), lid.x);
     let withBeta = ddAddProtected(scaled, betaTimesY, lid.x);
     // BLAS beta==0 semantics: y is written, not accumulated — the result

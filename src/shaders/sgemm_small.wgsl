@@ -303,7 +303,9 @@ fn main(
           let cIdx = params.offC + row * params.ldc + col;
           // BLAS beta==0 semantics: C is written, not accumulated — must not
           // read C (stale NaN/Inf bits would survive 0 * C as NaN).
-          let acc = params.alpha * threadResults[resIdxM * TN + resIdxN];
+          // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+          // operands then — so NaN or ±Infinity in them can't reach the result.
+          let acc = select(params.alpha * threadResults[resIdxM * TN + resIdxN], 0.0, params.alpha == 0.0);
           C[cIdx] = select(acc, acc + params.beta * C[cIdx], params.beta != 0.0);
         }
       }

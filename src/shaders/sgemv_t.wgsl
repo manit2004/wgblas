@@ -30,6 +30,21 @@ struct Params {
 
 const WGS: u32 = 64u;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
+// Reference BLAS (and stdlib) runs this transposed product column by column
+// and skips a column whose x entry is 0, so 0 · Infinity or 0 · NaN in that
+// column of A never happens: a term with x = ±0 is exactly 0 here.
+// A is zeroed where x is (not the product selected away — measured 2x slower
+// in strmv_t), making the term 0 · 0.
+fn term(a: f32, xv: f32) -> f32 {
+  return select(a, 0.0, isZeroBits(xv)) * xv;
+}
+
 @compute @workgroup_size(64)
 fn main(
   @builtin(workgroup_id)        wid: vec3u,
@@ -47,14 +62,14 @@ fn main(
   var acc3: f32 = 0.0;
   var j = jStart;
   while (j + 3u < jEnd) {
-    acc0 += A[ j       * params.lda + col] * x[ j       * params.incx];
-    acc1 += A[(j + 1u) * params.lda + col] * x[(j + 1u) * params.incx];
-    acc2 += A[(j + 2u) * params.lda + col] * x[(j + 2u) * params.incx];
-    acc3 += A[(j + 3u) * params.lda + col] * x[(j + 3u) * params.incx];
+    acc0 += term(A[ j       * params.lda + col], x[ j       * params.incx]);
+    acc1 += term(A[(j + 1u) * params.lda + col], x[(j + 1u) * params.incx]);
+    acc2 += term(A[(j + 2u) * params.lda + col], x[(j + 2u) * params.incx]);
+    acc3 += term(A[(j + 3u) * params.lda + col], x[(j + 3u) * params.incx]);
     j += 4u;
   }
   while (j < jEnd) {
-    acc0 += A[j * params.lda + col] * x[j * params.incx];
+    acc0 += term(A[j * params.lda + col], x[j * params.incx]);
     j += 1u;
   }
   let sum = (acc0 + acc1) + (acc2 + acc3);
@@ -62,7 +77,9 @@ fn main(
   if (params.direct == 1u) {
     let yi = col * params.incy;
     // BLAS beta==0 semantics: y is written, not accumulated — must not read y.
-    let acc = params.alpha * sum;
+    // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+    // operands then — so NaN or ±Infinity in them can't reach the result.
+    let acc = select(params.alpha * sum, 0.0, params.alpha == 0.0);
     out[yi] = select(acc, acc + params.beta * out[yi], params.beta != 0.0);
   } else {
     out[wid.y * params.n + col] = sum;

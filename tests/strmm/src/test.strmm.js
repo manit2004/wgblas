@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { strmm } from "wgblas/strmm";
+import { assertIeeeMatch, at, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -328,4 +329,46 @@ test("strmm edge cases (column-major)", async (t) => {
       assert.deepEqual(got.B, expected.B);
     });
   }
+});
+
+// alpha = 0: reference BLAS (and stdlib) sets B to 0 without reading A or B,
+// so NaN or ±Infinity there can't reach it.
+test("strmm alpha = 0 reads neither A nor B (regression)", async (t) => {
+  for (const side of ["left", "right"])
+    for (const n of [7, 300])
+      await t.test(`${side} n=${n}`, async () => {
+        const a = {
+          side,
+          uplo: "lower",
+          transA: "no-transpose",
+          diag: "non-unit",
+          m: n,
+          n,
+          alpha: 0,
+          A: withValues(randomFloat32Array(n * n, -1, 1, 1), {
+            [at(n, 3, 1)]: NaN,
+          }),
+          lda: n,
+          B: withValues(randomFloat32Array(n * n, -1, 1, 2), {
+            [at(n, 2, 3)]: Infinity,
+            [at(n, 0, 0)]: NaN,
+          }),
+          ldb: n,
+        };
+        const got = await strmm(
+          device,
+          a.side,
+          a.uplo,
+          a.transA,
+          a.diag,
+          a.m,
+          a.n,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.B.slice(),
+          a.ldb,
+        );
+        assertIeeeMatch(got.B, stdlibReference(a).B, "B", 1e-4);
+      });
 });

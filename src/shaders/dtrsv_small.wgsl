@@ -45,6 +45,7 @@ struct Params {
   unit:     u32, // 1 = unit diagonal (not read)
   invert:   u32,
   xLd:      u32, // solve: 1 = also write the packed copy to X
+  skipZero: u32, // solve: 1 = reference BLAS's zero-unknown skip (see below)
 }
 
 @group(0) @binding(6) var<uniform> params: Params;
@@ -60,6 +61,12 @@ fn ddSelect(a: DD, b: DD, cond: bool) -> DD {
 
 fn loadA(idx: u32) -> DD {
   return DD(AHi[idx], ALo[idx]);
+}
+
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
 }
 
 @compute @workgroup_size(256)
@@ -104,7 +111,14 @@ fn dtrsv_small_main(
     let jn = min(j + 1u, len - 1u);
     aNext = loadA(rowBase + select(jn, len - 1u - jn, back) * params.aCs);
 
-    let cand = ddMulProtected(b, rinv, tid);
+    // skipZero (dtrsv/strsv, when the solve is transposed in the row-major frame —
+    // the column-by-column form of reference BLAS and stdlib): an unknown whose
+    // value is 0 before the division stays 0 (no division, so a 0 or NaN diagonal
+    // can't reach it), and its column's updates are skipped, so 0 · Infinity or
+    // 0 · NaN there never happens.
+    let skip = params.skipZero == 1u;
+    let candRaw = ddMulProtected(b, rinv, tid);
+    let cand = ddSelect(candRaw, DD(0.0, 0.0), skip && isZeroBits(b.hi) && isZeroBits(b.lo));
     if (i == j) {
       published[r] = cand;
       xi = cand;
@@ -115,7 +129,8 @@ fn dtrsv_small_main(
     let xj = published[r];
     // a is L_ij only below the diagonal (above it, the unstored triangle —
     // possibly anything, even NaN); select() keeps it out of b.
-    let nb = ddSubProtected(b, ddMulProtected(a, xj, tid), tid);
+    let aj = ddSelect(a, DD(0.0, 0.0), skip && isZeroBits(xj.hi) && isZeroBits(xj.lo));
+    let nb = ddSubProtected(b, ddMulProtected(aj, xj, tid), tid);
     b = ddSelect(b, nb, i > j);
   }
 

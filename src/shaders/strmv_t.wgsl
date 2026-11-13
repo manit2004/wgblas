@@ -35,11 +35,23 @@ struct Params {
 
 const WGS: u32 = 64u;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 fn term(j: u32, i: u32, ic: u32, iOK: bool) -> f32 {
   let inRange = select(j <= i, j >= i, params.uplo == 0u);
   var a = A[j * params.lda + ic];
   if (params.diag == 1u && j == i) { a = 1.0; }
-  return select(0.0, a * x[j * params.incx], inRange && iOK);
+  let xv = x[j * params.incx];
+  // Reference BLAS (and stdlib) runs this transposed product column by column
+  // and skips a column whose x entry is 0, so 0 · Infinity or 0 · NaN in that
+  // column of A never happens: A is zeroed where x is, making the term 0 · 0
+  // (selecting the product away instead measured ~2x slower).
+  a = select(a, 0.0, isZeroBits(xv));
+  return select(0.0, a * xv, inRange && iOK);
 }
 
 @compute @workgroup_size(64)

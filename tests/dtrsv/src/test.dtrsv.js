@@ -408,3 +408,57 @@ test("dtrsv f32 exponent range (regression)", async (t) => {
         );
       });
 });
+
+// Reference BLAS (and stdlib) runs a transposed solve column by column: an
+// unknown that is 0 before its division stays 0 (a NaN diagonal there
+// doesn't matter) and its column's updates are skipped, so 0 · Infinity and
+// 0 · NaN never happen; the other form takes them. n = 300 takes the
+// substitution path, which non-finite host data always does.
+test("dtrsv zero unknowns skip their column (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const trans of ["no-transpose", "transpose"])
+        for (const n of [7, 300])
+          await t.test(`${layout} ${uplo} ${trans} n=${n}`, async () => {
+            const at2 = (i, j) =>
+              layout === "row-major" ? at(n, i, j) : at(n, j, i);
+            const A = randomFloat64Array(n * n, -1, 1, 1);
+            for (let i = 0; i < n; i++) A[at(n, i, i)] += n + 4;
+            // The first unknown solved is 0 (b = 0 there), its diagonal NaN,
+            // and the entry it multiplies further on Infinity.
+            const forward = (uplo === "lower") === (trans === "no-transpose");
+            const first = forward ? 0 : n - 1;
+            const later = forward ? 3 : n - 4;
+            A[at2(first, first)] = NaN;
+            A[
+              trans === "no-transpose" ? at2(later, first) : at2(first, later)
+            ] = Infinity;
+            const x = withValues(randomFloat64Array(n, -1, 1, 2), {
+              [first]: 0,
+            });
+            const a = {
+              uplo,
+              trans,
+              diag: "non-unit",
+              n,
+              A,
+              lda: n,
+              x,
+              incx: 1,
+              layout,
+            };
+            const got = await dtrsv(
+              device,
+              a.uplo,
+              a.trans,
+              a.diag,
+              a.n,
+              a.A,
+              a.lda,
+              x.slice(),
+              a.incx,
+              a.layout,
+            );
+            assertIeeeMatch(got.x, dtrsvReference(a).x, "x", 1e-9);
+          });
+});

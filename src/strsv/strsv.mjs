@@ -217,6 +217,7 @@ export async function strsv(
             { value: isUnit ? 1 : 0, type: "u32" },
             { value: 1.0, type: "f32" }, // alpha
             { value: rowCount > 0 ? 1 : 0, type: "u32" }, // xLd: packed copy for the update
+            { value: isNoTrans ? 0 : 1, type: "u32" }, // skipZero: BLAS's column form
           ],
           "strsv-solve-params",
         );

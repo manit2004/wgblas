@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssyr } from "wgblas/ssyr";
-import { assertIeeeMatch } from "../../helpers/specials.js";
+import { assertIeeeMatch, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -204,4 +204,27 @@ test("ssyr zero vector entries skip their row (regression)", async (t) => {
             1e-5,
           );
         });
+});
+
+// alpha = 0: reference BLAS (and stdlib) returns A as it is, without
+// reading x — so 0 · Infinity or 0 · NaN can't reach it.
+test("ssyr alpha = 0 leaves A as it is (regression)", async () => {
+  const n = 6;
+  const x = withValues(randomFloat32Array(n, -1, 1, 1), {
+    1: Infinity,
+    3: NaN,
+  });
+  const A = randomFloat32Array(n * n, -1, 1, 3);
+  const a = { uplo: "lower", n, alpha: 0, x, incx: 1, A, lda: n };
+  const got = await ssyr(
+    device,
+    a.uplo,
+    a.n,
+    a.alpha,
+    a.x,
+    a.incx,
+    A.slice(),
+    a.lda,
+  );
+  assertIeeeMatch(got.A, stdlibReference(a).A, "A", 0);
 });

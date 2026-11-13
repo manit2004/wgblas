@@ -33,6 +33,21 @@ struct Params {
 const WGS: u32 = 64u;
 var<workgroup> tile: array<DD, 64>;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
+// Transposed products (params.trans = 1, in this row-major frame) are the ones
+// reference BLAS (and stdlib) runs column by column, skipping a column whose x
+// entry is 0 — so 0 · Infinity or 0 · NaN there never happens. A is zeroed
+// where x is, making the term 0 · 0.
+fn skipZeroColumn(a: DD, ix: u32) -> DD {
+  let skip = params.trans != 0u && isZeroBits(xHi[ix]) && isZeroBits(xLo[ix]);
+  return DD(select(a.hi, 0.0, skip), select(a.lo, 0.0, skip));
+}
+
 @compute @workgroup_size(64)
 fn dtrmv_main(
   @builtin(workgroup_id)        wgid: vec3u,
@@ -68,7 +83,7 @@ fn dtrmv_main(
         select(ALo[addr], 0.0, isUnitDiag),
       );
       let ix = j * params.incx;
-      let prod = ddMulProtected(aVal, DD(xHi[ix], xLo[ix]), lid.x);
+      let prod = ddMulProtected(skipZeroColumn(aVal, ix), DD(xHi[ix], xLo[ix]), lid.x);
       acc = ddAddProtected(acc, prod, lid.x);
     }
 
@@ -83,7 +98,7 @@ fn dtrmv_main(
         select(ALo[addr], 0.0, isUnitDiag),
       );
       let ix = safeJ * params.incx;
-      let prod = ddMulProtected(aVal, DD(xHi[ix], xLo[ix]), lid.x);
+      let prod = ddMulProtected(skipZeroColumn(aVal, ix), DD(xHi[ix], xLo[ix]), lid.x);
       let contribution = DD(select(0.0, prod.hi, valid), select(0.0, prod.lo, valid));
       acc = ddAddProtected(acc, contribution, lid.x);
     }

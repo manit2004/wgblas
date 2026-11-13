@@ -530,3 +530,52 @@ test("dgemm f32 exponent range (regression)", async (t) => {
     });
   }
 });
+
+// alpha = 0: reference BLAS (and stdlib) scales the output by beta without
+// reading the other operands, so NaN or ±Infinity there can't reach it — and
+// beta = 0 clears it, NaN included. n = 150 spans several tiles.
+test("dgemm alpha = 0 reads neither A nor B (regression)", async (t) => {
+  for (const n of [7, 150])
+    for (const beta of [0, 0.5])
+      await t.test(`n=${n} beta=${beta}`, async () => {
+        const a = {
+          transA: "no-transpose",
+          transB: "no-transpose",
+          m: n,
+          n,
+          k: n,
+          alpha: 0,
+          A: withValues(randomFloat64Array(n * n, -1, 1, 1), {
+            [at(n, 1, 2)]: NaN,
+          }),
+          lda: n,
+          B: withValues(randomFloat64Array(n * n, -1, 1, 2), {
+            [at(n, 2, 3)]: Infinity,
+          }),
+          ldb: n,
+          beta,
+          C: withValues(
+            randomFloat64Array(n * n, -1, 1, 3),
+            beta === 0 ? { [at(n, 4, 4)]: NaN } : {},
+          ),
+          ldc: n,
+        };
+        const got = await dgemm(
+          device,
+          a.transA,
+          a.transB,
+          a.m,
+          a.n,
+          a.k,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.B,
+          a.ldb,
+          a.beta,
+          a.C,
+          a.ldc,
+        );
+        assertIeeeMatch(got.C, stdlibReference(a).C, "C", 1e-9);
+      });
+});

@@ -546,3 +546,96 @@ test("dgemv f32 exponent range (regression)", async (t) => {
       });
     }
 });
+
+// alpha = 0: reference BLAS (and stdlib) scales the output by beta without
+// reading the other operands, so NaN or ±Infinity there can't reach it — and
+// beta = 0 clears it, NaN included.
+test("dgemv alpha = 0 reads neither A nor x (regression)", async (t) => {
+  for (const trans of ["no-transpose", "transpose"])
+    for (const n of [7, 300])
+      for (const beta of [0, 0.5])
+        await t.test(`${trans} n=${n} beta=${beta}`, async () => {
+          const a = {
+            trans,
+            m: n,
+            n,
+            alpha: 0,
+            A: withValues(randomFloat64Array(n * n, -1, 1, 1), {
+              [at(n, 1, 2)]: NaN,
+              [at(n, 3, 4)]: Infinity,
+            }),
+            lda: n,
+            x: withValues(randomFloat64Array(n, -1, 1, 2), { 5: -Infinity }),
+            incx: 1,
+            beta,
+            y: withValues(
+              randomFloat64Array(n, -1, 1, 3),
+              beta === 0 ? { 0: NaN } : {},
+            ),
+            incy: 1,
+          };
+          const got = await dgemv(
+            device,
+            a.trans,
+            a.m,
+            a.n,
+            a.alpha,
+            a.A,
+            a.lda,
+            a.x,
+            a.incx,
+            a.beta,
+            a.y,
+            a.incy,
+          );
+          assertIeeeMatch(got.y, stdlibReference(a).y, "y", 1e-9);
+        });
+});
+
+// Reference BLAS (and stdlib) forms a transposed product — A^T x row-major,
+// A x column-major — column by column and skips a column whose x entry is 0,
+// so 0 · Infinity and 0 · NaN never happen there; the other form takes them.
+test("dgemv zero x entries skip their column (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const trans of ["no-transpose", "transpose"])
+      for (const n of [7, 300])
+        await t.test(`${layout} ${trans} n=${n}`, async () => {
+          const A = withValues(randomFloat64Array(n * n, -1, 1, 1), {
+            [at(n, 1, 2)]: Infinity,
+            [at(n, 2, 1)]: -Infinity,
+            [at(n, 4, 0)]: NaN,
+            [at(n, 0, 4)]: Infinity,
+          });
+          const x = withValues(randomFloat64Array(n, -1, 1, 2), { 1: 0, 4: 0 });
+          const a = {
+            trans,
+            m: n,
+            n,
+            alpha: 1.5,
+            A,
+            lda: n,
+            x,
+            incx: 1,
+            beta: 0.5,
+            y: randomFloat64Array(n, -1, 1, 3),
+            incy: 1,
+            layout,
+          };
+          const got = await dgemv(
+            device,
+            a.trans,
+            a.m,
+            a.n,
+            a.alpha,
+            a.A,
+            a.lda,
+            a.x,
+            a.incx,
+            a.beta,
+            a.y,
+            a.incy,
+            a.layout,
+          );
+          assertIeeeMatch(got.y, stdlibReference(a).y, "y", 1e-9);
+        });
+});

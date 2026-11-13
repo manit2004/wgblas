@@ -44,6 +44,16 @@ struct Params {
 const WGS: u32 = 64u;
 var<workgroup> xTile: array<DD, 64>;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
+fn isZero4(v: vec4<f32>) -> vec4<bool> {
+  return (bitcast<vec4<u32>>(v) & vec4<u32>(0x7fffffffu)) == vec4<u32>(0u);
+}
+
 @compute @workgroup_size(64)
 fn dgemv_t_main(
   @builtin(workgroup_id)        wid: vec3u,
@@ -81,7 +91,13 @@ fn dgemv_t_main(
         DD(AHi[ia + 3u * params.lda], ALo[ia + 3u * params.lda]),
       );
       let xv = dd4Of(xTile[j], xTile[j + 1u], xTile[j + 2u], xTile[j + 3u]);
-      acc4 = ddAdd4Protected(acc4, ddMul4Protected(a, xv, lid.x), lid.x);
+      // Reference BLAS (and stdlib) runs this transposed product column by column
+      // and skips a column whose x entry is 0, so 0 · Infinity or 0 · NaN in that
+      // column of A never happens: a term with x = ±0 is exactly 0 here.
+      // A is zeroed where x is, so the product is 0 · 0.
+      let xZero = isZero4(xv.hi) & isZero4(xv.lo);
+      let aKept = DD4(select(a.hi, vec4<f32>(0.0), xZero), select(a.lo, vec4<f32>(0.0), xZero));
+      acc4 = ddAdd4Protected(acc4, ddMul4Protected(aKept, xv, lid.x), lid.x);
     }
     workgroupBarrier();
   }
@@ -93,7 +109,9 @@ fn dgemv_t_main(
   for (var row = jStart + tiles * WGS; row < jEnd; row++) {
     let ia  = row * params.lda + safeCol;
     let ix  = row * params.incx;
-    let prod = ddMulProtected(DD(AHi[ia], ALo[ia]), DD(xHi[ix], xLo[ix]), lid.x);
+    let xZero = isZeroBits(xHi[ix]) && isZeroBits(xLo[ix]); // see the tiled loop
+    let a = DD(select(AHi[ia], 0.0, xZero), select(ALo[ia], 0.0, xZero));
+    let prod = ddMulProtected(a, DD(xHi[ix], xLo[ix]), lid.x);
     acc = ddAddProtected(acc, prod, lid.x);
   }
 
@@ -103,7 +121,11 @@ fn dgemv_t_main(
   if (params.direct == 1u) {
     let alpha = DD(params.alphaHi, params.alphaLo);
     let beta  = DD(params.betaHi, params.betaLo);
-    let scaled = ddMulProtected(alpha, acc, lid.x);
+    // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+    // operands then — so NaN or ±Infinity in them can't reach the result.
+    let scaledRaw = ddMulProtected(alpha, acc, lid.x);
+    let alphaIsZero = params.alphaHi == 0.0 && params.alphaLo == 0.0;
+    let scaled = DD(select(scaledRaw.hi, 0.0, alphaIsZero), select(scaledRaw.lo, 0.0, alphaIsZero));
 
     let iy = safeCol * params.incy;
     let yVal = DD(outHi[iy], outLo[iy]);

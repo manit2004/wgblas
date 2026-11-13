@@ -34,7 +34,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param n - number of elements (must be a positive integer)
  * @param x - Float64Array input vector
  * @param incx - stride for x (must be a positive integer)
- * @returns 0-based index of max |x[i]|
+ * @returns 0-based index of max |x[i]|, or -1 when n < 1 (no element)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/idamax/idamax.mjs#L19">Source code: idamax.mjs (L19)</a>
  * @category BLAS Level 1
  */
@@ -71,7 +71,7 @@ export declare function idamax(
  * @param n - number of elements (must be a positive integer)
  * @param x - Float64Array-backed GpuVector input vector
  * @param incx - stride for x (must be a positive integer)
- * @returns 0-based index of max |x[i]|
+ * @returns 0-based index of max |x[i]|, or -1 when n < 1 (no element)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/idamax/idamax.mjs#L19">Source code: idamax.mjs (L19)</a>
  * @category BLAS Level 1
  */

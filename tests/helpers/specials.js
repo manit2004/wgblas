@@ -46,7 +46,7 @@ export function assertIeeeMatch(got, want, what, tol = 1e-12) {
  * @returns {Float64Array}
  */
 export function withValues(x, entries) {
-  const out = Float64Array.from(x);
+  const out = x.slice(); // same type as x
   for (const [i, v] of Object.entries(entries)) out[Number(i)] = v;
   return out;
 }

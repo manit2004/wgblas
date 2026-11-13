@@ -73,6 +73,12 @@ fn sumParts(r: u32, tid: u32) -> DD {
   );
 }
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 @compute @workgroup_size(256)
 fn dtrsv_step_main(
   @builtin(workgroup_id)           wid: vec3u,
@@ -146,7 +152,11 @@ fn dtrsv_step_main(
     for (var u = 0u; u < SPAN; u++) {
       let j = q * SPAN + u;
       let ia = col + min(j, blockLen - 1u) * params.lda;
-      av[u] = ddMask(DD(AHi[ia], ALo[ia]), j < blockLen);
+      // Reference BLAS (and stdlib) skips the column of a solved unknown that
+      // is 0 in this transposed form, so 0 · Infinity or 0 · NaN never
+      // happens: A is zeroed where xs is, making the term 0 · 0.
+      let xj = xs[min(j, BLOCK_SIZE - 1u)];
+      av[u] = ddMask(DD(AHi[ia], ALo[ia]), j < blockLen && !(isZeroBits(xj.hi) && isZeroBits(xj.lo)));
     }
   } else {
     // A[i,j]: quarters fastest across lanes, interleaved — lane q takes

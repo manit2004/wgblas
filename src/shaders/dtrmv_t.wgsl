@@ -42,6 +42,12 @@ struct Params {
 
 const WGS: u32 = 64u;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 @compute @workgroup_size(64)
 fn dtrmv_t_main(
   @builtin(workgroup_id)        wid: vec3u,
@@ -71,7 +77,11 @@ fn dtrmv_t_main(
     let a = DD(select(AHi[ia], 1.0, isUnitDiag), select(ALo[ia], 0.0, isUnitDiag));
     let ix = j * params.incx; // same for every lane: a broadcast read
     let prod = ddMulProtected(a, DD(xHi[ix], xLo[ix]), lid.x);
-    let term = DD(select(0.0, prod.hi, inRange), select(0.0, prod.lo, inRange));
+    // Reference BLAS (and stdlib) runs this transposed product column by column
+    // and skips a column whose x entry is 0, so 0 · Infinity or 0 · NaN in that
+    // column of A never happens: a term with x = ±0 is exactly 0 here.
+    let keep = inRange && !(isZeroBits(xHi[ix]) && isZeroBits(xLo[ix]));
+    let term = DD(select(0.0, prod.hi, keep), select(0.0, prod.lo, keep));
     acc = ddAddProtected(acc, term, lid.x);
   }
 

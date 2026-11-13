@@ -384,6 +384,7 @@ export async function strsm(
           { value: isUnit ? 1 : 0, type: "u32" },
           { value: alphaS, type: "f32" }, // applied as B is read in
           { value: xLd, type: "u32" },
+          { value: 0, type: "u32" }, // skipZero: strsv's only
         ],
         "strsm-solve-params",
       );

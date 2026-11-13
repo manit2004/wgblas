@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { strmv } from "wgblas/strmv";
+import { assertIeeeMatch, at, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures, makeVec } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -248,4 +249,58 @@ test("strmv edge cases (column-major)", async (t) => {
       assert.deepEqual(got, expected);
     });
   }
+});
+
+// Reference BLAS (and stdlib) forms a transposed product column by column
+// and skips a column whose x entry is 0 — including its diagonal term, so a
+// NaN diagonal there doesn't matter — so 0 · Infinity and 0 · NaN never
+// happen; the other form takes them.
+test("strmv zero x entries skip their column (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const trans of ["no-transpose", "transpose"])
+        for (const n of [7, 300])
+          await t.test(`${layout} ${uplo} ${trans} n=${n}`, async () => {
+            const A = randomFloat32Array(n * n, -1, 1, 1);
+            for (const [i, j] of [
+              [3, 1],
+              [1, 3],
+              [n - 1, 0],
+              [0, n - 1],
+            ])
+              A[at(n, i, j)] = Infinity;
+            A[at(n, 1, 1)] = NaN; // diagonal at a zero entry of x
+            const x = withValues(randomFloat32Array(n, -1, 1, 2), {
+              1: 0,
+              [n - 1]: 0,
+            });
+            const a = {
+              uplo,
+              trans,
+              diag: "non-unit",
+              n,
+              A,
+              lda: n,
+              x,
+              incx: 1,
+              y: randomFloat32Array(n, -1, 1, 3),
+              incy: 1,
+              layout,
+            };
+            const got = await strmv(
+              device,
+              a.uplo,
+              a.trans,
+              a.diag,
+              a.n,
+              a.A,
+              a.lda,
+              a.x,
+              a.incx,
+              a.y,
+              a.incy,
+              a.layout,
+            );
+            assertIeeeMatch(got.y, stdlibReference(a).y, "y", 1e-4);
+          });
 });

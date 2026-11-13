@@ -56,6 +56,12 @@ fn solveTerm(r: u32, c: u32, lowerInv: bool) -> f32 {
   return select(0.0, xr[c], select(c >= r, c <= r, lowerInv));
 }
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 @compute @workgroup_size(256)
 fn main(
   @builtin(workgroup_id)           wid: vec3u,
@@ -116,6 +122,9 @@ fn main(
   var a1 = 0.0f;
   var a2 = 0.0f;
   var a3 = 0.0f;
+  // Transposed update: reference BLAS (and stdlib) skips the column of a
+  // solved unknown that is 0, so 0 · Infinity or 0 · NaN never happens — A
+  // is zeroed where xs is, making the term 0 · 0.
   if (params.trans != 0u) {
     // A[j,i]: rows fastest across lanes, so at each j consecutive lanes read
     // consecutive i — coalesced.
@@ -125,10 +134,10 @@ fn main(
     let col = params.blockStart * params.lda + i;
     for (var u = 0u; u < SPAN; u += 4u) {
       let j = q * SPAN + u;
-      a0 += select(0.0, A[col + min(j,      blockLen - 1u) * params.lda], j      < blockLen) * xs[j];
-      a1 += select(0.0, A[col + min(j + 1u, blockLen - 1u) * params.lda], j + 1u < blockLen) * xs[j + 1u];
-      a2 += select(0.0, A[col + min(j + 2u, blockLen - 1u) * params.lda], j + 2u < blockLen) * xs[j + 2u];
-      a3 += select(0.0, A[col + min(j + 3u, blockLen - 1u) * params.lda], j + 3u < blockLen) * xs[j + 3u];
+      a0 += select(0.0, A[col + min(j, blockLen - 1u) * params.lda], j < blockLen && !isZeroBits(xs[j])) * xs[j];
+      a1 += select(0.0, A[col + min(j + 1u, blockLen - 1u) * params.lda], j + 1u < blockLen && !isZeroBits(xs[j + 1u])) * xs[j + 1u];
+      a2 += select(0.0, A[col + min(j + 2u, blockLen - 1u) * params.lda], j + 2u < blockLen && !isZeroBits(xs[j + 2u])) * xs[j + 2u];
+      a3 += select(0.0, A[col + min(j + 3u, blockLen - 1u) * params.lda], j + 3u < blockLen && !isZeroBits(xs[j + 3u])) * xs[j + 3u];
     }
     part[q * TILE_ROWS + r] = (a0 + a1) + (a2 + a3);
   } else {

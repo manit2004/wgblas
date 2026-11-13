@@ -282,6 +282,7 @@ export async function dtrsv(
             { value: isUnit ? 1 : 0, type: "u32" },
             { value: 0, type: "u32" }, // solve, not invert
             { value: rowCount > 0 ? 1 : 0, type: "u32" }, // packed copy for the update
+            { value: isNoTrans ? 0 : 1, type: "u32" }, // skipZero: BLAS's column form
           ],
           "dtrsv-solve-params",
         );
@@ -351,6 +352,7 @@ export async function dtrsv(
           { value: isUnit ? 1 : 0, type: "u32" },
           { value: 1, type: "u32" }, // invert
           { value: 0, type: "u32" },
+          { value: 0, type: "u32" }, // skipZero: solve mode only
         ],
         "dtrsv-invert-params",
       );

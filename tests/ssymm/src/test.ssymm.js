@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssymm } from "wgblas/ssymm";
+import { assertIeeeMatch, at, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -333,4 +334,52 @@ test("ssymm edge cases (column-major)", async (t) => {
       assert.deepEqual(got.C, expected.C);
     });
   }
+});
+
+// alpha = 0: reference BLAS (and stdlib) scales the output by beta without
+// reading the other operands, so NaN or ±Infinity there can't reach it — and
+// beta = 0 clears it, NaN included.
+test("ssymm alpha = 0 reads neither A nor B (regression)", async (t) => {
+  for (const side of ["left", "right"])
+    for (const n of [7, 300])
+      for (const beta of [0, 0.5])
+        await t.test(`${side} n=${n} beta=${beta}`, async () => {
+          const a = {
+            side,
+            uplo: "lower",
+            m: n,
+            n,
+            alpha: 0,
+            A: withValues(randomFloat32Array(n * n, -1, 1, 1), {
+              [at(n, 3, 1)]: NaN,
+            }),
+            lda: n,
+            B: withValues(randomFloat32Array(n * n, -1, 1, 2), {
+              [at(n, 2, 3)]: Infinity,
+            }),
+            ldb: n,
+            beta,
+            C: withValues(
+              randomFloat32Array(n * n, -1, 1, 3),
+              beta === 0 ? { [at(n, 4, 4)]: NaN } : {},
+            ),
+            ldc: n,
+          };
+          const got = await ssymm(
+            device,
+            a.side,
+            a.uplo,
+            a.m,
+            a.n,
+            a.alpha,
+            a.A,
+            a.lda,
+            a.B,
+            a.ldb,
+            a.beta,
+            a.C,
+            a.ldc,
+          );
+          assertIeeeMatch(got.C, stdlibReference(a).C, "C", 1e-4);
+        });
 });
