@@ -48,7 +48,7 @@ typedef struct {
     int x_len, y_len;                /* derived vector lengths (gemv) */
     double alpha, beta, c, s;
     cuComplex calpha;                /* complex alpha (cscal) */
-    const char *trans, *uplo, *diag; /* "no-transpose" / "lower" / "non-unit" style */
+    const char *trans, *uplo, *diag, *side; /* "no-transpose" / "lower" / "non-unit" / "left" style */
 } bench_params;
 
 typedef enum { K_INT, K_REAL, K_COMPLEX, K_STRING } bench_kind;
@@ -73,6 +73,7 @@ static const struct { const char *name; size_t off; bench_kind kind; } BENCH_FIE
     { "trans", offsetof(bench_params, trans), K_STRING },
     { "uplo", offsetof(bench_params, uplo), K_STRING },
     { "diag", offsetof(bench_params, diag), K_STRING },
+    { "side", offsetof(bench_params, side), K_STRING },
 };
 #define BENCH_N_FIELDS ((int)(sizeof BENCH_FIELDS / sizeof BENCH_FIELDS[0]))
 
@@ -80,6 +81,7 @@ static const struct { const char *name; size_t off; bench_kind kind; } BENCH_FIE
 static cublasOperation_t op_of(const char *t) { return strcmp(t, "transpose") == 0 ? CUBLAS_OP_T : CUBLAS_OP_N; }
 static cublasFillMode_t fill_of(const char *u) { return strcmp(u, "upper") == 0 ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER; }
 static cublasDiagType_t diag_of(const char *d) { return strcmp(d, "unit") == 0 ? CUBLAS_DIAG_UNIT : CUBLAS_DIAG_NON_UNIT; }
+static cublasSideMode_t side_of(const char *s) { return strcmp(s, "right") == 0 ? CUBLAS_SIDE_RIGHT : CUBLAS_SIDE_LEFT; }
 
 static int bench_field(const char *name) {
     for (int i = 0; i < BENCH_N_FIELDS; i++)
