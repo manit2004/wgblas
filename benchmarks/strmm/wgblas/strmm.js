@@ -1,124 +1,100 @@
-import { init, cleanup } from "wgblas";
 import { strmm } from "wgblas/strmm";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, matrix } from "../../utils/harness.mjs";
+import { L3_SIZES, L3_SWEEP_SIZES, PADS, ALPHAS } from "../../utils/params.mjs";
 
-// Two-pass pipeline: triangularize (zero-fill op(A)) then an unmodified
-// sgemm pass, plus a seed copy (B -> outBuffer, preserves stride-padding
-// gaps). uplo/side/transA/diag/A's lda all scoped as non-effects
-// (temp/scope_strmm.mjs); the gemm pass's ldb/layout behavior is sgemm's
-// own, unswept here — see ldb.sgemm.js/trans.sgemm.js.
-const WARMUP_ITERS = 3;
-const BENCH_ITERS = 20;
-const SIZES = [32, 64, 128, 256, 512, 1024];
-
-const COLS = ["m", "n", "compute_ms", "compute_GFLOPs", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const m = size,
-    n = size; // square: aOrder (side='left') = m = n
-  // column-major: lda/ldb >= rows, matching cuBLAS's native layout
-  const lda = m,
-    ldb = m;
-  const alpha = 1.0;
-
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(m * lda), m, m),
-    m,
-    m,
-    lda,
-    "column-major",
-  );
-  const BGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(m * n), m, n),
-    m,
-    n,
-    ldb,
-    "column-major",
-  );
-
-  await warmClocks(device); // full clocks first — see helpers.mjs
-
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await strmm(
+// Two passes per call: triangularize (zero-fill op(A)), then an unmodified
+// sgemm pass, plus a seed copy (B → the output, keeping stride-padding
+// gaps). uplo, side, transA, diag and A's lda were all scoped as
+// non-effects (see temp/scope_strmm.mjs); the gemm pass's ldb/layout
+// behavior is sgemm's own (see sgemm.js). A is diagonally dominant
+// ("triangular" fill), as for the triangular solves.
+await runBenchmark({
+  routine: "strmm",
+  warmup: 5,
+  iters: 50,
+  defaults: {
+    side: "left",
+    uplo: "lower",
+    transA: "no-transpose",
+    diag: "non-unit",
+    alpha: 1.0,
+    layout: "row-major",
+  },
+  // Square m = n, so A's order is n on either side; tight lda/ldb.
+  derive: (p) => {
+    const m = p.n;
+    const aOrder = p.side === "left" ? m : p.n;
+    const ldb = p.layout === "column-major" ? m : p.n;
+    return { ...p, m, aOrder, lda: aOrder, ldb };
+  },
+  operands: (p) => ({
+    A: matrix(Float32Array, p.aOrder, p.aOrder, p.lda, p.layout, "triangular"),
+    B: matrix(Float32Array, p.m, p.n, p.ldb, p.layout),
+  }),
+  call: (device, p, o) =>
+    strmm(
       device,
-      "left",
-      "lower",
-      "no-transpose",
-      "non-unit",
-      m,
-      n,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-    );
-  }
-
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await strmm(
-      device,
-      "left",
-      "lower",
-      "no-transpose",
-      "non-unit",
-      m,
-      n,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
-
-  AGpu.destroy();
-  BGpu.destroy();
-
-  if (times.length === 0) continue;
-
-  const med = median(times);
-  const aOrder = m; // side='left'
-  // gemm-shaped 2*m*n*aOrder multiply-adds, plus m*n for the alpha scale
+      p.side,
+      p.uplo,
+      p.transA,
+      p.diag,
+      p.m,
+      p.n,
+      p.alpha,
+      o.A,
+      p.lda,
+      o.B,
+      p.ldb,
+    ),
+  // gemm-shaped 2·m·n·aOrder multiply-adds, plus m·n for the alpha scale
   // (no beta term — strmm has no C accumulation).
-  const flops = 2 * m * n * aOrder + m * n;
-  // triangularize: A read + Adense write (2*aOrder^2); seed copy: B read +
-  // outBuffer write (2*m*n); gemm: Adense re-read (aOrder^2) + B read +
-  // outBuffer read (beta term) + outBuffer write (3*m*n)
-  const bytes = (3 * aOrder * aOrder + 5 * m * n) * 4;
-  const gflops = flops / 1e9 / (med / 1e3);
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [m, n, med, gflops, gbs]);
-  records.push({
-    m,
-    n,
-    compute_ms: med,
-    compute_GFLOPs: gflops,
-    compute_GBs: gbs,
-  });
-}
+  flops: (p) => 2 * p.m * p.n * p.aOrder + p.m * p.n,
+  // triangularize: A read + dense write (2·aOrder²); seed copy: B read +
+  // output write (2·m·n); gemm: dense re-read (aOrder²) + B read + output
+  // read and write (3·m·n).
+  bytes: (p) => (3 * p.aOrder * p.aOrder + 5 * p.m * p.n) * 4,
+  sweeps: {
+    // Column-major (cuBLAS's native layout), m = n.
+    base: {
+      axes: { n: L3_SIZES },
+      fixed: { layout: "column-major" },
+      record: ["m", "n"],
+      warmup: 3,
+      iters: 20,
+    },
 
-saveResults("strmm", gpuModel, records, { folder: "strmm" });
+    // alpha is a plain scale in the gemm pass, so expect a flat row.
+    alpha: { axes: { alpha: ALPHAS, n: L3_SWEEP_SIZES } },
 
-cleanup();
+    // A unit diagonal skips the diagonal load — any difference is that.
+    diag: { axes: { diag: ["non-unit", "unit"], n: L3_SWEEP_SIZES } },
+
+    // Row- vs column-major (wgblas only: cuBLAS is column-major).
+    layout: {
+      axes: { layout: ["row-major", "column-major"], n: L3_SWEEP_SIZES },
+    },
+
+    // Padding on A's leading dimension: only triangularize reads A directly.
+    lda: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, lda: p.lda + p.pad }),
+    },
+
+    // Padding on B's: the operand the gemm pass streams along its inner loop.
+    ldb: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldb: p.ldb + p.pad }),
+    },
+
+    // A on the left or the right: a traversal-order question, not arithmetic.
+    side: { axes: { side: ["left", "right"], n: L3_SWEEP_SIZES } },
+
+    // op(A): whether the dense copy is read along rows or columns.
+    transA: {
+      axes: { transA: ["no-transpose", "transpose"], n: L3_SWEEP_SIZES },
+    },
+
+    // Which triangle triangularize keeps.
+    uplo: { axes: { uplo: ["lower", "upper"], n: L3_SWEEP_SIZES } },
+  },
+});

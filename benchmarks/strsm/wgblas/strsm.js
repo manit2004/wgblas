@@ -1,142 +1,136 @@
-import { init, cleanup } from "wgblas";
 import { strsm } from "wgblas/strsm";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import {
-  randomFloat32Array,
-  randomTriangularFloat32Array,
-} from "wgblas/random";
-import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+import { runBenchmark, matrix, refresh } from "../../utils/harness.mjs";
+import { L3_SWEEP_SIZES, PADS, ALPHAS } from "../../utils/params.mjs";
 
-const WARMUP_ITERS = 5;
-const BENCH_ITERS = 30;
-// Same dispatch-count-dominated story as strsv.js, generalized to a matrix RHS; scoped non-effects (uplo/side/diag/lda/ldb/transA/otherLen) get no dedicated sweep, per strsv's precedent.
-const SIZES = [64, 128, 256, 512, 1024, 2048, 4096];
-const OTHER_LEN = 64; // representative matrix-RHS width
-const BLOCK_SIZE = 64; // matches strsm.mjs's own BLOCK_SIZE
+// Base orders: L3_SWEEP_SIZES plus 4096, as this benchmark has always run.
+const TRSM_SIZES = [64, 128, 256, 512, 1024, 2048, 4096];
+// strsm.mjs's own diagonal-block size.
+const BLOCK_SIZE = 64;
 
-const COLS = [
-  "order",
-  "numBlocks",
-  "compute_ms",
-  "ms_per_block",
-  "compute_GBs",
-];
+// Solves in place, so B is refreshed (untimed) before every call. A is
+// diagonally dominant ("triangular" fill), keeping every solve well
+// conditioned.
+const refreshB = refresh("B");
 
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const order = size,
-    n = OTHER_LEN;
-  // column-major: lda/ldb >= rows, matching cuBLAS's native layout. B is
-  // order x n (side='left'), so its row count is order, not n.
-  const lda = order,
-    ldb = order;
-
-  // Well-conditioned diagonal (away from 0) — strsm divides by it via its
-  // own block-inversion pass. column-major, matching cuBLAS's native layout.
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(
-      randomTriangularFloat32Array(order, lda, "lower"),
-      order,
-      order,
+await runBenchmark({
+  routine: "strsm",
+  warmup: 5,
+  iters: 50,
+  defaults: {
+    side: "left",
+    uplo: "lower",
+    transA: "no-transpose",
+    diag: "non-unit",
+    alpha: 1.0,
+    layout: "row-major",
+  },
+  // m = order (base) or n; A's order follows side; tight lda/ldb.
+  derive: (p) => {
+    const m = p.order ?? p.n;
+    const aOrder = p.side === "left" ? m : p.n;
+    const ldb = p.layout === "column-major" ? m : p.n;
+    return { ...p, m, aOrder, lda: aOrder, ldb };
+  },
+  operands: (p) => ({
+    A: matrix(Float32Array, p.aOrder, p.aOrder, p.lda, p.layout, "triangular"),
+    B: matrix(Float32Array, p.m, p.n, p.ldb, p.layout),
+  }),
+  call: (device, p, o) =>
+    strsm(
+      device,
+      p.side,
+      p.uplo,
+      p.transA,
+      p.diag,
+      p.m,
+      p.n,
+      p.alpha,
+      o.A,
+      p.lda,
+      o.B,
+      p.ldb,
     ),
-    order,
-    order,
-    lda,
-    "column-major",
-  );
-  const B = randomFloat32Array(order * n, -10, 10);
+  // m·n·aOrder multiply-adds: n solves of an aOrder-order triangle (side
+  // = 'left').
+  flops: (p) => p.m * p.n * p.aOrder,
+  // The triangle of A read + B read and written in place — coarse, as
+  // strsv.js counts it, without the internal scratch traffic.
+  bytes: (p) => ((p.aOrder * (p.aOrder + 1)) / 2 + 2 * p.m * p.n) * 4,
+  sweeps: {
+    // Column-major (cuBLAS's native layout), a 64-column right-hand side.
+    // Each 64-row diagonal block is a dependent step, so time per block is
+    // the story — the same dispatch-count-dominated picture as strsv.js,
+    // generalized to a matrix right-hand side. The scoped non-effects
+    // (uplo/side/diag/lda/ldb/transA/right-hand-side width) still get
+    // their sweeps below.
+    base: {
+      axes: { order: TRSM_SIZES },
+      fixed: { n: 64, layout: "column-major" },
+      derive: (p) => ({ ...p, numBlocks: Math.ceil(p.order / BLOCK_SIZE) }),
+      record: ["order", "numBlocks"],
+      metrics: (p, m) => ({
+        compute_ms: m.compute_ms,
+        ms_per_block: m.compute_ms / p.numBlocks,
+        compute_GBs: m.compute_GBs,
+      }),
+      beforeEach: refreshB,
+      iters: 30,
+    },
 
-  // strsm solves in place, so reset B to the same values before every call.
-  let BGpu = null;
-  const resetB = () => {
-    if (BGpu) BGpu.destroy();
-    BGpu = GpuMatrix.from(
-      toColumnMajor(B, order, n),
-      order,
-      n,
-      ldb,
-      "column-major",
-    );
-  };
+    // strsm adds a pre-scale pass when alpha != 1 and skips the solve at
+    // alpha = 0 (B is just zeroed), so this row has a real mechanism.
+    alpha: {
+      axes: { alpha: ALPHAS, n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+      flops: (p) => (p.alpha === 0 ? 0 : p.m * p.n * p.aOrder),
+      bytes: (p) =>
+        p.alpha === 0
+          ? p.m * p.n * 4
+          : ((p.aOrder * (p.aOrder + 1)) / 2 + 2 * p.m * p.n) * 4,
+    },
 
-  await warmClocks(device); // full clocks first — see helpers.mjs
+    // A unit diagonal skips the diagonal load and its reciprocal.
+    diag: {
+      axes: { diag: ["non-unit", "unit"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
 
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    resetB();
-    await strsm(
-      device,
-      "left",
-      "lower",
-      "no-transpose",
-      "non-unit",
-      order,
-      n,
-      1.0,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-    );
-  }
+    // Row- vs column-major (wgblas only: cuBLAS is column-major).
+    layout: {
+      axes: { layout: ["row-major", "column-major"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
 
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    resetB();
-    const { gpuTimeMs } = await strsm(
-      device,
-      "left",
-      "lower",
-      "no-transpose",
-      "non-unit",
-      order,
-      n,
-      1.0,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
+    // Padding on A's leading dimension.
+    lda: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, lda: p.lda + p.pad }),
+      beforeEach: refreshB,
+    },
 
-  AGpu.destroy();
-  BGpu.destroy();
+    // Padding on B's leading dimension.
+    ldb: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldb: p.ldb + p.pad }),
+      beforeEach: refreshB,
+    },
 
-  if (times.length === 0) continue;
+    // A on the left or the right: a traversal-order question, not arithmetic.
+    side: {
+      axes: { side: ["left", "right"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
 
-  const med = median(times);
-  const numBlocks = Math.ceil(order / BLOCK_SIZE);
-  const msPerBlock = med / numBlocks;
-  // lower triangle A read + B read + B write (in place) — coarse, same
-  // approximation strsv.js uses, not counting internal scratch traffic.
-  const bytes = ((order * (order + 1)) / 2 + 2 * order * n) * 4;
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [order, numBlocks, med, msPerBlock, gbs]);
-  records.push({
-    order,
-    numBlocks,
-    compute_ms: med,
-    ms_per_block: msPerBlock,
-    compute_GBs: gbs,
-  });
-}
+    // op(A): whether the solve walks A along rows or columns.
+    transA: {
+      axes: { transA: ["no-transpose", "transpose"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
 
-saveResults("strsm", gpuModel, records, { folder: "strsm" });
-
-cleanup();
+    // Lower vs upper triangle of A.
+    uplo: {
+      axes: { uplo: ["lower", "upper"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
+  },
+});
