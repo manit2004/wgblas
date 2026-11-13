@@ -9,9 +9,9 @@
  * benchmarks/
  *   <routine>/
  *     wgblas/
- *       <routine>.js          — wgblas benchmark (Node + WebGPU)
- *       <sweep>.<routine>.js  — optional parameter sweeps, e.g. alpha.sgemm.js
- *                                (see "Parameter Sweeps" below)
+ *       <routine>.js          — wgblas benchmark (Node + WebGPU): the base
+ *                                run and every parameter sweep, as one
+ *                                runBenchmark spec (see "Parameter Sweeps" below)
  *     cuda/
  *       <routine>.c           — cuBLAS reference benchmark, plus the same
  *                                sweeps as wgblas/ above
@@ -114,8 +114,9 @@
  * The base benchmark varies only the problem size, with every other argument
  * fixed at a typical value (unit stride, no transpose, tight leading
  * dimensions, column-major). A sweep varies one other argument across its
- * own, usually smaller, set of sizes, in its own `<sweep>.<routine>.js` and
- * result JSON. A routine only has the sweeps where that argument could
+ * own, usually smaller, set of sizes — a named sweep in the routine's
+ * benchmark file, with its own `<sweep>.<routine>.json` result. A routine
+ * only has the sweeps where that argument could
  * plausibly change the kernel's behaviour:
  *
  * | Sweep | What varies | Routines |
@@ -162,8 +163,10 @@
  * | `make cuda` | Compiles and runs every cuBLAS benchmark (NVIDIA only) |
  * | `make cuda-<routine>` | Compiles and runs every cuBLAS benchmark that routine has |
  *
- * To run a single sweep, run its file directly:
- * `node benchmarks/sgemm/wgblas/alpha.sgemm.js`.
+ * To run only some sweeps, name them:
+ * `node benchmarks/sgemm/wgblas/sgemm.js --sweeps=alpha,beta`. `--plan`
+ * lists a file's points without a GPU, and `--check` compares them with the
+ * committed results.
  *
  * Pass `ARGS=low-power` to prefer the integrated GPU on dual-GPU machines:
  * `make bench-saxpy ARGS=low-power`.

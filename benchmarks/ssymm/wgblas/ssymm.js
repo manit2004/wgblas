@@ -1,133 +1,104 @@
-import { init, cleanup } from "wgblas";
 import { ssymm } from "wgblas/ssymm";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
+import { runBenchmark, matrix } from "../../utils/harness.mjs";
 import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+  L3_SIZES,
+  L3_SWEEP_SIZES,
+  PADS,
+  ALPHAS,
+  BETAS,
+} from "../../utils/params.mjs";
 
-// Two-pass pipeline: symmetrize (dense-expand A) then an unmodified sgemm
-// pass. uplo/side/A's lda scoped as non-effects (temp/scope_ssymm.mjs); the
-// gemm pass's ldb/ldc/layout behavior is sgemm's own, unswept here — see
-// ldb.sgemm.js/trans.sgemm.js.
-const WARMUP_ITERS = 3;
-const BENCH_ITERS = 20;
-const SIZES = [32, 64, 128, 256, 512, 1024];
-
-const COLS = ["m", "n", "compute_ms", "compute_GFLOPs", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const m = size,
-    n = size; // square: aOrder (side='left') = m = n
-  // column-major: lda/ldb/ldc >= rows, matching cuBLAS's native layout
-  const lda = m,
-    ldb = m,
-    ldc = m;
-  const alpha = 1.0;
-  const beta = 0.0;
-
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(m * lda), m, m),
-    m,
-    m,
-    lda,
-    "column-major",
-  );
-  const BGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(m * n), m, n),
-    m,
-    n,
-    ldb,
-    "column-major",
-  );
-  const CGpu = GpuMatrix.from(
-    new Float32Array(m * n),
-    m,
-    n,
-    ldc,
-    "column-major",
-  );
-
-  await warmClocks(device); // full clocks first — see helpers.mjs
-
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await ssymm(
+// Two passes per call: symmetrize (dense-expand A), then an unmodified
+// sgemm pass. uplo, side and A's lda were scoped as non-effects (see
+// temp/scope_ssymm.mjs); the gemm pass's ldb/ldc/layout behavior is
+// sgemm's own (see sgemm.js).
+await runBenchmark({
+  routine: "ssymm",
+  warmup: 5,
+  iters: 50,
+  defaults: {
+    side: "left",
+    uplo: "lower",
+    alpha: 1.0,
+    beta: 0.0,
+    layout: "row-major",
+  },
+  // Square m = n, so A's order is n on either side; tight lda/ldb/ldc.
+  derive: (p) => {
+    const m = p.n;
+    const aOrder = p.side === "left" ? m : p.n;
+    const ld = p.layout === "column-major" ? m : p.n;
+    return { ...p, m, aOrder, lda: aOrder, ldb: ld, ldc: ld };
+  },
+  operands: (p) => ({
+    A: matrix(Float32Array, p.aOrder, p.aOrder, p.lda, p.layout),
+    B: matrix(Float32Array, p.m, p.n, p.ldb, p.layout),
+    C: matrix(Float32Array, p.m, p.n, p.ldc, p.layout),
+  }),
+  call: (device, p, o) =>
+    ssymm(
       device,
-      "left",
-      "lower",
-      m,
-      n,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-      beta,
-      CGpu,
-      ldc,
-    );
-  }
+      p.side,
+      p.uplo,
+      p.m,
+      p.n,
+      p.alpha,
+      o.A,
+      p.lda,
+      o.B,
+      p.ldb,
+      p.beta,
+      o.C,
+      p.ldc,
+    ),
+  // m·n dot products of length aOrder, plus the beta·C update.
+  flops: (p) => 2 * p.m * p.n * p.aOrder + 2 * p.m * p.n,
+  // symmetrize reads A and writes its dense copy, gemm reads that copy; B
+  // read, C read and written.
+  bytes: (p) => (3 * p.aOrder * p.aOrder + 3 * p.m * p.n) * 4,
+  sweeps: {
+    // Column-major (cuBLAS's native layout), m = n.
+    base: {
+      axes: { n: L3_SIZES },
+      fixed: { layout: "column-major" },
+      record: ["m", "n"],
+      warmup: 3,
+      iters: 20,
+    },
 
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await ssymm(
-      device,
-      "left",
-      "lower",
-      m,
-      n,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-      beta,
-      CGpu,
-      ldc,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
+    // No branch on alpha in the kernel, so expect a flat row.
+    alpha: { axes: { alpha: ALPHAS, n: L3_SWEEP_SIZES } },
 
-  AGpu.destroy();
-  BGpu.destroy();
-  CGpu.destroy();
+    // beta = 0 could skip reading C; a step at 0 is that shortcut.
+    beta: { axes: { beta: BETAS, n: L3_SWEEP_SIZES } },
 
-  if (times.length === 0) continue;
+    // Row- vs column-major (wgblas only: cuBLAS is column-major).
+    layout: {
+      axes: { layout: ["row-major", "column-major"], n: L3_SWEEP_SIZES },
+    },
 
-  const med = median(times);
-  const aOrder = m; // side='left'
-  // gemm-shaped 2*m*n*aOrder multiply-adds, plus 2*m*n for the alpha/beta step
-  const flops = 2 * m * n * aOrder + 2 * m * n;
-  // symmetrize: A read + Adense write (both aOrder^2); gemm: Adense re-read
-  // (aOrder^2) + B read (m*n) + C read + C write (2*m*n)
-  const bytes = (3 * aOrder * aOrder + 3 * m * n) * 4;
-  const gflops = flops / 1e9 / (med / 1e3);
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [m, n, med, gflops, gbs]);
-  records.push({
-    m,
-    n,
-    compute_ms: med,
-    compute_GFLOPs: gflops,
-    compute_GBs: gbs,
-  });
-}
+    // Padding on A's leading dimension: only symmetrize reads A directly.
+    lda: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, lda: p.lda + p.pad }),
+    },
 
-saveResults("ssymm", gpuModel, records, { folder: "ssymm" });
+    // Padding on B's leading dimension: the gemm's other operand.
+    ldb: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldb: p.ldb + p.pad }),
+    },
 
-cleanup();
+    // Padding on C's leading dimension: write coalescing.
+    ldc: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldc: p.ldc + p.pad }),
+    },
+
+    // A on the left or the right: which gemm operand the dense copy becomes.
+    side: { axes: { side: ["left", "right"], n: L3_SWEEP_SIZES } },
+
+    // Which triangle symmetrize reads A from.
+    uplo: { axes: { uplo: ["lower", "upper"], n: L3_SWEEP_SIZES } },
+  },
+});

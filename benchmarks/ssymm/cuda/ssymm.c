@@ -1,102 +1,73 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "../../utils/helpers.h"
+// ssymm: cuBLAS twin of benchmarks/ssymm/wgblas/ssymm.js.
+#include "../../utils/harness.h"
 
-#define WARMUP_ITERS 3
-#define BENCH_ITERS  20
-
-int main(void) {
-    char gpu_model[256];
-    get_gpu_model(gpu_model, sizeof(gpu_model));
-
-    cublasHandle_t handle;
-    CUBLAS_CHECK(cublasCreate(&handle));
-
-    // Matches benchmark ssymm.js: side=left, uplo=lower, tight lda/ldb/ldc,
-    // square m=n (so A's order equals m).
-    int sizes[] = { 32, 64, 128, 256, 512, 1024};
-    int num_sizes = (int)(sizeof(sizes) / sizeof(sizes[0]));
-
-    float med_times[num_sizes];
-    float gflops_vals[num_sizes];
-    float gbs_vals[num_sizes];
-
-    printf("%-10s  %-10s  %-12s  %-14s  %-12s\n",
-           "m", "n", "compute_ms", "compute_GFLOPs", "compute_GBs");
-    printf("%-10s  %-10s  %-12s  %-14s  %-12s\n",
-           "----------", "----------", "------------", "--------------", "------------");
-
-    const float alpha = 1.0f;
-    const float beta  = 0.0f;
-
-    for (int si = 0; si < num_sizes; si++) {
-        int m = sizes[si];
-        int n = sizes[si];
-        int lda = m, ldb = m, ldc = m;
-
-        float *h_A = random_float_array((size_t)m * lda, -1.0f, 1.0f);
-        float *h_B = random_float_array((size_t)m * n, -1.0f, 1.0f);
-        float *h_C = random_float_array((size_t)m * n, -1.0f, 1.0f);
-
-        float *d_A, *d_B, *d_C;
-        CUDA_CHECK(cudaMalloc((void **)&d_A, (size_t)m * lda * sizeof(float)));
-        CUDA_CHECK(cudaMalloc((void **)&d_B, (size_t)m * n * sizeof(float)));
-        CUDA_CHECK(cudaMalloc((void **)&d_C, (size_t)m * n * sizeof(float)));
-        CUDA_CHECK(cudaMemcpy(d_A, h_A, (size_t)m * lda * sizeof(float), cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_B, h_B, (size_t)m * n * sizeof(float), cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_C, h_C, (size_t)m * n * sizeof(float), cudaMemcpyHostToDevice));
-
-        cudaEvent_t start, stop;
-        CUDA_CHECK(cudaEventCreate(&start));
-        CUDA_CHECK(cudaEventCreate(&stop));
-
-        warm_clocks(handle); /* full clocks first — see helpers.h */
-
-        for (int i = 0; i < WARMUP_ITERS; i++) {
-            CUBLAS_CHECK(cublasSsymm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, &alpha, d_A, lda, d_B, ldb, &beta, d_C, ldc));
-        }
-        CUDA_CHECK(cudaDeviceSynchronize());
-
-        float compute_times[BENCH_ITERS];
-        for (int i = 0; i < BENCH_ITERS; i++) {
-            CUDA_CHECK(cudaEventRecord(start, 0));
-            CUBLAS_CHECK(cublasSsymm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, &alpha, d_A, lda, d_B, ldb, &beta, d_C, ldc));
-            CUDA_CHECK(cudaEventRecord(stop, 0));
-            CUDA_CHECK(cudaEventSynchronize(stop));
-            CUDA_CHECK(cudaEventElapsedTime(&compute_times[i], start, stop));
-        }
-
-        float med = median(compute_times, BENCH_ITERS);
-        int a_order = m; // side=left
-        float flops = 2.0f * m * n * a_order + 2.0f * m * n;
-        float bytes = (float)((size_t)(3 * a_order * a_order + 3 * m * n)) * 4.0f;
-        float gflops = (flops / 1e9f) / (med / 1e3f);
-        float gbs = (bytes / 1e9f) / (med / 1e3f);
-
-        med_times[si]   = med;
-        gflops_vals[si] = gflops;
-        gbs_vals[si]    = gbs;
-
-        printf("%-10d  %-10d  %-12.4f  %-14.4f  %-12.4f\n",
-               m, n, med, gflops, gbs);
-
-        CUDA_CHECK(cudaEventDestroy(start));
-        CUDA_CHECK(cudaEventDestroy(stop));
-        cudaFree(d_A);
-        cudaFree(d_B);
-        cudaFree(d_C);
-        free(h_A);
-        free(h_B);
-        free(h_C);
-    }
-
-    // write JSON results
-    record_field fields[] = {
-        { "m", FIELD_INT, sizes },
-        { "n", FIELD_INT, sizes },
-    };
-    save_results(gpu_model, "ssymm", "ssymm", fields, 2, med_times, gbs_vals, gflops_vals, num_sizes);
-
-    cublasDestroy(handle);
-    return 0;
+// Square m = n, column-major: A is aOrder×aOrder, B and C m×n, all tight.
+static void derive(bench_params *p) {
+    if (!p->m) p->m = p->n;
+    p->lda = strcmp(p->side, "left") == 0 ? p->m : p->n;
+    p->ldb = p->ldc = p->m;
 }
+
+static int a_order(const bench_params *p) { return strcmp(p->side, "left") == 0 ? p->m : p->n; }
+
+static int operands(const bench_params *p, bench_operand *o) {
+    o[0] = matrix(DT_F32, a_order(p), a_order(p), p->lda, FILL_RANDOM); // A
+    o[1] = matrix(DT_F32, p->m, p->n, p->ldb, FILL_RANDOM);             // B
+    o[2] = matrix(DT_F32, p->m, p->n, p->ldc, FILL_RANDOM);             // C
+    return 3;
+}
+
+static void call(cublasHandle_t device, const bench_params *p, bench_operand *o) {
+    float alpha = (float)p->alpha, beta = (float)p->beta;
+    CUBLAS_CHECK(cublasSsymm(device, side_of(p->side), fill_of(p->uplo), p->m, p->n, &alpha, o[0].ptr, p->lda, o[1].ptr, p->ldb, &beta, o[2].ptr, p->ldc));
+}
+
+// m·n dot products of length aOrder, plus the beta·C update.
+static double flops(const bench_params *p) { return 2.0 * p->m * p->n * a_order(p) + 2.0 * p->m * p->n; }
+
+// Same count as the wgblas file: its symmetrize pass reads A and writes a
+// dense copy, which the gemm pass reads; B read, C read and written.
+static double bytes(const bench_params *p) { return (3.0 * a_order(p) * a_order(p) + 3.0 * p->m * p->n) * 4; }
+
+static void pad_lda(bench_params *p) { p->lda += p->pad; }
+static void pad_ldb(bench_params *p) { p->ldb += p->pad; }
+static void pad_ldc(bench_params *p) { p->ldc += p->pad; }
+
+static const bench_spec spec = {
+    .routine = "ssymm",
+    .warmup = 5,
+    .iters = 50,
+    .defaults = { .side = "left", .uplo = "lower", .alpha = 1.0 },
+    .derive = derive,
+    .operands = operands,
+    .call = call,
+    .bytes = bytes,
+    .flops = flops,
+    .sweeps = {
+        // Column-major (cuBLAS's native layout), m = n.
+        { .name = "base", .axes = { AXIS(n, L3_SIZES) }, .record = { "m", "n" }, .warmup = 3, .iters = 20 },
+
+        // alpha values, including 0 and 1, which a kernel could special-case.
+        { .name = "alpha", .axes = { AXIS(alpha, ALPHAS), AXIS(n, L3_SWEEP_SIZES) } },
+
+        // beta = 0 could skip reading C; a step at 0 is that shortcut.
+        { .name = "beta", .axes = { AXIS(beta, BETAS), AXIS(n, L3_SWEEP_SIZES) } },
+
+        // Padding on A's leading dimension.
+        { .name = "lda", .axes = { AXIS(pad, PADS), AXIS(n, L3_SWEEP_SIZES) }, .derive = pad_lda },
+
+        // Padding on B's leading dimension.
+        { .name = "ldb", .axes = { AXIS(pad, PADS), AXIS(n, L3_SWEEP_SIZES) }, .derive = pad_ldb },
+
+        // Padding on C's leading dimension: write coalescing.
+        { .name = "ldc", .axes = { AXIS(pad, PADS), AXIS(n, L3_SWEEP_SIZES) }, .derive = pad_ldc },
+
+        // A on the left or the right.
+        { .name = "side", .axes = { AXIS(side, SIDES), AXIS(n, L3_SWEEP_SIZES) } },
+
+        // Which triangle A is read from.
+        { .name = "uplo", .axes = { AXIS(uplo, UPLOS), AXIS(n, L3_SWEEP_SIZES) } },
+    },
+};
+
+int main(int argc, char **argv) { return run_benchmark(argc, argv, &spec); }

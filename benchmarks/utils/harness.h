@@ -25,7 +25,7 @@
  * silently. Optional sweep fields: `fixed`, `derive`, `skip`, `record` (JSON
  * keys if not the axes'), `format` (display per key), `before_each`
  * (untimed, per call — e.g. `bench_refresh(&o[1])`), `warmup`/`iters`, and
- * `bytes`/`flops` to override the spec's. Operands are `vector()`,
+ * `bytes`/`flops`/`operands`/`call` to override the spec's. Operands are `vector()`,
  * `matrix()` (column-major) or `device_result()`. Points that won't fit in
  * free device memory or host RAM are skipped. A `device_result()` operand
  * gets no data and runs the timed calls in device pointer mode, so no result
@@ -49,6 +49,7 @@ typedef struct {
     double alpha, beta, c, s;
     cuComplex calpha;                /* complex alpha (cscal) */
     const char *trans, *uplo, *diag, *side; /* "no-transpose" / "lower" / "non-unit" / "left" style */
+    const char *transA, *transB;            /* gemm's two flags; trmm/trsm's transA */
 } bench_params;
 
 typedef enum { K_INT, K_REAL, K_COMPLEX, K_STRING } bench_kind;
@@ -74,6 +75,8 @@ static const struct { const char *name; size_t off; bench_kind kind; } BENCH_FIE
     { "uplo", offsetof(bench_params, uplo), K_STRING },
     { "diag", offsetof(bench_params, diag), K_STRING },
     { "side", offsetof(bench_params, side), K_STRING },
+    { "transA", offsetof(bench_params, transA), K_STRING },
+    { "transB", offsetof(bench_params, transB), K_STRING },
 };
 #define BENCH_N_FIELDS ((int)(sizeof BENCH_FIELDS / sizeof BENCH_FIELDS[0]))
 
@@ -157,6 +160,8 @@ typedef struct {
     int warmup, iters;     /* 0: the spec's */
     double (*bytes)(const bench_params *p); /* override the spec's */
     double (*flops)(const bench_params *p); /* override the spec's */
+    int (*operands)(const bench_params *p, bench_operand *o); /* override the spec's */
+    void (*call)(cublasHandle_t device, const bench_params *p, bench_operand *o); /* override the spec's */
 } bench_sweep;
 
 #define BENCH_MAX_SWEEPS 12
@@ -396,6 +401,7 @@ static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
     }
     float *med_times = malloc(cap * sizeof(float)), *gbs_vals = malloc(cap * sizeof(float));
     double (*bytes_fn)(const bench_params *) = sw->bytes ? sw->bytes : spec->bytes;
+    void (*call_fn)(cublasHandle_t, const bench_params *, bench_operand *) = sw->call ? sw->call : spec->call;
     double (*flops_fn)(const bench_params *) = sw->flops ? sw->flops : spec->flops;
     float *gflops_vals = flops_fn ? malloc(cap * sizeof(float)) : NULL;
     float *times = malloc(iters * sizeof(float));
@@ -409,7 +415,7 @@ static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
     for (int i = 0; i < npts; i++) {
         bench_params *p = &pts[i];
         bench_operand o[BENCH_MAX_OPERANDS];
-        int no = spec->operands(p, o);
+        int no = (sw->operands ? sw->operands : spec->operands)(p, o);
         bench_key_text(sw, p, text, sizeof text);
         text[strlen(text) - 2] = '\0'; /* drop the trailing ", " for messages */
 
@@ -446,13 +452,13 @@ static void bench_run_sweep(cublasHandle_t device, const char *gpu_model,
         if (device_mode) CUBLAS_CHECK(cublasSetPointerMode(device, CUBLAS_POINTER_MODE_DEVICE));
         for (int it = 0; it < warmup; it++) {
             if (sw->before_each) sw->before_each(p, o);
-            spec->call(device, p, o);
+            call_fn(device, p, o);
         }
         CUDA_CHECK(cudaDeviceSynchronize());
         for (int it = 0; it < iters; it++) {
             if (sw->before_each) sw->before_each(p, o);
             CUDA_CHECK(cudaEventRecord(start, 0));
-            spec->call(device, p, o);
+            call_fn(device, p, o);
             CUDA_CHECK(cudaEventRecord(stop, 0));
             CUDA_CHECK(cudaEventSynchronize(stop));
             CUDA_CHECK(cudaEventElapsedTime(&times[it], start, stop));

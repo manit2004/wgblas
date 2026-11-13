@@ -1,137 +1,119 @@
-import { init, cleanup } from "wgblas";
 import { ssyr2k } from "wgblas/ssyr2k";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat32Array } from "wgblas/random";
+import { runBenchmark, matrix } from "../../utils/harness.mjs";
 import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+  L3_SIZES,
+  L3_SWEEP_SIZES,
+  L3_TRANS_SIZES,
+  L3_LDA_SIZES,
+  L3_LDA_PADS,
+  PADS,
+  ALPHAS,
+  BETAS,
+} from "../../utils/params.mjs";
 
 // Two sgemmtr passes per call (see ssyr2k.mjs). uplo is a confirmed
-// non-effect; trans and lda/ldb are real but coupled (lda and ldb behave
-// identically — the two-pass design treats them symmetrically) — see
-// trans.ssyr2k.js/lda.ssyr2k.js and temp/scope_ssyr2k.mjs. trans="no-
-// transpose" used below to match BLAS/cuBLAS convention, despite being the
-// slower choice.
-const WARMUP_ITERS = 3;
-const BENCH_ITERS = 20;
-const SIZES = [32, 64, 128, 256, 512, 1024];
-
-const COLS = ["n", "k", "compute_ms", "compute_GFLOPs", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const n = size,
-    k = size;
-  // column-major: lda >= rows, matching cuBLAS's native layout
-  const lda = n,
-    ldb = n,
-    ldc = n;
-  const alpha = 1.0;
-  const beta = 0.0;
-
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(n * k), n, k),
-    n,
-    k,
-    lda,
-    "column-major",
-  );
-  const BGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat32Array(n * k), n, k),
-    n,
-    k,
-    ldb,
-    "column-major",
-  );
-  const CGpu = GpuMatrix.from(
-    new Float32Array(n * n),
-    n,
-    n,
-    ldc,
-    "column-major",
-  );
-
-  await warmClocks(device); // full clocks first — see helpers.mjs
-
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await ssyr2k(
+// non-effect; trans and lda/ldb are real but coupled (see
+// temp/scope_ssyr2k.mjs). lda and ldb behave identically — the two-pass
+// design treats them symmetrically — so the lda sweep pads both together.
+// trans couples both passes the way ssyrk's single trans does, so
+// trans = "transpose" is ~1.4x faster, and padding only matters for
+// trans = "no-transpose". The default trans = "no-transpose" matches
+// BLAS/cuBLAS convention despite being the slower choice.
+await runBenchmark({
+  routine: "ssyr2k",
+  warmup: 5,
+  iters: 50,
+  defaults: {
+    uplo: "lower",
+    trans: "no-transpose",
+    alpha: 1.0,
+    beta: 0.0,
+    layout: "row-major",
+  },
+  // Tight lda/ldb/ldc; A and B are n×k as stored (k×n when transposed).
+  derive: (p) => {
+    const k = p.k ?? p.n;
+    const [rows, cols] = p.trans === "no-transpose" ? [p.n, k] : [k, p.n];
+    const ld = p.layout === "column-major" ? rows : cols;
+    return { ...p, k, rows, cols, lda: ld, ldb: ld, ldc: p.n };
+  },
+  operands: (p) => ({
+    A: matrix(Float32Array, p.rows, p.cols, p.lda, p.layout),
+    B: matrix(Float32Array, p.rows, p.cols, p.ldb, p.layout),
+    C: matrix(Float32Array, p.n, p.n, p.ldc, p.layout),
+  }),
+  call: (device, p, o) =>
+    ssyr2k(
       device,
-      "lower",
-      "no-transpose",
-      n,
-      k,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-      beta,
-      CGpu,
-      ldc,
-    );
-  }
+      p.uplo,
+      p.trans,
+      p.n,
+      p.k,
+      p.alpha,
+      o.A,
+      p.lda,
+      o.B,
+      p.ldb,
+      p.beta,
+      o.C,
+      p.ldc,
+    ),
+  // Two rank-k terms, k multiply-adds each per element of the n(n+1)/2 triangle.
+  flops: (p) => 2 * p.n * (p.n + 1) * p.k,
+  // A + B read + the touched half of C read and written
+  bytes: (p) => (2 * p.n * p.k + p.n * p.n) * 4,
+  sweeps: {
+    // Column-major (cuBLAS's native layout), n = k.
+    base: {
+      axes: { n: L3_SIZES },
+      fixed: { layout: "column-major" },
+      record: ["n", "k"],
+      warmup: 3,
+      iters: 20,
+    },
 
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await ssyr2k(
-      device,
-      "lower",
-      "no-transpose",
-      n,
-      k,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-      beta,
-      CGpu,
-      ldc,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
+    // No branch on alpha in the kernel, so expect a flat row.
+    alpha: { axes: { alpha: ALPHAS, n: L3_SWEEP_SIZES } },
 
-  AGpu.destroy();
-  BGpu.destroy();
-  CGpu.destroy();
+    // beta = 0 could skip reading C; a step at 0 is that shortcut.
+    beta: { axes: { beta: BETAS, n: L3_SWEEP_SIZES } },
 
-  if (times.length === 0) continue;
+    // Row- vs column-major (wgblas only: cuBLAS is column-major).
+    layout: {
+      axes: { layout: ["row-major", "column-major"], n: L3_SWEEP_SIZES },
+    },
 
-  const med = median(times);
-  // Useful work, the BLAS/LAPACK convention: two rank-k terms, each k
-  // multiply-adds for every element of the n(n+1)/2 triangle — the same
-  // count cuBLAS's ssyr2k.c charges. Both sgemmtr passes skip every tile
-  // wholly outside the triangle, so this is what runs. (Charging two full
-  // 2*n*n*k products reported ~1.9x the real rate, past the FMA peak.)
-  const flops = 2 * n * (n + 1) * k;
-  // A read + B read (both full, once each) + touched-half-of-C read + write
-  const bytes = (n * k + n * k + n * n) * 4;
-  const gflops = flops / 1e9 / (med / 1e3);
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [n, k, med, gflops, gbs]);
-  records.push({
-    n,
-    k,
-    compute_ms: med,
-    compute_GFLOPs: gflops,
-    compute_GBs: gbs,
-  });
-}
+    // Padding on lda and ldb together, both ways of trans.
+    lda: {
+      axes: {
+        trans: ["no-transpose", "transpose"],
+        n: L3_LDA_SIZES,
+        pad: L3_LDA_PADS,
+      },
+      derive: (p) => ({ ...p, lda: p.lda + p.pad, ldb: p.ldb + p.pad }),
+      record: ["trans", "pad", "n"],
+      iters: 30,
+    },
 
-saveResults("ssyr2k", gpuModel, records, { folder: "ssyr2k" });
+    // Padding on ldb alone.
+    ldb: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldb: p.ldb + p.pad }),
+    },
 
-cleanup();
+    // Padding on C's leading dimension: write coalescing.
+    ldc: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldc: p.ldc + p.pad }),
+    },
+
+    // trans flips both operands' read direction at once.
+    trans: {
+      axes: { trans: ["no-transpose", "transpose"], n: L3_TRANS_SIZES },
+      iters: 30,
+    },
+
+    // Which triangle: whether the heavy tiles dispatch first or last.
+    uplo: { axes: { uplo: ["lower", "upper"], n: L3_SWEEP_SIZES } },
+  },
+});

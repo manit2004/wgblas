@@ -1,143 +1,111 @@
-import { init, cleanup } from "wgblas";
 import { dgemmtr } from "wgblas/dgemmtr";
-import { GpuMatrix } from "wgblas/classes/GpuMatrix";
-import { randomFloat64Array } from "wgblas/random";
+import { runBenchmark, matrix } from "../../utils/harness.mjs";
 import {
-  median,
-  printHeader,
-  printRow,
-  getGpuModel,
-  saveResults,
-  toColumnMajor,
-  warmClocks,
-} from "../../utils/helpers.mjs";
+  L3_SIZES,
+  L3_SWEEP_SIZES,
+  PADS,
+  ALPHAS,
+  BETAS,
+} from "../../utils/params.mjs";
 
-// Same kernel as dgemm (dgemm_small), write gated to one
-// triangle by uplo; the swept params mirror sgemmtr's (see uplo.dgemmtr.js
-// and its siblings). No cuBLAS counterpart — cuBLAS has no gemmt routine —
-// so wgblas-only. flops/bytes count the triangle only: the kernels skip
-// every tile wholly outside it. Bytes are 8 per element (a hi and a lo f32).
-const WARMUP_ITERS = 3;
-const BENCH_ITERS = 20;
-const SIZES = [32, 64, 128, 256, 512, 1024];
-
-const COLS = ["m", "n", "k", "compute_ms", "compute_GFLOPs", "compute_GBs"];
-
-const powerPreference =
-  process.argv[2] === "low-power" ? "low-power" : "high-performance";
-const device = await init({ benchmark: true, powerPreference });
-
-const gpuModel = getGpuModel();
-const records = [];
-
-printHeader(COLS);
-
-for (const size of SIZES) {
-  const m = size,
-    n = size,
-    k = size;
-  // column-major, consistent with sgemm's own benchmark — not for a cuBLAS
-  // comparison here (there is none), just so the two remain directly
-  // comparable to each other.
-  const lda = m,
-    ldb = k,
-    ldc = m;
-  const alpha = 1.0;
-  const beta = 0.0;
-
-  const AGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat64Array(m * k), m, k),
-    m,
-    k,
-    lda,
-    "column-major",
-  );
-  const BGpu = GpuMatrix.from(
-    toColumnMajor(randomFloat64Array(k * n), k, n),
-    k,
-    n,
-    ldb,
-    "column-major",
-  );
-  const CGpu = GpuMatrix.from(
-    new Float64Array(m * n),
-    m,
-    n,
-    ldc,
-    "column-major",
-  );
-
-  // warm up
-  await warmClocks(device); // full clocks first — see helpers.mjs
-  for (let i = 0; i < WARMUP_ITERS; i++) {
-    await dgemmtr(
+// Same kernel as dgemm (dgemm_small), with the write gated to one triangle
+// by uplo; the sweeps mirror sgemmtr's.
+await runBenchmark({
+  routine: "dgemmtr",
+  warmup: 5,
+  iters: 50,
+  defaults: {
+    uplo: "lower",
+    transA: "no-transpose",
+    transB: "no-transpose",
+    alpha: 1.0,
+    beta: 0.0,
+    layout: "row-major",
+  },
+  // Square m = n = k, tight lda/ldb/ldc (A and B are square either way of trans).
+  derive: (p) => {
+    const [m, k] = [p.n, p.n];
+    return { ...p, m, k, lda: k, ldb: k, ldc: p.n };
+  },
+  operands: (p) => ({
+    A: matrix(Float64Array, p.m, p.k, p.lda, p.layout),
+    B: matrix(Float64Array, p.k, p.n, p.ldb, p.layout),
+    C: matrix(Float64Array, p.m, p.n, p.ldc, p.layout),
+  }),
+  call: (device, p, o) =>
+    dgemmtr(
       device,
-      "lower",
-      "no-transpose",
-      "no-transpose",
-      m,
-      n,
-      k,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-      beta,
-      CGpu,
-      ldc,
-    );
-  }
+      p.uplo,
+      p.transA,
+      p.transB,
+      p.m,
+      p.n,
+      p.k,
+      p.alpha,
+      o.A,
+      p.lda,
+      o.B,
+      p.ldb,
+      p.beta,
+      o.C,
+      p.ldc,
+    ),
+  // The triangle only (the kernels skip every tile wholly outside it): k
+  // multiply-adds for each of C's n(n+1)/2 elements.
+  flops: (p) => p.n * (p.n + 1) * p.k,
+  // A read + B read + the touched half of C read and written (8 B: hi + lo).
+  bytes: (p) => (p.m * p.k + p.k * p.n + p.m * p.n) * 8,
+  sweeps: {
+    // Column-major, m = n = k (wgblas only: cuBLAS has no gemmt routine).
+    base: {
+      axes: { n: L3_SIZES },
+      fixed: { layout: "column-major" },
+      record: ["m", "n", "k"],
+      warmup: 3,
+      iters: 20,
+    },
 
-  const times = [];
-  for (let i = 0; i < BENCH_ITERS; i++) {
-    const { gpuTimeMs } = await dgemmtr(
-      device,
-      "lower",
-      "no-transpose",
-      "no-transpose",
-      m,
-      n,
-      k,
-      alpha,
-      AGpu,
-      lda,
-      BGpu,
-      ldb,
-      beta,
-      CGpu,
-      ldc,
-    );
-    if (Number.isFinite(gpuTimeMs) && gpuTimeMs > 0) times.push(gpuTimeMs);
-  }
+    // No branch on alpha in the kernel, so expect a flat row.
+    alpha: { axes: { alpha: ALPHAS, n: L3_SWEEP_SIZES } },
 
-  AGpu.destroy();
-  BGpu.destroy();
-  CGpu.destroy();
+    // beta = 0 could skip reading C; a step at 0 is that shortcut.
+    beta: { axes: { beta: BETAS, n: L3_SWEEP_SIZES } },
 
-  if (times.length === 0) continue;
+    // Row- vs column-major.
+    layout: {
+      axes: { layout: ["row-major", "column-major"], n: L3_SWEEP_SIZES },
+    },
 
-  const med = median(times);
-  // Useful work (C is square here, m == n): k multiply-adds for each of the
-  // n(n+1)/2 elements of the triangle written — what the kernels do, since
-  // they skip every tile wholly outside it. (Charging the full 2*m*n*k
-  // product reported ~1.9x the real rate, past the card's FMA peak.)
-  const flops = n * (n + 1) * k;
-  // A read + B read + touched-half-of-C read + touched-half-of-C write
-  const bytes = (m * k + k * n + m * n) * 8;
-  const gflops = flops / 1e9 / (med / 1e3);
-  const gbs = bytes / 1e9 / (med / 1e3);
-  printRow(COLS, [m, n, k, med, gflops, gbs]);
-  records.push({
-    m,
-    n,
-    k,
-    compute_ms: med,
-    compute_GFLOPs: gflops,
-    compute_GBs: gbs,
-  });
-}
+    // Padding on A's leading dimension: its rows move relative to the
+    // 128-byte coalescing boundary.
+    lda: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, lda: p.lda + p.pad }),
+    },
 
-saveResults("dgemmtr", gpuModel, records, { folder: "dgemmtr" });
+    // Padding on B's: the operand the kernel streams along its inner loop.
+    ldb: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldb: p.ldb + p.pad }),
+    },
 
-cleanup();
+    // Padding on C's leading dimension: write coalescing.
+    ldc: {
+      axes: { pad: PADS, n: L3_SWEEP_SIZES },
+      derive: (p) => ({ ...p, ldc: p.ldc + p.pad }),
+    },
+
+    // op(A): whether A's tile loads walk rows or columns.
+    transA: {
+      axes: { transA: ["no-transpose", "transpose"], n: L3_SWEEP_SIZES },
+    },
+
+    // op(B): the same on the operand streamed along the inner loop.
+    transB: {
+      axes: { transB: ["no-transpose", "transpose"], n: L3_SWEEP_SIZES },
+    },
+
+    // Which triangle of C: whether the heavy tiles dispatch first or last.
+    uplo: { axes: { uplo: ["lower", "upper"], n: L3_SWEEP_SIZES } },
+  },
+});
