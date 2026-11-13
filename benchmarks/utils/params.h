@@ -38,6 +38,7 @@ static const double BETAS[] = { 0.0, 1.0, 2.5, -3.75 };
 static const char *const TRANSES[] = { "no-transpose", "transpose" };
 static const char *const UPLOS[] = { "lower", "upper" };
 static const char *const DIAGS[] = { "non-unit", "unit" };
+static const char *const SIDES[] = { "left", "right" };
 
 /** Level 3 base sizes: square n = k, 32 to 1024. */
 static const int L3_SIZES[] = { 32, 64, 128, 256, 512, 1024 };

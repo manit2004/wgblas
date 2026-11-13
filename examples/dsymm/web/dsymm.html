@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dsymm — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dsymm, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // A is symmetric with only its upper triangle stored. Taking B = identity
+        // makes C the full symmetric matrix A stands for.
+        const n = 3,
+          lda = n;
+        const A = new Float64Array([2, 1, 0, 0, 2, 1, 0, 0, 2]);
+        const B = new Float64Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+        const C = new Float64Array(n * n);
+
+        const { C: result } = await dsymm(
+          device,
+          "left",
+          "upper",
+          n,
+          n,
+          1,
+          A,
+          lda,
+          B,
+          lda,
+          0,
+          C,
+          lda,
+        );
+
+        document.getElementById("out").textContent = [
+          "A (upper triangle stored) =",
+          "  [" + A.slice(0, 3).join(", ") + "]",
+          "  [" + A.slice(3, 6).join(", ") + "]",
+          "  [" + A.slice(6, 9).join(", ") + "]",
+          "C = A*I = the full symmetric A =",
+          "  [" + result.slice(0, 3).join(", ") + "]",
+          "  [" + result.slice(3, 6).join(", ") + "]",
+          "  [" + result.slice(6, 9).join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })();
+    </script>
+  </body>
+</html>
