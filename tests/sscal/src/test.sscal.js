@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { sscal } from "wgblas/sscal";
+import { withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures, maxUlp } from "../../helpers/fixtures.js";
 import { sscalReference as stdlibReference } from "../../helpers/stdlib.js";
@@ -85,4 +86,15 @@ test("sscal zero-dimension (regression)", async () => {
   const got = await sscal(device, 0, 2.5, x, 1);
 
   assert.deepEqual(Array.from(got.x), Array.from(before));
+});
+
+// alpha = 1: reference BLAS (and stdlib) returns x as it is, without a pass
+// over it — every element bit for bit.
+test("sscal alpha = 1 leaves x as it is (regression)", async () => {
+  const x = withValues(randomFloat32Array(6, -1, 1, 1), { 1: NaN, 2: -0 });
+  const want = x.slice();
+  const got = await sscal(device, 6, 1, x, 1);
+  assert.equal(got.x, x);
+  for (let i = 0; i < 6; i++)
+    assert.ok(Object.is(got.x[i], want[i]), `x[${i}]`);
 });

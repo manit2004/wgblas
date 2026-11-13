@@ -5,6 +5,7 @@ import {
   stageReadback,
   destroyBuffers,
 } from "../util/buffer.mjs";
+import { hasNonFinite, triangleHasNonFinite } from "../util/finite.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
@@ -14,7 +15,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { BLOCK_SIZE, STRSV_TILE_ROWS, WGS } from "../util/constants.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // Blocked triangular solve over 64-row diagonal blocks, double-double
@@ -146,7 +147,17 @@ export async function dtrsv(
   const numBlocks = blockStarts.length;
 
   const stride = device.limits.minUniformBufferOffsetAlignment;
-  const useSubstitution = numBlocks <= SUBSTITUTION_MAX_BLOCKS;
+  // Host arrays holding ±Infinity/NaN take substitution at any size, so the
+  // special values land where stdlib and the reference BLAS put them (see
+  // util/finite.mjs). GPU-resident data can't be checked without a readback,
+  // so it keeps the inverse path — the difference its docs describe.
+  // Only scanned when the size would otherwise take the inverse path.
+  const nonFinite =
+    numBlocks > SUBSTITUTION_MAX_BLOCKS &&
+    !xIsGpu &&
+    (hasNonFinite(x, n, incx) ||
+      triangleHasNonFinite(A, n, lda, isLower, isUnit));
+  const useSubstitution = numBlocks <= SUBSTITUTION_MAX_BLOCKS || nonFinite;
   const scatterPipeline = useSubstitution
     ? null
     : await getPipeline(device, "scatter_strided");
@@ -271,6 +282,7 @@ export async function dtrsv(
             { value: isUnit ? 1 : 0, type: "u32" },
             { value: 0, type: "u32" }, // solve, not invert
             { value: rowCount > 0 ? 1 : 0, type: "u32" }, // packed copy for the update
+            { value: isNoTrans ? 0 : 1, type: "u32" }, // skipZero: BLAS's column form
           ],
           "dtrsv-solve-params",
         );
@@ -340,6 +352,7 @@ export async function dtrsv(
           { value: isUnit ? 1 : 0, type: "u32" },
           { value: 1, type: "u32" }, // invert
           { value: 0, type: "u32" },
+          { value: 0, type: "u32" }, // skipZero: solve mode only
         ],
         "dtrsv-invert-params",
       );
@@ -435,7 +448,7 @@ export async function dtrsv(
     readHiBuffer = null;
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    const result = mergeDoubleDoubleExact(hi, lo, x);
     if (gpuTimeMs !== undefined) return { x: result, gpuTimeMs };
     return { x: result };
   } finally {

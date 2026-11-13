@@ -3,6 +3,17 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dcopy } from "wgblas/dcopy";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as
@@ -112,4 +123,36 @@ test("dcopy zero-dimension (regression)", async () => {
   const got = await dcopy(device, 0, x, 1, y, 1);
 
   assert.deepEqual(Array.from(got.y), Array.from(before));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dcopy exactness (regression)", async () => {
+  // Copied elements are x's doubles bit for bit; y's gaps are untouched.
+  const full = fullPrecisionFrom(920);
+  const x = full(12);
+  const y = full(18);
+  const got = await dcopy(device, 6, x, 2, y, 3);
+  const want = Float64Array.from(y, (v, i) =>
+    i % 3 === 0 ? x[(i / 3) * 2] : v,
+  );
+  assertBitIdentical(got.y, want, all(y.length), "y");
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dcopy f32 exponent range (regression)", async () => {
+  const a = {
+    n: 5,
+    x: withValues(values(5, 1), { 1: 1e300, 2: -1e300, 3: 1e-50 }),
+    incx: 1,
+    y: withValues(values(5, 2), { 4: 1e300 }),
+    incy: 1,
+  };
+  const got = await dcopy(device, a.n, a.x, a.incx, a.y, a.incy);
+  assertIeeeMatch(got.y, stdlibReference(argsInF32Range(a)).y, "y");
 });

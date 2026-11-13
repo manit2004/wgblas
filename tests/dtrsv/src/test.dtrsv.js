@@ -3,6 +3,20 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dtrsv } from "wgblas/dtrsv";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  at,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import { dtrsvReference } from "../../helpers/stdlib.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { backwardResidualFactor } from "../helpers.js";
@@ -267,4 +281,184 @@ test("dtrsv edge cases (column-major)", async (t) => {
       );
     });
   }
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dtrsv exactness (regression)", async () => {
+  const full = fullPrecisionFrom(990);
+  const n = 5;
+  // Diagonally dominant, so the solve stays well conditioned.
+  const A = full(n * n);
+  for (let i = 0; i < n; i++) A[i * n + i] += n + 4;
+  const x = full(13);
+  const got = await dtrsv(
+    device,
+    "upper",
+    "no-transpose",
+    "non-unit",
+    n,
+    A,
+    n,
+    x,
+    3,
+  );
+  assertBitIdentical(got.x, x, gaps(n, 3), "x stride gaps");
+});
+
+// Host-array calls put ±Infinity and NaN exactly where stdlib does, at any
+// size: with a non-finite value in b or A's referenced triangle they take the
+// substitution path (util/finite.mjs), since applying a block's inverse can
+// leave ±Infinity where substitution's Inf - Inf gives NaN. Covers an
+// Infinity at the start, middle and end of b, Infinity in A's referenced
+// triangle (a diagonal and an off-diagonal block), and NaN in the
+// unreferenced triangle (never read). n = 300 is past the inverse threshold.
+test("dtrsv IEEE special values (regression)", async (t) => {
+  for (const uplo of ["lower", "upper"])
+    for (const trans of ["no-transpose", "transpose"])
+      for (const n of [7, 300])
+        for (const [label, setup] of [
+          ["Infinity early in b", (A, x) => (x[1] = Infinity)],
+          ["Infinity mid-b", (A, x) => (x[Math.floor(n / 2)] = Infinity)],
+          ["Infinity late in b", (A, x) => (x[n - 2] = -Infinity)],
+          [
+            "Infinity in A",
+            (A) =>
+              (A[uplo === "lower" ? at(n, n - 1, 2) : at(n, 2, n - 1)] =
+                Infinity),
+          ],
+          [
+            "Infinity in A near the diagonal",
+            (A) => (A[uplo === "lower" ? at(n, 5, 4) : at(n, 4, 5)] = Infinity),
+          ],
+        ])
+          await t.test(`${uplo} ${trans} n=${n}: ${label}`, async () => {
+            const A = randomFloat64Array(n * n, -1, 1, 1);
+            for (let i = 0; i < n; i++) A[at(n, i, i)] += n + 4;
+            A[uplo === "lower" ? at(n, 1, 4) : at(n, 4, 1)] = NaN;
+            const x = randomFloat64Array(n, -1, 1, 2);
+            setup(A, x);
+            const a = {
+              uplo,
+              trans,
+              diag: "non-unit",
+              n,
+              A,
+              lda: n,
+              x,
+              incx: 1,
+            };
+            const got = await dtrsv(
+              device,
+              a.uplo,
+              a.trans,
+              a.diag,
+              a.n,
+              a.A,
+              a.lda,
+              x.slice(),
+              a.incx,
+            );
+            assertIeeeMatch(got.x, dtrsvReference(a).x, "x", 1e-9);
+          });
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dtrsv f32 exponent range (regression)", async (t) => {
+  // 1e300 in b reads as Infinity — and, like a real Infinity, takes the
+  // substitution path at n = 300 (util/finite.mjs) to match stdlib; 1e300 in
+  // the unreferenced triangle is never read.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      await t.test(`${uplo} n=${n}`, async () => {
+        const A = values(n * n, 1);
+        for (let i = 0; i < n; i++) A[at(n, i, i)] += n + 4;
+        const [r, c] = uplo === "lower" ? [1, 4] : [4, 1];
+        const a = {
+          uplo,
+          trans: "no-transpose",
+          diag: "non-unit",
+          n,
+          A: withValues(A, { [at(n, r, c)]: 1e300, [at(n, c, r)]: 1e-50 }),
+          lda: n,
+          x: withValues(values(n, 2), { [Math.floor(n / 2)]: 1e300, 2: 1e-50 }),
+          incx: 1,
+        };
+        const got = await dtrsv(
+          device,
+          a.uplo,
+          a.trans,
+          a.diag,
+          a.n,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+        );
+        assertIeeeMatch(
+          got.x,
+          saturate(dtrsvReference(argsInF32Range(a)).x),
+          "x",
+          1e-9,
+        );
+      });
+});
+
+// Reference BLAS (and stdlib) runs a transposed solve column by column: an
+// unknown that is 0 before its division stays 0 (a NaN diagonal there
+// doesn't matter) and its column's updates are skipped, so 0 · Infinity and
+// 0 · NaN never happen; the other form takes them. n = 300 takes the
+// substitution path, which non-finite host data always does.
+test("dtrsv zero unknowns skip their column (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const trans of ["no-transpose", "transpose"])
+        for (const n of [7, 300])
+          await t.test(`${layout} ${uplo} ${trans} n=${n}`, async () => {
+            const at2 = (i, j) =>
+              layout === "row-major" ? at(n, i, j) : at(n, j, i);
+            const A = randomFloat64Array(n * n, -1, 1, 1);
+            for (let i = 0; i < n; i++) A[at(n, i, i)] += n + 4;
+            // The first unknown solved is 0 (b = 0 there), its diagonal NaN,
+            // and the entry it multiplies further on Infinity.
+            const forward = (uplo === "lower") === (trans === "no-transpose");
+            const first = forward ? 0 : n - 1;
+            const later = forward ? 3 : n - 4;
+            A[at2(first, first)] = NaN;
+            A[
+              trans === "no-transpose" ? at2(later, first) : at2(first, later)
+            ] = Infinity;
+            const x = withValues(randomFloat64Array(n, -1, 1, 2), {
+              [first]: 0,
+            });
+            const a = {
+              uplo,
+              trans,
+              diag: "non-unit",
+              n,
+              A,
+              lda: n,
+              x,
+              incx: 1,
+              layout,
+            };
+            const got = await dtrsv(
+              device,
+              a.uplo,
+              a.trans,
+              a.diag,
+              a.n,
+              a.A,
+              a.lda,
+              x.slice(),
+              a.incx,
+              a.layout,
+            );
+            assertIeeeMatch(got.x, dtrsvReference(a).x, "x", 1e-9);
+          });
 });

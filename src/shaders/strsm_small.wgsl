@@ -41,6 +41,7 @@ struct Params {
   unit:     u32, // 1 = unit diagonal (not read)
   alpha:    f32, // applied as B is read in (alpha = 0 never reaches here)
   xLd:      u32, // 0 = no packed copy
+  skipZero: u32, // 1 = reference BLAS's zero-unknown skip (strsv; see solveDiv)
 }
 
 @group(0) @binding(2) var<uniform> params: Params;
@@ -64,6 +65,24 @@ fn colStart(j: u32) -> u32 {
 // Solve-frame index -> original index (identity, or reversed for backward).
 fn orig(i: u32) -> u32 {
   return select(i, params.n - 1u - i, params.backward == 1u);
+}
+
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v == 0.0` can't be trusted to keep NaN out.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
+// skipZero (strsv, when the solve is transposed in the row-major frame —
+// the column-by-column form of reference BLAS and stdlib): an unknown whose
+// value is 0 before the division stays 0 (no division, so a 0 or NaN diagonal
+// can't reach it), and its column's updates are skipped, so 0 · Infinity or
+// 0 · NaN there never happens.
+fn solveDiv(v: f32, d: f32) -> f32 {
+  return select(v / d, 0.0, isZeroBits(v));
+}
+fn mulSkip(l: f32, x: f32) -> f32 {
+  return select(l, 0.0, isZeroBits(x)) * x; // l zeroed where x is: 0 · 0
 }
 
 @compute @workgroup_size(256)
@@ -106,15 +125,33 @@ fn main(
     let c1 = colStart(j + 1u);
     let c2 = colStart(j + 2u);
     let c3 = colStart(j + 3u);
-    let x0 = chunkVals[slot] / L[c0];
-    let x1 = (chunkVals[slot + 1u] - L[c0 + 1u] * x0) / L[c1];
-    let x2 = (chunkVals[slot + 2u] - L[c0 + 2u] * x0 - L[c1 + 1u] * x1) / L[c2];
-    let x3 = (chunkVals[slot + 3u] - L[c0 + 3u] * x0 - L[c1 + 2u] * x1 - L[c2 + 1u] * x2) / L[c3];
+    // skipZero is uniform, so the checked arithmetic is a separate branch:
+    // per-operation selects cost strsv up to 15% at small n (and strsm, which
+    // never skips, too).
+    var x0: f32;
+    var x1: f32;
+    var x2: f32;
+    var x3: f32;
+    if (params.skipZero == 1u) {
+      x0 = solveDiv(chunkVals[slot], L[c0]);
+      x1 = solveDiv(chunkVals[slot + 1u] - mulSkip(L[c0 + 1u], x0), L[c1]);
+      x2 = solveDiv(chunkVals[slot + 2u] - mulSkip(L[c0 + 2u], x0) - mulSkip(L[c1 + 1u], x1), L[c2]);
+      x3 = solveDiv(chunkVals[slot + 3u] - mulSkip(L[c0 + 3u], x0) - mulSkip(L[c1 + 2u], x1) - mulSkip(L[c2 + 1u], x2), L[c3]);
+    } else {
+      x0 = chunkVals[slot] / L[c0];
+      x1 = (chunkVals[slot + 1u] - L[c0 + 1u] * x0) / L[c1];
+      x2 = (chunkVals[slot + 2u] - L[c0 + 2u] * x0 - L[c1 + 1u] * x1) / L[c2];
+      x3 = (chunkVals[slot + 3u] - L[c0 + 3u] * x0 - L[c1 + 2u] * x1 - L[c2 + 1u] * x2) / L[c3];
+    }
     if (i >= j && i < j + CHUNK) {
       xi = select(select(x3, x2, i == j + 2u), select(x1, x0, i == j), i < j + 2u);
     } else if (i >= j + CHUNK) {
       let d = i - j;
-      b = b - L[c0 + d] * x0 - L[c1 + d - 1u] * x1 - L[c2 + d - 2u] * x2 - L[c3 + d - 3u] * x3;
+      if (params.skipZero == 1u) {
+        b = b - mulSkip(L[c0 + d], x0) - mulSkip(L[c1 + d - 1u], x1) - mulSkip(L[c2 + d - 2u], x2) - mulSkip(L[c3 + d - 3u], x3);
+      } else {
+        b = b - L[c0 + d] * x0 - L[c1 + d - 1u] * x1 - L[c2 + d - 2u] * x2 - L[c3 + d - 3u] * x3;
+      }
     }
   }
 

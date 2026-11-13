@@ -14,7 +14,7 @@ import { requireWorkgroupCount } from "../util/workgroup.mjs";
 import { WGS, SPLITK_CHUNK_ROWS_DD } from "../util/constants.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // dgemv: y := alpha * op(A) * x + beta * y, double-double (Dekker) f64
@@ -120,6 +120,10 @@ export async function dgemv(
     throw new Error(
       "y does not have enough elements for the given dimensions and incy.",
     );
+
+  // Reference BLAS quick return (alpha = 0, beta = 1 leaves y as it is): no GPU
+  // round trip, which would also round full-precision doubles.
+  if (alpha === 0 && beta === 1) return yIsGpu ? {} : { y };
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const batchDeps = ["f64/utils/batch"]; // four-lane ops, both kernels
@@ -317,7 +321,7 @@ export async function dgemv(
     readHiBuffer = null;
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    const result = mergeDoubleDoubleExact(hi, lo, y);
     if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
     return { y: result };
   } finally {

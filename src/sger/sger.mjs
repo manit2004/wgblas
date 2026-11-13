@@ -98,6 +98,10 @@ export async function sger(
       "y does not have enough elements for the given n and incy.",
     );
 
+  // Reference BLAS quick return: alpha = 0 leaves A as it is, without
+  // reading x — so 0 · Infinity or 0 · NaN can't reach it.
+  if (alpha === 0) return AIsGpu ? {} : { A };
+
   const pipeline = await getPipeline(device, "sger");
 
   let xBuffer = null;

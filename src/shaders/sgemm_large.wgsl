@@ -49,13 +49,23 @@ struct Params {
   offA:    u32, // element offsets into A/B/C — strsm addresses sub-blocks in place
   offB:    u32, // (vec4 paths need offset % 4 == 0, checked host-side)
   offC:    u32,
-  kTri:    u32, // strmm: 0 = dense; 1/2 = op(A) lower/upper, 3/4 = op(B) lower/upper
+  kTri:    u32, // strmm: 0 = dense; 1/2 = op(A) lower/upper, 3/4 = op(B) lower/upper; strsm: 5/6 = op(A) lower/upper by element (termOf)
 }
 
 @group(0) @binding(5) var<uniform> params: Params;
 
 var<workgroup> As: array<f32, BM * BK>;
 var<workgroup> Bs: array<f32, BK * BN>;
+
+// kTri 5/6 (strsm's block inverses): op(A) is lower/upper triangular element
+// by element, and a product past its diagonal (k > row for lower, k < row
+// for upper) adds exactly 0 — the structural zero there times an Infinity or
+// NaN in op(B) would otherwise be NaN, in rows the solve never touches.
+// Only the kTri >= 5 copy of the dot loop calls it; every other mode runs
+// the plain loop.
+fn termOf(p: f32, k: u32, row: u32) -> f32 {
+  return select(0.0, p, select(k >= row, k <= row, params.kTri == 5u));
+}
 
 @compute @workgroup_size(THREADS_X, THREADS_Y)
 fn main(
@@ -94,8 +104,8 @@ fn main(
   // column. Uniform (workgroup id + params), so the barriers stay legal.
   var kLo = 0u;
   var kHi = params.k;
-  if (params.kTri == 1u) { kHi = min(kHi, blockRow + BM); }
-  if (params.kTri == 2u) { kLo = blockRow; }
+  if (params.kTri == 1u || params.kTri == 5u) { kHi = min(kHi, blockRow + BM); }
+  if (params.kTri == 2u || params.kTri == 6u) { kLo = blockRow; }
   if (params.kTri == 3u) { kLo = blockCol; }
   if (params.kTri == 4u) { kHi = min(kHi, blockCol + BN); }
   let tEnd = (kHi + BK - 1u) / BK;
@@ -207,30 +217,66 @@ fn main(
     // transposed A — see the tile loads. The uniform branch sits outside the
     // dot loop: inside it, it kept the compiler from unrolling the hot path.
     if (params.transA == 0u) {
-      for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
-        for (var i = 0u; i < TM; i++) {
-          regM[i] = As[(threadRow * TM + i) * BK + dotIdx];
+      if (params.kTri < 5u) {
+        for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
+          for (var i = 0u; i < TM; i++) {
+            regM[i] = As[(threadRow * TM + i) * BK + dotIdx];
+          }
+          for (var i = 0u; i < TN; i++) {
+            regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
+          }
+          for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
+            for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
+              threadResults[resIdxM * TN + resIdxN] += regM[resIdxM] * regN[resIdxN];
+            }
+          }
         }
-        for (var i = 0u; i < TN; i++) {
-          regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
-        }
-        for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
-          for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
-            threadResults[resIdxM * TN + resIdxN] += regM[resIdxM] * regN[resIdxN];
+      } else {
+        // kTri 5/6: the same loop, structural zeros masked (termOf) —
+        // kept apart so the plain loop has no per-product test.
+        for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
+          for (var i = 0u; i < TM; i++) {
+            regM[i] = As[(threadRow * TM + i) * BK + dotIdx];
+          }
+          for (var i = 0u; i < TN; i++) {
+            regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
+          }
+          for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
+            for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
+              threadResults[resIdxM * TN + resIdxN] += termOf(regM[resIdxM] * regN[resIdxN], t * BK + dotIdx, blockRow + threadRow * TM + resIdxM);
+            }
           }
         }
       }
     } else {
-      for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
-        for (var i = 0u; i < TM; i++) {
-          regM[i] = As[dotIdx * BM + threadRow * TM + i];
+      if (params.kTri < 5u) {
+        for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
+          for (var i = 0u; i < TM; i++) {
+            regM[i] = As[dotIdx * BM + threadRow * TM + i];
+          }
+          for (var i = 0u; i < TN; i++) {
+            regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
+          }
+          for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
+            for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
+              threadResults[resIdxM * TN + resIdxN] += regM[resIdxM] * regN[resIdxN];
+            }
+          }
         }
-        for (var i = 0u; i < TN; i++) {
-          regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
-        }
-        for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
-          for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
-            threadResults[resIdxM * TN + resIdxN] += regM[resIdxM] * regN[resIdxN];
+      } else {
+        // kTri 5/6: the same loop, structural zeros masked (termOf) —
+        // kept apart so the plain loop has no per-product test.
+        for (var dotIdx = 0u; dotIdx < BK; dotIdx++) {
+          for (var i = 0u; i < TM; i++) {
+            regM[i] = As[dotIdx * BM + threadRow * TM + i];
+          }
+          for (var i = 0u; i < TN; i++) {
+            regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
+          }
+          for (var resIdxM = 0u; resIdxM < TM; resIdxM++) {
+            for (var resIdxN = 0u; resIdxN < TN; resIdxN++) {
+              threadResults[resIdxM * TN + resIdxN] += termOf(regM[resIdxM] * regN[resIdxN], t * BK + dotIdx, blockRow + threadRow * TM + resIdxM);
+            }
           }
         }
       }
@@ -252,7 +298,9 @@ fn main(
           let cIdx = params.offC + row * params.ldc + col;
           // BLAS beta==0 semantics: C is written, not accumulated — must not
           // read C (stale NaN/Inf bits would survive 0 * C as NaN).
-          let acc = params.alpha * threadResults[resIdxM * TN + resIdxN];
+          // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+          // operands then — so NaN or ±Infinity in them can't reach the result.
+          let acc = select(params.alpha * threadResults[resIdxM * TN + resIdxN], 0.0, params.alpha == 0.0);
           C[cIdx] = select(acc, acc + params.beta * C[cIdx], params.beta != 0.0);
         }
       }

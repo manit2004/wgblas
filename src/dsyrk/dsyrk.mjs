@@ -14,7 +14,7 @@ import { resolveTimestamp, extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
 import { requireWorkgroupCount } from "../util/workgroup.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { BM_SMALL, BN_SMALL } from "../util/constants.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
@@ -136,6 +136,10 @@ export async function dsyrk(
   // Always dgemm_small: dgemm_large (BM=BN=64), sgemm's large-tile split
   // carried over, measured ~2x slower at every size from 128 to 2048 on a
   // GTX 1650 — double-double tiles need twice the registers and smem.
+
+  // Reference BLAS quick return: alpha = 0 or k = 0 with beta = 1 leaves C
+  // as it is — no GPU round trip, which would also round full-precision doubles.
+  if ((alpha === 0 || k === 0) && beta === 1) return CIsGpu ? {} : { C };
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(
@@ -283,7 +287,7 @@ export async function dsyrk(
     readHiBuffer = null;
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    const result = mergeDoubleDoubleExact(hi, lo, C);
     if (gpuTimeMs !== undefined) return { C: result, gpuTimeMs };
     return { C: result };
   } finally {

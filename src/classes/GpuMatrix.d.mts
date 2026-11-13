@@ -44,6 +44,9 @@ export declare class GpuMatrix {
    * doubles from these pairs. This gives ~48 bits of mantissa (vs. 24 for a
    * single f32) but less than true f64 precision (52 bits), so
    * round-tripped values are not always bit-exact with the original input.
+   * f32's exponent range applies too: a double beyond ±3.4e38 is stored as
+   * ±Infinity and one below ~1.2e-38 in magnitude as 0, so `read()` returns
+   * those rather than the original value.
    * A Complex32Array is stored interleaved (`[re0, im0, re1, im1, ...]`) in
    * one buffer; a Complex64Array gets the same double-double split applied
    * independently to its real and imaginary components.

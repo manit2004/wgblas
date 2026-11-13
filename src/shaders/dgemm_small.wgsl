@@ -244,7 +244,11 @@ fn main(
     DD(CHi[cIdx[2]], CLo[cIdx[2]]),
     DD(CHi[cIdx[3]], CLo[cIdx[3]]),
   );
-  let scaled = ddMul4Protected(dd4Splat(alpha), acc, tid);
+  // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+  // operands then — so NaN or ±Infinity in them can't reach the result.
+  let scaledRaw = ddMul4Protected(dd4Splat(alpha), acc, tid);
+  let alphaIsZero = params.alphaHi == 0.0 && params.alphaLo == 0.0;
+  let scaled = DD4(select(scaledRaw.hi, vec4<f32>(0.0), alphaIsZero), select(scaledRaw.lo, vec4<f32>(0.0), alphaIsZero));
   // BLAS beta==0 semantics: C is written, not accumulated — select rather
   // than multiply so stale NaN/Inf in C can't survive as 0 * NaN.
   let betaTerm = ddMul4Protected(dd4Splat(beta), cOld, tid);

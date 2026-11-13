@@ -3,6 +3,20 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dsymv } from "wgblas/dsymv";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  at,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -267,4 +281,183 @@ test("dsymv edge cases (column-major)", async (t) => {
       assert.deepEqual(got.y, expected.y);
     });
   }
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dsymv exactness (regression)", async (t) => {
+  const full = fullPrecisionFrom(970);
+  const n = 5;
+  await t.test("alpha=0, beta=1 returns y untouched", async () => {
+    const y = full(n);
+    const want = Float64Array.from(y);
+    const got = await dsymv(
+      device,
+      "lower",
+      n,
+      0,
+      full(n * n),
+      n,
+      full(n),
+      1,
+      1,
+      y,
+      1,
+    );
+    assert.equal(got.y, y);
+    assertBitIdentical(got.y, want, all(n), "y");
+  });
+  for (const beta of [0, 0.5])
+    await t.test(`stride gaps in y (beta=${beta})`, async () => {
+      const y = full(13);
+      const got = await dsymv(
+        device,
+        "upper",
+        n,
+        1.5,
+        full(n * n),
+        n,
+        full(13),
+        3,
+        beta,
+        y,
+        3,
+      );
+      assertBitIdentical(got.y, y, gaps(n, 3), "y");
+    });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dsymv IEEE special values (regression)", async (t) => {
+  // n = 300 reaches the tile kernel. The stored Infinity reaches rows r and
+  // c (symmetry) as ±Infinity, the rest stay finite; NaN in the unreferenced
+  // triangle must never be read.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      await t.test(`${uplo} n=${n}`, async () => {
+        const [r, c] = uplo === "lower" ? [4, 1] : [1, 4];
+        const a = {
+          uplo,
+          n,
+          alpha: 1.5,
+          A: withValues(values(n * n, 1), {
+            [at(n, r, c)]: Infinity,
+            [at(n, c, r)]: NaN,
+          }),
+          lda: n,
+          x: values(n, 2),
+          incx: 1,
+          beta: 0.5,
+          y: values(n, 3),
+          incy: 1,
+        };
+        const got = await dsymv(
+          device,
+          a.uplo,
+          a.n,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.beta,
+          a.y,
+          a.incy,
+        );
+        assertIeeeMatch(got.y, stdlibReference(a).y, "y");
+      });
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dsymv f32 exponent range (regression)", async (t) => {
+  // 1e300 in the unreferenced triangle is never read.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      await t.test(`${uplo} n=${n}`, async () => {
+        const [r, c] = uplo === "lower" ? [4, 1] : [1, 4];
+        const a = {
+          uplo,
+          n,
+          alpha: 1.5,
+          A: withValues(values(n * n, 1), {
+            [at(n, r, c)]: 1e300,
+            [at(n, c, r)]: -1e300,
+            [at(n, 5, 5)]: 1e-50,
+          }),
+          lda: n,
+          x: withValues(values(n, 2), { 6: 1e-50 }),
+          incx: 1,
+          beta: 0.5,
+          y: values(n, 3),
+          incy: 1,
+        };
+        const got = await dsymv(
+          device,
+          a.uplo,
+          a.n,
+          a.alpha,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.beta,
+          a.y,
+          a.incy,
+        );
+        assertIeeeMatch(
+          got.y,
+          saturate(stdlibReference(argsInF32Range(a)).y),
+          "y",
+        );
+      });
+});
+
+// alpha = 0: reference BLAS (and stdlib) scales the output by beta without
+// reading the other operands, so NaN or ±Infinity there can't reach it — and
+// beta = 0 clears it, NaN included.
+test("dsymv alpha = 0 reads neither A nor x (regression)", async (t) => {
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      for (const beta of [0, 0.5])
+        await t.test(`${uplo} n=${n} beta=${beta}`, async () => {
+          const a = {
+            uplo,
+            n,
+            alpha: 0,
+            A: withValues(randomFloat64Array(n * n, -1, 1, 1), {
+              [at(n, 3, 1)]: NaN,
+              [at(n, 1, 3)]: Infinity,
+              [at(n, 2, 2)]: -Infinity,
+            }),
+            lda: n,
+            x: withValues(randomFloat64Array(n, -1, 1, 2), { 5: Infinity }),
+            incx: 1,
+            beta,
+            y: withValues(
+              randomFloat64Array(n, -1, 1, 3),
+              beta === 0 ? { 0: NaN } : {},
+            ),
+            incy: 1,
+          };
+          const got = await dsymv(
+            device,
+            a.uplo,
+            a.n,
+            a.alpha,
+            a.A,
+            a.lda,
+            a.x,
+            a.incx,
+            a.beta,
+            a.y,
+            a.incy,
+          );
+          assertIeeeMatch(got.y, stdlibReference(a).y, "y", 1e-9);
+        });
 });

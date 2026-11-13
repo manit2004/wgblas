@@ -28,6 +28,13 @@ struct Params {
 
 const WGS: u32 = 64u;
 
+// ±0 exactly, by its bits: WGSL lets a compiler assume no NaN, so a float
+// comparison like `v != 0.0` can come out false for NaN (seen on NVIDIA/Mesa
+// in the double-double kernels) — and a NaN entry must not skip its row.
+fn isZeroBits(v: f32) -> bool {
+  return (bitcast<u32>(v) & 0x7fffffffu) == 0u;
+}
+
 @compute @workgroup_size(64)
 fn dger_main(
   @builtin(workgroup_id)        wgid: vec3u,
@@ -50,6 +57,14 @@ fn dger_main(
     let ix = row * params.x_inc;
     let xi = ddMulProtected(alpha, DD(xHi[ix], xLo[ix]), lid.x);
     let row_base = row * params.lda;
+    // Reference BLAS (and stdlib) skips a row whose x entry is 0 — leaving A's
+    // row as it is, even where the other vector holds ±Infinity or NaN that
+    // Infinity · 0 would turn into NaN. Row here is the row-major frame's row:
+    // for column-major A the routine swaps the vectors (dger) or reads the
+    // transpose (dsyr, dsyr2), which is the column BLAS skips there.
+    // The arithmetic still runs (its barriers stay uniform); only the
+    // writes are skipped.
+    let keep = !(isZeroBits(xHi[ix]) && isZeroBits(xLo[ix]));
 
     for (var iter = 0u; iter < mainIters; iter++) {
       let col = lid.x + iter * WGS;
@@ -57,8 +72,10 @@ fn dger_main(
       let iy = col * params.y_inc;
       let prod = ddMulProtected(xi, DD(yHi[iy], yLo[iy]), lid.x);
       let result = ddAddProtected(prod, DD(AHi[idx], ALo[idx]), lid.x);
-      AHi[idx] = result.hi;
-      ALo[idx] = result.lo;
+      if (keep) {
+        AHi[idx] = result.hi;
+        ALo[idx] = result.lo;
+      }
     }
 
     for (var iter = 0u; iter < hasTail; iter++) {
@@ -68,7 +85,7 @@ fn dger_main(
       let iy = select(0u, col * params.y_inc, valid);
       let prod = ddMulProtected(xi, DD(yHi[iy], yLo[iy]), lid.x);
       let result = ddAddProtected(prod, DD(AHi[idx], ALo[idx]), lid.x);
-      if (valid) {
+      if (valid && keep) {
         AHi[idx] = result.hi;
         ALo[idx] = result.lo;
       }

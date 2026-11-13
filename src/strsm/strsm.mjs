@@ -7,6 +7,7 @@ import {
   vec4ViewBinding,
   vec4Usable,
 } from "../util/buffer.mjs";
+import { hasNonFinite, triangleHasNonFinite } from "../util/finite.mjs";
 import { createBindGroup } from "../util/bindgroup.mjs";
 import { beginTimedEncoder, submit } from "../util/compute.mjs";
 import { extractResult } from "../util/result.mjs";
@@ -62,7 +63,12 @@ function encodeGemm(
   kg,
   alpha,
   beta,
+  kTri = 0,
 ) {
+  // kTri 5/6 marks op(X) as element-triangular; the swap below would move it
+  // to the B side, which those modes don't cover.
+  if (kTri !== 0 && C.cs !== 1)
+    throw new Error("strsm: an element-triangular gemm needs a row-major C.");
   if (C.cs !== 1) {
     [X, Y, C] = [transposed(Y), transposed(X), transposed(C)];
     [mg, ng] = [ng, mg];
@@ -108,7 +114,7 @@ function encodeGemm(
       { value: X.off, type: "u32" },
       { value: Y.off, type: "u32" },
       { value: C.off, type: "u32" },
-      { value: 0, type: "u32" }, // kTri: dense operands
+      { value: kTri, type: "u32" }, // 0 dense; 5/6 op(X) lower/upper by element
     ],
     "strsm-gemm-params",
   );
@@ -262,7 +268,17 @@ export async function strsm(
   const numBlocks = blockStarts.length;
 
   const smallPipeline = await getPipeline(device, "strsm_small");
-  const useInverse = numBlocks > SUBSTITUTION_MAX_BLOCKS;
+  // Host arrays holding ±Infinity/NaN take substitution at any size, so the
+  // special values land where stdlib and the reference BLAS put them (see
+  // util/finite.mjs). GPU-resident data can't be checked without a readback,
+  // so it keeps the inverse path — the difference its docs describe.
+  // Only scanned when the size would otherwise take the inverse path.
+  const nonFinite =
+    numBlocks > SUBSTITUTION_MAX_BLOCKS &&
+    !BIsGpu &&
+    (hasNonFinite(B, B.length) ||
+      triangleHasNonFinite(A, aOrder, lda, uploEffA === "lower", isUnit));
+  const useInverse = numBlocks > SUBSTITUTION_MAX_BLOCKS && !nonFinite;
   const invertPipeline = useInverse
     ? await getPipeline(device, "strsv_invert_block")
     : null;
@@ -334,7 +350,7 @@ export async function strsm(
     const { commandEncoder, querySet, passDescriptor } =
       beginTimedEncoder(device);
     const pass = commandEncoder.beginComputePass(passDescriptor);
-    const gemm = (X, Y, C, mg, ng, kg, alphaG, betaG) =>
+    const gemm = (X, Y, C, mg, ng, kg, alphaG, betaG, kTri = 0) =>
       encodeGemm(
         device,
         pass,
@@ -348,6 +364,7 @@ export async function strsm(
         kg,
         alphaG,
         betaG,
+        kTri,
       );
 
     // Substitution solve of one diagonal block, in place on B through views
@@ -367,6 +384,7 @@ export async function strsm(
           { value: isUnit ? 1 : 0, type: "u32" },
           { value: alphaS, type: "f32" }, // applied as B is read in
           { value: xLd, type: "u32" },
+          { value: 0, type: "u32" }, // skipZero: strsv's only
         ],
         "strsm-solve-params",
       );
@@ -477,6 +495,9 @@ export async function strsm(
             side === "left"
               ? view(AinvBuffer, ainvOff, 1, BLOCK_SIZE)
               : view(AinvBuffer, ainvOff, BLOCK_SIZE, 1);
+          // The inverse is triangular like Lt — lower when solving forward —
+          // so its structural zeros must add exactly 0 (sgemm's kTri 5/6),
+          // not 0 · Inf = NaN from an Infinity or NaN in B.
           gemm(
             Minv,
             at(Bt, blockStart, 0),
@@ -486,6 +507,7 @@ export async function strsm(
             blockLen,
             1,
             0,
+            forward ? 5 : 6,
           );
 
           // 2) scatter the solved block back into B.

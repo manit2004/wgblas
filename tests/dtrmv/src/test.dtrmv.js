@@ -3,6 +3,19 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dtrmv } from "wgblas/dtrmv";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  at,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures, makeVec } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -262,4 +275,168 @@ test("dtrmv edge cases (column-major)", async (t) => {
       assert.deepEqual(got, expected);
     });
   }
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dtrmv exactness (regression)", async () => {
+  const full = fullPrecisionFrom(980);
+  const y = full(13);
+  const got = await dtrmv(
+    device,
+    "lower",
+    "no-transpose",
+    "non-unit",
+    5,
+    full(25),
+    5,
+    full(13),
+    3,
+    y,
+    3,
+  );
+  assertBitIdentical(got.y, y, gaps(5, 3), "y stride gaps");
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dtrmv IEEE special values (regression)", async (t) => {
+  // NaN in the unreferenced triangle must never be read.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      await t.test(`${uplo} n=${n}`, async () => {
+        const [r, c] = uplo === "lower" ? [4, 1] : [1, 4];
+        const a = {
+          uplo,
+          trans: "no-transpose",
+          diag: "non-unit",
+          n,
+          A: withValues(values(n * n, 1), {
+            [at(n, r, c)]: Infinity,
+            [at(n, c, r)]: NaN,
+          }),
+          lda: n,
+          x: values(n, 2),
+          incx: 1,
+          y: values(n, 3),
+          incy: 1,
+        };
+        const got = await dtrmv(
+          device,
+          a.uplo,
+          a.trans,
+          a.diag,
+          a.n,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.y,
+          a.incy,
+        );
+        assertIeeeMatch(got.y, stdlibReference(a).y, "y");
+      });
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dtrmv f32 exponent range (regression)", async (t) => {
+  // 1e300 in the unreferenced triangle is never read.
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      await t.test(`${uplo} n=${n}`, async () => {
+        const [r, c] = uplo === "lower" ? [4, 1] : [1, 4];
+        const a = {
+          uplo,
+          trans: "no-transpose",
+          diag: "non-unit",
+          n,
+          A: withValues(values(n * n, 1), {
+            [at(n, r, c)]: 1e300,
+            [at(n, c, r)]: -1e300,
+            [at(n, 5, 5)]: 1e-50,
+          }),
+          lda: n,
+          x: values(n, 2),
+          incx: 1,
+          y: values(n, 3),
+          incy: 1,
+        };
+        const got = await dtrmv(
+          device,
+          a.uplo,
+          a.trans,
+          a.diag,
+          a.n,
+          a.A,
+          a.lda,
+          a.x,
+          a.incx,
+          a.y,
+          a.incy,
+        );
+        assertIeeeMatch(
+          got.y,
+          saturate(stdlibReference(argsInF32Range(a)).y),
+          "y",
+        );
+      });
+});
+
+// Reference BLAS (and stdlib) forms a transposed product column by column
+// and skips a column whose x entry is 0 — including its diagonal term, so a
+// NaN diagonal there doesn't matter — so 0 · Infinity and 0 · NaN never
+// happen; the other form takes them.
+test("dtrmv zero x entries skip their column (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const trans of ["no-transpose", "transpose"])
+        for (const n of [7, 300])
+          await t.test(`${layout} ${uplo} ${trans} n=${n}`, async () => {
+            const A = randomFloat64Array(n * n, -1, 1, 1);
+            for (const [i, j] of [
+              [3, 1],
+              [1, 3],
+              [n - 1, 0],
+              [0, n - 1],
+            ])
+              A[at(n, i, j)] = Infinity;
+            A[at(n, 1, 1)] = NaN; // diagonal at a zero entry of x
+            const x = withValues(randomFloat64Array(n, -1, 1, 2), {
+              1: 0,
+              [n - 1]: 0,
+            });
+            const a = {
+              uplo,
+              trans,
+              diag: "non-unit",
+              n,
+              A,
+              lda: n,
+              x,
+              incx: 1,
+              y: randomFloat64Array(n, -1, 1, 3),
+              incy: 1,
+              layout,
+            };
+            const got = await dtrmv(
+              device,
+              a.uplo,
+              a.trans,
+              a.diag,
+              a.n,
+              a.A,
+              a.lda,
+              a.x,
+              a.incx,
+              a.y,
+              a.incy,
+              a.layout,
+            );
+            assertIeeeMatch(got.y, stdlibReference(a).y, "y", 1e-9);
+          });
 });

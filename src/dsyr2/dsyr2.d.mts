@@ -9,6 +9,14 @@ import { GpuMatrix } from "../classes/GpuMatrix.mjs";
  * Only the triangle specified by `uplo` is referenced and updated; the other
  * triangle is left untouched (implied by symmetry).
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
+ *
  * {@includeCode ../../examples/dsyr2/dsyr2.js}
  *
  * **Browser (standalone HTML):**
@@ -51,6 +59,14 @@ export declare function dsyr2(
  * x, y, and A are all kept resident on the GPU. `A`'s own `layout` (set at
  * `GpuMatrix.from` time) determines the operation — there is no separate
  * `layout` argument here.
+ *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — including elements of
+ * an output array the routine never touches (stride gaps, padding, an
+ * unreferenced triangle) — and a result or intermediate past ±3.4e38
+ * overflows to ±Infinity, where real f64 would stay finite.
  *
  * {@includeCode ../../examples/dsyr2/gpu.dsyr2.js}
  *

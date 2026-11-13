@@ -3,6 +3,18 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { drot } from "wgblas/drot";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // GPU may fuse multiply-add (FMA, one rounding) while CPU stdlib does two
@@ -119,4 +131,57 @@ test("drot zero-dimension (regression)", async () => {
 
   assert.deepEqual(Array.from(got.x), Array.from(beforeX));
   assert.deepEqual(Array.from(got.y), Array.from(beforeY));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("drot exactness (regression)", async () => {
+  const full = fullPrecisionFrom(940);
+  const x = full(13);
+  const y = full(13);
+  const got = await drot(device, 5, x, 3, y, 3, 0.6, 0.8);
+  assertBitIdentical(got.x, x, gaps(5, 3), "x stride gaps");
+  assertBitIdentical(got.y, y, gaps(5, 3), "y stride gaps");
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("drot IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      n,
+      x: withValues(values(n, 1), { 1: Infinity, 3: NaN }),
+      incx: 1,
+      y: withValues(values(n, 2), { 4: -Infinity }),
+      incy: 1,
+      c: 0.6,
+      s: 0.8,
+    };
+    const got = await drot(device, a.n, a.x, a.incx, a.y, a.incy, a.c, a.s);
+    const want = stdlibReference(a);
+    assertIeeeMatch(got.x, want.x, `n=${n} x`);
+    assertIeeeMatch(got.y, want.y, `n=${n} y`);
+  }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("drot f32 exponent range (regression)", async () => {
+  const a = {
+    n: 6,
+    x: withValues(values(6, 1), { 1: 1e300, 3: 1e-50, 4: 3e38 }),
+    incx: 1,
+    y: withValues(values(6, 2), { 2: -1e300, 4: 3e38 }),
+    incy: 1,
+    c: 0.6,
+    s: 0.8,
+  };
+  const got = await drot(device, a.n, a.x, a.incx, a.y, a.incy, a.c, a.s);
+  const want = stdlibReference(argsInF32Range(a));
+  assertIeeeMatch(saturate(got.x), saturate(want.x), "x");
+  assertIeeeMatch(saturate(got.y), saturate(want.y), "y");
 });

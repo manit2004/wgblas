@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssyr2 } from "wgblas/ssyr2";
+import { assertIeeeMatch, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -191,4 +192,92 @@ test("ssyr2 edge cases (column-major)", async (t) => {
       assert.deepEqual(got.A, expected.A);
     });
   }
+});
+
+// The reference BLAS (and stdlib) skips the row of a zero vector entry —
+// the column, for column-major A — so Infinity · 0 never happens there and
+// that part of A is left as it is, NaN or ±Infinity in the other vector
+// notwithstanding. Zeros sit next to ±Infinity and NaN here; n = 300 and a
+// stride of 2 reach the larger kernels' paths.
+test("ssyr2 zero vector entries skip their row (regression)", async (t) => {
+  for (const layout of ["row-major", "column-major"])
+    for (const uplo of ["lower", "upper"])
+      for (const n of [7, 300])
+        await t.test(`${layout} ${uplo} n=${n}`, async () => {
+          const inc = 2;
+          const len = (n - 1) * inc + 1;
+          const x = randomFloat32Array(len, -1, 1, 1);
+          const y = randomFloat32Array(len, -1, 1, 2);
+          for (const i of [0, 3, 5]) x[i * inc] = 0;
+          for (const i of [1, 3, 6]) y[i * inc] = 0; // 3: both zero
+          x[1 * inc] = Infinity;
+          x[6 * inc] = -Infinity;
+          y[5 * inc] = NaN;
+          const A = randomFloat32Array(n * n, -1, 1, 3);
+          const got = await ssyr2(
+            device,
+            uplo,
+            n,
+            1.5,
+            x,
+            inc,
+            y,
+            inc,
+            A.slice(),
+            n,
+            layout,
+          );
+          assertIeeeMatch(
+            got.A,
+            stdlibReference({
+              uplo,
+              n,
+              alpha: 1.5,
+              x,
+              incx: inc,
+              y,
+              incy: inc,
+              A,
+              lda: n,
+              layout,
+            }).A,
+            "A",
+            1e-5,
+          );
+        });
+});
+
+// alpha = 0: reference BLAS (and stdlib) returns A as it is, without
+// reading x — so 0 · Infinity or 0 · NaN can't reach it.
+test("ssyr2 alpha = 0 leaves A as it is (regression)", async () => {
+  const n = 6;
+  const x = withValues(randomFloat32Array(n, -1, 1, 1), {
+    1: Infinity,
+    3: NaN,
+  });
+  const A = randomFloat32Array(n * n, -1, 1, 3);
+  const a = {
+    uplo: "upper",
+    n,
+    alpha: 0,
+    x,
+    incx: 1,
+    y: randomFloat32Array(n, -1, 1, 2),
+    incy: 1,
+    A,
+    lda: n,
+  };
+  const got = await ssyr2(
+    device,
+    a.uplo,
+    a.n,
+    a.alpha,
+    a.x,
+    a.incx,
+    a.y,
+    a.incy,
+    A.slice(),
+    a.lda,
+  );
+  assertIeeeMatch(got.A, stdlibReference(a).A, "A", 0);
 });

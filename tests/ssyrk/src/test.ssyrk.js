@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssyrk } from "wgblas/ssyrk";
+import { assertIeeeMatch, at, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -300,4 +301,48 @@ test("ssyrk edge cases (column-major)", async (t) => {
       assert.deepEqual(got.C, expected.C);
     });
   }
+});
+
+// alpha = 0: reference BLAS (and stdlib) scales the output by beta without
+// reading the other operands, so NaN or ±Infinity there can't reach it — and
+// beta = 0 clears it, NaN included.
+test("ssyrk alpha = 0 reads no A (regression)", async (t) => {
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      for (const beta of [0, 0.5])
+        await t.test(`${uplo} n=${n} beta=${beta}`, async () => {
+          const a = {
+            uplo,
+            trans: "no-transpose",
+            n,
+            k: n,
+            alpha: 0,
+            A: withValues(randomFloat32Array(n * n, -1, 1, 1), {
+              [at(n, 1, 2)]: NaN,
+              [at(n, 3, 0)]: -Infinity,
+            }),
+            lda: n,
+
+            beta,
+            C: withValues(
+              randomFloat32Array(n * n, -1, 1, 3),
+              beta === 0 ? { [at(n, 4, 4)]: NaN } : {},
+            ),
+            ldc: n,
+          };
+          const got = await ssyrk(
+            device,
+            a.uplo,
+            a.trans,
+            a.n,
+            a.k,
+            a.alpha,
+            a.A,
+            a.lda,
+            a.beta,
+            a.C,
+            a.ldc,
+          );
+          assertIeeeMatch(got.C, stdlibReference(a).C, "C", 1e-4);
+        });
 });

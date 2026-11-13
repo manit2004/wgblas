@@ -3,6 +3,18 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dscal } from "wgblas/dscal";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as ddot's
@@ -111,4 +123,60 @@ test("dscal zero-dimension (regression)", async () => {
   const got = await dscal(device, 0, 2.5, x, 1);
 
   assert.deepEqual(Array.from(got.x), Array.from(before));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dscal exactness (regression)", async () => {
+  const full = fullPrecisionFrom(910);
+  const x = full(13);
+  const got = await dscal(device, 5, 1.5, x, 3);
+  assertBitIdentical(got.x, x, gaps(5, 3), "x stride gaps");
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("dscal IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      n,
+      alpha: 2.5,
+      x: withValues(values(n, 1), { 1: Infinity, 3: NaN, 4: -Infinity }),
+      incx: 1,
+    };
+    const got = await dscal(device, a.n, a.alpha, a.x, a.incx);
+    assertIeeeMatch(got.x, stdlibReference(a).x, `n=${n} x`);
+  }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dscal f32 exponent range (regression)", async () => {
+  const a = {
+    n: 6,
+    alpha: 1e20,
+    x: withValues(values(6, 1), { 1: 1e300, 2: -1e300, 3: 1e-50, 4: 1e20 }),
+    incx: 1,
+  };
+  const got = await dscal(device, a.n, a.alpha, a.x, a.incx);
+  assertIeeeMatch(got.x, saturate(stdlibReference(argsInF32Range(a)).x), "x");
+});
+
+// alpha = 1: reference BLAS (and stdlib) returns x as it is, without a pass
+// over it — every element bit for bit, values past f32's range included.
+test("dscal alpha = 1 leaves x as it is (regression)", async () => {
+  const x = withValues(randomFloat64Array(6, -1, 1, 1), {
+    1: NaN,
+    2: -0,
+    3: 1e300,
+  });
+  const want = x.slice();
+  const got = await dscal(device, 6, 1, x, 1);
+  assert.equal(got.x, x);
+  for (let i = 0; i < 6; i++)
+    assert.ok(Object.is(got.x[i], want[i]), `x[${i}]`);
 });

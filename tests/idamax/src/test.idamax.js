@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { idamax } from "wgblas/idamax";
+import { argsInF32Range, values, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { idamaxReference as stdlibReference } from "../../helpers/stdlib.js";
@@ -70,7 +71,7 @@ test("idamax edge cases", async (t) => {
   }
 });
 
-// n<=0 is special-cased in idamax.mjs to `return { index: 0 }` before ever
+// n<=0 is special-cased in idamax.mjs to `return { index: -1 }` before ever
 // touching the GPU — no pipeline, no dispatch, nothing to scribble on. The
 // edge-cases block above only asserts "does not throw" for n<=0 entries, so
 // this pins the actual returned value instead.
@@ -82,7 +83,13 @@ test("idamax zero-dimension (regression)", async () => {
     1,
   );
 
-  assert.strictEqual(got, 0);
+  // -1, as stdlib: 0 would be a valid index (BLAS's 1-based 0, made 0-based).
+  assert.strictEqual(got, -1);
+  for (const n of [0, -3])
+    assert.strictEqual(
+      (await idamax(device, n, new Float64Array([1, 2]), 1)).index,
+      stdlibReference({ n, x: new Float64Array([1, 2]), incx: 1 }),
+    );
 });
 
 // Mirrors the isamax NaN tests — same `>` comparison, same documented
@@ -114,4 +121,36 @@ test("idamax NaN handling", async (t) => {
     assert.equal(await run([1, Inf, 2, 3]), 1);
     assert.equal(await run([1, -Inf, 2, 3]), 1);
   });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("idamax IEEE special values (regression)", async () => {
+  // The first ±Infinity wins, as |Inf| is the largest magnitude.
+  for (const [entries, n] of [
+    [{ 2: Infinity }, 7],
+    [{ 3: -Infinity, 5: Infinity }, 7],
+    [{ 4000: -Infinity }, 5000],
+  ]) {
+    const a = { n, x: withValues(values(n, 1), entries), incx: 1 };
+    const got = await idamax(device, a.n, a.x, a.incx);
+    assert.equal(got.index, stdlibReference(a), `n=${n} index`);
+  }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("idamax f32 exponent range (regression)", async () => {
+  // 1e300 and 1e301 both read as Infinity, so the first wins (f64: index 1).
+  for (const x of [
+    new Float64Array([1e300, 1e301, 5]),
+    new Float64Array([1e-50, 0.5]),
+  ]) {
+    const a = { n: x.length, x, incx: 1 };
+    const got = await idamax(device, a.n, a.x, a.incx);
+    assert.equal(got.index, stdlibReference(argsInF32Range(a)));
+  }
 });

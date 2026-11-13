@@ -11,7 +11,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { calcWorkgroups } from "../util/workgroup.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 // daxpy: y := alpha * x + y, double-double (Dekker) f64 emulation of saxpy —
@@ -58,6 +58,10 @@ export async function daxpy(device, n, alpha, x, incx, y, incy) {
   // Concatenated with f64/dekker.wgsl (DD struct), f64/utils/add.wgsl
   // (fsub/negf/fastTwoSumProtected/ddAddProtected), and f64/utils/multiply.wgsl
   // (ddMulProtected) — WGSL has no #include.
+  // Reference BLAS quick return (alpha = 0 leaves y as it is): no GPU
+  // round trip, which would also round full-precision doubles.
+  if (alpha === 0) return yIsGpu ? {} : { y };
+
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   const pipeline = await getPipeline(device, [...f64Deps, "daxpy"]);
 
@@ -133,7 +137,7 @@ export async function daxpy(device, n, alpha, x, incx, y, incy) {
     readHiBuffer = null; // extractResult already destroyed it
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    const result = mergeDoubleDoubleExact(hi, lo, y);
     if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
     return { y: result };
   } finally {

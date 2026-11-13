@@ -3,6 +3,17 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { dswap } from "wgblas/dswap";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as
@@ -114,4 +125,40 @@ test("dswap zero-dimension (regression)", async () => {
 
   assert.deepEqual(Array.from(got.x), Array.from(beforeX));
   assert.deepEqual(Array.from(got.y), Array.from(beforeY));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("dswap exactness (regression)", async () => {
+  // Swapped elements are the other vector's doubles bit for bit; gaps untouched.
+  const full = fullPrecisionFrom(930);
+  const x = full(11);
+  const y = full(16);
+  const got = await dswap(device, 6, x, 2, y, 3);
+  for (let i = 0; i < 6; i++) {
+    assert.ok(Object.is(got.x[i * 2], y[i * 3]), `x[${i * 2}]`);
+    assert.ok(Object.is(got.y[i * 3], x[i * 2]), `y[${i * 3}]`);
+  }
+  assertBitIdentical(got.x, x, gaps(6, 2), "x gaps");
+  assertBitIdentical(got.y, y, gaps(6, 3), "y gaps");
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("dswap f32 exponent range (regression)", async () => {
+  const a = {
+    n: 5,
+    x: withValues(values(5, 1), { 1: 1e300, 3: 1e-50 }),
+    incx: 1,
+    y: withValues(values(5, 2), { 2: -1e300 }),
+    incy: 1,
+  };
+  const got = await dswap(device, a.n, a.x, a.incx, a.y, a.incy);
+  const want = stdlibReference(argsInF32Range(a));
+  assertIeeeMatch(got.x, want.x, "x");
+  assertIeeeMatch(got.y, want.y, "y");
 });

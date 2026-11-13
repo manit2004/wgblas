@@ -14,7 +14,7 @@ import { extractTimestamp } from "../util/benchmark.mjs";
 import { getPipeline } from "../util/pipeline.mjs";
 import { GpuVector } from "../classes/GpuVector.mjs";
 import { GpuMatrix } from "../classes/GpuMatrix.mjs";
-import { splitDoubleDouble, mergeDoubleDouble } from "../util/f64.mjs";
+import { splitDoubleDouble, mergeDoubleDoubleExact } from "../util/f64.mjs";
 import { requireGpuDevice, requireSameDevice } from "../util/device.mjs";
 
 const TILE_KERNEL_MIN_N = 256;
@@ -110,6 +110,10 @@ export async function dsymv(
   const effLayout = AIsGpu ? A.layout : layout;
   const isLower =
     effLayout === "column-major" ? uplo === "upper" : uplo === "lower";
+
+  // Reference BLAS quick return (alpha = 0, beta = 1 leaves y as it is): no GPU
+  // round trip, which would also round full-precision doubles.
+  if (alpha === 0 && beta === 1) return yIsGpu ? {} : { y };
 
   const f64Deps = ["f64/dekker", "f64/utils/add", "f64/utils/multiply"];
   // From TILE_KERNEL_MIN_N up, two passes: tiled partial sums over the
@@ -312,7 +316,7 @@ export async function dsymv(
     readHiBuffer = null;
     const lo = await extractResult(readLoBuffer, Float32Array);
     readLoBuffer = null;
-    const result = mergeDoubleDouble(hi, lo);
+    const result = mergeDoubleDoubleExact(hi, lo, y);
     if (gpuTimeMs !== undefined) return { y: result, gpuTimeMs };
     return { y: result };
   } finally {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { ssymv } from "wgblas/ssymv";
+import { assertIeeeMatch, at, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 import { forwardFactor } from "../helpers.js";
@@ -249,4 +250,48 @@ test("ssymv edge cases (column-major)", async (t) => {
       assert.deepEqual(got.y, expected.y);
     });
   }
+});
+
+// alpha = 0: reference BLAS (and stdlib) scales the output by beta without
+// reading the other operands, so NaN or ±Infinity there can't reach it — and
+// beta = 0 clears it, NaN included.
+test("ssymv alpha = 0 reads neither A nor x (regression)", async (t) => {
+  for (const uplo of ["lower", "upper"])
+    for (const n of [7, 300])
+      for (const beta of [0, 0.5])
+        await t.test(`${uplo} n=${n} beta=${beta}`, async () => {
+          const a = {
+            uplo,
+            n,
+            alpha: 0,
+            A: withValues(randomFloat32Array(n * n, -1, 1, 1), {
+              [at(n, 3, 1)]: NaN,
+              [at(n, 1, 3)]: Infinity,
+              [at(n, 2, 2)]: -Infinity,
+            }),
+            lda: n,
+            x: withValues(randomFloat32Array(n, -1, 1, 2), { 5: Infinity }),
+            incx: 1,
+            beta,
+            y: withValues(
+              randomFloat32Array(n, -1, 1, 3),
+              beta === 0 ? { 0: NaN } : {},
+            ),
+            incy: 1,
+          };
+          const got = await ssymv(
+            device,
+            a.uplo,
+            a.n,
+            a.alpha,
+            a.A,
+            a.lda,
+            a.x,
+            a.incx,
+            a.beta,
+            a.y,
+            a.incy,
+          );
+          assertIeeeMatch(got.y, stdlibReference(a).y, "y", 1e-4);
+        });
 });

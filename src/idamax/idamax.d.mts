@@ -18,6 +18,13 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * index of the largest non-NaN element. `+-Infinity` compares normally and is
  * selected as the maximum.
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — so values past the
+ * range all compare equal, and the first of them wins where real f64 would
+ * pick the largest.
+ *
  * {@includeCode ../../examples/idamax/idamax.js}
  *
  * **Browser (standalone HTML):**
@@ -27,7 +34,7 @@ import { GpuVector } from "../classes/GpuVector.mjs";
  * @param n - number of elements (must be a positive integer)
  * @param x - Float64Array input vector
  * @param incx - stride for x (must be a positive integer)
- * @returns 0-based index of max |x[i]|
+ * @returns 0-based index of max |x[i]|, or -1 when n < 1 (no element)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/idamax/idamax.mjs#L19">Source code: idamax.mjs (L19)</a>
  * @category BLAS Level 1
  */
@@ -51,13 +58,20 @@ export declare function idamax(
  * index of the largest non-NaN element. `+-Infinity` compares normally and is
  * selected as the maximum.
  *
+ * **Range:** double-double keeps its leading part in an f32, so it has
+ * ~48 bits of precision but f32's exponent range. A double beyond ±3.4e38
+ * reads as ±Infinity and one below ~1.2e-38 in magnitude as 0 (f32
+ * subnormals may flush too, depending on the GPU) — so values past the
+ * range all compare equal, and the first of them wins where real f64 would
+ * pick the largest.
+ *
  * {@includeCode ../../examples/idamax/gpu.idamax.js}
  *
  * @param device - GPUDevice from `init()`
  * @param n - number of elements (must be a positive integer)
  * @param x - Float64Array-backed GpuVector input vector
  * @param incx - stride for x (must be a positive integer)
- * @returns 0-based index of max |x[i]|
+ * @returns 0-based index of max |x[i]|, or -1 when n < 1 (no element)
  * @see <a href="https://github.com/manit2004/wgblas/blob/main/src/idamax/idamax.mjs#L19">Source code: idamax.mjs (L19)</a>
  * @category BLAS Level 1
  */

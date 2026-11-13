@@ -48,6 +48,10 @@ export async function saxpy(device, n, alpha, x, incx, y, incy) {
       "y does not have enough elements for the given n and incy.",
     );
 
+  // Reference BLAS quick return: alpha = 0 leaves y as it is, without
+  // reading x — so 0 · Infinity or 0 · NaN can't reach it.
+  if (alpha === 0) return yIsGpu ? {} : { y };
+
   const pipeline = await getPipeline(device, "saxpy");
 
   let xBuffer = null;

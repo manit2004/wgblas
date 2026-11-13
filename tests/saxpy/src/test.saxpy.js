@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { saxpy } from "wgblas/saxpy";
+import { assertIeeeMatch, withValues } from "../../helpers/specials.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // GPU may fuse multiply-add (FMA, one rounding) while CPU stdlib does two separate roundings.
@@ -96,4 +97,17 @@ test("saxpy zero-dimension (regression)", async () => {
   const got = await saxpy(device, 0, 2.5, x, 1, y, 1);
 
   assert.deepEqual(Array.from(got.y), Array.from(before));
+});
+
+// alpha = 0: reference BLAS (and stdlib) returns the output as it is, without
+// reading x — so 0 · Infinity or 0 · NaN can't reach it.
+test("saxpy alpha = 0 leaves y as it is (regression)", async () => {
+  const x = withValues(randomFloat32Array(6, -1, 1, 1), {
+    1: Infinity,
+    3: NaN,
+  });
+  const y = randomFloat32Array(6, -1, 1, 2);
+  const a = { n: 6, alpha: 0, x, incx: 1, y, incy: 1 };
+  const got = await saxpy(device, a.n, a.alpha, a.x, a.incx, y.slice(), a.incy);
+  assertIeeeMatch(got.y, stdlibReference(a).y, "y", 0);
 });

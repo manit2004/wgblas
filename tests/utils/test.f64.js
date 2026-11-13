@@ -8,7 +8,11 @@
 // carry a second buffer around.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitDoubleDouble, mergeDoubleDouble } from "../../src/util/f64.mjs";
+import {
+  splitDoubleDouble,
+  mergeDoubleDouble,
+  mergeDoubleDoubleExact,
+} from "../../src/util/f64.mjs";
 
 test("hi is the f32 rounding and lo is the residual it dropped", () => {
   const x = new Float64Array([Math.PI, Math.E, 1 / 3]);
@@ -102,4 +106,53 @@ test("negatives and very small magnitudes survive the round trip", () => {
       `element ${i} should stay accurate`,
     );
   }
+});
+
+test("mergeDoubleDoubleExact restores values whose pair came back unchanged", () => {
+  // 1/3 and PI need all 53 bits, so a plain merge rounds them.
+  const before = new Float64Array([1 / 3, Math.PI, 2.5, -0, Infinity]);
+  const { hi, lo } = splitDoubleDouble(before);
+  assert.notEqual(mergeDoubleDouble(hi, lo)[0], before[0]);
+  // Element 2 was "computed" (changed); the rest passed through.
+  hi[2] = 7;
+  lo[2] = 0;
+  const out = mergeDoubleDoubleExact(hi, lo, before);
+  assert.ok(Object.is(out[0], 1 / 3));
+  assert.ok(Object.is(out[1], Math.PI));
+  assert.equal(out[2], 7);
+  assert.ok(Object.is(out[3], -0));
+  assert.equal(out[4], Infinity);
+});
+
+test("mergeDoubleDoubleExact merges normally where the pair changed", () => {
+  const before = new Float64Array([1 / 3]);
+  const { hi, lo } = splitDoubleDouble(before);
+  lo[0] = Math.fround(lo[0] * 2); // a one-ulp-scale change in the low part
+  const out = mergeDoubleDoubleExact(hi, lo, before);
+  assert.equal(out[0], hi[0] + lo[0]);
+  assert.notEqual(out[0], before[0]);
+});
+
+test("splitDoubleDouble keeps ±Infinity and NaN, with a zero lo", () => {
+  const { hi, lo } = splitDoubleDouble(
+    new Float64Array([Infinity, -Infinity, NaN]),
+  );
+  assert.deepEqual(Array.from(hi), [Infinity, -Infinity, NaN]);
+  assert.deepEqual(Array.from(lo), [0, 0, 0]);
+  assert.deepEqual(Array.from(mergeDoubleDouble(hi, lo)), [
+    Infinity,
+    -Infinity,
+    NaN,
+  ]);
+});
+
+test("mergeDoubleDoubleExact never restores values outside f32's range", () => {
+  // 1e300 splits to (Inf, 0) and 1e-320 to (0, 0): an unchanged pair there
+  // is the GPU's overflowed/underflowed result, not the original.
+  const before = new Float64Array([1e300, 1e-320, Infinity]);
+  const { hi, lo } = splitDoubleDouble(before);
+  const out = mergeDoubleDoubleExact(hi, lo, before);
+  assert.equal(out[0], Infinity);
+  assert.equal(out[1], 0);
+  assert.equal(out[2], Infinity);
 });

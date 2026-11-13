@@ -103,7 +103,11 @@ fn dsymv_main(
     // every thread redundantly finishes the O(1) alpha/beta combine so the
     // protected ops below stay uniformly called (only the write is gated).
     let dot = tile[0];
-    let scaled = ddMulProtected(alpha, dot, lid.x);
+    // alpha = 0: the product term is exactly 0, as reference BLAS never reads the
+    // operands then — so NaN or ±Infinity in them can't reach the result.
+    let scaledRaw = ddMulProtected(alpha, dot, lid.x);
+    let alphaIsZero = params.alphaHi == 0.0 && params.alphaLo == 0.0;
+    let scaled = DD(select(scaledRaw.hi, 0.0, alphaIsZero), select(scaledRaw.lo, 0.0, alphaIsZero));
     let iy = i * params.incy;
     let yVal = DD(yHi[iy], yLo[iy]);
     let betaTimesY = ddMulProtected(beta, yVal, lid.x);

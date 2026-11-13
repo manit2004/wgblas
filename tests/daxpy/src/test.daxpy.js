@@ -3,6 +3,19 @@ import assert from "node:assert/strict";
 import { init, cleanup, randomFloat64Array } from "wgblas";
 import { getPowerPreference } from "../../helpers/device.js";
 import { daxpy } from "wgblas/daxpy";
+import {
+  argsInF32Range,
+  assertIeeeMatch,
+  saturate,
+  values,
+  withValues,
+} from "../../helpers/specials.js";
+import {
+  fullPrecisionFrom,
+  assertBitIdentical,
+  all,
+  gaps,
+} from "../../helpers/exactness.js";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
 // Raw ULP64 against stdlib is the wrong oracle here — same reason as
@@ -119,4 +132,80 @@ test("daxpy zero-dimension (regression)", async () => {
   const got = await daxpy(device, 0, 2.5, x, 1, y, 1);
 
   assert.deepEqual(Array.from(got.y), Array.from(before));
+});
+
+// Values the routine leaves alone come back bit-identical (see
+// tests/helpers/exactness.js): full-precision inputs, which the (hi, lo)
+// split would round if they went through a GPU round trip.
+test("daxpy exactness (regression)", async (t) => {
+  const full = fullPrecisionFrom(900);
+  await t.test("alpha=0 returns y untouched, even with NaN in x", async () => {
+    const y = full(6);
+    const want = Float64Array.from(y);
+    const x = full(6).fill(NaN, 0, 2);
+    const got = await daxpy(device, 6, 0, x, 1, y, 1);
+    assert.equal(got.y, y);
+    assertBitIdentical(got.y, want, all(6), "y");
+  });
+  await t.test("stride gaps in y", async () => {
+    const y = full(13);
+    const got = await daxpy(device, 5, 1.5, full(13), 3, y, 3);
+    assertBitIdentical(got.y, y, gaps(5, 3), "y");
+  });
+});
+
+// ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
+// into NaN by a double-double error term (see tests/helpers/specials.js).
+test("daxpy IEEE special values (regression)", async () => {
+  for (const n of [7, 300]) {
+    const a = {
+      n,
+      alpha: 1.5,
+      x: withValues(values(n, 1), { 1: Infinity, 3: NaN, 4: -Infinity }),
+      incx: 1,
+      y: withValues(values(n, 2), { 5: Infinity }),
+      incy: 1,
+    };
+    const got = await daxpy(device, a.n, a.alpha, a.x, a.incx, a.y, a.incy);
+    assertIeeeMatch(got.y, stdlibReference(a).y, `n=${n} y`);
+  }
+});
+
+// Double-double has f64's precision but f32's exponent range (its leading
+// part is an f32): a double beyond ±3.4e38 reads as ±Infinity, one below
+// f32's range as 0, and a result past it overflows to ±Infinity — where real
+// f64 stays finite. Pinned against stdlib on the inputs as double-double sees
+// them (tests/helpers/specials.js), so a change in that behaviour shows.
+test("daxpy f32 exponent range (regression)", async (t) => {
+  await t.test(
+    "out-of-range inputs, and an untouched one in a stride gap",
+    async () => {
+      const a = {
+        n: 6,
+        alpha: 1.5,
+        x: withValues(values(6, 1), { 1: 1e300, 3: 1e-50 }),
+        incx: 1,
+        y: withValues(values(11, 2), { 1: -1e300, 4: 1e-50 }),
+        incy: 2,
+      };
+      const got = await daxpy(device, a.n, a.alpha, a.x, a.incx, a.y, a.incy);
+      assertIeeeMatch(
+        got.y,
+        saturate(stdlibReference(argsInF32Range(a)).y),
+        "y",
+      );
+    },
+  );
+  await t.test("a result past f32's range", async () => {
+    const a = {
+      n: 4,
+      alpha: 1e20,
+      x: withValues(values(4, 3), { 2: 1e20 }),
+      incx: 1,
+      y: values(4, 4),
+      incy: 1,
+    };
+    const got = await daxpy(device, a.n, a.alpha, a.x, a.incx, a.y, a.incy);
+    assertIeeeMatch(got.y, saturate(stdlibReference(argsInF32Range(a)).y), "y");
+  });
 });

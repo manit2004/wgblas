@@ -16,6 +16,14 @@ fn fsub(a: f32, b: f32) -> f32 {
   return a + negf(b);
 }
 
+// IEEE special values: once a rounded result is ±Inf or NaN, the error-free
+// transformations' error term is meaningless (Inf - Inf = NaN) — the value
+// alone is the answer, so its error is 0. Without this an Inf turns into NaN
+// at the next DD op, where f32 (and real f64) would carry the Inf through.
+fn isFiniteF(x: f32) -> bool {
+  return (bitcast<u32>(x) & 0x7f800000u) != 0x7f800000u;
+}
+
 // Knuth/Møller's TwoSum: s = fl(a+b), e = exact rounding error, a+b == s+e.
 // Works for any a, b. UNPROTECTED — see header above.
 fn twoSum(a: f32, b: f32) -> DD {
@@ -59,7 +67,7 @@ fn twoSumProtected(a: f32, b: f32, threadSlot: u32) -> DD {
   let s = dekkerScratch[threadSlot];
   let v = fsub(s, a);
   let e = fsub(a, fsub(s, v)) + fsub(b, v);
-  return DD(s, e);
+  return DD(s, select(0.0, e, isFiniteF(s)));
 }
 
 fn fastTwoSumProtected(a: f32, b: f32, threadSlot: u32) -> DD {
@@ -67,7 +75,7 @@ fn fastTwoSumProtected(a: f32, b: f32, threadSlot: u32) -> DD {
   workgroupBarrier();
   let s = dekkerScratch[threadSlot];
   let e = fsub(b, fsub(s, a));
-  return DD(s, e);
+  return DD(s, select(0.0, e, isFiniteF(s)));
 }
 
 // Protected double-double addition — same contract as ddAdd, but exact.
