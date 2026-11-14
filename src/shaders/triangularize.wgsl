@@ -1,6 +1,7 @@
 // triangularize: Adense := dense expansion of op(A) (A or A^T per `trans`),
 // zero-filling the unstored triangle (exact for a matmul) so strmm can reuse
-// sgemm's kernel unchanged. `diag=1` substitutes 1.0 on the diagonal.
+// sgemm's kernel unchanged. `diag=1` substitutes 1.0 on the diagonal; `diag=2`
+// substitutes 0.0 — dtrmm's Lo half, where unit diagonal 1.0 = (1.0, 0.0).
 
 @group(0) @binding(0) var<storage, read>       A: array<f32>;
 @group(0) @binding(1) var<storage, read_write> Adense: array<f32>;
@@ -11,7 +12,7 @@ struct Params {
   ldd:   u32, // leading dimension of Adense
   uplo:  u32, // 0 = lower, 1 = upper
   trans: u32, // 0 = no-transpose (op(A) = A), 1 = transpose (op(A) = A^T)
-  diag:  u32, // 0 = non-unit, 1 = unit
+  diag:  u32, // 0 = non-unit, 1 = unit (1.0), 2 = unit, Lo half (0.0)
 }
 
 @group(0) @binding(2) var<uniform> params: Params;
@@ -25,7 +26,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   }
 
   if (row == col) {
-    Adense[row * params.ldd + col] = select(A[row * params.lda + row], 1.0, params.diag == 1u);
+    Adense[row * params.ldd + col] = select(A[row * params.lda + row], select(0.0, 1.0, params.diag == 1u), params.diag != 0u);
     return;
   }
 
