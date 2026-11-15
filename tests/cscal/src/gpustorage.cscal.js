@@ -65,8 +65,14 @@ test(
       { x: () => GpuVector.from(bDevice, new Complex32Array([1, 1, 2, 2])) },
       async ({ x }) => {
         const result = await cscal(bDevice, 2, new Complex32(2, 0), x, 1);
-        assert.equal(typeof result.gpuTimeMs, "number");
-        assert.ok(result.gpuTimeMs >= 0);
+        // Without timestamp queries (GitHub's macOS runners, for one)
+        // benchmark mode still runs, with no time to report.
+        if (bDevice.features.has("timestamp-query")) {
+          assert.equal(typeof result.gpuTimeMs, "number");
+          assert.ok(result.gpuTimeMs >= 0);
+        } else {
+          assert.equal(result.gpuTimeMs, undefined);
+        }
       },
     );
   },

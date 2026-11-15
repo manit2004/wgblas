@@ -14,10 +14,6 @@ on:
 permissions:
   contents: read
 
-env:
-  # Mesa's software Vulkan driver, the only one the loader may load.
-  LAVAPIPE_ICD: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
-
 jobs:
   shaders:
     name: Shaders (naga, spirv-val, dxc, glslang)
@@ -80,20 +76,24 @@ jobs:
 
       - run: npm ci
 
+      # Point the Vulkan loader at lavapipe alone, wherever this Ubuntu's
+      # package puts its manifest (the name varies by release and CPU level).
       - name: Install lavapipe
         run: |
           sudo apt-get update
           sudo apt-get install -y mesa-vulkan-drivers libvulkan1
+          icd=$(dpkg -L mesa-vulkan-drivers | grep -m1 '/lvp_icd[^/]*\.json$' || true)
+          if [ -z "$icd" ]; then
+            echo "No lavapipe ICD manifest in mesa-vulkan-drivers:"
+            dpkg -L mesa-vulkan-drivers | grep '\.json$'
+            exit 1
+          fi
+          echo "lavapipe: $icd"
+          echo "VK_ICD_FILENAMES=$icd" >> "$GITHUB_ENV"
 
-      - name: make test
-        env:
-          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
-        run: make test
+      - run: make test
 
-      - name: make test-gpu
-        env:
-          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
-        run: make test-gpu
+      - run: make test-gpu
 
   lavapipe-wgpu:
     name: Suite on lavapipe (wgpu, via Deno)
@@ -115,16 +115,25 @@ jobs:
         with:
           deno-version: 2.9.8
 
+      # Point the Vulkan loader at lavapipe alone, wherever this Ubuntu's
+      # package puts its manifest (the name varies by release and CPU level).
       - name: Install lavapipe
         run: |
           sudo apt-get update
           sudo apt-get install -y mesa-vulkan-drivers libvulkan1
+          icd=$(dpkg -L mesa-vulkan-drivers | grep -m1 '/lvp_icd[^/]*\.json$' || true)
+          if [ -z "$icd" ]; then
+            echo "No lavapipe ICD manifest in mesa-vulkan-drivers:"
+            dpkg -L mesa-vulkan-drivers | grep '\.json$'
+            exit 1
+          fi
+          echo "lavapipe: $icd"
+          echo "VK_ICD_FILENAMES=$icd" >> "$GITHUB_ENV"
 
       # Deno also enables wgpu's GL backend, which finds the same CPU renderer
       # through EGL and can't run compute shaders; keep it on Vulkan.
       - name: make test-wgpu
         env:
-          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
           DENO_WEBGPU_BACKEND: vulkan
         run: make test-wgpu
 
@@ -132,8 +141,9 @@ jobs:
     name: Suite on Metal (Dawn, macOS)
     runs-on: macos-15
     timeout-minutes: 30
-    # Hosted macOS runners are VMs; until a run shows Dawn gets a working
-    # Metal adapter there, a failure here doesn't fail the workflow.
+    # Dawn gets a Metal adapter here (Apple's paravirtual GPU), but the d*
+    # routines come out only f32-accurate on it: the double-double error
+    # terms are lost. Non-blocking until that's fixed.
     continue-on-error: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
