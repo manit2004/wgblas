@@ -12,14 +12,25 @@
 //
 // Same uniformity contract as the scalar ops: `threadSlot` unique per thread
 // (local_invocation_index), every thread calls each op the same number of
-// times, only write-backs conditional. Sized for 256-thread workgroups.
+// times, only write-backs conditional. Sized for 256-thread workgroups, plus
+// DEKKER4_ZERO_SLOT for hide4() — add.wgsl's hide() lane-wise, which keeps
+// Metal's relaxed math from reassociating the error terms (see add.wgsl).
 
 struct DD4 {
   hi: vec4<f32>,
   lo: vec4<f32>,
 }
 
-var<workgroup> dekkerScratch4: array<vec4<f32>, 256>;
+const DEKKER4_ZERO_SLOT: u32 = 256u;
+var<workgroup> dekkerScratch4: array<vec4<f32>, 257>;
+
+// A zero the compiler can't prove: a slot nothing writes (see add.wgsl).
+fn dekkerZero4() -> vec4<u32> {
+  return bitcast<vec4<u32>>(dekkerScratch4[DEKKER4_ZERO_SLOT]);
+}
+fn hide4(x: vec4<f32>, zero: vec4<u32>) -> vec4<f32> {
+  return bitcast<vec4<f32>>(bitcast<vec4<u32>>(x) ^ zero);
+}
 
 fn negf4(x: vec4<f32>) -> vec4<f32> {
   return bitcast<vec4<f32>>(bitcast<vec4<u32>>(x) ^ vec4<u32>(0x80000000u));
@@ -41,15 +52,21 @@ fn materialize4(v: vec4<f32>, threadSlot: u32) -> vec4<f32> {
 }
 
 fn twoSum4Protected(a: vec4<f32>, b: vec4<f32>, threadSlot: u32) -> DD4 {
-  let s = materialize4(a + b, threadSlot);
-  let v = fsub4(s, a);
-  let e = fsub4(a, fsub4(s, v)) + fsub4(b, v);
+  let z = dekkerZero4();
+  let ha = hide4(a, z);
+  let hb = hide4(b, z);
+  let s = materialize4(ha + hb, threadSlot);
+  let v = hide4(fsub4(s, ha), z);
+  let e = hide4(fsub4(ha, hide4(fsub4(s, v), z)), z) + hide4(fsub4(hb, v), z);
   return DD4(s, select(vec4<f32>(0.0), e, isFinite4(s)));
 }
 
 fn fastTwoSum4Protected(a: vec4<f32>, b: vec4<f32>, threadSlot: u32) -> DD4 {
-  let s = materialize4(a + b, threadSlot);
-  let e = fsub4(b, fsub4(s, a));
+  let z = dekkerZero4();
+  let ha = hide4(a, z);
+  let hb = hide4(b, z);
+  let s = materialize4(ha + hb, threadSlot);
+  let e = fsub4(hb, hide4(fsub4(s, ha), z));
   return DD4(s, select(vec4<f32>(0.0), e, isFinite4(s)));
 }
 
@@ -61,16 +78,22 @@ fn ddAdd4Protected(a: DD4, b: DD4, threadSlot: u32) -> DD4 {
 }
 
 // multiply.wgsl's bitSplit/twoProdBit, lane-wise.
-fn bitSplit4(a: vec4<f32>) -> DD4 {
+fn bitSplit4(a: vec4<f32>, zero: vec4<u32>) -> DD4 {
   let hi = bitcast<vec4<f32>>(bitcast<vec4<u32>>(a) & vec4<u32>(0xFFFFF000u));
-  return DD4(hi, fsub4(a, hi));
+  return DD4(hi, hide4(fsub4(a, hi), zero));
 }
 
 fn twoProdBit4(a: vec4<f32>, b: vec4<f32>) -> DD4 {
-  let s = a * b;
-  let as_ = bitSplit4(a);
-  let bs = bitSplit4(b);
-  let e = fsub4(fsub4(fsub4(fsub4(s, as_.hi * bs.hi), as_.lo * bs.hi), as_.hi * bs.lo), as_.lo * bs.lo);
+  let z = dekkerZero4();
+  let ha = hide4(a, z);
+  let hb = hide4(b, z);
+  let s = hide4(ha * hb, z);
+  let as_ = bitSplit4(ha, z);
+  let bs = bitSplit4(hb, z);
+  let e1 = hide4(fsub4(s, hide4(as_.hi * bs.hi, z)), z);
+  let e2 = hide4(fsub4(e1, hide4(as_.lo * bs.hi, z)), z);
+  let e3 = hide4(fsub4(e2, hide4(as_.hi * bs.lo, z)), z);
+  let e = fsub4(e3, hide4(as_.lo * bs.lo, z));
   return DD4(s, select(vec4<f32>(0.0), negf4(e), isFinite4(s)));
 }
 
