@@ -37,7 +37,9 @@
         ].join("\n");
 
         cleanup();
-      })();
+      })().catch((err) => {
+        document.getElementById("out").textContent = "Error: " + err.message;
+      });
     </script>
   </body>
 </html>

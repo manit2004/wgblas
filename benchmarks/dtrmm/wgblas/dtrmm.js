@@ -1,12 +1,12 @@
 import { dtrmm } from "wgblas/dtrmm";
-import { runBenchmark, matrix } from "../../utils/harness.mjs";
+import { runBenchmark, matrix, refresh } from "../../utils/harness.mjs";
 import { L3_SIZES, L3_SWEEP_SIZES, PADS, ALPHAS } from "../../utils/params.mjs";
 
-// Three passes per call (see dtrmm.mjs): triangularize A's hi and lo halves
-// (zero-fill op(A)), then dgemm_small, plus seed copies (B's halves → the
-// output, keeping stride-padding gaps). Unlike dtrmm's sgemm pass,
-// dgemm_small has no k-band skip, so it runs the full dense product. A is
-// diagonally dominant ("triangular" fill), as for dtrmm.
+// Triangularize A's hi and lo halves, then a full dense dgemm_small (no
+// k-band skip, unlike strmm). B is overwritten in place, so it's refreshed
+// (untimed) before every call.
+const refreshB = refresh("B");
+
 await runBenchmark({
   routine: "dtrmm",
   warmup: 5,
@@ -60,41 +60,55 @@ await runBenchmark({
       record: ["m", "n"],
       warmup: 3,
       iters: 20,
+      beforeEach: refreshB,
     },
 
     // alpha is a plain scale in the gemm pass (0 zeroes the product term),
     // so expect a flat row.
-    alpha: { axes: { alpha: ALPHAS, n: L3_SWEEP_SIZES } },
+    alpha: { axes: { alpha: ALPHAS, n: L3_SWEEP_SIZES }, beforeEach: refreshB },
 
     // A unit diagonal skips the diagonal load — any difference is that.
-    diag: { axes: { diag: ["non-unit", "unit"], n: L3_SWEEP_SIZES } },
+    diag: {
+      axes: { diag: ["non-unit", "unit"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
 
     // Row- vs column-major (wgblas only: cuBLAS is column-major).
     layout: {
       axes: { layout: ["row-major", "column-major"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
     },
 
     // Padding on A's leading dimension: only triangularize reads A directly.
     lda: {
       axes: { pad: PADS, n: L3_SWEEP_SIZES },
       derive: (p) => ({ ...p, lda: p.lda + p.pad }),
+      beforeEach: refreshB,
     },
 
     // Padding on B's: the gemm's other operand, and the output's stride.
     ldb: {
       axes: { pad: PADS, n: L3_SWEEP_SIZES },
       derive: (p) => ({ ...p, ldb: p.ldb + p.pad }),
+      beforeEach: refreshB,
     },
 
     // A on the left or the right: a traversal-order question, not arithmetic.
-    side: { axes: { side: ["left", "right"], n: L3_SWEEP_SIZES } },
+    side: {
+      axes: { side: ["left", "right"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
 
     // op(A): whether the dense copy is read along rows or columns.
     transA: {
       axes: { transA: ["no-transpose", "transpose"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
     },
 
     // Which triangle triangularize keeps.
-    uplo: { axes: { uplo: ["lower", "upper"], n: L3_SWEEP_SIZES } },
+    uplo: {
+      axes: { uplo: ["lower", "upper"], n: L3_SWEEP_SIZES },
+      beforeEach: refreshB,
+    },
   },
 });
