@@ -15,7 +15,11 @@ import {
   getAdapter,
   isBenchmarkEnabled,
 } from "../../../src/init.mjs";
-import { getPowerPreference } from "../../helpers/device.js";
+import {
+  dawnOnly,
+  getPowerPreference,
+  multiDevice,
+} from "../../helpers/device.js";
 
 const powerPreference = getPowerPreference();
 
@@ -64,18 +68,25 @@ test("repeat init() with identical options returns the same device", async () =>
   assert.equal(second, first, "expected the cached device to be returned");
 });
 
-test("differing options yield a distinct device, not an error", async () => {
-  const plain = await init({ powerPreference });
-  const benchmarking = await init({ powerPreference, benchmark: true });
-  assert.notEqual(
-    benchmarking,
-    plain,
-    "benchmark:true must get its own device",
-  );
-  // ...and each remains individually cached.
-  assert.equal(await init({ powerPreference }), plain);
-  assert.equal(await init({ powerPreference, benchmark: true }), benchmarking);
-});
+test(
+  "differing options yield a distinct device, not an error",
+  { skip: multiDevice },
+  async () => {
+    const plain = await init({ powerPreference });
+    const benchmarking = await init({ powerPreference, benchmark: true });
+    assert.notEqual(
+      benchmarking,
+      plain,
+      "benchmark:true must get its own device",
+    );
+    // ...and each remains individually cached.
+    assert.equal(await init({ powerPreference }), plain);
+    assert.equal(
+      await init({ powerPreference, benchmark: true }),
+      benchmarking,
+    );
+  },
+);
 
 test("getDevice() returns the primary device once one exists", async () => {
   const first = await init({ powerPreference });
@@ -98,84 +109,102 @@ test("gpuName() reports per-device, defaulting to the first init", async () => {
   assert.ok(byDefault.description, "expected an adapter description");
 });
 
-test('gpuName() falls back to "unknown" for missing adapter info fields', async () => {
-  // Real adapters always report a description, so this fallback needs a
-  // deliberately blanked-out info object — adapter.info is a plain
-  // writable/configurable own property, so no environment faking needed.
-  const device = await init({ powerPreference });
-  const adapter = getAdapter(device);
-  const originalInfo = adapter.info;
-  adapter.info = { device: "", description: "" };
-  try {
-    assert.deepEqual(gpuName(device), {
-      description: "unknown",
-      device: "unknown",
-    });
-  } finally {
-    adapter.info = originalInfo;
-  }
-});
+// Overwrites adapter.info, which Dawn allows; WebGPU makes it read-only and
+// wgpu enforces that.
+test(
+  'gpuName() falls back to "unknown" for missing adapter info fields',
+  { skip: dawnOnly },
+  async () => {
+    // Real adapters always report a description, so this fallback needs a
+    // deliberately blanked-out info object — adapter.info is a plain
+    // writable/configurable own property, so no environment faking needed.
+    const device = await init({ powerPreference });
+    const adapter = getAdapter(device);
+    const originalInfo = adapter.info;
+    adapter.info = { device: "", description: "" };
+    try {
+      assert.deepEqual(gpuName(device), {
+        description: "unknown",
+        device: "unknown",
+      });
+    } finally {
+      adapter.info = originalInfo;
+    }
+  },
+);
 
-test("cleanup() releases every cached device", async () => {
-  await init({ powerPreference });
-  await init({ powerPreference, benchmark: true });
-  cleanup();
-  assert.throws(
-    () => gpuName(),
-    /call init\(\) first/,
-    "cleanup should clear device state",
-  );
-  // Re-initializing after cleanup works and starts a fresh cache.
-  const fresh = await init({ powerPreference });
-  assert.ok(fresh, "expected re-init after cleanup to succeed");
-  cleanup();
-});
+test(
+  "cleanup() releases every cached device",
+  { skip: multiDevice },
+  async () => {
+    await init({ powerPreference });
+    await init({ powerPreference, benchmark: true });
+    cleanup();
+    assert.throws(
+      () => gpuName(),
+      /call init\(\) first/,
+      "cleanup should clear device state",
+    );
+    // Re-initializing after cleanup works and starts a fresh cache.
+    const fresh = await init({ powerPreference });
+    assert.ok(fresh, "expected re-init after cleanup to succeed");
+    cleanup();
+  },
+);
 
-test("cleanup(device) releases only that device", async () => {
-  const plain = await init({ powerPreference });
-  const benchmarking = await init({ powerPreference, benchmark: true });
+test(
+  "cleanup(device) releases only that device",
+  { skip: multiDevice },
+  async () => {
+    const plain = await init({ powerPreference });
+    const benchmarking = await init({ powerPreference, benchmark: true });
 
-  cleanup(benchmarking);
+    cleanup(benchmarking);
 
-  // The survivor stays usable, and its cache entry stays intact.
-  assert.equal(
-    await init({ powerPreference }),
-    plain,
-    "surviving device should still be cached",
-  );
-  assert.ok(
-    gpuName(plain).description,
-    "surviving device should still report its adapter",
-  );
-  // The released one is gone from the cache, so asking again builds a new device.
-  const rebuilt = await init({ powerPreference, benchmark: true });
-  assert.notEqual(
-    rebuilt,
-    benchmarking,
-    "released device should not come back from the cache",
-  );
-  cleanup();
-});
+    // The survivor stays usable, and its cache entry stays intact.
+    assert.equal(
+      await init({ powerPreference }),
+      plain,
+      "surviving device should still be cached",
+    );
+    assert.ok(
+      gpuName(plain).description,
+      "surviving device should still report its adapter",
+    );
+    // The released one is gone from the cache, so asking again builds a new device.
+    const rebuilt = await init({ powerPreference, benchmark: true });
+    assert.notEqual(
+      rebuilt,
+      benchmarking,
+      "released device should not come back from the cache",
+    );
+    cleanup();
+  },
+);
 
-test("cleanup(device) promotes a survivor to be the default device", async () => {
-  const plain = await init({ powerPreference });
-  const benchmarking = await init({ powerPreference, benchmark: true });
-  assert.deepEqual(
-    gpuName(),
-    gpuName(plain),
-    "first init should start as the default",
-  );
+test(
+  "cleanup(device) promotes a survivor to be the default device",
+  { skip: multiDevice },
+  async () => {
+    const plain = await init({ powerPreference });
+    const benchmarking = await init({ powerPreference, benchmark: true });
+    assert.deepEqual(
+      gpuName(),
+      gpuName(plain),
+      "first init should start as the default",
+    );
 
-  cleanup(plain); // release the current default
+    cleanup(plain); // release the current default
 
-  // gpuName() with no argument must still answer, now via the survivor.
-  assert.deepEqual(
-    gpuName(),
-    gpuName(benchmarking),
-    "survivor should become the default",
-  );
-  cleanup();
-});
+    // gpuName() with no argument must still answer, now via the survivor.
+    assert.deepEqual(
+      gpuName(),
+      gpuName(benchmarking),
+      "survivor should become the default",
+    );
+    cleanup();
+  },
+);
 
 test("cleanup(device) is idempotent and ignores unknown devices", async () => {
   const device = await init({ powerPreference });
@@ -186,30 +215,35 @@ test("cleanup(device) is idempotent and ignores unknown devices", async () => {
   cleanup();
 });
 
-test("dumpShaders can only be set by the process's first init() call", async () => {
-  // dumpShaders is a toggle on the shared WebGPU instance, fixed once by
-  // whichever init() call creates it first — not per-device like
-  // powerPreference/benchmark. This file's first init() call (above) already
-  // created the instance with dumpShaders: true, so a later call on a
-  // genuinely new (powerPreference, benchmark) key that asks for
-  // dumpShaders: false must warn and be ignored, not silently succeed.
-  const otherPref =
-    powerPreference === "low-power" ? "high-performance" : "low-power";
+// dumpShaders is a Dawn toggle.
+test(
+  "dumpShaders can only be set by the process's first init() call",
+  { skip: dawnOnly },
+  async () => {
+    // dumpShaders is a toggle on the shared WebGPU instance, fixed once by
+    // whichever init() call creates it first — not per-device like
+    // powerPreference/benchmark. This file's first init() call (above) already
+    // created the instance with dumpShaders: true, so a later call on a
+    // genuinely new (powerPreference, benchmark) key that asks for
+    // dumpShaders: false must warn and be ignored, not silently succeed.
+    const otherPref =
+      powerPreference === "low-power" ? "high-performance" : "low-power";
 
-  const warnings = [];
-  const originalWarn = console.warn;
-  console.warn = (...args) => warnings.push(args.join(" "));
-  let device;
-  try {
-    device = await init({ powerPreference: otherPref, dumpShaders: false });
-  } finally {
-    console.warn = originalWarn;
-  }
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(" "));
+    let device;
+    try {
+      device = await init({ powerPreference: otherPref, dumpShaders: false });
+    } finally {
+      console.warn = originalWarn;
+    }
 
-  assert.ok(device, "expected init() to still succeed");
-  assert.ok(
-    warnings.some((w) => w.includes("dumpShaders")),
-    `expected a dumpShaders warning, got: ${JSON.stringify(warnings)}`,
-  );
-  cleanup(device);
-});
+    assert.ok(device, "expected init() to still succeed");
+    assert.ok(
+      warnings.some((w) => w.includes("dumpShaders")),
+      `expected a dumpShaders warning, got: ${JSON.stringify(warnings)}`,
+    );
+    cleanup(device);
+  },
+);

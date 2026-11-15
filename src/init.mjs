@@ -8,6 +8,7 @@ import { clearReadbackPool } from "./util/buffer.mjs";
 // after another. So the instance is built once and every adapter comes from
 // it; cleanup() releases devices, not this.
 let _gpu = null;
+let _onDawn = false; // _gpu is the "webgpu" npm package's instance, not navigator.gpu
 let _dumpShaders = false; // instance-level Dawn toggle, fixed when _gpu is made
 
 // Resolved-options key -> GPUDevice. init() returns the cached device for a
@@ -39,11 +40,12 @@ export async function init({
   const cached = _devices.get(key);
   if (cached) return cached;
 
-  // Browser exposes WebGPU natively via navigator.gpu.
-  // Node.js has no navigator, so we polyfill using the "webgpu" npm package which also
-  // injects WebGPU globals (GPUBufferUsage, GPUShaderStage, etc.) into globalThis.
+  // A native navigator.gpu wins: the browser's, or Deno's (wgpu). Node.js has
+  // none (no navigator before Node 21, no navigator.gpu after), so we polyfill
+  // using the "webgpu" npm package (Dawn), which also injects WebGPU globals
+  // (GPUBufferUsage, GPUShaderStage, etc.) into globalThis.
   if (!_gpu) {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" && !globalThis.navigator?.gpu) {
       const { create, globals } = await import("webgpu");
       Object.assign(globalThis, globals);
       // dumpShaders forwards Dawn's own debug toggle — prints each pipeline's
@@ -52,15 +54,16 @@ export async function init({
         ? ["enable-dawn-features=dump_shaders,disable_symbol_renaming"]
         : [];
       _gpu = create(toggles);
+      _onDawn = true;
       _dumpShaders = dumpShaders;
     } else {
       if (dumpShaders)
         console.warn(
-          "dumpShaders has no effect in the browser — see init()'s docs.",
+          "dumpShaders has no effect in the browser or Deno — see init()'s docs.",
         );
       _gpu = navigator.gpu;
     }
-  } else if (dumpShaders !== _dumpShaders && typeof window === "undefined") {
+  } else if (_onDawn && dumpShaders !== _dumpShaders) {
     // Unlike powerPreference and benchmark, dumpShaders is a toggle on the Dawn
     // instance rather than the device, and the instance is shared, so a later
     // init() cannot change it.

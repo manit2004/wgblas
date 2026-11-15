@@ -186,7 +186,9 @@ test("destroys the readback buffer even when mapping fails", async () => {
   src.destroy();
 });
 
-test("handles an empty readback", async () => {
+// Zero-length transfers panic Deno's WebGPU (ext/webgpu/queue.rs), a Deno bug.
+const denoPanics = globalThis.Deno ? "panics Deno's WebGPU" : false;
+test("handles an empty readback", { skip: denoPanics }, async () => {
   const out = await roundTrip(new Float32Array(0));
   assert.equal(out.length, 0);
 });

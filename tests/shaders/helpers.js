@@ -5,7 +5,9 @@
 // files use in turn), not from each routine's hand-written list, so a new
 // shader is covered without touching this file. WGSL is order-independent at
 // module scope, so the order within the set doesn't change what compiles.
+import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
+import { homedir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -95,3 +97,21 @@ export function lineRanges(files) {
     })
     .join(", ");
 }
+
+/**
+ * The first of `candidates` that runs (`<bin> --version`), or null. Each is a
+ * name looked up on PATH or a path; unset entries (an env var that isn't set)
+ * are passed over.
+ */
+export function findTool(...candidates) {
+  for (const bin of candidates)
+    if (bin && !spawnSync(bin, ["--version"]).error) return bin;
+  return null;
+}
+
+/** naga, from $NAGA, PATH or ~/.cargo/bin (`make install-naga`). */
+export const naga = findTool(
+  process.env.NAGA,
+  "naga",
+  join(homedir(), ".cargo", "bin", "naga"),
+);
