@@ -29,6 +29,23 @@ struct Acc3 {
   flag: f32,
 }
 
+// v · 2^e by editing the exponent bits: exact, and nothing for a compiler to
+// fold. Not ldexp(): HLSL has no exact one — it's defined as v * 2^e, and
+// 2^-152 is below f32's range, so the product can come out 0 (snrm2/dnrm2
+// dropped their medium sums that way on D3D12 WARP). Zero and results below
+// f32's normal range give a signed 0, overflow a signed Inf; Inf and NaN pass
+// through. Same as reduction/scaledSum.wgsl's.
+fn ldexpBits(v: f32, e: i32) -> f32 {
+  let bits = bitcast<u32>(v);
+  let sign = bits & 0x80000000u;
+  let ev = i32((bits >> 23u) & 0xffu);
+  if (ev == 255) { return v; }
+  let en = ev + e;
+  if (ev == 0 || en <= 0) { return bitcast<f32>(sign); }
+  if (en >= 255) { return bitcast<f32>(sign | 0x7f800000u); }
+  return bitcast<f32>((bits & 0x807fffffu) | (u32(en) << 23u));
+}
+
 fn ddSelect(a: DD, b: DD, cond: bool) -> DD {
   return DD(select(a.hi, b.hi, cond), select(a.lo, b.lo, cond));
 }
@@ -97,12 +114,12 @@ fn reduce_scaled_f64(
   let rMed = ddSqrtProtected(t.med, i);
 
   // Case big: medium in big's units is amed·SBIG² = amed·2^-152 — one exact
-  // ldexp. Never as (amed·SBIG)·SBIG: a compiler may fold that into
+  // exponent shift (ldexpBits). Never as (amed·SBIG)·SBIG: a compiler may fold that into
   // amed·(SBIG·SBIG), and the constant 2^-152 underflows f32 to 0 (it did,
   // on NVIDIA/Vulkan). Not via sqrt(amed) squared either: the DD sqrt is
   // markedly less accurate on some backends. If the scaled value underflows,
   // medium was below big's rounding anyway (big's smallest square is 2^-52).
-  let medInBig = DD(ldexp(t.med.hi, SBIG_SQ_EXP), ldexp(t.med.lo, SBIG_SQ_EXP));
+  let medInBig = DD(ldexpBits(t.med.hi, SBIG_SQ_EXP), ldexpBits(t.med.lo, SBIG_SQ_EXP));
   let bigTotal = ddAddProtected(t.big, medInBig, i);
   let resBig = ddScale(ddSqrtProtected(bigTotal, i), 1.0 / SBIG);
 

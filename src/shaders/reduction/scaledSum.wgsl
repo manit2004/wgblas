@@ -23,6 +23,23 @@ fn isNan(v: f32) -> bool {
   return (bitcast<u32>(v) & 0x7fffffffu) > 0x7f800000u;
 }
 
+// v · 2^e by editing the exponent bits: exact, and nothing for a compiler to
+// fold. Not ldexp(): HLSL has no exact one — it's defined as v * 2^e, and
+// 2^-152 is below f32's range, so the product can come out 0 (snrm2/dnrm2
+// dropped their medium sums that way on D3D12 WARP). Zero and results below
+// f32's normal range give a signed 0, overflow a signed Inf; Inf and NaN pass
+// through.
+fn ldexpBits(v: f32, e: i32) -> f32 {
+  let bits = bitcast<u32>(v);
+  let sign = bits & 0x80000000u;
+  let ev = i32((bits >> 23u) & 0xffu);
+  if (ev == 255) { return v; }
+  let en = ev + e;
+  if (ev == 0 || en <= 0) { return bitcast<f32>(sign); }
+  if (en >= 255) { return bitcast<f32>(sign | 0x7f800000u); }
+  return bitcast<f32>((bits & 0x807fffffu) | (u32(en) << 23u));
+}
+
 fn partial(i: u32) -> vec3f {
   return vec3f(partials[3u * i], partials[3u * i + 1u], partials[3u * i + 2u]);
 }
@@ -58,12 +75,13 @@ fn reduce_scaled(
     var scl = 1.0;
     var sumsq = amed;
     if (abig > 0.0) {
-      // Medium in big's units is amed·SBIG² = amed·2^-152 — one exact ldexp.
-      // Never as (amed·SBIG)·SBIG: a compiler may fold that into
-      // amed·(SBIG·SBIG), and the constant 2^-152 underflows f32 to 0 (it
-      // did, on NVIDIA/Vulkan). If the scaled value underflows, medium was
-      // below big's rounding anyway (big's smallest square is 2^-52).
-      if (medLive) { abig = abig + ldexp(amed, SBIG_SQ_EXP); }
+      // Medium in big's units is amed·SBIG² = amed·2^-152 — one exact
+      // exponent shift (ldexpBits). Never as (amed·SBIG)·SBIG: a compiler may
+      // fold that into amed·(SBIG·SBIG), and the constant 2^-152 underflows
+      // f32 to 0 (it did, on NVIDIA/Vulkan). If the scaled value underflows,
+      // medium was below big's rounding anyway (big's smallest square is
+      // 2^-52).
+      if (medLive) { abig = abig + ldexpBits(amed, SBIG_SQ_EXP); }
       scl = 1.0 / SBIG;
       sumsq = abig;
     } else if (asml > 0.0) {
