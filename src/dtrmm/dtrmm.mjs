@@ -211,19 +211,18 @@ export async function dtrmm(
       aOrder * ldDense * 4,
       "dtrmm-AdenseLo",
     );
-    // COPY_DST: seeded from B's own halves before gemm runs, so stride-padding
-    // gaps (never written by gemm's tight m x n loop) keep B's original bytes.
-    // COPY_SRC: read back / adopted by B after.
+    // Sized to B's own storage (not bOuter*ldb), so the result keeps B's exact
+    // length. COPY_DST: seeded from B; COPY_SRC: read back / adopted by B.
     const outUsage = GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST;
     outHiBuffer = createStorageBuffer(
       device,
-      bOuter * ldb * 4,
+      BHiBuffer.size,
       "dtrmm-outHi",
       outUsage,
     );
     outLoBuffer = createStorageBuffer(
       device,
-      bOuter * ldb * 4,
+      BLoBuffer.size,
       "dtrmm-outLo",
       outUsage,
     );
@@ -314,22 +313,20 @@ export async function dtrmm(
 
     const { commandEncoder, querySet } = beginTimedEncoder(device);
     // Seed outHi/outLo with B's own halves first, so gemm's tight m x n write
-    // leaves stride-padding gaps holding B's original content, not zero. B's
-    // buffers may be larger than out's (e.g. a validation-test baseline
-    // over-provisioned for a bigger ldb it might later be substituted with).
+    // leaves stride-padding gaps holding B's original content, not zero.
     commandEncoder.copyBufferToBuffer(
       BHiBuffer,
       0,
       outHiBuffer,
       0,
-      Math.min(BHiBuffer.size, outHiBuffer.size),
+      BHiBuffer.size,
     );
     commandEncoder.copyBufferToBuffer(
       BLoBuffer,
       0,
       outLoBuffer,
       0,
-      Math.min(BLoBuffer.size, outLoBuffer.size),
+      BLoBuffer.size,
     );
     // Three passes; the timestamp brackets them (begin on the first
     // triangularize, end on the gemm), as in dsymm.

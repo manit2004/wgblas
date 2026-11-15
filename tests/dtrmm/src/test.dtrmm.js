@@ -277,6 +277,37 @@ test("dtrmm exactness (regression)", async (t) => {
     });
 });
 
+// The result keeps B's exact storage length: B may stop short of a full last
+// stride ((m-1)*ldb + n elements) or run past the matrix, and neither the
+// length nor anything outside the m x n region may change.
+test("dtrmm B storage length (regression)", async (t) => {
+  const A = new Float64Array([2, 0, 3, 4]);
+  const cases = [
+    ["minimal storage, no last-stride padding", [1, 2, 99, 3, 4], 3],
+    ["trailing elements past the matrix", [1, 2, 3, 4, 7, 8], 2],
+  ];
+  for (const [label, data, ldb] of cases)
+    await t.test(label, async () => {
+      const B = new Float64Array(data);
+      const a = {
+        side: "left",
+        uplo: "lower",
+        transA: "no-transpose",
+        diag: "non-unit",
+        m: 2,
+        n: 2,
+        alpha: 1,
+        A,
+        lda: 2,
+        B,
+        ldb,
+      };
+      const got = await run(device, a);
+      assert.equal(got.B.length, B.length);
+      assert.deepEqual(got.B, stdlibReference(a).B.subarray(0, B.length));
+    });
+});
+
 // ±Infinity and NaN reach the outputs as in real f64 (stdlib): no Inf turned
 // into NaN by a double-double error term (see tests/helpers/specials.js).
 test("dtrmm IEEE special values (regression)", async (t) => {

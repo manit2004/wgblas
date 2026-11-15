@@ -124,6 +124,33 @@ test("dtrmm fixtures (GPU-resident)", async (t) => {
   );
 });
 
+// B may hold more rows than m: dtrmm only touches the m x n block, and the
+// rows past it must survive the in-place update (B's buffer is replaced).
+test("dtrmm GpuMatrix B larger than m x n (regression)", async () => {
+  const A = GpuMatrix.from(new Float64Array([2, 0, 3, 4]), 2, 2, 2);
+  const B = GpuMatrix.from(new Float64Array([1, 2, 3, 4, 5, 6]), 3, 2, 2);
+  try {
+    await dtrmm(
+      device,
+      "left",
+      "lower",
+      "no-transpose",
+      "non-unit",
+      2,
+      2,
+      1,
+      A,
+      2,
+      B,
+      2,
+    );
+    assert.deepEqual(await B.read(), new Float64Array([2, 4, 15, 22, 5, 6]));
+  } finally {
+    A.destroy();
+    B.destroy();
+  }
+});
+
 test("dtrmm edge cases (GPU-resident)", async (t) => {
   for (const tc of edgeCases) {
     await t.test(tc.label, async () => {
