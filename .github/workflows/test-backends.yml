@@ -1,0 +1,162 @@
+name: Backend Tests
+
+# GPU-free coverage beyond the Kaggle job's NVIDIA/Dawn run: naga's output for
+# every backend, the suite on Mesa's lavapipe (a CPU Vulkan driver) under both
+# Dawn and wgpu, and the suite on Metal.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Mesa's software Vulkan driver, the only one the loader may load.
+  LAVAPIPE_ICD: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+
+jobs:
+  shaders:
+    name: Shaders (naga, spirv-val, dxc, glslang)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # The naga version is pinned in .cargo/config.toml, so that keys the cache.
+      - name: Cache naga
+        id: naga
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cargo/bin/naga
+          key: naga-${{ runner.os }}-${{ hashFiles('.cargo/config.toml') }}
+
+      - name: Install naga
+        if: steps.naga.outputs.cache-hit != 'true'
+        run: make install-naga
+
+      - name: Install spirv-val, glslangValidator and dxc
+        run: |
+          sudo apt-get update
+          make install-shader-tools
+
+      # The tests skip a missing tool, so check they're all here first.
+      - name: Check tools
+        run: |
+          naga --version
+          spirv-val --version
+          glslangValidator --version
+          ~/.local/share/dxc/bin/dxc --version
+
+      # test.dawn.js needs a GPU; the lavapipe jobs below run it.
+      - name: naga validation and backend output
+        run: node --test --test-reporter=spec tests/shaders/src/test.naga.js tests/shaders/src/test.backends.js
+
+  lavapipe-dawn:
+    name: Suite on lavapipe (Dawn)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install lavapipe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers libvulkan1
+
+      - name: make test
+        env:
+          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
+        run: make test
+
+      - name: make test-gpu
+        env:
+          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
+        run: make test-gpu
+
+  lavapipe-wgpu:
+    name: Suite on lavapipe (wgpu, via Deno)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.8
+
+      - name: Install lavapipe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers libvulkan1
+
+      # Deno also enables wgpu's GL backend, which finds the same CPU renderer
+      # through EGL and can't run compute shaders; keep it on Vulkan.
+      - name: make test-wgpu
+        env:
+          VK_ICD_FILENAMES: ${{ env.LAVAPIPE_ICD }}
+          DENO_WEBGPU_BACKEND: vulkan
+        run: make test-wgpu
+
+  metal:
+    name: Suite on Metal (Dawn, macOS)
+    runs-on: macos-15
+    timeout-minutes: 30
+    # Hosted macOS runners are VMs; until a run shows Dawn gets a working
+    # Metal adapter there, a failure here doesn't fail the workflow.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Which GPU
+        run: |
+          node --input-type=module -e '
+            import { init, gpuName, cleanup } from "wgblas";
+            await init();
+            console.log(gpuName());
+            cleanup();
+            process.exit(0);
+          '
+
+      - run: make test
+
+      - run: make test-gpu
