@@ -141,10 +141,8 @@ jobs:
     name: Suite on Metal (Dawn, macOS)
     runs-on: macos-15
     timeout-minutes: 30
-    # Dawn gets a Metal adapter here (Apple's paravirtual GPU), but the d*
-    # routines come out only f32-accurate on it: the double-double error
-    # terms are lost. Non-blocking until that's fixed.
-    continue-on-error: true
+    # Dawn gets a Metal adapter here (Apple's paravirtual GPU) and compiles
+    # under relaxed math, the case f64/utils/add.wgsl's hide() exists for.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
