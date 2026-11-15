@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>dtrmm — wgblas browser example</title>
+    <script src="https://unpkg.com/wgblas/dist/wgblas.browser.js"></script>
+  </head>
+  <body>
+    <pre id="out">Running…</pre>
+    <script>
+      const { init, dtrmm, cleanup } = window.wgblas;
+
+      (async () => {
+        const device = await init();
+
+        // B := A*B, A lower triangular. Starting from the identity,
+        // B ends up holding the dense triangle of A.
+        const n = 3, lda = n;
+        const A = new Float64Array([2, 0, 0,
+                                    3, 4, 0,
+                                    5, 6, 8]);
+        const B = new Float64Array([1, 0, 0,
+                                    0, 1, 0,
+                                    0, 0, 1]);
+
+        const { B: result } = await dtrmm(device, "left", "lower", "no-transpose", "non-unit", n, n, 1, A, lda, B, lda);
+
+        document.getElementById("out").textContent = [
+          "A (lower triangular) =",
+          "  [" + A.slice(0, 3).join(", ") + "]",
+          "  [" + A.slice(3, 6).join(", ") + "]",
+          "  [" + A.slice(6, 9).join(", ") + "]",
+          "B = A*I = A =",
+          "  [" + result.slice(0, 3).join(", ") + "]",
+          "  [" + result.slice(3, 6).join(", ") + "]",
+          "  [" + result.slice(6, 9).join(", ") + "]",
+        ].join("\n");
+
+        cleanup();
+      })().catch((err) => {
+        document.getElementById("out").textContent = "Error: " + err.message;
+      });
+    </script>
+  </body>
+</html>

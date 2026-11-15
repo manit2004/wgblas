@@ -607,7 +607,7 @@ export const dsymmReference = makeSymmReference(dgemmReference);
 function denseTriangular(A, lda, order, uplo, transA, diag, layout) {
   const isCM = (layout ?? "row-major") === "column-major";
   const readA = (row, col) => (isCM ? A[col * lda + row] : A[row * lda + col]);
-  const out = new Float32Array(order * order);
+  const out = new A.constructor(order * order);
   const writeOut = (row, col, v) => {
     out[isCM ? col * order + row : row * order + col] = v;
   };
@@ -645,8 +645,9 @@ function denseTriangular(A, lda, order, uplo, transA, diag, layout) {
 // dense operand, then a plain gemm with beta=0 (no C term). Seeds the gemm's
 // "C" with B itself (not a fresh zero array) so stride-padding gaps — never
 // touched by gemm's tight m x n write — keep B's own original bytes,
-// matching strmm.mjs's actual in-place-mutation behavior.
-export const strmmReference = (a) => {
+// matching strmm.mjs's actual in-place-mutation behavior. dtrmm runs the
+// same mapping on dgemm.
+const makeTrmmReference = (gemmReference) => (a) => {
   const layout = a.layout ?? "row-major";
   const aOrder = a.side === "left" ? a.m : a.n;
   const denseA = denseTriangular(
@@ -662,7 +663,7 @@ export const strmmReference = (a) => {
     a.side === "left"
       ? [denseA, aOrder, a.B, a.ldb]
       : [a.B, a.ldb, denseA, aOrder];
-  const { C } = sgemmReference({
+  const { C } = gemmReference({
     transA: "no-transpose",
     transB: "no-transpose",
     m: a.m,
@@ -680,6 +681,9 @@ export const strmmReference = (a) => {
   });
   return { B: C };
 };
+
+export const strmmReference = makeTrmmReference(sgemmReference);
+export const dtrmmReference = makeTrmmReference(dgemmReference);
 
 // Solves denseA@X=alpha*B (side='left') or X@denseA=alpha*B (side='right')
 // via direct forward/backward substitution on the already zero-filled
