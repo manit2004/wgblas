@@ -2,7 +2,7 @@ name: Backend Tests
 
 # GPU-free coverage beyond the Kaggle job's NVIDIA/Dawn run: naga's output for
 # every backend, the suite on Mesa's lavapipe (a CPU Vulkan driver) under both
-# Dawn and wgpu, and the suite on Metal.
+# Dawn and wgpu, and the suite on Metal and on D3D12 (WARP, a CPU driver).
 
 on:
   push:
@@ -168,3 +168,47 @@ jobs:
       - run: make test
 
       - run: make test-gpu
+
+  warp:
+    name: Suite on D3D12 WARP (Dawn, Windows)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    # Hosted Windows runners have no GPU; Dawn's default Windows backend,
+    # D3D12, then finds only WARP, Microsoft's software rasterizer. Shaders go
+    # through the FXC compiler the webgpu package ships (d3dcompiler_47.dll).
+    # Non-blocking until a run shows the suite passes there.
+    continue-on-error: true
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Keep LF line endings, as on Linux and macOS.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Which GPU
+        run: |
+          node --input-type=module -e '
+            import { init, gpuName, cleanup } from "wgblas";
+            await init();
+            console.log(gpuName());
+            cleanup();
+            process.exit(0);
+          '
+
+      # make test / make test-gpu, without depending on make being installed.
+      - name: Test suite
+        run: node --test --test-reporter=spec $(find tests -name 'test.*.js')
+
+      - name: GPU-resident suite
+        run: node --test --test-reporter=spec $(find tests -name 'gpustorage.*.js')
