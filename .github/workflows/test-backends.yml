@@ -176,8 +176,6 @@ jobs:
     # Hosted Windows runners have no GPU; Dawn's default Windows backend,
     # D3D12, then finds only WARP, Microsoft's software rasterizer. Shaders go
     # through the FXC compiler the webgpu package ships (d3dcompiler_47.dll).
-    # Non-blocking until a run shows the suite passes there.
-    continue-on-error: true
     defaults:
       run:
         shell: bash

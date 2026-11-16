@@ -1,7 +1,7 @@
 // Forward error factor for dgemmtr — dgemm's DD bound (see
 // tests/dgemm/helpers.js), restricted to the uplo-selected triangle (same
 // restriction sgemmtr applies to sgemm's — see tests/sgemmtr/helpers.js):
-//   (k+2)*eps*|alpha|*Σ|op(A)[i,p]*op(B)[p,j]|  +  2*eps*|beta|*|C_in[i,j]|
+//   (k+2)*eps*|alpha|*Σ|op(A)[i,p]*op(B)[p,j]|  +  3*eps*|beta|*|C_in[i,j]|
 const eps = 2 ** -48;
 
 // op(M)[row,col] — accounts for trans and layout independently.
@@ -55,7 +55,7 @@ export function forwardFactor(gpu, ref, a) {
 
       const cIn = Math.abs(cElem(C, ldc, layout, i, j));
       const bound =
-        eps * ((k + 2) * Math.abs(alpha) * dotBound + 2 * Math.abs(beta) * cIn);
+        eps * ((k + 2) * Math.abs(alpha) * dotBound + 3 * Math.abs(beta) * cIn);
       if (bound === 0) {
         if (err !== 0) maxFactor = Infinity;
       } else maxFactor = Math.max(maxFactor, err / bound);

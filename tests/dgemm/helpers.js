@@ -3,8 +3,10 @@
 // and C each go through splitDoubleDouble before upload, an extra rounding
 // step sgemm's direct f32 upload doesn't have, so the coefficients follow
 // dsymv's DD bound instead of sgemm's: (k+2) for the dot-product term and
-// 2*eps for the beta*C term.
-//   (k+2)*eps*|alpha|*Σ|op(A)[i,p]*op(B)[p,j]|  +  2*eps*|beta|*|C_in[i,j]|
+// 3*eps for the beta*C term — splitting C costs up to 2^-49, and ddMul's own
+// f32 sum of its low terms up to 2^-47 more (a dsymm fixture measured 2.015
+// eps there, past the 2*eps this used to allow; dsyr2k already used 3).
+//   (k+2)*eps*|alpha|*Σ|op(A)[i,p]*op(B)[p,j]|  +  3*eps*|beta|*|C_in[i,j]|
 const eps = 2 ** -48;
 
 // op(M)[row,col] — accounts for trans and layout independently.
@@ -51,7 +53,7 @@ export function forwardFactor(gpu, ref, a) {
 
       const cIn = Math.abs(cElem(C, ldc, layout, i, j));
       const bound =
-        eps * ((k + 2) * Math.abs(alpha) * dotBound + 2 * Math.abs(beta) * cIn);
+        eps * ((k + 2) * Math.abs(alpha) * dotBound + 3 * Math.abs(beta) * cIn);
       if (bound === 0) {
         if (err !== 0) maxFactor = Infinity;
       } else maxFactor = Math.max(maxFactor, err / bound);
