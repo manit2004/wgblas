@@ -264,8 +264,10 @@ fn main(
       || (params.uplo == 1u && col <= row)
       || (params.uplo == 2u && col >= row);
     if (row < params.m && col < params.n && inTriangle) {
-      CHi[cIdx[l]] = select(withBeta.hi[l], scaled.hi[l], betaIsZero);
-      CLo[cIdx[l]] = select(withBeta.lo[l], scaled.lo[l], betaIsZero);
+      // lane4, not withBeta.hi[l]: see batch.wgsl (an Inf/NaN in one lane
+      // would otherwise turn the others NaN under D3D/FXC).
+      CHi[cIdx[l]] = select(lane4(withBeta.hi, l), lane4(scaled.hi, l), betaIsZero);
+      CLo[cIdx[l]] = select(lane4(withBeta.lo, l), lane4(scaled.lo, l), betaIsZero);
     }
   }
 }

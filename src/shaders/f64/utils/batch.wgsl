@@ -113,9 +113,18 @@ fn dd4Splat(d: DD) -> DD4 {
   return DD4(vec4<f32>(d.hi), vec4<f32>(d.lo));
 }
 
+// Lane i of v, for an i known only at runtime: a chain of selects, never
+// v[i]. Under D3D (FXC, measured on WARP) a runtime-indexed vector read came
+// back NaN in every lane as soon as any lane held Inf or NaN — the indexing
+// mixes all four lanes arithmetically, and Inf * 0 is NaN. Selects only
+// copy, so a lane gets exactly its own value.
+fn lane4(v: vec4<f32>, i: u32) -> f32 {
+  return select(select(select(v.x, v.y, i == 1u), v.z, i == 2u), v.w, i == 3u);
+}
+
 // Lane i of a DD4 as a DD.
 fn dd4Lane(v: DD4, i: u32) -> DD {
-  return DD(v.hi[i], v.lo[i]);
+  return DD(lane4(v.hi, i), lane4(v.lo, i));
 }
 
 // Four DDs as the lanes of a DD4.

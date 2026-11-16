@@ -6,6 +6,9 @@
 //   - a non-finite result (Inf, NaN, overflow) has a 0 error term, never NaN;
 //   - a finite lane is exact (twoSum, twoProd) or double-double accurate
 //     (ddAdd, ddMul), whatever its neighbours hold.
+// The scalar path picks lanes with a runtime index through batch.wgsl's
+// lane4, which D3D/FXC needs: plain v[i] turned every lane NaN there once
+// one lane held Inf or NaN.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";
@@ -41,6 +44,13 @@ fn put(base: u32, op: u32, r: DD4) {
   out[base + 2u * op + 1u] = r.lo;
 }
 
+// v with lane l set to d, by vector select: like lane4 (batch.wgsl) for
+// reads, a runtime-indexed write v[l] = x isn't safe next to Inf/NaN.
+fn withLane(v: DD4, l: u32, d: DD) -> DD4 {
+  let at = vec4<u32>(0u, 1u, 2u, 3u) == vec4<u32>(l);
+  return DD4(select(v.hi, vec4<f32>(d.hi), at), select(v.lo, vec4<f32>(d.lo), at));
+}
+
 @compute @workgroup_size(1)
 fn main(@builtin(workgroup_id) wg: vec3<u32>) {
   let c = cases[wg.x];
@@ -57,21 +67,15 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>) {
   var prod: DD4;
   var ddSum: DD4;
   var ddProd: DD4;
+  // The scalar ops, one lane at a time. Lanes are read with lane4 — so this
+  // also checks it with a runtime index — and written with withLane.
   for (var l = 0u; l < 4u; l++) {
-    let al = DD(c.aHi[l], c.aLo[l]);
-    let bl = DD(c.bHi[l], c.bLo[l]);
-    let s = twoSumProtected(c.aHi[l], c.bHi[l], 0u);
-    let p = twoProdBit(c.aHi[l], c.bHi[l]);
-    let ds = ddAddProtected(al, bl, 0u);
-    let dp = ddMulProtected(al, bl, 0u);
-    sum.hi[l] = s.hi;
-    sum.lo[l] = s.lo;
-    prod.hi[l] = p.hi;
-    prod.lo[l] = p.lo;
-    ddSum.hi[l] = ds.hi;
-    ddSum.lo[l] = ds.lo;
-    ddProd.hi[l] = dp.hi;
-    ddProd.lo[l] = dp.lo;
+    let al = dd4Lane(a, l);
+    let bl = dd4Lane(b, l);
+    sum = withLane(sum, l, twoSumProtected(al.hi, bl.hi, 0u));
+    prod = withLane(prod, l, twoProdBit(al.hi, bl.hi));
+    ddSum = withLane(ddSum, l, ddAddProtected(al, bl, 0u));
+    ddProd = withLane(ddProd, l, ddMulProtected(al, bl, 0u));
   }
   put(base, 4u, sum);
   put(base, 5u, prod);
