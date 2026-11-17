@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   shaders:
@@ -91,9 +92,19 @@ jobs:
           echo "lavapipe: $icd"
           echo "VK_ICD_FILENAMES=$icd" >> "$GITHUB_ENV"
 
-      - run: make test
+      # c8 collects coverage from the node processes make starts; the second
+      # run keeps the first's data (--clean=false), so coverage/lcov.info
+      # covers both suites.
+      - run: npx c8 --reporter=lcov make test
 
-      - run: make test-gpu
+      - run: npx c8 --reporter=lcov --clean=false make test-gpu
+
+      - name: Upload coverage to Qlty
+        if: github.event.pull_request.head.repo.fork != true
+        uses: qltysh/qlty-action/coverage@v2
+        with:
+          oidc: true
+          files: coverage/lcov.info
 
   lavapipe-wgpu:
     name: Suite on lavapipe (wgpu, via Deno)
