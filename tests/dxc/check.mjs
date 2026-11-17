@@ -12,8 +12,18 @@ import { fileURLToPath } from "node:url";
 
 if (process.argv[2] === "--kernel") {
   const { init, cleanup, gpuName, ddot } = await import("wgblas");
+  const { getAdapter } = await import("../../src/init.mjs");
   const device = await init();
   console.log("adapter:", gpuName(device).description);
+  // Dawn offers these on D3D12 only with DXC loaded (subgroups also needs
+  // shader model 6.0, shader-f16 6.2): a hint at why a run fell back to FXC.
+  const features = getAdapter(device).features;
+  console.log(
+    "adapter: subgroups",
+    features.has("subgroups"),
+    "shader-f16",
+    features.has("shader-f16"),
+  );
   const r = await ddot(
     device,
     2,
@@ -48,7 +58,7 @@ if (run.status !== 0) {
 if (!out.includes("DXC compile flags")) {
   console.error(
     out.includes("FXC compile flags")
-      ? "Dawn compiled with FXC, not DXC: use_dxc found no dxcompiler.dll/dxil.dll, or the device lacks shader model 6."
+      ? "Dawn compiled with FXC, not DXC: use_dxc found no dxcompiler.dll/dxil.dll (subgroups false above), or the device lacks shader model 6."
       : "No D3D12 shader dump: is this Dawn on D3D12?",
   );
   process.exit(1);

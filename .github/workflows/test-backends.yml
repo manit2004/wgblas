@@ -294,20 +294,22 @@ jobs:
 
       - run: npm ci
 
-      # The x64 DLLs next to Dawn's binary, and that directory on PATH, the two
-      # places a DLL load is likely to look.
-      - name: Install DXC beside Dawn
+      # The x64 DLLs next to node.exe, where Dawn looks (beside the running
+      # executable, by full path, so PATH doesn't help), and next to Dawn's own
+      # binary in case a build looks there instead. With them only beside
+      # Dawn's binary and on PATH, Dawn stayed on FXC.
+      - name: Install DXC beside node and Dawn
         run: |
           curl -fsSL -o "$RUNNER_TEMP/dxc.zip" "$DXC_ZIP"
           pwsh -NoProfile -Command "Expand-Archive -Path '$RUNNER_TEMP/dxc.zip' -DestinationPath '$RUNNER_TEMP/dxc'"
-          dist=node_modules/webgpu/dist
+          nodedir=$(dirname "$(command -v node)")
           for dll in dxcompiler.dll dxil.dll; do
             src=$(find "$RUNNER_TEMP/dxc" -ipath '*x64*' -iname "$dll" | head -1)
             if [ -z "$src" ]; then echo "No x64 $dll in $DXC_ZIP"; exit 1; fi
-            echo "$dll: $src"
-            cp "$src" "$dist/"
-          done
-          (cd "$dist" && pwd -W) >> "$GITHUB_PATH"
+            echo "$dll: $src -> $nodedir, node_modules/webgpu/dist"
+            cp "$src" "$nodedir/"
+            cp "$src" node_modules/webgpu/dist/
+          done"
 
       # Fails unless Dawn's shader dump shows DXC compiled the kernel, so the
       # suite below can't pass on a silent fallback to FXC.
