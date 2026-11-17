@@ -21,7 +21,7 @@ one of several conditionally (e.g. sgemv's <code>sgemv_n</code>/<code>sgemv_t</c
 dedicated shader at all:</p>
 <ul>
 <li><code>sgemmtr</code>/<code>ssyrk</code>/<code>ssyr2k</code> all dispatch through <code>sgemm_small</code>/<code>sgemm_large</code> (<code>uplo</code> param),
-and <code>dgemmtr</code>/<code>dsyrk</code> through <code>dgemm_small</code>/<code>dgemm_large</code> the same way.</li>
+and <code>dgemmtr</code>/<code>dsyrk</code>/<code>dsyr2k</code> through <code>dgemm_small</code> alone (<code>dgemm_large</code> measured slower).</li>
 <li><code>strsm</code> shares <code>strsm_small</code> and <code>strsv_invert_block</code> with strsv, plus its own
 <code>block_transfer</code> and the shared <code>sgemm_small</code>/<code>sgemm_large</code>.</li>
 <li>Every <code>d*</code> routine concatenates the <code>f64/</code> double-double shaders it needs in front of its
@@ -31,52 +31,53 @@ own — see <code>getPipeline</code>'s <code>shaderName: string[]</code> behavio
 <p>Built up entry by entry so each import sits next to the mapping entry that uses it.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L69">src/shaders/index.mjs:69</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L72">src/shaders/index.mjs:72</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L75">src/shaders/index.mjs:75</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L78">src/shaders/index.mjs:78</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L81">src/shaders/index.mjs:81</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L84">src/shaders/index.mjs:84</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L87">src/shaders/index.mjs:87</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L90">src/shaders/index.mjs:90</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L94">src/shaders/index.mjs:94</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L97">src/shaders/index.mjs:97</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L101">src/shaders/index.mjs:101</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L105">src/shaders/index.mjs:105</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L112">src/shaders/index.mjs:112</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L124">src/shaders/index.mjs:124</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L133">src/shaders/index.mjs:133</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L141">src/shaders/index.mjs:141</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L152">src/shaders/index.mjs:152</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L162">src/shaders/index.mjs:162</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L165">src/shaders/index.mjs:165</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L173">src/shaders/index.mjs:173</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L176">src/shaders/index.mjs:176</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L187">src/shaders/index.mjs:187</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L202">src/shaders/index.mjs:202</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L206">src/shaders/index.mjs:206</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L210">src/shaders/index.mjs:210</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L216">src/shaders/index.mjs:216</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L224">src/shaders/index.mjs:224</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L227">src/shaders/index.mjs:227</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L236">src/shaders/index.mjs:236</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L239">src/shaders/index.mjs:239</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L248">src/shaders/index.mjs:248</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L251">src/shaders/index.mjs:251</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L262">src/shaders/index.mjs:262</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L273">src/shaders/index.mjs:273</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L284">src/shaders/index.mjs:284</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L296">src/shaders/index.mjs:296</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L308">src/shaders/index.mjs:308</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L315">src/shaders/index.mjs:315</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L316">src/shaders/index.mjs:316</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L320">src/shaders/index.mjs:320</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L322">src/shaders/index.mjs:322</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L323">src/shaders/index.mjs:323</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L324">src/shaders/index.mjs:324</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L327">src/shaders/index.mjs:327</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L330">src/shaders/index.mjs:330</a></li>
-<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/bc5e99f7132aadacae8d4dfa4b64a31ac423124f/src/shaders/index.mjs#L333">src/shaders/index.mjs:333</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L69">src/shaders/index.mjs:69</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L72">src/shaders/index.mjs:72</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L75">src/shaders/index.mjs:75</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L78">src/shaders/index.mjs:78</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L81">src/shaders/index.mjs:81</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L84">src/shaders/index.mjs:84</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L87">src/shaders/index.mjs:87</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L90">src/shaders/index.mjs:90</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L94">src/shaders/index.mjs:94</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L97">src/shaders/index.mjs:97</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L101">src/shaders/index.mjs:101</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L105">src/shaders/index.mjs:105</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L112">src/shaders/index.mjs:112</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L125">src/shaders/index.mjs:125</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L134">src/shaders/index.mjs:134</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L142">src/shaders/index.mjs:142</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L153">src/shaders/index.mjs:153</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L163">src/shaders/index.mjs:163</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L166">src/shaders/index.mjs:166</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L174">src/shaders/index.mjs:174</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L177">src/shaders/index.mjs:177</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L188">src/shaders/index.mjs:188</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L203">src/shaders/index.mjs:203</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L207">src/shaders/index.mjs:207</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L211">src/shaders/index.mjs:211</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L217">src/shaders/index.mjs:217</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L225">src/shaders/index.mjs:225</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L228">src/shaders/index.mjs:228</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L237">src/shaders/index.mjs:237</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L240">src/shaders/index.mjs:240</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L249">src/shaders/index.mjs:249</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L252">src/shaders/index.mjs:252</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L264">src/shaders/index.mjs:264</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L276">src/shaders/index.mjs:276</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L288">src/shaders/index.mjs:288</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L300">src/shaders/index.mjs:300</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L314">src/shaders/index.mjs:314</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L321">src/shaders/index.mjs:321</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L322">src/shaders/index.mjs:322</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L323">src/shaders/index.mjs:323</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L327">src/shaders/index.mjs:327</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L329">src/shaders/index.mjs:329</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L330">src/shaders/index.mjs:330</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L331">src/shaders/index.mjs:331</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L334">src/shaders/index.mjs:334</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L337">src/shaders/index.mjs:337</a></li>
+<li>Defined in <a href="https://github.com/manit2004/wgblas/blob/040db41c80a2ed7a30c9e83c7680bf8b5598d13b/src/shaders/index.mjs#L340">src/shaders/index.mjs:340</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

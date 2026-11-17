@@ -1,17 +1,17 @@
 /**
  * Build and docs tooling: the browser bundle, the docs site's extras, the
- * benchmark results pages, the roofline analysis, and the docs MCP server.
+ * benchmark viewer's files, the roofline checks, and the docs MCP server.
  *
  * | Script | What it does | Run by |
  * |---|---|---|
  * | `build-browser.mjs` | Bundles the library into one IIFE file, `window.wgblas` | `npm run build:browser`, `npm run docs`, `prepublishOnly` |
  * | `gen-sitemap.mjs` | Writes `docs/sitemap.xml` and `robots.txt`; copies site-verification files into `docs/` | `npm run docs` |
- * | `gen-bench-tables.py` | Generates the per-GPU benchmark results pages and their charts | `make bench-tables` |
- * | `roofline.py` | Roofline analysis over the benchmark results; writes `roofline.json` and the chart | by hand |
- * | `docs-mcp.mjs` | Serves this checkout's `docs/api.json` over MCP | an MCP client |
+ * | `copy-docs-assets.mjs` | Puts the benchmark results viewer and a plain-script build of `benchmarks/results-reader.mjs` into `docs/` | `npm run docs` |
+ * | `roofline.mjs` | Prints each GPU's roofline from the local results, with checks for suspect rows | by hand |
+ * | `docs-mcp.mjs` | Serves this checkout's `docs/api.json` and benchmark results over MCP | an MCP client |
  *
- * `npm run docs` is `typedoc` → `gen-sitemap.mjs` → `build-browser.mjs`, in
- * that order: TypeDoc wipes `docs/` on every build, so everything else that
+ * `npm run docs` is `typedoc` → `gen-sitemap.mjs` → `build-browser.mjs` →
+ * `copy-docs-assets.mjs`, in that order: TypeDoc wipes `docs/` on every build, so everything else that
  * lives there has to be written after it.
  *
  * ## `build-browser.mjs` — the browser bundle
@@ -49,84 +49,50 @@
  * currently Google's — from `assets/docs/` into `docs/`, since they must be
  * served from the site root but TypeDoc would delete them there.
  *
- * ## `gen-bench-tables.py` — benchmark results pages
+ * ## `copy-docs-assets.mjs` — the benchmark results viewer's files
  *
- * Reads GPU folder names from the local `benchmarks/results/` directory to
- * discover which GPUs have results, then **fetches the JSON files from
- * GitHub** (the `main` branch, not local disk) so that skip-worktree'd local
- * files are never used — falling back to local disk only if a fetch fails
- * (e.g. results not pushed yet). Routines are every `src/<routine>/` that has
- * a `<routine>.mjs`.
+ * Puts the benchmark results viewer on the docs root: copies
+ * `assets/docs/bench.js`, and bundles `benchmarks/results-reader.mjs` (which
+ * lists and reads the results) with esbuild into a plain script,
+ * `results-reader.js`, that sets `window.wgblasResultsReader`. A plain script
+ * rather than the module because browsers won't load modules on a page opened
+ * from disk (`file://`). It also writes `results-index.js`, the list of
+ * result files as of the build: the viewer lists them with GitHub's API
+ * (60 calls an hour per address) and falls back on this list when refused.
+ * And `routine-params.js`, `assets/routines/routine_params.json` as of the
+ * build, so the roofline's FLOP counts match the code the site ships. `runner.js` loads the viewer on the
+ * `benchmarks/results` and `benchmarks/roofline` pages, which then draw their
+ * charts and tables from the result JSON on GitHub. TypeDoc copies only its
+ * one `customJs` file, so these need this step.
  *
- * For each GPU it writes, under `benchmarks/bench-result/<gpu>/`:
+ * ## `roofline.mjs` — roofline checks
  *
- * - **`<routine>.mjs`** per routine with results — a TypeDoc module whose
- *   comment holds the default-size table, then one section per parameter
- *   sweep, each with links to its charts and its benchmark scripts. When the
- *   GPU has a `cuda/` results folder the tables add cuBLAS columns and an
- *   efficiency column (`wgblas GB/s ÷ cuBLAS GB/s × 100`); otherwise they show
- *   wgblas only.
- * - **`index.mjs`** — the GPU's own page, including its roofline section when
- *   `roofline.py` has produced a `roofline.json` for it.
- *
- * Charts go to `assets/benchmarks/<gpu>/<routine>/`, a GB/s and a ms chart
- * per table, named `<metric>-<variant>.svg`: `gbps-default.svg` for the
- * default sizes, then e.g. `gbps-stride32.svg`, `gbps-alpha0.svg`,
- * `gbps-trans-no-transpose-transpose.svg`, `gbps-ldb-transpose-pad8.svg`.
- * TypeDoc nests the generated modules under `benchmarks` and copies the
- * charts they link into `docs/media/`.
- *
- * By default, a routine already generated for a GPU (an existing
- * `<routine>.mjs` there) is skipped, and a GPU with nothing left to generate
- * is skipped entirely — its `index.mjs` included. After new results or a
- * fresh `roofline.py` run, pass `--force` (or `--routine`) so the pages
- * actually change.
- *
- * ### Arguments
- *
- * | Argument | Effect |
- * |---|---|
- * | `--local` | Read result JSON from local disk instead of fetching from GitHub |
- * | `--force` | Regenerate `.mjs` files even if they already exist |
- * | `--routine NAME` | Only regenerate this one routine (implies `--force` for it) |
- *
- * ```sh
- * python3 scripts/gen-bench-tables.py                  # generate everything not yet generated
- * python3 scripts/gen-bench-tables.py --force          # regenerate everything
- * python3 scripts/gen-bench-tables.py --routine saxpy  # just saxpy, on every GPU with results
- * python3 scripts/gen-bench-tables.py --local          # use benchmarks/results/ on disk, not GitHub
- * ```
- *
- * ## `roofline.py` — roofline analysis
- *
- * Places every routine at its arithmetic intensity against what it achieved,
- * under a memory roof and a compute roof measured by
- * `benchmarks/roofline/wgblas/bandwidth.js` and `fma.js` (see the
- * `benchmarks` module's Roofline section for the method). Reads the local
- * `benchmarks/results/` tree; a GPU without both probe results is skipped.
- * For each GPU it prints a report and writes
- * `benchmarks/results/<gpu>/wgblas/roofline/roofline.json`, which
- * `gen-bench-tables.py` turns into the GPU page's roofline section.
+ * Prints each GPU's roofline from the local `benchmarks/results/`: the table
+ * the `benchmarks/roofline` page draws (same code, `results-reader.mjs`'s
+ * `readRoofline`), plus two checks the page leaves out. Rows above the
+ * measured roofs are kept and listed with how far past they sit: a few percent
+ * is usually a real measurement the probes didn't match, an order of
+ * magnitude a FLOP or byte count that doesn't describe the work. Rows that
+ * can't be placed (no FLOP count, or missing a size) are counted. It writes
+ * nothing; a GPU without both probe results is skipped.
  *
  * | Argument | Effect |
  * |---|---|
  * | `--gpu SLUG` | Only this GPU (default: every one under `benchmarks/results/`) |
- * | `--svg` | Also write the chart, `assets/benchmarks/<gpu>/roofline/roofline.svg` |
- * | `--empirical-roof` | Use the best observed rates as the roofs instead of the probes (circular — sgemm then scores 100% of a roof it set) |
- * | `--peak-flops N` / `--peak-bw N` | Override the compute roof (GFLOP/s) / memory roof (GB/s) |
- * | `-v`, `--verbose` | List every excluded row |
+ * | `-v`, `--verbose` | List every row that can't be placed |
  *
  * ```sh
- * python3 scripts/roofline.py --svg                                  # every GPU, with charts
- * python3 scripts/roofline.py --gpu nvidia-geforce-gtx-1650 --svg   # one GPU
+ * node scripts/roofline.mjs                                  # every GPU
+ * node scripts/roofline.mjs --gpu nvidia-geforce-gtx-1650    # one GPU
  * ```
  *
  * ## `docs-mcp.mjs` — the docs MCP server, against this checkout
  *
  * A thin wrapper around `mcp/docs-mcp.mjs` (published to npm as
  * `wgblas-docs-mcp`) that points it at this checkout's `docs/api.json` —
- * TypeDoc's JSON output, written by `npm run docs` — with no network access,
- * so doc changes are queryable before they're deployed:
+ * TypeDoc's JSON output, written by `npm run docs` — and its
+ * `benchmarks/results/`, with no network access, so doc and result changes
+ * are queryable before they're deployed:
  *
  * ```sh
  * claude mcp add wgblas-docs -- node scripts/docs-mcp.mjs

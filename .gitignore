@@ -26,4 +26,5 @@ jscpd/
 # wgblas-docs-mcp package: copied in at pack time (see mcp/package.json), plus npm pack output
 mcp/api.json
 mcp/LICENSE
+mcp/results-reader.mjs
 mcp/*.tgz

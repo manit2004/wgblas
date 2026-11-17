@@ -75,7 +75,19 @@ jobs:
 
       - run: npm ci
 
-      - name: Audit
+      # What users install: wgblas's runtime dependencies. A high finding here
+      # fails the job.
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      # Development tooling (ESLint, TypeDoc, Vite, c8, lint-staged): reported,
+      # not blocking. Its findings are in glob-matching libraries that only
+      # ever see this repo's own patterns, and some have no fixed release
+      # (picomatch's ReDoS covers every version). npm's offered "fix"
+      # (`npm audit fix --force`) downgrades those tools a major version,
+      # which breaks the build: TypeDoc 0.23 can't run TypeScript 6.
+      - name: Audit development tooling (informational)
+        continue-on-error: true
         run: npm audit --audit-level=high
 
   check-links:

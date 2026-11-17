@@ -1,7 +1,8 @@
 {
-  "$comment": "Routine -> real parameters (from src/<routine>/<routine>.mjs; device omitted). `role`: size, scalar (alpha/beta/c/s), increment (incx/incy), leading-dimension (lda/ldb/ldc), flag (trans/uplo/diag/side), layout, data. `random` excluded -- not a leveled BLAS routine.",
+  "$comment": "Routine -> real parameters (from src/<routine>/<routine>.mjs; device omitted). `role`: size, scalar (alpha/beta/c/s), increment (incx/incy), leading-dimension (lda/ldb/ldc), flag (trans/uplo/diag/side), layout, data. `random` excluded -- not a leveled BLAS routine. `flops`: the standard BLAS FLOP count (a multiply-add is 2), over the sizes a result row records (n, m, k, order) and `bytes`, the row's byte count; a size a row lacks is taken as n. Only for routines whose benchmarks record bytes but not FLOPs (and their sweeps); 0 for index searches and data movement. benchmarks/results-reader.mjs reads `level` and `flops` for the roofline.",
   "sscal": {
     "level": 1,
+    "flops": "n",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "alpha", "role": "scalar" },
@@ -11,6 +12,7 @@
   },
   "sswap": {
     "level": 1,
+    "flops": "0",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -21,6 +23,7 @@
   },
   "saxpy": {
     "level": 1,
+    "flops": "2 * n",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "alpha", "role": "scalar" },
@@ -32,6 +35,7 @@
   },
   "scopy": {
     "level": 1,
+    "flops": "0",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -42,6 +46,7 @@
   },
   "sdot": {
     "level": 1,
+    "flops": "2 * n",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -52,6 +57,7 @@
   },
   "sasum": {
     "level": 1,
+    "flops": "n",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -60,6 +66,7 @@
   },
   "dasum": {
     "level": 1,
+    "flops": "n",
     "note": "f64 (double-double) counterpart of sasum -- same parameter shape",
     "parameters": [
       { "name": "n", "role": "size" },
@@ -69,6 +76,7 @@
   },
   "snrm2": {
     "level": 1,
+    "flops": "2 * n",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -77,6 +85,7 @@
   },
   "isamax": {
     "level": 1,
+    "flops": "0",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -85,6 +94,7 @@
   },
   "idamax": {
     "level": 1,
+    "flops": "0",
     "note": "f64 (double-double) counterpart of isamax -- same parameter shape",
     "parameters": [
       { "name": "n", "role": "size" },
@@ -94,6 +104,7 @@
   },
   "srot": {
     "level": 1,
+    "flops": "6 * n",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -106,6 +117,7 @@
   },
   "srotm": {
     "level": 1,
+    "flops": "6 * n",
     "parameters": [
       { "name": "n", "role": "size" },
       { "name": "x", "role": "data" },
@@ -117,6 +129,7 @@
   },
   "sgemv": {
     "level": 2,
+    "flops": "2 * m * n",
     "parameters": [
       { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
       { "name": "m", "role": "size" },
@@ -134,6 +147,7 @@
   },
   "ssymv": {
     "level": 2,
+    "flops": "2 * n^2",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "n", "role": "size" },
@@ -150,6 +164,7 @@
   },
   "strmv": {
     "level": 2,
+    "flops": "n^2",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
@@ -166,6 +181,7 @@
   },
   "strsv": {
     "level": 2,
+    "flops": "n^2",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "trans", "role": "flag", "values": ["no-transpose", "transpose"] },
@@ -180,6 +196,7 @@
   },
   "sger": {
     "level": 2,
+    "flops": "2 * m * n",
     "parameters": [
       { "name": "m", "role": "size" },
       { "name": "n", "role": "size" },
@@ -195,6 +212,7 @@
   },
   "ssyr": {
     "level": 2,
+    "flops": "n * (n + 1)",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "n", "role": "size" },
@@ -208,6 +226,7 @@
   },
   "ssyr2": {
     "level": 2,
+    "flops": "2 * n * (n + 1)",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
       { "name": "n", "role": "size" },
@@ -264,6 +283,7 @@
   },
   "ssyrk": {
     "level": 3,
+    "flops": "n * (n + 1) * k",
     "note": "no shader of its own -- rides on sgemm_small/sgemm_large (uplo mask)",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
@@ -281,6 +301,7 @@
   },
   "ssyr2k": {
     "level": 3,
+    "flops": "2 * n * (n + 1) * k",
     "note": "no shader of its own -- rides on sgemm_small/sgemm_large (uplo mask)",
     "parameters": [
       { "name": "uplo", "role": "flag", "values": ["lower", "upper"] },
@@ -335,6 +356,7 @@
   },
   "strsm": {
     "level": 3,
+    "flops": "order^2 * (bytes / 4 - order * (order + 1) / 2) / (2 * order)",
     "note": "dispatch-count-dominated (sequential block dependency), not compute-bound like sgemm -- uses its own iteration counts in benchmarks, not Level 3's default",
     "parameters": [
       { "name": "side", "role": "flag", "values": ["left", "right"] },

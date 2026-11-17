@@ -17,21 +17,23 @@
  *                                sweeps as wgblas/ above
  *       Makefile               — compiles and links against cublas
  *       bin/                    — build output (gitignored)
- *   roofline/wgblas/
- *     fma.js                   — peak FP32 throughput probe (the compute roof)
- *     bandwidth.js             — peak memory bandwidth probe (the memory roof)
+ *   roofline/
+ *     wgblas/fma.js            — peak FP32 throughput probe (the compute roof)
+ *     wgblas/bandwidth.js      — peak memory bandwidth probe (the memory roof)
+ *     index.mjs                — the docs site's roofline page (computed from results/)
  *   utils/
  *     helpers.mjs              — JS utilities: warmClocks, median, saveResults,
  *                                printHeader, printRow, getGpuModel, toColumnMajor
  *     helpers.h                — C utilities: warm_clocks, median, save_results*,
  *                                random_float_array, get_gpu_model, host_bytes_available
  *   results/
+ *     index.mjs                — the docs site's results page (charts drawn from the JSON here)
  *     <gpu-model-slug>/
  *       wgblas/<routine>/<routine>.json        — base benchmark
  *       wgblas/<routine>/<sweep>.<routine>.json  — one JSON per sweep
- *       wgblas/roofline/                       — fma.json, bandwidth.json, roofline.json
+ *       wgblas/roofline/                       — fma.json, bandwidth.json: the probes' roofs
  *       cuda/...                               — same layout, cuBLAS results (NVIDIA only)
- *   bench-result/<gpu-model-slug>/              — generated docs pages (don't edit)
+ *   results-reader.mjs         — lists and reads results/, for those pages and the docs MCP server
  *   bench.mk                   — the make targets below
  * ```
  *
@@ -137,9 +139,10 @@
  *
  * ## Roofline
  *
- * `scripts/roofline.py` places every routine at its arithmetic intensity
- * (FLOPs per byte of compulsory traffic) against what it achieved, under a
- * memory roof and a compute roof. Both roofs are measured, never typed in
+ * The `benchmarks/roofline` page places every routine at its arithmetic
+ * intensity (FLOPs per byte of compulsory traffic) against what it achieved,
+ * under a memory roof and a compute roof, computed from the results when the
+ * page loads (`results-reader.mjs`'s `readRoofline`). Both roofs are measured, never typed in
  * from a datasheet: `roofline/wgblas/bandwidth.js` takes the best of three
  * vec4 access patterns, and `roofline/wgblas/fma.js` runs independent FMA
  * chains out of registers. They're deliberately separate kernels — taking a
@@ -148,8 +151,9 @@
  *
  * Intensity comes from each routine's base benchmark at its largest size:
  * `compute_GFLOPs / compute_GBs` where both are recorded, otherwise the
- * standard BLAS FLOP count supplied by `roofline.py` (Level 1 and most of
- * Level 2 record bytes only). It assumes perfect caching, so it's exact for
+ * routine's standard BLAS FLOP count, the `flops` formula in
+ * `assets/routines/routine_params.json` (Level 1 and most of Level 2 record
+ * bytes only). It assumes perfect caching, so it's exact for
  * the streaming Level 1 and 2 kernels and an upper bound for tiled Level 3
  * ones. A GPU without both probe results is skipped.
  *
@@ -176,12 +180,15 @@
  *
  * ## From Results to These Pages
  *
- * - `python3 scripts/roofline.py --svg` reads the results tree and writes
- *   `results/<gpu>/wgblas/roofline/roofline.json` and the roofline chart.
- * - `make bench-tables` (`scripts/gen-bench-tables.py`) generates the
- *   per-GPU pages in `bench-result/` and their charts — the tables in this
- *   module's results pages. It reads the results from GitHub, not local
- *   disk, so it shows what's been pushed (`--local` uses the working tree).
+ * Nothing is generated from the results. The `benchmarks/results` and
+ * `benchmarks/roofline` pages draw their charts and tables in the browser from
+ * the JSON in `results/` on GitHub, and the docs MCP server's `get_benchmarks`
+ * reads the same files; all go through `results-reader.mjs`. A result is on
+ * the site once it's on `main`, roofline included.
+ *
+ * - `node scripts/roofline.mjs` prints the same roofline from the local
+ *   results, with two checks the page leaves out: rows above the measured
+ *   roofs, and rows that can't be placed.
  * - The `GPU Benchmarks (Kaggle)` GitHub Actions workflow, triggered by hand,
  *   runs `make bench` on a Kaggle GPU and commits the results back.
  *
@@ -189,10 +196,9 @@
  *
  * 1. Run `make bench` (and `make cuda` on NVIDIA).
  * 2. Commit the generated JSON files under `benchmarks/results/`.
- * 3. Open a pull request — a maintainer will run `scripts/roofline.py` and
- *    `scripts/gen-bench-tables.py` and commit the generated `.mjs`/`.svg`
- *    files before merging. See the `scripts` module for what those scripts
- *    do and their arguments.
+ * 3. Open a pull request. The results and roofline pages show the new
+ *    results as soon as they're merged; `node scripts/roofline.mjs` checks
+ *    them first (see the `scripts` module).
  *
  * @module benchmarks
  */
