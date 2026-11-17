@@ -2,11 +2,11 @@ name: Backend Tests
 
 # GPU-free coverage beyond the Kaggle job's NVIDIA/Dawn run: naga's output for
 # every backend, the suite on Mesa's lavapipe (a CPU Vulkan driver) under both
-# Dawn and wgpu, and the suite on Metal and on D3D12 (WARP, a CPU driver).
+# Dawn and wgpu, and the suite on Metal and on D3D12 (WARP, a CPU driver)
+# under both Dawn and wgpu, with Dawn's D3D12 shaders compiled by FXC and,
+# as Chrome does, by DXC.
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -209,4 +209,117 @@ jobs:
         run: node --test --test-reporter=spec $(find tests -name 'test.*.js')
 
       - name: GPU-resident suite
+        run: node --test --test-reporter=spec $(find tests -name 'gpustorage.*.js')
+
+  wgpu-native:
+    name: Suite on wgpu (Deno, ${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # No GPU: WARP, if wgpu offers it. Shaders go through naga's HLSL.
+          - os: windows-latest
+            backend: dx12
+          # Apple's paravirtual GPU. Shaders go through naga's MSL.
+          - os: macos-15
+            backend: metal
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    # Non-blocking until a run shows the suite passes there: naga's HLSL and
+    # MSL haven't run anywhere else in CI.
+    continue-on-error: true
+    defaults:
+      run:
+        shell: bash
+    env:
+      DENO_WEBGPU_BACKEND: ${{ matrix.backend }}
+    steps:
+      # Keep LF line endings, as on Linux.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.8
+
+      # wgpu may not hand out a CPU adapter like WARP; fail here, plainly, if not.
+      - name: Which adapter
+        run: |
+          deno eval --unstable-webgpu '
+            const a = await navigator.gpu.requestAdapter();
+            if (!a) { console.error("wgpu found no adapter"); Deno.exit(1); }
+            console.log(a.info);
+          '
+
+      # make test-wgpu, without depending on make being installed.
+      - name: Test suite
+        run: node tests/wgpu/run.mjs
+
+  dxc:
+    name: Suite on D3D12 WARP with DXC (Dawn, Windows)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    # Chrome on Windows compiles shaders with DXC; the webgpu package, as in
+    # the warp job, uses FXC. Dawn's use_dxc toggle (set by
+    # tests/dxc/preload.mjs) switches to DXC once dxcompiler.dll and dxil.dll
+    # are there to load. Non-blocking until a run shows the suite passes.
+    continue-on-error: true
+    defaults:
+      run:
+        shell: bash
+    env:
+      DXC_ZIP: https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/dxc_2026_09_29.zip
+    steps:
+      # Keep LF line endings, as on Linux and macOS.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # The x64 DLLs next to Dawn's binary, and that directory on PATH, the two
+      # places a DLL load is likely to look.
+      - name: Install DXC beside Dawn
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/dxc.zip" "$DXC_ZIP"
+          pwsh -NoProfile -Command "Expand-Archive -Path '$RUNNER_TEMP/dxc.zip' -DestinationPath '$RUNNER_TEMP/dxc'"
+          dist=node_modules/webgpu/dist
+          for dll in dxcompiler.dll dxil.dll; do
+            src=$(find "$RUNNER_TEMP/dxc" -ipath '*x64*' -iname "$dll" | head -1)
+            if [ -z "$src" ]; then echo "No x64 $dll in $DXC_ZIP"; exit 1; fi
+            echo "$dll: $src"
+            cp "$src" "$dist/"
+          done
+          (cd "$dist" && pwd -W) >> "$GITHUB_PATH"
+
+      # Fails unless Dawn's shader dump shows DXC compiled the kernel, so the
+      # suite below can't pass on a silent fallback to FXC.
+      - name: Confirm DXC is used
+        run: node tests/dxc/check.mjs
+
+      - name: Test suite
+        env:
+          NODE_OPTIONS: --import=./tests/dxc/preload.mjs
+        run: node --test --test-reporter=spec $(find tests -name 'test.*.js')
+
+      - name: GPU-resident suite
+        env:
+          NODE_OPTIONS: --import=./tests/dxc/preload.mjs
         run: node --test --test-reporter=spec $(find tests -name 'gpustorage.*.js')
