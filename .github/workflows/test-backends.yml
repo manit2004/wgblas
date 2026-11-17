@@ -309,7 +309,7 @@ jobs:
             echo "$dll: $src -> $nodedir, node_modules/webgpu/dist"
             cp "$src" "$nodedir/"
             cp "$src" node_modules/webgpu/dist/
-          done"
+          done
 
       # Fails unless Dawn's shader dump shows DXC compiled the kernel, so the
       # suite below can't pass on a silent fallback to FXC.
