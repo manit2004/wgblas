@@ -1,16 +1,20 @@
 // Diagnostic, not part of the suite: run with
 //   node tests/browser/run.mjs tests/browser/diagnostics/dd-loop.diag.js
-// (browser only — it reads the bundled shader sources).
+// (browser only — it reads the bundled shader sources). Add
+// WGBLAS_BROWSER_ARGS=--disable-dawn-features=use_dxc for FXC as a control.
 //
-// dtrsv_small gives wrong answers in Chrome on Windows (DXC's code on D3D12's
-// WARP) for every n > 1, in a way that looks like b − a·x computed as b + a·x
-// (an expected +Infinity comes back −Infinity). FXC's code is right; DXC's is
-// wrong with its optimizer on or off, so the optimizer isn't the cause.
+// dtrsv_small gave wrong answers in Chrome on Windows (DXC's code on D3D12's
+// WARP) for every n > 1; FXC's code was right, and DXC's was wrong with its
+// optimizer on or off. Each kernel here has dtrsv_small's shape — 256
+// threads, a loop bounded by a uniform, the protected double-double ops (with
+// their barriers) inside it — and computes b_i = 100 − Σ_j a_ij·x_j over 8
+// rows, changing one thing at a time.
 //
-// Each kernel here has dtrsv_small's shape — 256 threads, a loop bounded by a
-// uniform, the protected double-double ops (with their barriers) inside it —
-// and computes b_i = 100 − Σ_j a_ij·x_j over 8 rows, changing one thing at a
-// time. Which variants come out wrong says what to avoid.
+// Found (Chrome 156, windows-latest, WARP): only "a_ij loaded a step ahead"
+// fails under DXC — `let aj = aNext; aNext = load(j + 1)` runs with aj already
+// holding the next step's value (row 1 gives 100 − a₁₁·x₀, not a₁₀). Every
+// variant passes under FXC, and "next a_ij loaded at the end of the step",
+// dtrsv_small's fix, passes under both. A minimal repro for a bug report.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup } from "wgblas";

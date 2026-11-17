@@ -21,9 +21,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-15]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    # Linux, verified locally on Chrome's SwiftShader, is blocking; Windows and
-    # macOS are not until a run shows they pass.
-    continue-on-error: ${{ matrix.os != 'ubuntu-latest' }}
     defaults:
       run:
         shell: bash
@@ -41,21 +38,3 @@ jobs:
       # if there is none.
       - name: Test suite
         run: node tests/browser/run.mjs
-
-      # Temporary diagnostics: dtrsv's block solve (dtrsv_small) gives wrong
-      # answers in Chrome on Windows (D3D12 on WARP) for every n > 1 with DXC,
-      # optimizer on or off; with FXC it's right. These kernels have
-      # dtrsv_small's shape and change one thing at a time
-      # (tests/browser/diagnostics/dd-loop.diag.js); which come out wrong
-      # under DXC, and right under FXC as the control, narrows the cause.
-      - name: "Diagnose dtrsv: kernel variants, DXC"
-        if: always() && runner.os == 'Windows'
-        continue-on-error: true
-        run: node tests/browser/run.mjs tests/browser/diagnostics/dd-loop.diag.js
-
-      - name: "Diagnose dtrsv: kernel variants, FXC (control)"
-        if: always() && runner.os == 'Windows'
-        continue-on-error: true
-        env:
-          WGBLAS_BROWSER_ARGS: --disable-dawn-features=use_dxc
-        run: node tests/browser/run.mjs tests/browser/diagnostics/dd-loop.diag.js
