@@ -6,12 +6,15 @@ name: Dawn Tests
 # Dawn on a real NVIDIA GPU.
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write # Qlty coverage upload (OIDC)
 
 jobs:
   lavapipe:
@@ -27,9 +30,26 @@ jobs:
 
       - uses: ./.github/actions/lavapipe
 
+      # Node writes raw V8 coverage for every test process into this
+      # directory; c8 turns it into lcov afterwards (same scope as `npm run
+      # coverage`).
       - run: make test
+        env:
+          NODE_V8_COVERAGE: ${{ github.workspace }}/coverage/tmp
 
       - run: make test-gpu
+        env:
+          NODE_V8_COVERAGE: ${{ github.workspace }}/coverage/tmp
+
+      - name: Coverage report
+        run: npx c8 report --reporter=lcov --temp-directory coverage/tmp --reports-dir coverage
+
+      - name: Upload coverage to Qlty
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: qltysh/qlty-action/coverage@v2
+        with:
+          oidc: true
+          files: coverage/lcov.info
 
   metal:
     name: Dawn on Metal (macOS)
