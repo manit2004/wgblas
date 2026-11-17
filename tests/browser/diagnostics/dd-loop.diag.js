@@ -142,6 +142,22 @@ const VARIANTS = {
     b = DD(select(b.hi, nb.hi, i > j), select(b.lo, nb.lo, i > j));`,
     want: EXPECTED.solve(1),
   },
+  // ... with the next a_ij loaded at the end of the step instead, after the
+  // current one's last use (dtrsv_small's fix): one value alive at a time.
+  "solve: next a_ij loaded at the end of the step": {
+    pre: "var aCur = DD(A[i * LEN], 0.0);",
+    body: `
+    let aj = aCur;
+    candHi[tid] = b.hi;
+    candLo[tid] = b.lo;
+    workgroupBarrier();
+    let xj = DD(candHi[(tid / LEN) * LEN + j], candLo[(tid / LEN) * LEN + j]);
+    let nb = ddSubProtected(b, ddMulProtected(aj, xj, tid), tid);
+    b = DD(select(b.hi, nb.hi, i > j), select(b.lo, nb.lo, i > j));
+    let jn = min(j + 1u, params.len - 1u);
+    aCur = DD(A[i * LEN + jn], 0.0);`,
+    want: EXPECTED.solve(1),
+  },
 };
 
 function kernel({ pre = "", body }) {
