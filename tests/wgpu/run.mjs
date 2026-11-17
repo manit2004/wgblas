@@ -97,10 +97,21 @@ const tmp = mkdtempSync(join(tmpdir(), "wgblas-wgpu-"));
 const mapPath = join(tmp, "import-map.json");
 writeFileSync(mapPath, JSON.stringify(importMap()));
 
+// How a test process ended, when not with 0. A process that crashes prints
+// nothing itself; on Windows its exit code is the NTSTATUS, e.g. 0xC0000005
+// (access violation) or 0xC00000FD (stack overflow), so show that in hex.
+function exitReason(status, signal) {
+  if (signal) return `signal ${signal}`;
+  if (status === null) return "no exit status";
+  return status > 255
+    ? `exit 0x${(status >>> 0).toString(16).toUpperCase()}`
+    : `exit ${status}`;
+}
+
 const failed = [];
 try {
   for (const file of files) {
-    const { status } = spawnSync(
+    const { status, signal } = spawnSync(
       deno,
       [
         "test",
@@ -113,7 +124,7 @@ try {
       ],
       { cwd: ROOT, stdio: "inherit", env },
     );
-    if (status !== 0) failed.push(file);
+    if (status !== 0) failed.push(`${file} (${exitReason(status, signal)})`);
   }
 } finally {
   rmSync(tmp, { recursive: true, force: true });

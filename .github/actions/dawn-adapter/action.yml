@@ -1,0 +1,18 @@
+name: Show Dawn's adapter
+description: >
+  Prints the GPU that wgblas's init() gets from Dawn (the webgpu npm package),
+  so a job's log says what the suite ran on. Fails if there's none.
+
+runs:
+  using: composite
+  steps:
+    - name: Which GPU
+      shell: bash
+      run: |
+        node --input-type=module -e '
+          import { init, gpuName, cleanup } from "wgblas";
+          await init();
+          console.log(gpuName());
+          cleanup();
+          process.exit(0);
+        '

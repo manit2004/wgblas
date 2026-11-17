@@ -19,8 +19,7 @@
 // owner publishes it as x_j, and every row below folds it in,
 // b_i -= L_ij·x_j. The protected ops carry a workgroupBarrier(), so every
 // thread makes the same calls and selects — strsm_small.wgsl's 4×4 chunking
-// would add protected ops, not save barriers. Each step's L_ij load is
-// issued a step ahead, off the dependency chain. (The per-column inversion
+// would add protected ops, not save barriers. (The per-column inversion
 // this replaced ran a 64-lane tree reduction plus a division per step:
 // ~38 barriers per step against ~9 here.)
 
@@ -104,12 +103,17 @@ fn dtrsv_small_main(
   }
   var xi = DD(0.0, 0.0); // rows above jStart are structural zeros
 
+  // L_ij for the next step is loaded at the end of this one, after `a`'s last
+  // use, so its latency overlaps the step boundary. Not loaded a step ahead at
+  // the top (`let a = aNext; aNext = load(j + 1)`, both alive at once): D3D12's
+  // WARP ran DXC's code for that with `a` already holding the next step's
+  // value — every n > 1 solved wrongly in Chrome on Windows, optimizer on or
+  // off, while FXC's code was right (tests/browser/diagnostics/dd-loop.diag.js
+  // isolates it). Loading in-step instead was ~13% slower for n <= 128.
   let jStart = select(0u, c0, inv);
-  var aNext = loadA(rowBase + select(jStart, len - 1u - jStart, back) * params.aCs);
+  var aCur = loadA(rowBase + select(jStart, len - 1u - jStart, back) * params.aCs);
   for (var j = jStart; j < len; j++) {
-    let a = aNext;
-    let jn = min(j + 1u, len - 1u);
-    aNext = loadA(rowBase + select(jn, len - 1u - jn, back) * params.aCs);
+    let a = aCur;
 
     // skipZero (dtrsv/strsv, when the solve is transposed in the row-major frame —
     // the column-by-column form of reference BLAS and stdlib): an unknown whose
@@ -132,6 +136,8 @@ fn dtrsv_small_main(
     let aj = ddSelect(a, DD(0.0, 0.0), skip && isZeroBits(xj.hi) && isZeroBits(xj.lo));
     let nb = ddSubProtected(b, ddMulProtected(aj, xj, tid), tid);
     b = ddSelect(b, nb, i > j);
+    let jn = min(j + 1u, len - 1u); // the last step reloads its own; unused
+    aCur = loadA(rowBase + select(jn, len - 1u - jn, back) * params.aCs);
   }
 
   if (live) {

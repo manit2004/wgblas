@@ -1,0 +1,23 @@
+name: Use lavapipe
+description: >
+  Installs Mesa's lavapipe, a CPU Vulkan driver, and points the Vulkan loader
+  at it alone (VK_ICD_FILENAMES, for the rest of the job). Ubuntu only.
+
+runs:
+  using: composite
+  steps:
+    # The manifest's name varies by Ubuntu release and CPU level, so it's
+    # looked up in the package rather than hard-coded.
+    - name: Install lavapipe
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mesa-vulkan-drivers libvulkan1
+        icd=$(dpkg -L mesa-vulkan-drivers | grep -m1 '/lvp_icd[^/]*\.json$' || true)
+        if [ -z "$icd" ]; then
+          echo "No lavapipe ICD manifest in mesa-vulkan-drivers:"
+          dpkg -L mesa-vulkan-drivers | grep '\.json$'
+          exit 1
+        fi
+        echo "lavapipe: $icd"
+        echo "VK_ICD_FILENAMES=$icd" >> "$GITHUB_ENV"

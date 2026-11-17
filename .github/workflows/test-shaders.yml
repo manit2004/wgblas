@@ -1,0 +1,53 @@
+name: Shader Tests
+
+# naga's output for every backend (SPIR-V, HLSL, GLSL, MSL), checked with each
+# backend's own validator or compiler. No GPU needed.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shaders:
+    name: Shaders (naga, spirv-val, dxc, glslang)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      # The naga version is pinned in .cargo/config.toml, so that keys the cache.
+      - name: Cache naga
+        id: naga
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cargo/bin/naga
+          key: naga-${{ runner.os }}-${{ hashFiles('.cargo/config.toml') }}
+
+      - name: Install naga
+        if: steps.naga.outputs.cache-hit != 'true'
+        run: make install-naga
+
+      - name: Install spirv-val, glslangValidator and dxc
+        run: |
+          sudo apt-get update
+          make install-shader-tools
+
+      # The tests skip a missing tool, so check they're all here first.
+      - name: Check tools
+        run: |
+          naga --version
+          spirv-val --version
+          glslangValidator --version
+          ~/.local/share/dxc/bin/dxc --version
+
+      # test.dawn.js needs a GPU; the Dawn on lavapipe job runs it.
+      - name: naga validation and backend output
+        run: node --test --test-reporter=spec tests/shaders/src/test.naga.js tests/shaders/src/test.backends.js
