@@ -15,9 +15,9 @@
 // in strsv_invert_block.wgsl), so the loop always runs forward.
 //
 // Thread (i, r) owns row i of right-hand side r. Step j: every thread forms
-// b_i / L_ii (as b_i times the reciprocal it computed up front), row j's
-// owner publishes it as x_j, and every row below folds it in,
-// b_i -= L_ij·x_j. The protected ops carry a workgroupBarrier(), so every
+// b_i / L_ii (as b_i times the reciprocal it computed up front) and stores
+// it in its own slot of `cand`; row j's slot is x_j, and every row below
+// folds it in, b_i -= L_ij·x_j. The protected ops carry a workgroupBarrier(), so every
 // thread makes the same calls and selects — strsm_small.wgsl's 4×4 chunking
 // would add protected ops, not save barriers. Each step's L_ij load is
 // issued a step ahead, off the dependency chain. (The per-column inversion
@@ -53,7 +53,14 @@ struct Params {
 const BLOCK_SIZE: u32 = 64u;
 const RHS_PER_WG: u32 = 4u;
 
-var<workgroup> published: array<DD, 4>; // x_j per right-hand side
+// Each thread's b_i / L_ii for the current step, at its local index; step j
+// reads x_j from row j's slot. Every thread stores, unconditionally: when
+// only row j's owner stored (inside an if, into one DD per right-hand side),
+// Chrome on Windows (DXC's code, run by D3D12's WARP) solved every n > 1
+// wrongly, though FXC's code for the same WGSL was right and DXC's output
+// read correctly. Plain f32 arrays, not DD structs, to keep the shape simple.
+var<workgroup> candHi: array<f32, 256>;
+var<workgroup> candLo: array<f32, 256>;
 
 fn ddSelect(a: DD, b: DD, cond: bool) -> DD {
   return DD(select(a.hi, b.hi, cond), select(a.lo, b.lo, cond));
@@ -119,14 +126,14 @@ fn dtrsv_small_main(
     let skip = params.skipZero == 1u;
     let candRaw = ddMulProtected(b, rinv, tid);
     let cand = ddSelect(candRaw, DD(0.0, 0.0), skip && isZeroBits(b.hi) && isZeroBits(b.lo));
-    if (i == j) {
-      published[r] = cand;
-      xi = cand;
-    }
+    candHi[tid] = cand.hi;
+    candLo[tid] = cand.lo;
+    xi = ddSelect(xi, cand, i == j);
     workgroupBarrier();
-    // The next write to published[r] comes after the barriers in the ops below,
-    // so every thread has read this one by then.
-    let xj = published[r];
+    // The next write to cand comes after the barriers in the ops below, so
+    // every thread has read this step's x_j by then.
+    let jSlot = r * BLOCK_SIZE + j;
+    let xj = DD(candHi[jSlot], candLo[jSlot]);
     // a is L_ij only below the diagonal (above it, the unstored triangle —
     // possibly anything, even NaN); select() keeps it out of b.
     let aj = ddSelect(a, DD(0.0, 0.0), skip && isZeroBits(xj.hi) && isZeroBits(xj.lo));

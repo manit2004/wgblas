@@ -54,9 +54,16 @@ jobs:
           WGBLAS_BROWSER_ARGS: --disable-dawn-features=use_dxc
         run: node tests/browser/run.mjs tests/dtrsv/src/test.dtrsv.js
 
+      # With the shader dump on too, but only its compile-flag lines printed:
+      # they show whether Chrome applied the toggle (SKIP_OPTIMIZATION).
       - name: "Diagnose dtrsv: DXC on, optimizer off"
         if: always() && runner.os == 'Windows'
         continue-on-error: true
         env:
-          WGBLAS_BROWSER_ARGS: --enable-dawn-features=d3d_skip_shader_optimizations
-        run: node tests/browser/run.mjs tests/dtrsv/src/test.dtrsv.js
+          WGBLAS_BROWSER_ARGS: --enable-dawn-features=d3d_skip_shader_optimizations,dump_shaders
+        run: |
+          status=0
+          node tests/browser/run.mjs tests/dtrsv/src/test.dtrsv.js > "$RUNNER_TEMP/dtrsv.log" 2>&1 || status=$?
+          grep -A4 "compile flags" "$RUNNER_TEMP/dtrsv.log" | sort | uniq -c
+          grep -E "✖|^browser:" "$RUNNER_TEMP/dtrsv.log" | head -40
+          exit $status
