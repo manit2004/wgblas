@@ -183,7 +183,13 @@ if (!testCase) {
   Deno.exit(2);
 }
 // stderr, unbuffered: what's printed before a crash survives it.
-const say = (message) => console.error(`[${name}] ${message}`);
+// With seconds since the last marker, to tell slow compiles from slow runs.
+let last = performance.now();
+const say = (message) => {
+  const now = performance.now();
+  console.error(`[${name}] ${message} (+${((now - last) / 1000).toFixed(1)}s)`);
+  last = now;
+};
 
 const device = await init();
 say("compiling the pipeline");
