@@ -43,11 +43,10 @@ jobs:
         run: node tests/browser/run.mjs
 
       # Temporary diagnostics: dtrsv's block solve (dtrsv_small) gives wrong
-      # answers in Chrome on Windows (D3D12 on WARP) for every n > 1, but passes
-      # under the webgpu package's Dawn on the same WARP, whose HLSL compiler is
-      # FXC. Chrome's is DXC. The same tests with DXC turned off tell a DXC
-      # miscompile from anything else; Dawn's shader dump, printed to the page
-      # console, shows the HLSL DXC was given.
+      # answers in Chrome on Windows (D3D12 on WARP) for every n > 1. With DXC
+      # off (FXC instead) it passes, and Tint's HLSL and DXC's DXIL for it read
+      # correctly. DXC with its optimizer off tells an optimizer miscompile
+      # (passes) from WARP running the DXIL wrongly (still fails).
       - name: "Diagnose dtrsv: DXC off"
         if: always() && runner.os == 'Windows'
         continue-on-error: true
@@ -55,9 +54,9 @@ jobs:
           WGBLAS_BROWSER_ARGS: --disable-dawn-features=use_dxc
         run: node tests/browser/run.mjs tests/dtrsv/src/test.dtrsv.js
 
-      - name: "Diagnose dtrsv: shader dump"
+      - name: "Diagnose dtrsv: DXC on, optimizer off"
         if: always() && runner.os == 'Windows'
         continue-on-error: true
         env:
-          WGBLAS_BROWSER_ARGS: --enable-dawn-features=dump_shaders
+          WGBLAS_BROWSER_ARGS: --enable-dawn-features=d3d_skip_shader_optimizations
         run: node tests/browser/run.mjs tests/dtrsv/src/test.dtrsv.js
