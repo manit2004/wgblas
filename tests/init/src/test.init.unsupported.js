@@ -9,34 +9,39 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { init } from "wgblas";
+import { nodeOnly } from "../../helpers/device.js";
 
-test("init() throws when neither Node nor the browser expose WebGPU", async () => {
-  const originalNavigator = Object.getOwnPropertyDescriptor(
-    globalThis,
-    "navigator",
-  );
-  Object.defineProperty(globalThis, "window", {
-    value: {},
-    configurable: true,
-  });
-  // No `gpu` property at all — the browser branch's `_gpu = navigator.gpu`
-  // assigns undefined, so init() falls through to the final `if (!_gpu)`.
-  Object.defineProperty(globalThis, "navigator", {
-    value: {},
-    configurable: true,
-  });
-
-  try {
-    await assert.rejects(
-      () => init(),
-      /WebGPU not supported in this environment/,
+test(
+  "init() throws when neither Node nor the browser expose WebGPU",
+  { skip: nodeOnly },
+  async () => {
+    const originalNavigator = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "navigator",
     );
-  } finally {
-    delete globalThis.window;
-    if (originalNavigator) {
-      Object.defineProperty(globalThis, "navigator", originalNavigator);
-    } else {
-      delete globalThis.navigator;
+    Object.defineProperty(globalThis, "window", {
+      value: {},
+      configurable: true,
+    });
+    // No `gpu` property at all — the browser branch's `_gpu = navigator.gpu`
+    // assigns undefined, so init() falls through to the final `if (!_gpu)`.
+    Object.defineProperty(globalThis, "navigator", {
+      value: {},
+      configurable: true,
+    });
+
+    try {
+      await assert.rejects(
+        () => init(),
+        /WebGPU not supported in this environment/,
+      );
+    } finally {
+      delete globalThis.window;
+      if (originalNavigator) {
+        Object.defineProperty(globalThis, "navigator", originalNavigator);
+      } else {
+        delete globalThis.navigator;
+      }
     }
-  }
-});
+  },
+);

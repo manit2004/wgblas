@@ -149,18 +149,30 @@ test("an unknown shader name fails loudly", async () => {
   );
 });
 
-test("a compile error maps back to its own file and local line number", async () => {
-  // __test_pipeline_a/b.wgsl are two-file fixtures (see their own header
-  // comments) — a is valid, b has a deliberate syntax error on its local
-  // line 2. Concatenated, that's module line 6 (a's 4 lines + b's line 2) —
-  // this asserts the error is reported as "__test_pipeline_b.wgsl:2", not
-  // the raw whole-module line number, which is the whole point of
-  // loadShader's per-file line-range tracking.
-  await assert.rejects(
-    () => loadShader(device, ["__test_pipeline_a", "__test_pipeline_b"]),
-    (err) => {
-      assert.match(err.message, /__test_pipeline_b\.wgsl:2/);
-      return true;
-    },
-  );
-});
+// Its two fixture shaders are read from disk; a browser has only the
+// library's own shaders, bundled (shaders/index.mjs). The line mapping under
+// test is the same code either way.
+const fixturesOnDisk =
+  typeof window !== "undefined"
+    ? "fixture shaders are on disk; the browser bundle has only the library's"
+    : false;
+
+test(
+  "a compile error maps back to its own file and local line number",
+  { skip: fixturesOnDisk },
+  async () => {
+    // __test_pipeline_a/b.wgsl are two-file fixtures (see their own header
+    // comments) — a is valid, b has a deliberate syntax error on its local
+    // line 2. Concatenated, that's module line 6 (a's 4 lines + b's line 2) —
+    // this asserts the error is reported as "__test_pipeline_b.wgsl:2", not
+    // the raw whole-module line number, which is the whole point of
+    // loadShader's per-file line-range tracking.
+    await assert.rejects(
+      () => loadShader(device, ["__test_pipeline_a", "__test_pipeline_b"]),
+      (err) => {
+        assert.match(err.message, /__test_pipeline_b\.wgsl:2/);
+        return true;
+      },
+    );
+  },
+);

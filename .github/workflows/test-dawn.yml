@@ -1,0 +1,80 @@
+name: Dawn Tests
+
+# The suite on Dawn (the webgpu npm package, Chrome's engine) on each of its
+# backends, all without a real GPU: Vulkan on Mesa's lavapipe, Metal on
+# Apple's paravirtual GPU, D3D12 on WARP. The Kaggle job (test-gpu.yml) covers
+# Dawn on a real NVIDIA GPU.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lavapipe:
+    name: Dawn on Vulkan (lavapipe, Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - uses: ./.github/actions/lavapipe
+
+      - run: make test
+
+      - run: make test-gpu
+
+  metal:
+    name: Dawn on Metal (macOS)
+    runs-on: macos-15
+    timeout-minutes: 30
+    # Dawn gets a Metal adapter here (Apple's paravirtual GPU) and compiles
+    # under relaxed math, the case f64/utils/add.wgsl's hide() exists for.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - uses: ./.github/actions/dawn-adapter
+
+      - run: make test
+
+      - run: make test-gpu
+
+  warp:
+    name: Dawn on D3D12 (WARP, Windows)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    # Hosted Windows runners have no GPU; Dawn's default Windows backend,
+    # D3D12, then finds only WARP, Microsoft's software rasterizer. Shaders go
+    # through the FXC compiler the webgpu package ships (d3dcompiler_47.dll).
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Keep LF line endings, as on Linux and macOS.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - uses: ./.github/actions/dawn-adapter
+
+      # make test / make test-gpu, without depending on make being installed.
+      - name: Test suite
+        run: node --test --test-reporter=spec $(find tests -name 'test.*.js')
+
+      - name: GPU-resident suite
+        run: node --test --test-reporter=spec $(find tests -name 'gpustorage.*.js')

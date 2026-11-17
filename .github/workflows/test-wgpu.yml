@@ -1,0 +1,84 @@
+name: wgpu Tests
+
+# The suite on wgpu (Firefox's engine), through Deno's WebGPU
+# (tests/wgpu/run.mjs), on each of its backends without a real GPU: Vulkan on
+# Mesa's lavapipe, D3D12 on WARP, Metal on Apple's paravirtual GPU. Shaders go
+# through naga instead of Dawn's Tint.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lavapipe:
+    name: wgpu on Vulkan (lavapipe, Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - uses: ./.github/actions/setup-deno
+
+      - uses: ./.github/actions/lavapipe
+
+      # Deno also enables wgpu's GL backend, which finds the same CPU renderer
+      # through EGL and can't run compute shaders; keep it on Vulkan.
+      - name: make test-wgpu
+        env:
+          DENO_WEBGPU_BACKEND: vulkan
+        run: make test-wgpu
+
+  native:
+    name: wgpu on ${{ matrix.backend }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # No GPU: WARP. Shaders go through naga's HLSL.
+          - os: windows-latest
+            backend: dx12
+          # Apple's paravirtual GPU. Shaders go through naga's MSL.
+          - os: macos-15
+            backend: metal
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    # macOS passes; Windows stays non-blocking until it does (test processes
+    # crash in the symv, trsv and dgemv-transpose kernels).
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      DENO_WEBGPU_BACKEND: ${{ matrix.backend }}
+    steps:
+      # Keep LF line endings, as on Linux.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - uses: ./.github/actions/setup-deno
+
+      # wgpu may not hand out a CPU adapter like WARP; fail here, plainly, if not.
+      - name: Which adapter
+        run: |
+          deno eval --unstable-webgpu '
+            const a = await navigator.gpu.requestAdapter();
+            if (!a) { console.error("wgpu found no adapter"); Deno.exit(1); }
+            console.log(a.info);
+          '
+
+      # make test-wgpu, without depending on make being installed.
+      - name: Test suite
+        run: node tests/wgpu/run.mjs

@@ -1,0 +1,43 @@
+name: Browser Tests
+
+# The suite in a real browser: each runner's preinstalled Google Chrome, driven
+# by Playwright (tests/browser/run.mjs). This is Chrome's own WebGPU, which on
+# Windows compiles shaders with DXC, as the webgpu npm package's Dawn can't.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chrome:
+    name: Chrome (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    # Linux, verified locally on Chrome's SwiftShader, is blocking; Windows and
+    # macOS are not until a run shows they pass.
+    continue-on-error: ${{ matrix.os != 'ubuntu-latest' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Keep LF line endings, as on Linux.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      # Prints the browser and the WebGPU adapter it offers, then fails at once
+      # if there is none.
+      - name: Test suite
+        run: node tests/browser/run.mjs

@@ -12,63 +12,68 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { init } from "wgblas";
+import { nodeOnly } from "../../helpers/device.js";
 
-test("init() in a simulated browser environment uses navigator.gpu and warns on dumpShaders", async () => {
-  // requestAdapter always resolves null — exercises both sides of the
-  // `?? await _gpu.requestAdapter()` fallback and the "No WebGPU adapter
-  // found" throw, without needing a real adapter.
-  let calls = 0;
-  // Modern Node already defines a read-only `navigator` global (Web-API
-  // compat, e.g. navigator.userAgent) — plain assignment throws "has only a
-  // getter", so both globals go through defineProperty instead.
-  const originalNavigator = Object.getOwnPropertyDescriptor(
-    globalThis,
-    "navigator",
-  );
-  Object.defineProperty(globalThis, "window", {
-    value: {},
-    configurable: true,
-  });
-  Object.defineProperty(globalThis, "navigator", {
-    value: {
-      gpu: {
-        requestAdapter: async () => {
-          calls++;
-          return null;
+test(
+  "init() in a simulated browser environment uses navigator.gpu and warns on dumpShaders",
+  { skip: nodeOnly },
+  async () => {
+    // requestAdapter always resolves null — exercises both sides of the
+    // `?? await _gpu.requestAdapter()` fallback and the "No WebGPU adapter
+    // found" throw, without needing a real adapter.
+    let calls = 0;
+    // Modern Node already defines a read-only `navigator` global (Web-API
+    // compat, e.g. navigator.userAgent) — plain assignment throws "has only a
+    // getter", so both globals go through defineProperty instead.
+    const originalNavigator = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "navigator",
+    );
+    Object.defineProperty(globalThis, "window", {
+      value: {},
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        gpu: {
+          requestAdapter: async () => {
+            calls++;
+            return null;
+          },
         },
       },
-    },
-    configurable: true,
-  });
+      configurable: true,
+    });
 
-  const warnings = [];
-  const originalWarn = console.warn;
-  console.warn = (...args) => warnings.push(args.join(" "));
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(" "));
 
-  try {
-    await assert.rejects(
-      () => init({ dumpShaders: true }),
-      /No WebGPU adapter found/,
-    );
-  } finally {
-    console.warn = originalWarn;
-    delete globalThis.window;
-    if (originalNavigator) {
-      Object.defineProperty(globalThis, "navigator", originalNavigator);
-    } else {
-      delete globalThis.navigator;
+    try {
+      await assert.rejects(
+        () => init({ dumpShaders: true }),
+        /No WebGPU adapter found/,
+      );
+    } finally {
+      console.warn = originalWarn;
+      delete globalThis.window;
+      if (originalNavigator) {
+        Object.defineProperty(globalThis, "navigator", originalNavigator);
+      } else {
+        delete globalThis.navigator;
+      }
     }
-  }
 
-  assert.ok(
-    warnings.some((w) =>
-      w.includes("dumpShaders has no effect in the browser"),
-    ),
-    `expected a browser dumpShaders warning, got: ${JSON.stringify(warnings)}`,
-  );
-  assert.equal(
-    calls,
-    2,
-    "expected both the powerPreference and fallback requestAdapter calls",
-  );
-});
+    assert.ok(
+      warnings.some((w) =>
+        w.includes("dumpShaders has no effect in the browser"),
+      ),
+      `expected a browser dumpShaders warning, got: ${JSON.stringify(warnings)}`,
+    );
+    assert.equal(
+      calls,
+      2,
+      "expected both the powerPreference and fallback requestAdapter calls",
+    );
+  },
+);

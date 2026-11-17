@@ -1,0 +1,16 @@
+name: Set up Node and dependencies
+description: >
+  Node from .nvmrc, with npm's cache, and the project's dependencies (npm ci).
+  Runs after actions/checkout, which has to come first for this action to
+  exist.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - run: npm ci
+      shell: bash
