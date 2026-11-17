@@ -43,27 +43,19 @@ jobs:
         run: node tests/browser/run.mjs
 
       # Temporary diagnostics: dtrsv's block solve (dtrsv_small) gives wrong
-      # answers in Chrome on Windows (D3D12 on WARP) for every n > 1. With DXC
-      # off (FXC instead) it passes, and Tint's HLSL and DXC's DXIL for it read
-      # correctly. DXC with its optimizer off tells an optimizer miscompile
-      # (passes) from WARP running the DXIL wrongly (still fails).
-      - name: "Diagnose dtrsv: DXC off"
+      # answers in Chrome on Windows (D3D12 on WARP) for every n > 1 with DXC,
+      # optimizer on or off; with FXC it's right. These kernels have
+      # dtrsv_small's shape and change one thing at a time
+      # (tests/browser/diagnostics/dd-loop.diag.js); which come out wrong
+      # under DXC, and right under FXC as the control, narrows the cause.
+      - name: "Diagnose dtrsv: kernel variants, DXC"
+        if: always() && runner.os == 'Windows'
+        continue-on-error: true
+        run: node tests/browser/run.mjs tests/browser/diagnostics/dd-loop.diag.js
+
+      - name: "Diagnose dtrsv: kernel variants, FXC (control)"
         if: always() && runner.os == 'Windows'
         continue-on-error: true
         env:
           WGBLAS_BROWSER_ARGS: --disable-dawn-features=use_dxc
-        run: node tests/browser/run.mjs tests/dtrsv/src/test.dtrsv.js
-
-      # With the shader dump on too, but only its compile-flag lines printed:
-      # they show whether Chrome applied the toggle (SKIP_OPTIMIZATION).
-      - name: "Diagnose dtrsv: DXC on, optimizer off"
-        if: always() && runner.os == 'Windows'
-        continue-on-error: true
-        env:
-          WGBLAS_BROWSER_ARGS: --enable-dawn-features=d3d_skip_shader_optimizations,dump_shaders
-        run: |
-          status=0
-          node tests/browser/run.mjs tests/dtrsv/src/test.dtrsv.js > "$RUNNER_TEMP/dtrsv.log" 2>&1 || status=$?
-          grep -A4 "compile flags" "$RUNNER_TEMP/dtrsv.log" | sort | uniq -c
-          grep -E "✖|^browser:" "$RUNNER_TEMP/dtrsv.log" | head -40
-          exit $status
+        run: node tests/browser/run.mjs tests/browser/diagnostics/dd-loop.diag.js
