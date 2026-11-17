@@ -1,9 +1,9 @@
 // Forward error factor for dsymm — ssymm's shape (see tests/ssymm/helpers.js)
 // with dgemm's double-double coefficients (see tests/dgemm/helpers.js): A, B
 // and C each go through splitDoubleDouble before upload, so the dot-product
-// term gets (aOrder+2) and the beta*C term 2*eps. The symmetrize pass only
+// term gets (aOrder+2) and the beta*C term 3*eps (see tests/dgemm/helpers.js). The symmetrize pass only
 // copies values, so it adds no rounding of its own.
-//   (aOrder+2)*eps*|alpha|*Σ|A[i,p]*B[p,j]|  +  2*eps*|beta|*|C_in[i,j]|
+//   (aOrder+2)*eps*|alpha|*Σ|A[i,p]*B[p,j]|  +  3*eps*|beta|*|C_in[i,j]|
 const eps = 2 ** -48;
 
 // A[row,col] mirrored from whichever triangle (uplo) is actually stored.
@@ -42,7 +42,7 @@ export function forwardFactor(gpu, ref, a) {
       const cIn = Math.abs(matElem(C, ldc, layout, i, j));
       const bound =
         eps *
-        ((aOrder + 2) * Math.abs(alpha) * dotBound + 2 * Math.abs(beta) * cIn);
+        ((aOrder + 2) * Math.abs(alpha) * dotBound + 3 * Math.abs(beta) * cIn);
       if (bound === 0) {
         if (err !== 0) maxFactor = Infinity;
       } else maxFactor = Math.max(maxFactor, err / bound);

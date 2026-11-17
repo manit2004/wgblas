@@ -1,6 +1,7 @@
 // Requires f64/dekker.wgsl concatenated first for the DD struct, and
-// f64/utils/add.wgsl for fsub/negf (bitcast-based subtraction/negation) and,
-// for ddMulProtected at the bottom, fastTwoSumProtected.
+// f64/utils/add.wgsl for fsub/negf (bitcast-based subtraction/negation),
+// hide/dekkerZero (Metal's relaxed math) and, for ddMulProtected at the
+// bottom, fastTwoSumProtected.
 //
 // Use twoProdBit — verified universal (0 corrupting failures across 3000+
 // random trials on NVIDIA/Intel-Mesa-ANV/llvmpipe), no barrier protection
@@ -13,7 +14,7 @@
 // legitimately auto-fusing `x - y*z` into hardware FMA.
 const SPLIT_CONST: f32 = 4097.0;
 
-fn bitSplit(a: f32) -> DD {
+fn bitSplit(a: f32, zero: u32) -> DD {
   let bits = bitcast<u32>(a);
   // Top 11 mantissa bits, so hi carries 12 significant bits with the implicit
   // leading 1 — the halves are multiplied pairwise and f32 holds 24, so a
@@ -21,15 +22,24 @@ fn bitSplit(a: f32) -> DD {
   // Matches SPLIT_CONST = 2^12+1 used by the Veltkamp path below.
   let hiBits = bits & 0xFFFFF000u;
   let hi = bitcast<f32>(hiBits);
-  let lo = fsub(a, hi); // exact by Sterbenz's lemma (hi, a share an exponent, are close)
+  let lo = hide(fsub(a, hi), zero); // exact by Sterbenz's lemma (hi, a share an exponent, are close)
   return DD(hi, lo);
 }
 
+// Every input, product and partial difference goes through hide() (add.wgsl)
+// so Metal's relaxed math can't reassociate the chain or fuse a product into
+// the subtraction after it — the error term is only exact as written.
 fn twoProdBit(a: f32, b: f32) -> DD {
-  let s = a * b;
-  let aSplit = bitSplit(a);
-  let bSplit = bitSplit(b);
-  let e = fsub(fsub(fsub(fsub(s, aSplit.hi * bSplit.hi), aSplit.lo * bSplit.hi), aSplit.hi * bSplit.lo), aSplit.lo * bSplit.lo);
+  let z = dekkerZero();
+  let ha = hide(a, z);
+  let hb = hide(b, z);
+  let s = hide(ha * hb, z);
+  let aSplit = bitSplit(ha, z);
+  let bSplit = bitSplit(hb, z);
+  let e1 = hide(fsub(s, hide(aSplit.hi * bSplit.hi, z)), z);
+  let e2 = hide(fsub(e1, hide(aSplit.lo * bSplit.hi, z)), z);
+  let e3 = hide(fsub(e2, hide(aSplit.hi * bSplit.lo, z)), z);
+  let e = fsub(e3, hide(aSplit.lo * bSplit.lo, z));
   // Inf/NaN product: no error term (see isFiniteF in add.wgsl).
   return DD(s, select(0.0, negf(e), isFiniteF(s)));
 }

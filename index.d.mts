@@ -91,7 +91,8 @@ export { strsm } from "./src/strsm/strsm.mjs";
  * @param options.dumpShaders - Node-only. Forwards Dawn's `dump_shaders` debug toggle, printing
  *   each pipeline's WGSL and compiled backend IR (SPIR-V/Vulkan, MSL/Metal, or HLSL/D3D12,
  *   whichever Dawn picked) to stderr as it compiles. A Dawn passthrough, not a wgblas format —
- *   no effect in the browser, which gives pages no API to request compiled shader IR (default: `false`)
+ *   no effect in the browser, which gives pages no API to request compiled shader IR, or in Deno,
+ *   whose `navigator.gpu` is wgpu rather than Dawn (default: `false`)
  *
  * @see [Source code: init.mjs](https://github.com/manit2004/wgblas/blob/main/src/init.mjs#L18-L54)
  * @category Core

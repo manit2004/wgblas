@@ -1,4 +1,4 @@
-.PHONY: test test-gpu test-utils
+.PHONY: test test-gpu test-utils test-wgpu
 
 test:
 	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test --test-reporter=spec $$(find tests -name 'test.*.js')
@@ -19,3 +19,12 @@ test-%:
 
 test-gpu-%:
 	WGBLAS_POWER_PREFERENCE=$(ARGS) node --test tests/$*/src/gpustorage.$*.js
+
+# The same test files on wgpu (Firefox's WebGPU engine) instead of Dawn, run
+# by Deno (make install-deno) — see tests/wgpu/run.mjs. A more specific
+# pattern than test-% above, so it wins for `test-wgpu-*`.
+test-wgpu:
+	WGBLAS_POWER_PREFERENCE=$(ARGS) node tests/wgpu/run.mjs
+
+test-wgpu-%:
+	WGBLAS_POWER_PREFERENCE=$(ARGS) node tests/wgpu/run.mjs $$(find tests/$*/src -name 'test.*.js' -o -name 'gpustorage.*.js')

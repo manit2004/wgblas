@@ -1,7 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { init, cleanup, randomFloat32Array } from "wgblas";
-import { getPowerPreference } from "../../helpers/device.js";
+import { getPowerPreference, multiDevice } from "../../helpers/device.js";
 import { cscal } from "wgblas/cscal";
 import { loadParam, runValidation } from "../../helpers/validation.js";
 import { runFixtures } from "../../helpers/fixtures.js";
@@ -40,21 +40,31 @@ test("cscal validation", async (t) => {
   );
 });
 
-test("cscal reports gpuTimeMs in benchmark mode", async () => {
-  const bDevice = await init({
-    powerPreference: getPowerPreference(),
-    benchmark: true,
-  });
-  const result = await cscal(
-    bDevice,
-    2,
-    new Complex32(2, 0),
-    new Complex32Array([1, 1, 2, 2]),
-    1,
-  );
-  assert.equal(typeof result.gpuTimeMs, "number");
-  assert.ok(result.gpuTimeMs >= 0);
-});
+test(
+  "cscal reports gpuTimeMs in benchmark mode",
+  { skip: multiDevice },
+  async () => {
+    const bDevice = await init({
+      powerPreference: getPowerPreference(),
+      benchmark: true,
+    });
+    const result = await cscal(
+      bDevice,
+      2,
+      new Complex32(2, 0),
+      new Complex32Array([1, 1, 2, 2]),
+      1,
+    );
+    // Without timestamp queries (GitHub's macOS runners, for one) benchmark
+    // mode still runs, with no time to report.
+    if (bDevice.features.has("timestamp-query")) {
+      assert.equal(typeof result.gpuTimeMs, "number");
+      assert.ok(result.gpuTimeMs >= 0);
+    } else {
+      assert.equal(result.gpuTimeMs, undefined);
+    }
+  },
+);
 
 test("cscal fixtures", async (t) => {
   await runFixtures(

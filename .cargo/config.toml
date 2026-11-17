@@ -1,0 +1,11 @@
+# Rust is needed only for dev tooling, not by wgblas itself.
+#
+# tests/shaders/src/test.naga.js validates every shader with naga, the WGSL
+# compiler inside wgpu (Firefox's WebGPU). Install it once with Rust
+# (https://rustup.rs) from anywhere in this repo:
+#
+#   cargo install-naga        (or: make install-naga)
+#
+# Without naga on PATH or in ~/.cargo/bin, that test is skipped.
+[alias]
+install-naga = "install --locked naga-cli@30.0.2"
