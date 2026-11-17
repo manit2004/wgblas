@@ -27,7 +27,9 @@ if (process.argv[2] === "--kernel") {
   process.exit(r.dot === 11 ? 0 : 1);
 }
 
-const preload = fileURLToPath(new URL("./preload.mjs", import.meta.url));
+// A file: URL, not a path: --import resolves like import(), and a Windows
+// path (D:\...) reads as a URL with scheme "d:".
+const preload = new URL("./preload.mjs", import.meta.url).href;
 const run = spawnSync(
   process.execPath,
   [`--import=${preload}`, fileURLToPath(import.meta.url), "--kernel"],

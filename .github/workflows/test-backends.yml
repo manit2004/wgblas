@@ -225,9 +225,9 @@ jobs:
             backend: metal
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
-    # Non-blocking until a run shows the suite passes there: naga's HLSL and
-    # MSL haven't run anywhere else in CI.
-    continue-on-error: true
+    # macOS passes; Windows stays non-blocking until it does (test processes
+    # crash in the symv, trsv and dgemv-transpose kernels).
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     defaults:
       run:
         shell: bash
