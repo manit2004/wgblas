@@ -7,45 +7,25 @@
  * assets/
  *   docs/
  *     runner.js                     — browser execution layer, injected into every docs page
+ *     bench.js                      — the benchmark results viewer, loaded by runner.js
  *     google53e32ad8e8c1b544.html   — Google Search Console site verification
- *   benchmarks/
- *     <gpu-slug>/
- *       <routine>/
- *         gbps-<variant>.svg, ms-<variant>.svg   — generated chart images
- *       roofline/
- *         roofline.svg              — generated roofline chart
  *   routines/
  *     routine_params.json           — every routine's parameters, tagged by role
  *     params.json                   — which parameters are worth a benchmark sweep
  * ```
  *
- * ## `benchmarks/`
- *
- * Pure generated output — never edit by hand; rerun the generator instead.
- *
- * - **`<gpu-slug>/<routine>/`** — written by `scripts/gen-bench-tables.py`
- *   (`make bench-tables`) from `benchmarks/results/`: one GB/s chart and one
- *   ms chart per result table, named after the table's variant — `-default`
- *   for the base size sweep, then one per sweep value (`-alpha0`,
- *   `-stride32`, `-trans-no-transpose-transpose`, `-ldb-transpose-pad8`, …).
- * - **`<gpu-slug>/roofline/roofline.svg`** — written by
- *   `python3 scripts/roofline.py --svg`, only for GPUs that have the roofline
- *   probe results (currently the GTX 1650 and the Intel Iris Xe).
- *
- * The generated pages under `benchmarks/bench-result/` link these by
- * relative path; TypeDoc copies each linked image into `docs/media/` when it
- * builds the site. See the `benchmarks` module for how the results are
- * produced.
- *
  * ## `routines/`
  *
  * Planning data for the benchmark sweeps, kept as JSON so it can be read by
- * tools as well as people. Nothing in the build reads it.
+ * tools as well as people. The roofline reads `routine_params.json`'s levels
+ * and FLOP counts (`benchmarks/results-reader.mjs`); nothing else reads them.
  *
  * - **`routine_params.json`** — each routine's real parameters (from
  *   `src/<routine>/<routine>.mjs`) with its BLAS level and each parameter's
  *   role: `size`, `scalar`, `increment`, `leading-dimension`, `flag`,
- *   `layout` or `data`.
+ *   `layout` or `data`; and, for routines whose benchmarks record bytes but
+ *   not FLOPs, `flops`: the standard BLAS FLOP count as a formula over the
+ *   sizes a result row records (`n`, `m`, `k`, `order`) and `bytes`.
  * - **`params.json`** — derived from it: every unique parameter name,
  *   the ones excluded as sweep axes (`data`, and `size`, which every
  *   benchmark already sweeps), and the remaining sweep candidates grouped by

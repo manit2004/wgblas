@@ -24,6 +24,7 @@
   },
   "files": [
     "docs-mcp.mjs",
+    "results-reader.mjs",
     "api.json",
     "README.md",
     "LICENSE"
@@ -36,6 +37,6 @@
     "zod": "^4.6.7"
   },
   "scripts": {
-    "prepack": "cp ../docs/api.json ./api.json && cp ../LICENSE ./LICENSE"
+    "prepack": "cp ../docs/api.json ./api.json && cp ../LICENSE ./LICENSE && cp ../benchmarks/results-reader.mjs ./results-reader.mjs"
   }
 }

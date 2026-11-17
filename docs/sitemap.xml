@@ -39,7 +39,10 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_device.requireGpuDevice.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_device.requireSameDevice.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_f64.mergeDoubleDouble.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_f64.mergeDoubleDoubleExact.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_f64.splitDoubleDouble.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_finite.hasNonFinite.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_finite.triangleHasNonFinite.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_pipeline.getPipeline.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_pipeline.loadShader.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/devdocs_utility-functions_result.extractResult.html</loc></url>
@@ -63,10 +66,13 @@
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.drotm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dscal.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dswap.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsymm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsymv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyr2.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyr2k.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dsyrk.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/functions/docs.dtrmm.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dtrmv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.dtrsv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/functions/docs.gpuName.html</loc></url>
@@ -125,102 +131,8 @@
   <url><loc>https://manit2004.github.io/wgblas/modules.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/assets.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_isamax.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_sasum.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_saxpy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_scopy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_sdot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_sgemv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_snrm2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_srot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_srotm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_sscal.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_sswap.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_ssymv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_amd-radeon-780m-graphics-radv-phoenix_strmv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_dasum.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_daxpy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_idamax.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_isamax.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_sasum.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_saxpy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_scopy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_sdot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_sgemmtr.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_sgemv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_sger.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_snrm2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_srot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_srotm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_sscal.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_sswap.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_ssymv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_ssyr.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_ssyr2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_ssyr2k.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_strmm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_strmv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_intel-r-iris-r-xe-graphics-tgl-gt2_strsv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_cscal.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dasum.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_daxpy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dcopy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ddot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dgemm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dgemv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dger.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dnrm2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_drot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_drotm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dscal.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dswap.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dsymv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dsyr.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dsyr2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dtrmv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_dtrsv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_idamax.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_isamax.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sasum.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_saxpy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_scopy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sdot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sgemm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sgemmtr.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sgemv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sger.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_snrm2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_srot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_srotm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sscal.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_sswap.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ssymm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ssymv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ssyr.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ssyr2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ssyr2k.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_ssyrk.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_strmm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_strmv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_strsm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-gtx-1650_strsv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_isamax.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_sasum.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_saxpy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_scopy.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_sdot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_sgemv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_snrm2.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_srot.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_srotm.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_sscal.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_sswap.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_ssymv.html</loc></url>
-  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_nvidia-geforce-rtx-4060-laptop-gpu_strmv.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_results.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_roofline.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/benchmarks_utils.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_blas-routines.html</loc></url>
@@ -235,6 +147,7 @@
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_constants.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_device.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_f64.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_finite.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_pipeline.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_result.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/modules/devdocs_utility-functions_strided.html</loc></url>
@@ -264,6 +177,7 @@
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsymv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyr.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyr2.html</loc></url>
+  <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyr2k.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dsyrk.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dtrmv.html</loc></url>
   <url><loc>https://manit2004.github.io/wgblas/variables/devdocs_shaders.routineShaders.dtrsv.html</loc></url>

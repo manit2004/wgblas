@@ -10,6 +10,10 @@
 //                                           routine "roofline" for each GPU's
 //                                           roofline table
 //
+// get_benchmarks reads the benchmark result JSON itself, with the module the
+// docs site's results page uses (results-reader.mjs): from GitHub, or from the
+// directory in WGBLAS_RESULTS_DIR (e.g. a checkout's benchmarks/results).
+//
 // Where the docs come from, by WGBLAS_DOCS_JSON:
 //   unset         serve the copy bundled with this package right away, and
 //                 fetch the live one from the wgblas docs site in the
@@ -26,6 +30,13 @@ import { z } from "zod";
 const SITE_JSON = "https://manit2004.github.io/wgblas/api.json";
 const BUNDLED_JSON = new URL("./api.json", import.meta.url);
 const FETCH_TIMEOUT_MS = 120_000;
+
+// The benchmark results reader, shared with the docs site's results page:
+// bundled beside this file in the published package (see package.json's
+// prepack), or the repo's own copy when run from a checkout.
+const reader = await import("./results-reader.mjs").catch(
+  () => import("../benchmarks/results-reader.mjs"),
+);
 
 const pkg = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf8"),
@@ -229,33 +240,6 @@ function render(entry) {
   return out.join("\n");
 }
 
-// A benchmarks/<gpu>/<routine> module's summary is its whole results page, as
-// markdown: the default-size table, a "See also" list, then one "## <param>
-// sweep" section per swept parameter, its tables in <details> blocks. Split it
-// into those sections, minus the chart images (relative links into the docs
-// site), with each <details> block's <summary> turned into a heading one level
-// below the block it's nested in.
-function benchSections(node) {
-  let depth = 0;
-  const lines = [];
-  for (const l of text(node.comment?.summary).split("\n")) {
-    if (l === "<details>") depth++;
-    else if (l === "</details>") depth--;
-    else if (!l.startsWith("![")) {
-      const summary = l.match(/^<summary>(.*)<\/summary>$/)?.[1];
-      lines.push(summary ? `${"#".repeat(2 + depth)} ${summary}` : l);
-    }
-  }
-  const md = lines.join("\n").replace(/\n{3,}/g, "\n\n");
-  const sections = [];
-  for (const chunk of md.split(/^(?=## )/m)) {
-    const heading = chunk.match(/^## (.*)/)?.[1];
-    if (heading && heading !== "See also")
-      sections.push({ heading, body: chunk.trim() });
-  }
-  return sections;
-}
-
 const reply = (s) => ({ content: [{ type: "text", text: s }] });
 
 // Every tool answers this until some docs have loaded (only possible with no
@@ -265,6 +249,125 @@ const notLoaded = () =>
     "The wgblas docs are still loading — try again in a few seconds. " +
       "(Set WGBLAS_DOCS_JSON to a local api.json to skip the download.)",
   );
+
+// ── Benchmark results ───────────────────────────────────────────────────────
+
+const resultsSource = process.env.WGBLAS_RESULTS_DIR
+  ? reader.localSource(process.env.WGBLAS_RESULTS_DIR)
+  : reader.githubSource();
+
+// Listing the results from GitHub costs API calls (60 an hour per address), so
+// the catalog is reused for a while; the files themselves are read each time.
+const CATALOG_TTL_MS = 10 * 60_000;
+let catalogCache = null;
+function resultsCatalog() {
+  if (!catalogCache || Date.now() - catalogCache.at > CATALOG_TTL_MS) {
+    const value = resultsSource.list().then(reader.catalog);
+    catalogCache = { at: Date.now(), value };
+    value.catch(() => {
+      catalogCache = null;
+    });
+  }
+  return catalogCache.value;
+}
+
+// Earlier names for sweeps, from the generated pages this replaced.
+const SWEEP_ALIASES = { transpose: "trans", c: "cosine", s: "sine" };
+
+const fmt = (v, digits) => (typeof v === "number" ? v.toFixed(digits) : "—");
+
+// One sweep as markdown tables, one per configuration: per library its time
+// and rates, then wgblas as a % of cuBLAS (GB/s over GB/s; above 100% is
+// faster).
+function sweepMarkdown({ info, configs }) {
+  const hasCuda = configs.some((c) => c.rows.some((row) => row.cuda));
+  const metrics = [
+    "compute_ms",
+    ...info.metrics.filter((m) => m !== "compute_ms"),
+  ].filter((m) => info.metrics.includes(m));
+  const backends = hasCuda ? ["wgblas", "cuda"] : ["wgblas"];
+  const header = [
+    info.x,
+    ...info.otherKeys,
+    ...backends.flatMap((b) =>
+      metrics.map((m) => `${reader.BACKENDS[b]} ${reader.METRICS[m].label}`),
+    ),
+    ...(hasCuda ? ["% of cuBLAS"] : []),
+  ];
+  const table = (rows) =>
+    [
+      `| ${header.join(" | ")} |`,
+      `|${header.map(() => "---").join("|")}|`,
+      ...rows.map((row) => {
+        const cells = [
+          row.x,
+          ...info.otherKeys.map((k) => row.other[k] ?? "—"),
+          ...backends.flatMap((b) =>
+            metrics.map((m) => fmt(row[b]?.[m], reader.METRICS[m].digits)),
+          ),
+          ...(hasCuda
+            ? [row.pct === null ? "—" : `${row.pct.toFixed(1)}%`]
+            : []),
+        ];
+        return `| ${cells.join(" | ")} |`;
+      }),
+    ].join("\n");
+  return configs
+    .map((c) =>
+      configs.length > 1 ? `### ${c.label}\n\n${table(c.rows)}` : table(c.rows),
+    )
+    .join("\n\n");
+}
+
+async function routineMarkdown(sweeps, sweep) {
+  const names = [...sweeps.keys()].filter((n) => n !== "base");
+  if (!sweep) {
+    const base = sweeps.get("base");
+    return [
+      base
+        ? `## Base run\n\n${sweepMarkdown(await reader.readSweep(resultsSource, base))}`
+        : "No base run.",
+      names.length
+        ? `Sweeps: ${names.join(", ")} — pass sweep to get one.`
+        : "No parameter sweeps.",
+    ];
+  }
+  let key = sweep
+    .toLowerCase()
+    .trim()
+    .replace(/ sweep$/, "");
+  key = SWEEP_ALIASES[key] ?? key;
+  const name = names.find((n) => n.toLowerCase() === key);
+  if (!name)
+    return [`No ${sweep} sweep. Sweeps: ${names.join(", ") || "none"}.`];
+  return [
+    `## ${name} sweep\n\n${sweepMarkdown(await reader.readSweep(resultsSource, sweeps.get(name)))}`,
+  ];
+}
+
+function rooflineMarkdown(roof) {
+  const lines = [
+    `Memory roof ${roof.peak_GBs.toFixed(1)} GB/s, compute roof ${roof.peak_GFLOPs.toFixed(0)} GFLOP/s ` +
+      `(${roof.roof_source}); ridge point ${roof.ridge_FLOP_per_byte.toFixed(2)} FLOP/byte. A routine left of ` +
+      "the ridge can only be memory-bound. Each row is the routine's largest size in its base run; intensity " +
+      "assumes perfect caching (exact for Level 1 and 2, an upper bound for tiled Level 3).",
+    "",
+    "| routine | level | size | FLOP/byte | GFLOP/s | GB/s | % of roof | bound |",
+    "|---|---|---|---|---|---|---|---|",
+    ...roof.routines.map(
+      (r) =>
+        `| ${r.routine}${r.flops_measured ? "" : " *"} | ${r.level} | ${r.size} | ` +
+        `${r.arithmetic_intensity.toFixed(3)} | ${r.compute_GFLOPs.toFixed(1)} | ` +
+        `${r.compute_GBs.toFixed(1)} | ${r.pct_of_roof.toFixed(0)}% | ${r.bound} |`,
+    ),
+  ];
+  if (roof.routines.some((r) => !r.flops_measured))
+    lines.push(
+      "",
+      "\\* FLOP count from assets/routines/routine_params.json: these benchmarks record bytes only.",
+    );
+  return lines.join("\n");
+}
 
 const server = new McpServer({ name: "wgblas-docs", version: pkg.version });
 
@@ -355,21 +458,13 @@ server.registerTool(
   {
     description:
       "List the modules of the wgblas docs with their summaries and member counts " +
-      "('docs' is the public API). Per-GPU benchmark-result modules are collapsed to one line per GPU.",
+      "('docs' is the public API). Benchmark results aren't modules: read them with get_benchmarks.",
     inputSchema: {},
   },
   async () => {
     if (!docs) return notLoaded();
-    // benchmarks/<gpu>/<routine> result modules: ~100 near-identical lines, so
-    // one line per GPU instead — search_docs reaches the individual ones.
-    const perGpu = new Map();
     const lines = [];
     for (const m of docs.api.children ?? []) {
-      const gpu = m.name.match(/^benchmarks\/([^/]+)\//)?.[1];
-      if (gpu) {
-        perGpu.set(gpu, (perGpu.get(gpu) ?? 0) + 1);
-        continue;
-      }
       const members = m.children?.length
         ? `${m.children.length} members`
         : "docs page";
@@ -377,10 +472,6 @@ server.registerTool(
         `${m.name} (${members}) — ${firstLine(summary(m)) || "(no summary)"}`,
       );
     }
-    for (const [gpu, count] of perGpu)
-      lines.push(
-        `benchmarks/${gpu}/* (${count} routine result modules) — per-routine benchmark results on this GPU; read them with get_benchmarks (routine "roofline" for the GPU's roofline)`,
-      );
     return reply(lines.join("\n"));
   },
 );
@@ -389,9 +480,10 @@ server.registerTool(
   "get_benchmarks",
   {
     description:
-      "Benchmark results for one wgblas routine: wgblas vs cuBLAS time (ms), throughput (GB/s) and efficiency " +
-      "per problem size, on each GPU with results. Without sweep, returns the default-size table per GPU and " +
-      "names the parameter sweeps available; with sweep, returns that sweep's tables instead. " +
+      "Benchmark results for one wgblas routine: wgblas vs cuBLAS time (ms), throughput (GB/s, and GFLOP/s " +
+      "where recorded) and wgblas as a % of cuBLAS, per problem size, on each GPU with results, read from the " +
+      "result JSON committed to the wgblas repo. Without sweep, returns the base-run table per GPU and names " +
+      "the parameter sweeps available; with sweep, returns that sweep's tables instead, one per configuration. " +
       "routine 'roofline' returns each GPU's roofline instead: its memory and compute roofs, ridge point, and " +
       "every routine's arithmetic intensity, achieved GFLOP/s and GB/s, and % of roof.",
     inputSchema: {
@@ -416,57 +508,50 @@ server.registerTool(
     },
   },
   async ({ routine, gpu, sweep }) => {
-    if (!docs) return notLoaded();
-    const r = routine.toLowerCase();
-    // The roofline isn't a routine: it's the "## Roofline" section of each
-    // GPU's own benchmarks/<gpu> page.
-    const roofline = r === "roofline";
-    const all = [];
-    for (const m of docs.api.children ?? []) {
-      if (roofline) {
-        const g = m.name.match(/^benchmarks\/([^/]+)$/)?.[1];
-        const section =
-          g && benchSections(m).find((s) => s.heading === "Roofline");
-        if (section) all.push({ gpu: g, section });
-        continue;
-      }
-      const [, g, name] = m.name.match(/^benchmarks\/([^/]+)\/([^/]+)$/) ?? [];
-      if (g && name.toLowerCase() === r) all.push({ gpu: g, node: m });
+    let cat;
+    try {
+      cat = await resultsCatalog();
+    } catch (err) {
+      // GitHub's API allows 60 unauthenticated calls an hour per address.
+      const limited = /HTTP (403|429)/.test(err.message)
+        ? " GitHub's API limit for this address was reached; it resets within the hour. " +
+          "Set WGBLAS_RESULTS_DIR to a checkout's benchmarks/results to read them from disk instead."
+        : "";
+      return reply(
+        `Couldn't list the benchmark results (${err.message}).${limited} They're on GitHub in ` +
+          "https://github.com/manit2004/wgblas/tree/main/benchmarks/results.",
+      );
     }
+    const r = routine.toLowerCase();
+    const roofline = r === "roofline";
+    const all = [...cat].filter(([, g]) =>
+      roofline ? reader.hasRoofline(g) : g.routines.has(r),
+    );
     if (!all.length)
       return reply(
         `No benchmark results for "${routine}". Try search_docs to find the routine's name.`,
       );
-    const gpus = gpu
-      ? all.filter((b) =>
-          b.gpu.includes(gpu.toLowerCase().trim().replace(/\s+/g, "-")),
-        )
-      : all;
+    const want = gpu?.toLowerCase().trim().replace(/\s+/g, "-");
+    const gpus = want ? all.filter(([slug]) => slug.includes(want)) : all;
     if (!gpus.length)
       return reply(
-        `No GPU matching "${gpu}" has ${routine} results. GPUs with results: ${all.map((b) => b.gpu).join(", ")}.`,
+        `No GPU matching "${gpu}" has ${routine} results. GPUs with results: ${all.map(([slug]) => slug).join(", ")}.`,
       );
-    const out = gpus.map(({ gpu: g, node, section }) => {
-      // Minus the note on zooming the chart, which isn't here.
-      if (roofline)
-        return `# roofline on ${g}\n\n${section.body.replace(/^> .*chart zooms.*\n\n/m, "")}`;
-      const [main, ...sweeps] = benchSections(node);
-      const names = sweeps.map((s) => s.heading.replace(/ sweep$/i, ""));
-      const head = `# ${r} on ${g}`;
-      if (!sweep)
-        return [
-          head,
-          main?.body ?? "(no results table)",
-          names.length
-            ? `Sweeps: ${names.join(", ")} — pass sweep to get one.`
-            : "No parameter sweeps.",
-        ].join("\n\n");
-      const want = sweep.toLowerCase().replace(/ sweep$/, "");
-      const hit = sweeps.filter((s, i) => names[i].toLowerCase() === want);
-      return hit.length
-        ? [head, ...hit.map((s) => s.body)].join("\n\n")
-        : `${head}\n\nNo ${sweep} sweep. Sweeps: ${names.join(", ") || "none"}.`;
-    });
+    const out = await Promise.all(
+      gpus.map(async ([slug, g]) => {
+        const head = `# ${r} on ${g.name} (${slug})`;
+        try {
+          if (roofline)
+            return `${head}\n\n${rooflineMarkdown(await reader.readRoofline(resultsSource, g))}`;
+          return [
+            head,
+            ...(await routineMarkdown(g.routines.get(r), sweep)),
+          ].join("\n\n");
+        } catch (err) {
+          return `${head}\n\nCouldn't read the results (${err.message}).`;
+        }
+      }),
+    );
     return reply(out.join("\n\n---\n\n"));
   },
 );

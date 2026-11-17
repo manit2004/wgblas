@@ -1,4 +1,4 @@
-// Peak FP32 throughput probe — the compute roof for scripts/roofline.py.
+// Peak FP32 throughput probe — the roofline's compute roof (benchmarks/roofline).
 //
 // A roofline needs a compute ceiling, and taking it from the BLAS kernels
 // themselves is circular: whichever kernel is fastest defines the roof and then

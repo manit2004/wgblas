@@ -2,7 +2,7 @@ include tests/tests.mk
 include benchmarks/bench.mk
 include examples/examples.mk
 
-.PHONY: typecheck protect-results bench-tables check-links install-tools install-naga install-deno install-shader-tools publish-docs repl help
+.PHONY: typecheck protect-results check-links install-tools install-naga install-deno install-shader-tools publish-docs repl help
 
 repl:
 	node repl.mjs
@@ -12,7 +12,6 @@ help:
 	@echo ""
 	@echo "  repl                  Start interactive REPL with all BLAS functions pre-bound"
 	@echo "  typecheck             Verify public API types are aligned (tsc --noEmit)"
-	@echo "  bench-tables          Fetch benchmark JSONs from GitHub and regenerate assets/bench-result/**/*.md"
 	@echo "  protect-results       Prevent benchmark re-runs from dirtying git status (run once after clone)"
 	@echo "  check-links           Check all markdown and docs HTML links with lychee"
 	@echo "  publish-docs          Enforce correct order: guard uncommitted changes → build docs → commit → push"
@@ -32,11 +31,10 @@ publish-docs:
 typecheck:
 	npx tsc --noEmit
 
-bench-tables:
-	python3 scripts/gen-bench-tables.py
-
+# The result JSON only: benchmarks/results/index.mjs is the docs page, whose
+# edits should show.
 protect-results:
-	git ls-files benchmarks/results/ | xargs git update-index --skip-worktree
+	git ls-files 'benchmarks/results/*.json' | xargs git update-index --skip-worktree
 
 check-links:
 	lychee --exclude-path node_modules "**/*.md" "docs/**/*.html"

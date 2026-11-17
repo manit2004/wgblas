@@ -782,7 +782,7 @@ struct DD {
 `;
     });
   var We,
-    Yt = ur(() => {
+    Xt = ur(() => {
       We = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // |a| for a double-double pair. Negation is exact (no rounding), so this is
@@ -796,7 +796,7 @@ fn ddAbs(a: DD) -> DD {
 `;
     });
   var Zr,
-    Xt = ur(() => {
+    Yt = ur(() => {
       Zr = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // \u2500\u2500 A real compiler bug \u2014 read before touching anything below \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -1010,9 +1010,9 @@ fn dasum_main(
 }
 `;
     });
-  var Ye,
+  var Xe,
     Qt = ur(() => {
-      Ye = `// sum reduction (f64, double-double): collapses 2*WGS partial (hi, lo) pairs
+      Xe = `// sum reduction (f64, double-double): collapses 2*WGS partial (hi, lo) pairs
 // into one, using ddAddProtected instead of plain f32 \`+\` (see
 // reduction/sum.wgsl for the f32 original this mirrors).
 // dispatch: 1 workgroup of WGS threads. partialsHi/partialsLo must have
@@ -1566,9 +1566,9 @@ fn daxpy_main(
 }
 `;
     });
-  var Xe,
+  var Ye,
     lo = ur(() => {
-      Xe = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
+      Ye = `// Requires f64/dekker.wgsl concatenated first for the DD struct.
 
 // a > b for double-double pairs. hi dominates (|lo| <= ulp(hi)/2 always), so
 // comparing hi alone is correct except on an exact hi tie, when lo breaks it.
@@ -3611,9 +3611,9 @@ fn main(
 }
 `;
     });
-  var Yo,
+  var Xo,
     Zo = ur(() => {
-      Yo = `// sger: A := alpha * x * y^T + A  (rank-1 update, A is m\xD7n general/dense)
+      Xo = `// sger: A := alpha * x * y^T + A  (rank-1 update, A is m\xD7n general/dense)
 
 @group(0) @binding(0) var<storage, read>       x: array<f32>;
 @group(0) @binding(1) var<storage, read>       y: array<f32>;
@@ -3682,7 +3682,7 @@ fn main(
 `;
     });
   var $o,
-    Xo = ur(() => {
+    Yo = ur(() => {
       $o = `// dger: A := alpha * x * y^T + A, double-double (Dekker) f64 emulation of
 // sger (rank-1 update). x, y, A, and alpha are each split into an f32
 // (hi, lo) pair; WGSL has no f64 type. One workgroup per row of A
@@ -5188,8 +5188,7 @@ fn dtrmv_t_main(
 // owner publishes it as x_j, and every row below folds it in,
 // b_i -= L_ij\xB7x_j. The protected ops carry a workgroupBarrier(), so every
 // thread makes the same calls and selects \u2014 strsm_small.wgsl's 4\xD74 chunking
-// would add protected ops, not save barriers. Each step's L_ij load is
-// issued a step ahead, off the dependency chain. (The per-column inversion
+// would add protected ops, not save barriers. (The per-column inversion
 // this replaced ran a 64-lane tree reduction plus a division per step:
 // ~38 barriers per step against ~9 here.)
 
@@ -5273,12 +5272,17 @@ fn dtrsv_small_main(
   }
   var xi = DD(0.0, 0.0); // rows above jStart are structural zeros
 
+  // L_ij for the next step is loaded at the end of this one, after \`a\`'s last
+  // use, so its latency overlaps the step boundary. Not loaded a step ahead at
+  // the top (\`let a = aNext; aNext = load(j + 1)\`, both alive at once): D3D12's
+  // WARP ran DXC's code for that with \`a\` already holding the next step's
+  // value \u2014 every n > 1 solved wrongly in Chrome on Windows, optimizer on or
+  // off, while FXC's code was right (tests/browser/diagnostics/dd-loop.diag.js
+  // isolates it). Loading in-step instead was ~13% slower for n <= 128.
   let jStart = select(0u, c0, inv);
-  var aNext = loadA(rowBase + select(jStart, len - 1u - jStart, back) * params.aCs);
+  var aCur = loadA(rowBase + select(jStart, len - 1u - jStart, back) * params.aCs);
   for (var j = jStart; j < len; j++) {
-    let a = aNext;
-    let jn = min(j + 1u, len - 1u);
-    aNext = loadA(rowBase + select(jn, len - 1u - jn, back) * params.aCs);
+    let a = aCur;
 
     // skipZero (dtrsv/strsv, when the solve is transposed in the row-major frame \u2014
     // the column-by-column form of reference BLAS and stdlib): an unknown whose
@@ -5301,6 +5305,8 @@ fn dtrsv_small_main(
     let aj = ddSelect(a, DD(0.0, 0.0), skip && isZeroBits(xj.hi) && isZeroBits(xj.lo));
     let nb = ddSubProtected(b, ddMulProtected(aj, xj, tid), tid);
     b = ddSelect(b, nb, i > j);
+    let jn = min(j + 1u, len - 1u); // the last step reloads its own; unused
+    aCur = loadA(rowBase + select(jn, len - 1u - jn, back) * params.aCs);
   }
 
   if (live) {
@@ -6577,8 +6583,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       qt();
       Vt();
       Zt();
-      Yt();
       Xt();
+      Yt();
       $t();
       Qt();
       ro();
@@ -6610,7 +6616,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       Vo();
       Uo();
       Zo();
-      Xo();
+      Yo();
       Jo();
       ra();
       ta();
@@ -6647,14 +6653,14 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         "f64/utils/abs": We,
         "f64/utils/add": Zr,
         dasum: Jt,
-        "reduction/sumF64": Ye,
+        "reduction/sumF64": Xe,
       };
       br.ddot = {
         "f64/dekker": zr,
         "f64/utils/add": Zr,
         "f64/utils/multiply": $r,
         ddot: oo,
-        "reduction/sumF64": Ye,
+        "reduction/sumF64": Xe,
       };
       br.dscal = {
         "f64/dekker": zr,
@@ -6671,7 +6677,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       br.idamax = {
         "f64/dekker": zr,
         "f64/utils/abs": We,
-        "f64/utils/greater": Xe,
+        "f64/utils/greater": Ye,
         "f64/utils/equal": fo,
         idamax: po,
         "reduction/argmaxF64": wo,
@@ -6693,7 +6699,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       br.dnrm2 = {
         "f64/dekker": zr,
         "f64/utils/abs": We,
-        "f64/utils/greater": Xe,
+        "f64/utils/greater": Ye,
         "f64/utils/add": Zr,
         "f64/utils/multiply": $r,
         "f64/utils/divide": $e,
@@ -6715,7 +6721,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         scatter_strided: Qe,
         strsm_small: rt,
       };
-      br.sger = { sger: Yo, gather_strided: le };
+      br.sger = { sger: Xo, gather_strided: le };
       br.dger = {
         "f64/dekker": zr,
         "f64/utils/add": Zr,
@@ -6820,7 +6826,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     dgemmtr: () => _s,
     dgemv: () => gs,
     dger: () => ms,
-    dnrm2: () => Xa,
+    dnrm2: () => Ya,
     drot: () => rs,
     drotm: () => ts,
     dscal: () => Ha,
@@ -6849,7 +6855,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     sgemmtr: () => Gs,
     sgemv: () => os,
     sger: () => ds,
-    snrm2: () => Ya,
+    snrm2: () => Xa,
     srot: () => Qa,
     srotm: () => es,
     sscal: () => Ta,
@@ -6907,7 +6913,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       { tsReadBuffer: t, resolveBuffer: o, querySet: e }
     );
   }
-  async function X(r) {
+  async function Y(r) {
     if (!r) return;
     let { tsReadBuffer: a, resolveBuffer: e, querySet: o } = r;
     await a.mapAsync(GPUMapMode.READ);
@@ -7718,7 +7724,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let l = N(r, i.getBindGroupLayout(0), [u, n]),
         { commandEncoder: m, ts: w } = Sr(r, i, l, Rr(r, a));
       ((d = s ? null : I(r, m, u)), $(r, m));
-      let p = await X(w);
+      let p = await Y(w);
       if (s) return p !== void 0 ? { gpuTimeMs: p } : {};
       let c = await G(d, Float32Array);
       return ((d = null), p !== void 0 ? { x: c, gpuTimeMs: p } : { x: c });
@@ -7768,7 +7774,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let l = N(r, i.getBindGroupLayout(0), [u, n]),
         { commandEncoder: m, ts: w } = Sr(r, i, l, Rr(r, a));
       ((d = s ? null : I(r, m, u)), $(r, m));
-      let p = await X(w);
+      let p = await Y(w);
       if (s) return p !== void 0 ? { gpuTimeMs: p } : {};
       let c = await G(d, Float32Array);
       d = null;
@@ -7825,7 +7831,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let h = N(r, u.getBindGroupLayout(0), [l, m, w]),
         { commandEncoder: g, ts: b } = Sr(r, u, h, Rr(r, a));
       ((p = s ? null : I(r, g, l)), (c = s ? null : I(r, g, m)), $(r, g));
-      let x = await X(b);
+      let x = await Y(b);
       if (s) return x !== void 0 ? { gpuTimeMs: x } : {};
       let B = await G(p, Float32Array);
       p = null;
@@ -7885,7 +7891,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let c = N(r, n.getBindGroupLayout(0), [d, l, m]),
         { commandEncoder: h, ts: g } = Sr(r, n, c, Rr(r, a));
       ((w = i ? null : I(r, h, d)), (p = u ? null : I(r, h, l)), $(r, h));
-      let b = await X(g);
+      let b = await Y(g);
       if (i) return b !== void 0 ? { gpuTimeMs: b } : {};
       let x = await G(w, Float32Array);
       w = null;
@@ -7965,7 +7971,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         (g = u ? null : I(r, B, m)),
         (b = u ? null : I(r, B, w)),
         $(r, B));
-      let k = await X(v);
+      let k = await Y(v);
       if (i) return k !== void 0 ? { gpuTimeMs: k } : {};
       let _ = await G(c, Float32Array);
       c = null;
@@ -8046,7 +8052,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let c = N(r, d.getBindGroupLayout(0), [l, m, w]),
         { commandEncoder: h, ts: g } = Sr(r, d, c, Rr(r, a));
       ((p = n ? null : I(r, h, m)), $(r, h));
-      let b = await X(g);
+      let b = await Y(g);
       if (n) return b !== void 0 ? { gpuTimeMs: b } : {};
       let x = await G(p, Float32Array);
       return ((p = null), b !== void 0 ? { y: x, gpuTimeMs: b } : { y: x });
@@ -8124,7 +8130,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let v = N(r, l.getBindGroupLayout(0), [p, c, h, g, b]),
         { commandEncoder: k, ts: _ } = Sr(r, l, v, Rr(r, a));
       ((x = n ? null : I(r, k, h)), (B = n ? null : I(r, k, g)), $(r, k));
-      let S = await X(_);
+      let S = await Y(_);
       if (n) return S !== void 0 ? { gpuTimeMs: S } : {};
       let T = await G(x, Float32Array);
       x = null;
@@ -8189,7 +8195,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let p = N(r, n.getBindGroupLayout(0), [d, l, m]),
         { commandEncoder: c, ts: h } = Sr(r, n, p, Rr(r, a));
       ((w = u ? null : I(r, c, l)), $(r, c));
-      let g = await X(h);
+      let g = await Y(h);
       if (u) return g !== void 0 ? { gpuTimeMs: g } : {};
       let b = await G(w, Float32Array);
       return ((w = null), g !== void 0 ? { y: b, gpuTimeMs: g } : { y: b });
@@ -8258,7 +8264,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let g = N(r, n.getBindGroupLayout(0), [d, l, m, w, p]),
         { commandEncoder: b, ts: x } = Sr(r, n, g, Rr(r, a));
       ((c = u ? null : I(r, b, m)), (h = u ? null : I(r, b, w)), $(r, b));
-      let B = await X(x);
+      let B = await Y(x);
       if (u) return B !== void 0 ? { gpuTimeMs: B } : {};
       let v = await G(c, Float32Array);
       c = null;
@@ -8336,7 +8342,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ((h = I(r, x, p)), $(r, x));
       let v = G(h, Float32Array);
       h = null;
-      let [k, _] = await Promise.all([X(B), v]);
+      let [k, _] = await Promise.all([Y(B), v]);
       return k !== void 0 ? { dot: _[0], gpuTimeMs: k } : { dot: _[0] };
     } finally {
       (!i && l && f(l),
@@ -8391,7 +8397,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ((m = I(r, c, d)), $(r, c));
       let g = G(m, Float32Array);
       m = null;
-      let [b, x] = await Promise.all([X(h), g]);
+      let [b, x] = await Promise.all([Y(h), g]);
       return b !== void 0 ? { asum: x[0], gpuTimeMs: b } : { asum: x[0] };
     } finally {
       (!t && u && f(u), n && f(n), d && f(d), l && f(l), m && f(m));
@@ -8455,7 +8461,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let k = G(h, Float32Array),
         _ = G(g, Float32Array);
       ((h = null), (g = null));
-      let [S, T, D] = await Promise.all([X(v), k, _]),
+      let [S, T, D] = await Promise.all([Y(v), k, _]),
         A = Jr(T, D)[0];
       return S !== void 0 ? { asum: A, gpuTimeMs: S } : { asum: A };
     } finally {
@@ -8548,7 +8554,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let A = G(v, Float32Array),
         L = G(k, Float32Array);
       ((v = null), (k = null));
-      let [E, M, P] = await Promise.all([X(D), A, L]),
+      let [E, M, P] = await Promise.all([Y(D), A, L]),
         H = Jr(M, P)[0];
       return E !== void 0 ? { dot: H, gpuTimeMs: E } : { dot: H };
     } finally {
@@ -8565,7 +8571,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         k && f(k));
     }
   }
-  async function Ya(r, a, e, o) {
+  async function Xa(r, a, e, o) {
     let t = e instanceof Z;
     if (
       (J(r),
@@ -8609,14 +8615,14 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ((m = I(r, c, d)), $(r, c));
       let g = G(m, Float32Array);
       m = null;
-      let [b, x] = await Promise.all([X(h), g]),
+      let [b, x] = await Promise.all([Y(h), g]),
         B = x[0];
       return b !== void 0 ? { nrm2: B, gpuTimeMs: b } : { nrm2: B };
     } finally {
       (!t && u && f(u), n && f(n), d && f(d), l && f(l), m && f(m));
     }
   }
-  async function Xa(r, a, e, o) {
+  async function Ya(r, a, e, o) {
     let t = e instanceof Z;
     if (
       (J(r),
@@ -8680,7 +8686,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let v = G(c, Float32Array),
         k = G(h, Float32Array);
       ((c = null), (h = null));
-      let [_, S, T] = await Promise.all([X(B), v, k]),
+      let [_, S, T] = await Promise.all([Y(B), v, k]),
         D = Jr(S, T)[0];
       return _ !== void 0 ? { nrm2: D, gpuTimeMs: _ } : { nrm2: D };
     } finally {
@@ -8740,7 +8746,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ((w = I(r, h, l)), $(r, h));
       let b = G(w, Uint32Array);
       w = null;
-      let [x, B] = await Promise.all([X(g), b]),
+      let [x, B] = await Promise.all([Y(g), b]),
         v = B[0];
       return x !== void 0 ? { index: v, gpuTimeMs: x } : { index: v };
     } finally {
@@ -8808,7 +8814,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ((h = I(r, x, p)), $(r, x));
       let v = G(h, Uint32Array);
       h = null;
-      let [k, _] = await Promise.all([X(B), v]),
+      let [k, _] = await Promise.all([Y(B), v]),
         S = _[0];
       return k !== void 0 ? { index: S, gpuTimeMs: k } : { index: S };
     } finally {
@@ -8878,7 +8884,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let g = N(r, l.getBindGroupLayout(0), [m, w, p]),
         { commandEncoder: b, ts: x } = Sr(r, l, g, Rr(r, a));
       ((c = n ? null : I(r, b, m)), (h = d ? null : I(r, b, w)), $(r, b));
-      let B = await X(x);
+      let B = await Y(x);
       if (n) return B !== void 0 ? { gpuTimeMs: B } : {};
       let v = G(c, Float32Array),
         k = G(h, Float32Array);
@@ -8971,7 +8977,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         (S = d ? null : I(r, A, x)),
         (T = d ? null : I(r, A, B)),
         $(r, A));
-      let E = await X(L);
+      let E = await Y(L);
       if (n) return E !== void 0 ? { gpuTimeMs: E } : {};
       let M = await G(k, Float32Array);
       k = null;
@@ -9050,7 +9056,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let g = N(r, d.getBindGroupLayout(0), [l, m, w, p]),
         { commandEncoder: b, ts: x } = Sr(r, d, g, Rr(r, a));
       ((c = u ? null : I(r, b, l)), (h = n ? null : I(r, b, m)), $(r, b));
-      let B = await X(x);
+      let B = await Y(x);
       if (u) return B !== void 0 ? { gpuTimeMs: B } : {};
       let v = G(c, Float32Array),
         k = G(h, Float32Array);
@@ -9145,7 +9151,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         (_ = n ? null : I(r, D, h)),
         (S = n ? null : I(r, D, g)),
         $(r, D));
-      let L = await X(A);
+      let L = await Y(A);
       if (u) return L !== void 0 ? { gpuTimeMs: L } : {};
       let E = await G(v, Float32Array);
       v = null;
@@ -9332,7 +9338,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let { commandEncoder: H, ts: z } = Ar(r, P),
         O = h ? null : I(r, H, A);
       $(r, H);
-      let W = await X(z);
+      let W = await Y(z);
       if (h) return W !== void 0 ? { gpuTimeMs: W } : {};
       let F = await G(O, Float32Array);
       return W !== void 0 ? { y: F, gpuTimeMs: W } : { y: F };
@@ -9500,7 +9506,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         { commandEncoder: z, ts: O } = Ar(r, H),
         W = p ? null : I(r, z, _);
       $(r, z);
-      let F = await X(O);
+      let F = await Y(O);
       if (p) return F !== void 0 ? { gpuTimeMs: F } : {};
       let K = await G(W, Float32Array);
       return F !== void 0 ? { y: K, gpuTimeMs: F } : { y: K };
@@ -9673,7 +9679,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let { commandEncoder: W, ts: F } = Ar(r, O),
         K = p ? null : I(r, W, A);
       $(r, W);
-      let C = await X(F);
+      let C = await Y(F);
       if (p) return C !== void 0 ? { gpuTimeMs: C } : {};
       let q = await G(K, Float32Array);
       return C !== void 0 ? { y: q, gpuTimeMs: C } : { y: q };
@@ -9797,7 +9803,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let { commandEncoder: F, querySet: K, passDescriptor: C } = Cr(r),
         q = F.beginComputePass(C);
       if (D) {
-        let Y = await R(r, "strsm_small");
+        let X = await R(r, "strsm_small");
         ((P = dr(r, t * 4, "strsv-sol")),
           _ > 1 && (H = us(r, A(1), "strsv-step-params")));
         let U = g ? i : 1,
@@ -9827,10 +9833,10 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
               "strsv-solve-params",
             );
           (W.push(gr),
-            q.setPipeline(Y),
+            q.setPipeline(X),
             q.setBindGroup(
               0,
-              N(r, Y.getBindGroupLayout(0), [
+              N(r, X.getBindGroupLayout(0), [
                 L,
                 E,
                 gr,
@@ -9879,10 +9885,10 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           q.setBindGroup(0, N(r, b.getBindGroupLayout(0), [L, M, z])),
           q.dispatchWorkgroups(_),
           q.setPipeline(x));
-        for (let Y of k) {
-          let U = Y / 64,
-            or = Math.min(Y + 64, t),
-            lr = v ? t - or : Y;
+        for (let X of k) {
+          let U = X / 64,
+            or = Math.min(X + 64, t),
+            lr = v ? t - or : X;
           (q.setBindGroup(
             0,
             N(r, x.getBindGroupLayout(0), [
@@ -9910,7 +9916,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let er = Tr(r, F, K),
         ar = l ? null : I(r, F, E);
       $(r, F);
-      let tr = await X(er);
+      let tr = await Y(er);
       if (l) return tr !== void 0 ? { gpuTimeMs: tr } : {};
       let rr = await G(ar, Float32Array);
       return tr !== void 0 ? { x: rr, gpuTimeMs: tr } : { x: rr };
@@ -10018,7 +10024,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ]),
         D = m ? null : I(r, S, x);
       $(r, S);
-      let A = await X(T);
+      let A = await Y(T);
       if (m) return A !== void 0 ? { gpuTimeMs: A } : {};
       let L = await G(D, Float32Array);
       return A !== void 0 ? { A: L, gpuTimeMs: A } : { A: L };
@@ -10165,7 +10171,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           { pipeline: g, bindGroup: P, workgroups: H },
         ]);
       ((E = m ? null : I(r, z, S)), (M = m ? null : I(r, z, T)), $(r, z));
-      let W = await X(O);
+      let W = await Y(O);
       if (m) return W !== void 0 ? { gpuTimeMs: W } : {};
       let F = await G(E, Float32Array);
       E = null;
@@ -10256,7 +10262,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ]),
         _ = l ? null : I(r, v, h);
       $(r, v);
-      let S = await X(k);
+      let S = await Y(k);
       if (l) return S !== void 0 ? { gpuTimeMs: S } : {};
       let T = await G(_, Float32Array);
       return S !== void 0 ? { A: T, gpuTimeMs: S } : { A: T };
@@ -10362,7 +10368,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           { pipeline: c, bindGroup: A, workgroups: L },
         ]);
       ((T = l ? null : I(r, E, B)), (D = l ? null : I(r, E, v)), $(r, E));
-      let P = await X(M);
+      let P = await Y(M);
       if (l) return P !== void 0 ? { gpuTimeMs: P } : {};
       let H = await G(T, Float32Array);
       T = null;
@@ -10487,7 +10493,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ]),
         L = p ? null : I(r, D, B);
       $(r, D);
-      let E = await X(A);
+      let E = await Y(A);
       if (p) return E !== void 0 ? { gpuTimeMs: E } : {};
       let M = await G(L, Float32Array);
       return E !== void 0 ? { A: M, gpuTimeMs: E } : { A: M };
@@ -10607,13 +10613,13 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       else {
         let tr = V(t),
           rr = V(i),
-          Y = V(n);
+          X = V(n);
         ((v = y(r, tr.hi, "dsyr2-xHi", !1)),
           (k = y(r, tr.lo, "dsyr2-xLo", !1)),
           (_ = y(r, rr.hi, "dsyr2-yHi", !1)),
           (S = y(r, rr.lo, "dsyr2-yLo", !1)),
-          (T = y(r, Y.hi, "dsyr2-AHi", !0)),
-          (D = y(r, Y.lo, "dsyr2-ALo", !0)));
+          (T = y(r, X.hi, "dsyr2-AHi", !0)),
+          (D = y(r, X.lo, "dsyr2-ALo", !0)));
       }
       (de(s, e) &&
         ((L = await jr(r, v, e, s, "dsyr2-xHi-packed")),
@@ -10649,7 +10655,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           { pipeline: b, bindGroup: O, workgroups: W },
         ]);
       ((H = p ? null : I(r, F, T)), (z = p ? null : I(r, F, D)), $(r, F));
-      let C = await X(K);
+      let C = await Y(K);
       if (p) return C !== void 0 ? { gpuTimeMs: C } : {};
       let q = await G(H, Float32Array);
       H = null;
@@ -10792,7 +10798,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ((F = y(r, gr.hi, "dgemv-yHi", !0)),
           (K = y(r, gr.lo, "dgemv-yLo", !0)));
       }
-      let Y = [
+      let X = [
           { value: e, type: "u32" },
           { value: o, type: "u32" },
           { value: L[0], type: "f32" },
@@ -10805,7 +10811,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ],
         U;
       b
-        ? ((C = j(r, Y, "dgemv-params")),
+        ? ((C = j(r, X, "dgemv-params")),
           (U = [
             {
               pipeline: T,
@@ -10835,7 +10841,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           (C = j(
             r,
             [
-              ...Y,
+              ...X,
               { value: 64, type: "u32" },
               { value: D > 1 ? 0 : 1, type: "u32" },
             ],
@@ -10870,7 +10876,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
             }));
       let { commandEncoder: or, ts: lr } = Ar(r, U);
       ((tr = h ? null : I(r, or, F)), (rr = h ? null : I(r, or, K)), $(r, or));
-      let sr = await X(lr);
+      let sr = await Y(lr);
       if (h) return sr !== void 0 ? { gpuTimeMs: sr } : {};
       let cr = await G(tr, Float32Array);
       tr = null;
@@ -11080,13 +11086,13 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       }
       let { commandEncoder: er, ts: ar } = Ar(r, q);
       ((K = p ? null : I(r, er, P)), (C = p ? null : I(r, er, H)), $(r, er));
-      let tr = await X(ar);
+      let tr = await Y(ar);
       if (p) return tr !== void 0 ? { gpuTimeMs: tr } : {};
       let rr = await G(K, Float32Array);
       K = null;
-      let Y = await G(C, Float32Array);
+      let X = await G(C, Float32Array);
       C = null;
-      let U = _r(rr, Y, d);
+      let U = _r(rr, X, d);
       return tr !== void 0 ? { y: U, gpuTimeMs: tr } : { y: U };
     } finally {
       (!c && A && f(A),
@@ -11311,9 +11317,9 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
             },
           ])),
         F && rr.unshift(F.pass, K.pass));
-      let { commandEncoder: Y, ts: U } = Ar(r, rr);
-      ((C = p ? null : I(r, Y, M)), (q = p ? null : I(r, Y, P)), $(r, Y));
-      let or = await X(U);
+      let { commandEncoder: X, ts: U } = Ar(r, rr);
+      ((C = p ? null : I(r, X, M)), (q = p ? null : I(r, X, P)), $(r, X));
+      let or = await Y(U);
       if (p) return or !== void 0 ? { gpuTimeMs: or } : {};
       let lr = await G(C, Float32Array);
       C = null;
@@ -11447,7 +11453,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ar = null,
       tr = [],
       rr = null,
-      Y = null;
+      X = null;
     try {
       if (m) ((P = s._buf), (H = s._loBuf));
       else {
@@ -11573,13 +11579,13 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       }
       sr.end();
       let fr = Tr(r, U, or);
-      ((rr = l ? null : I(r, U, z)), (Y = l ? null : I(r, U, O)), $(r, U));
-      let mr = await X(fr);
+      ((rr = l ? null : I(r, U, z)), (X = l ? null : I(r, U, O)), $(r, U));
+      let mr = await Y(fr);
       if (l) return mr !== void 0 ? { gpuTimeMs: mr } : {};
       let gr = await G(rr, Float32Array);
       rr = null;
-      let kr = await G(Y, Float32Array);
-      Y = null;
+      let kr = await G(X, Float32Array);
+      X = null;
       let Ir = _r(gr, kr, u);
       return mr !== void 0 ? { x: Ir, gpuTimeMs: mr } : { x: Ir };
     } finally {
@@ -11596,7 +11602,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ar && f(ar),
         f(tr),
         rr && f(rr),
-        Y && f(Y));
+        X && f(X));
     }
   }
   async function Bs(r, a, e, o, t, s, i, u, n, d, l, m, w, p, c = "row-major") {
@@ -11663,8 +11669,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (h) {
       if (n !== u.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [rr, Y] = a === "no-transpose" ? [o, s] : [s, o];
-      if (u.rows < rr || u.cols < Y)
+      let [rr, X] = a === "no-transpose" ? [o, s] : [s, o];
+      if (u.rows < rr || u.cols < X)
         throw new Error("A is too small for the given m, k, and transA.");
     } else if (u.length < (S - 1) * n + T)
       throw new Error(
@@ -11681,8 +11687,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (g) {
       if (l !== d.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [rr, Y] = e === "no-transpose" ? [s, t] : [t, s];
-      if (d.rows < rr || d.cols < Y)
+      let [rr, X] = e === "no-transpose" ? [s, t] : [t, s];
+      if (d.rows < rr || d.cols < X)
         throw new Error("B is too small for the given n, k, and transB.");
     } else if (d.length < (L - 1) * l + E)
       throw new Error(
@@ -11758,9 +11764,9 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           (q = y(r, wr.lo, "dgemm-CLo", !0)));
       }
       let rr = a === "no-transpose",
-        Y = e === "no-transpose",
+        X = e === "no-transpose",
         U = rr && Er(O, n, o, s),
-        or = Er(F, l, Y ? s : t, Y ? t : s),
+        or = Er(F, l, X ? s : t, X ? t : s),
         { hi: lr, lo: sr } = V(new Float64Array([i])),
         { hi: cr, lo: fr } = V(new Float64Array([m]));
       er = j(
@@ -11801,7 +11807,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         },
         { commandEncoder: kr, ts: Ir } = Sr(r, z, mr, gr);
       ((ar = b ? null : I(r, kr, C)), (tr = b ? null : I(r, kr, q)), $(r, kr));
-      let xr = await X(Ir);
+      let xr = await Y(Ir);
       if (b) return xr !== void 0 ? { gpuTimeMs: xr } : {};
       let Dr = await G(ar, Float32Array);
       ar = null;
@@ -11904,8 +11910,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (g) {
       if (d !== n.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [Y, U] = e === "no-transpose" ? [t, i] : [i, t];
-      if (n.rows < Y || n.cols < U)
+      let [X, U] = e === "no-transpose" ? [t, i] : [i, t];
+      if (n.rows < X || n.cols < U)
         throw new Error("A is too small for the given m, k, and transA.");
     } else if (n.length < (T - 1) * d + D)
       throw new Error(
@@ -11922,8 +11928,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (b) {
       if (m !== l.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [Y, U] = o === "no-transpose" ? [i, s] : [s, i];
-      if (l.rows < Y || l.cols < U)
+      let [X, U] = o === "no-transpose" ? [i, s] : [s, i];
+      if (l.rows < X || l.cols < U)
         throw new Error("B is too small for the given n, k, and transB.");
     } else if (l.length < (E - 1) * m + M)
       throw new Error(
@@ -11999,9 +12005,9 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ((q = y(r, yr.hi, "dgemmtr-CHi", !0)),
           (er = y(r, yr.lo, "dgemmtr-CLo", !0)));
       }
-      let Y = e === "no-transpose",
+      let X = e === "no-transpose",
         U = o === "no-transpose",
-        or = Y && Er(W, d, t, i),
+        or = X && Er(W, d, t, i),
         lr = Er(K, m, U ? i : s, U ? s : i),
         { hi: sr, lo: cr } = V(new Float64Array([u])),
         { hi: fr, lo: mr } = V(new Float64Array([w]));
@@ -12043,7 +12049,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         },
         { commandEncoder: Ir, ts: xr } = Sr(r, O, gr, kr);
       ((tr = x ? null : I(r, Ir, q)), (rr = x ? null : I(r, Ir, er)), $(r, Ir));
-      let Dr = await X(xr);
+      let Dr = await Y(xr);
       if (x) return Dr !== void 0 ? { gpuTimeMs: Dr } : {};
       let Nr = await G(tr, Float32Array);
       tr = null;
@@ -12220,7 +12226,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           P,
           H,
         ]),
-        Y = {
+        X = {
           x: nr(r, Math.ceil(o / 32), "dsyrk", "x"),
           y: nr(r, Math.ceil(o / 32), "dsyrk", "y"),
         },
@@ -12228,10 +12234,10 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       (w &&
         (U.copyBufferToBuffer(D, 0, L, 0, D.size),
         U.copyBufferToBuffer(A, 0, E, 0, A.size)),
-        Mr(U, T, rr, Y, lr));
+        Mr(U, T, rr, X, lr));
       let sr = Tr(r, U, or);
       ((z = p ? null : I(r, U, M)), (O = p ? null : I(r, U, P)), $(r, U));
-      let cr = await X(sr);
+      let cr = await Y(sr);
       if (p) return cr !== void 0 ? { gpuTimeMs: cr } : {};
       let fr = await G(z, Float32Array);
       z = null;
@@ -12380,7 +12386,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ar = null,
       tr = null,
       rr = null,
-      Y = null,
+      X = null,
       U = null,
       or = null;
     try {
@@ -12407,12 +12413,12 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         cr = z(M, lr, P, sr),
         fr = z(P, sr, M, lr),
         { hi: mr, lo: gr } = V(new Float64Array([s])),
-        kr = (vr, Xr, me) => {
+        kr = (vr, Yr, me) => {
           let re = vr.transX === "no-transpose",
             Vr = vr.transY === "no-transpose",
             ue = re && Er(vr.X.hi, vr.X.ld, o, t),
             Se = Er(vr.Y.hi, vr.Y.ld, Vr ? t : o, Vr ? o : t),
-            { hi: De, lo: pe } = V(new Float64Array([Xr]));
+            { hi: De, lo: pe } = V(new Float64Array([Yr]));
           return j(
             r,
             [
@@ -12435,8 +12441,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
             me,
           );
         };
-      ((rr = kr(cr, l, "dsyr2k-params1")), (Y = kr(fr, 1, "dsyr2k-params2")));
-      let Ir = (vr, Xr) =>
+      ((rr = kr(cr, l, "dsyr2k-params1")), (X = kr(fr, 1, "dsyr2k-params2")));
+      let Ir = (vr, Yr) =>
           N(r, W.getBindGroupLayout(0), [
             vr.X.hi,
             Br(r, vr.X.hi),
@@ -12446,10 +12452,10 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
             vr.Y.lo,
             ar,
             tr,
-            Xr,
+            Yr,
           ]),
         xr = Ir(cr, rr),
-        Dr = Ir(fr, Y),
+        Dr = Ir(fr, X),
         { commandEncoder: Nr, querySet: pr } = Cr(r),
         wr = pr
           ? { timestampWrites: { querySet: pr, beginningOfPassWriteIndex: 0 } }
@@ -12460,7 +12466,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       (Mr(Nr, W, xr, F, wr), Mr(Nr, W, Dr, F, yr));
       let Lr = Tr(r, Nr, pr);
       ((U = g ? null : I(r, Nr, ar)), (or = g ? null : I(r, Nr, tr)), $(r, Nr));
-      let Pr = await X(Lr);
+      let Pr = await Y(Lr);
       if (g) return Pr !== void 0 ? { gpuTimeMs: Pr } : {};
       let Kr = await G(U, Float32Array);
       U = null;
@@ -12476,7 +12482,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         !g && ar && f(ar),
         !g && tr && f(tr),
         rr && f(rr),
-        Y && f(Y),
+        X && f(X),
         U && f(U),
         or && f(or));
     }
@@ -12601,7 +12607,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ar = v,
       tr = null,
       rr = null,
-      Y = null,
+      X = null,
       U = null,
       or = null,
       lr = null,
@@ -12618,10 +12624,10 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         ((tr = y(r, ce.hi, "dsymm-AHi", !1)),
           (rr = y(r, ce.lo, "dsymm-ALo", !1)));
       }
-      if (h) ((Y = n._buf), (U = n._loBuf));
+      if (h) ((X = n._buf), (U = n._loBuf));
       else {
         let ce = V(n);
-        ((Y = y(r, ce.hi, "dsymm-BHi", !1)),
+        ((X = y(r, ce.hi, "dsymm-BHi", !1)),
           (U = y(r, ce.lo, "dsymm-BLo", !1)));
       }
       if (g) ((or = m._buf), (lr = m._loBuf));
@@ -12646,7 +12652,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         xr = N(r, Ir, [tr, sr, fr]),
         Dr = N(r, Ir, [rr, cr, fr]),
         Nr = { hi: sr, lo: cr, ld: ar },
-        pr = { hi: Y, lo: U, ld: d },
+        pr = { hi: X, lo: U, ld: d },
         wr = W ? pr : Nr,
         yr = W ? Nr : pr,
         Lr = H === "no-transpose",
@@ -12654,7 +12660,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         Kr = Lr && Er(wr.hi, wr.ld, E, P),
         Qr = Er(yr.hi, yr.ld, Pr ? P : M, Pr ? M : P),
         { hi: qr, lo: vr } = V(new Float64Array([s])),
-        { hi: Xr, lo: me } = V(new Float64Array([l]));
+        { hi: Yr, lo: me } = V(new Float64Array([l]));
       mr = j(
         r,
         [
@@ -12663,7 +12669,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           { value: P, type: "u32" },
           { value: qr[0], type: "f32" },
           { value: vr[0], type: "f32" },
-          { value: Xr[0], type: "f32" },
+          { value: Yr[0], type: "f32" },
           { value: me[0], type: "f32" },
           { value: wr.ld, type: "u32" },
           { value: yr.ld, type: "u32" },
@@ -12699,7 +12705,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ((gr = g ? null : I(r, Vr, or)),
         (kr = g ? null : I(r, Vr, lr)),
         $(r, Vr));
-      let be = await X(pe);
+      let be = await Y(pe);
       if (g) return be !== void 0 ? { gpuTimeMs: be } : {};
       let qe = await G(gr, Float32Array);
       gr = null;
@@ -12710,7 +12716,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     } finally {
       (!c && tr && f(tr),
         !c && rr && f(rr),
-        !h && Y && f(Y),
+        !h && X && f(X),
         !h && U && f(U),
         !g && or && f(or),
         !g && lr && f(lr),
@@ -12828,7 +12834,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ar = null,
       tr = null,
       rr = null,
-      Y = null,
+      X = null,
       U = null,
       or = null,
       lr = null,
@@ -12851,7 +12857,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           (tr = y(r, se.lo, "dtrmm-BLo", !0)));
       }
       ((rr = dr(r, x * C * 4, "dtrmm-AdenseHi")),
-        (Y = dr(r, x * C * 4, "dtrmm-AdenseLo")));
+        (X = dr(r, x * C * 4, "dtrmm-AdenseLo")));
       let kr = GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST;
       ((U = dr(r, ar.size, "dtrmm-outHi", kr)),
         (or = dr(r, tr.size, "dtrmm-outLo", kr)));
@@ -12867,8 +12873,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         (sr = j(r, Ir(h ? 2 : 0), "dtrmm-tri-lo-params")));
       let xr = W.getBindGroupLayout(0),
         Dr = N(r, xr, [q, rr, lr]),
-        Nr = N(r, xr, [er, Y, sr]),
-        pr = { hi: rr, lo: Y, ld: C },
+        Nr = N(r, xr, [er, X, sr]),
+        pr = { hi: rr, lo: X, ld: C },
         wr = { hi: ar, lo: tr, ld: m },
         yr = H ? wr : pr,
         Lr = H ? pr : wr,
@@ -12876,7 +12882,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         Kr = M === "no-transpose",
         Qr = Pr && Er(yr.hi, yr.ld, D, L),
         qr = Er(Lr.hi, Lr.ld, Kr ? L : A, Kr ? A : L),
-        { hi: vr, lo: Xr } = V(new Float64Array([u]));
+        { hi: vr, lo: Yr } = V(new Float64Array([u]));
       cr = j(
         r,
         [
@@ -12884,7 +12890,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           { value: A, type: "u32" },
           { value: L, type: "u32" },
           { value: vr[0], type: "f32" },
-          { value: Xr[0], type: "f32" },
+          { value: Yr[0], type: "f32" },
           { value: 0, type: "f32" },
           { value: 0, type: "f32" },
           { value: yr.ld, type: "u32" },
@@ -12921,7 +12927,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       (Mr(re, W, Dr, K, ue), Mr(re, W, Nr, K), Mr(re, O, me, F, Se));
       let De = Tr(r, re, Vr);
       ((fr = c ? null : I(r, re, U)), (mr = c ? null : I(r, re, or)), $(r, re));
-      let pe = await X(De);
+      let pe = await Y(De);
       if (c)
         return (
           f(l._buf, l._loBuf),
@@ -12942,7 +12948,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         !c && ar && f(ar),
         !c && tr && f(tr),
         rr && f(rr),
-        Y && f(Y),
+        X && f(X),
         U && !gr && f(U),
         or && !gr && f(or),
         lr && f(lr),
@@ -13010,8 +13016,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (h) {
       if (n !== u.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [Y, U] = a === "no-transpose" ? [o, s] : [s, o];
-      if (u.rows < Y || u.cols < U)
+      let [X, U] = a === "no-transpose" ? [o, s] : [s, o];
+      if (u.rows < X || u.cols < U)
         throw new Error("A is too small for the given m, k, and transA.");
     } else if (u.length < (S - 1) * n + T)
       throw new Error(
@@ -13028,8 +13034,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (g) {
       if (l !== d.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [Y, U] = e === "no-transpose" ? [s, t] : [t, s];
-      if (d.rows < Y || d.cols < U)
+      let [X, U] = e === "no-transpose" ? [s, t] : [t, s];
+      if (d.rows < X || d.cols < U)
         throw new Error("B is too small for the given n, k, and transB.");
     } else if (d.length < (L - 1) * l + E)
       throw new Error(
@@ -13098,17 +13104,17 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         "sgemm-params",
       );
     try {
-      let Y = N(r, W.getBindGroupLayout(0), [F, Br(r, F), K, Br(r, K), C, rr]),
+      let X = N(r, W.getBindGroupLayout(0), [F, Br(r, F), K, Br(r, K), C, rr]),
         U = O
           ? { x: nr(r, H, "sgemm", "x"), y: nr(r, z, "sgemm", "y") }
           : {
               x: nr(r, Math.ceil(t / 32), "sgemm", "x"),
               y: nr(r, Math.ceil(o / 32), "sgemm", "y"),
             },
-        { commandEncoder: or, ts: lr } = Sr(r, W, Y, U),
+        { commandEncoder: or, ts: lr } = Sr(r, W, X, U),
         sr = b ? null : I(r, or, C);
       $(r, or);
-      let cr = await X(lr);
+      let cr = await Y(lr);
       if (b) return cr !== void 0 ? { gpuTimeMs: cr } : {};
       let fr = await G(sr, Float32Array);
       return cr !== void 0 ? { C: fr, gpuTimeMs: cr } : { C: fr };
@@ -13258,7 +13264,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ar = o === "no-transpose",
       tr = Er(K, d, er ? t : i, er ? i : t),
       rr = Er(C, m, ar ? i : s, ar ? s : i),
-      Y = j(
+      X = j(
         r,
         [
           { value: t, type: "u32" },
@@ -13282,7 +13288,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         "sgemmtr-params",
       );
     try {
-      let U = N(r, F.getBindGroupLayout(0), [K, Br(r, K), C, Br(r, C), q, Y]),
+      let U = N(r, F.getBindGroupLayout(0), [K, Br(r, K), C, Br(r, C), q, X]),
         or = W
           ? { x: nr(r, z, "sgemmtr", "x"), y: nr(r, O, "sgemmtr", "y") }
           : {
@@ -13292,12 +13298,12 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         { commandEncoder: lr, ts: sr } = Sr(r, F, U, or),
         cr = x ? null : I(r, lr, q);
       $(r, lr);
-      let fr = await X(sr);
+      let fr = await Y(sr);
       if (x) return fr !== void 0 ? { gpuTimeMs: fr } : {};
       let mr = await G(cr, Float32Array);
       return fr !== void 0 ? { C: mr, gpuTimeMs: fr } : { C: mr };
     } finally {
-      (g || f(K), b || f(C), x || f(q), f(Y));
+      (g || f(K), b || f(C), x || f(q), f(X));
     }
   }
   async function Ns(r, a, e, o, t, s, i, u, n, d, l, m = "row-major") {
@@ -13423,10 +13429,10 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let ar = Tr(r, C, q),
         tr = p ? null : I(r, C, E);
       $(r, C);
-      let rr = await X(ar);
+      let rr = await Y(ar);
       if (p) return rr !== void 0 ? { gpuTimeMs: rr } : {};
-      let Y = await G(tr, Float32Array);
-      return rr !== void 0 ? { C: Y, gpuTimeMs: rr } : { C: Y };
+      let X = await G(tr, Float32Array);
+      return rr !== void 0 ? { C: X, gpuTimeMs: rr } : { C: X };
     } finally {
       (w || f(L), f(M), p || f(E), f(W));
     }
@@ -13487,8 +13493,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (c) {
       if (u !== i.lda)
         throw new Error("lda must match A.lda when A is a GpuMatrix.");
-      let [Y, U] = e === "no-transpose" ? [o, t] : [t, o];
-      if (i.rows < Y || i.cols < U)
+      let [X, U] = e === "no-transpose" ? [o, t] : [t, o];
+      if (i.rows < X || i.cols < U)
         throw new Error("A is too small for the given n, k, and trans.");
     } else if (i.length < (_ - 1) * u + S)
       throw new Error(
@@ -13505,8 +13511,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     if (h) {
       if (d !== n.lda)
         throw new Error("ldb must match B.lda when B is a GpuMatrix.");
-      let [Y, U] = e === "no-transpose" ? [o, t] : [t, o];
-      if (n.rows < Y || n.cols < U)
+      let [X, U] = e === "no-transpose" ? [o, t] : [t, o];
+      if (n.rows < X || n.cols < U)
         throw new Error("B is too small for the given n, k, and trans.");
     } else if (n.length < (A - 1) * d + L)
       throw new Error(
@@ -13529,9 +13535,9 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
     x === "column-major" &&
       (M = M === "no-transpose" ? "transpose" : "no-transpose");
     let P = B === "column-major" ? (a === "lower" ? "upper" : "lower") : a,
-      H = (Y) => (Y === "no-transpose" ? "transpose" : "no-transpose");
-    function z(Y, U, or, lr, sr, cr) {
-      let fr = Y,
+      H = (X) => (X === "no-transpose" ? "transpose" : "no-transpose");
+    function z(X, U, or, lr, sr, cr) {
+      let fr = X,
         mr = H(lr);
       return B !== "column-major"
         ? { transX: fr, X: U, ldX: or, transY: mr, Y: sr, ldY: cr }
@@ -13553,7 +13559,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       tr = null,
       rr = null;
     try {
-      let Y = z(E, q, u, M, er, d),
+      let X = z(E, q, u, M, er, d),
         U = z(M, er, d, E, q, u),
         or = (pr) => {
           let wr = pr.transX === "no-transpose",
@@ -13587,12 +13593,12 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
             ],
             "ssyr2k-params",
           );
-      ((tr = lr(Y, l)), (rr = lr(U, 1)));
+      ((tr = lr(X, l)), (rr = lr(U, 1)));
       let sr = N(r, K.getBindGroupLayout(0), [
-          Y.X,
-          Br(r, Y.X),
-          Y.Y,
-          Br(r, Y.Y),
+          X.X,
+          Br(r, X.X),
+          X.Y,
+          Br(r, X.Y),
           ar,
           tr,
         ]),
@@ -13615,7 +13621,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let Ir = Tr(r, fr, mr),
         xr = g ? null : I(r, fr, ar);
       $(r, fr);
-      let Dr = await X(Ir);
+      let Dr = await Y(Ir);
       if (g) return Dr !== void 0 ? { gpuTimeMs: Dr } : {};
       let Nr = await G(xr, Float32Array);
       return Dr !== void 0 ? { C: Nr, gpuTimeMs: Dr } : { C: Nr };
@@ -13731,7 +13737,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
             y: nr(r, Math.ceil(E / 32), "ssymm", "y"),
           },
       rr = c ? i._buf : y(r, i, "ssymm-A", !1),
-      Y = h ? n._buf : y(r, n, "ssymm-B", !1),
+      X = h ? n._buf : y(r, n, "ssymm-B", !1),
       U = g ? m._buf : y(r, m, "ssymm-C", !0),
       or = dr(r, v * F * 4, "ssymm-Adense"),
       lr = null,
@@ -13748,9 +13754,9 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         "ssymm-sym-params",
       );
       let cr = N(r, ar.getBindGroupLayout(0), [rr, or, lr]),
-        fr = W ? Y : or,
+        fr = W ? X : or,
         mr = W ? d : F,
-        gr = W ? or : Y,
+        gr = W ? or : X,
         kr = W ? F : d,
         Ir = H === "no-transpose",
         xr = z === "no-transpose",
@@ -13799,12 +13805,12 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let Kr = Tr(r, wr, yr),
         Qr = g ? null : I(r, wr, U);
       $(r, wr);
-      let qr = await X(Kr);
+      let qr = await Y(Kr);
       if (g) return qr !== void 0 ? { gpuTimeMs: qr } : {};
       let vr = await G(Qr, Float32Array);
       return qr !== void 0 ? { C: vr, gpuTimeMs: qr } : { C: vr };
     } finally {
-      (c || f(rr), h || f(Y), g || f(U), f(or), lr && f(lr), sr && f(sr));
+      (c || f(rr), h || f(X), g || f(U), f(or), lr && f(lr), sr && f(sr));
     }
   }
   async function Ms(r, a, e, o, t, s, i, u, n, d, l, m, w = "row-major") {
@@ -13904,7 +13910,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       ar = null,
       tr = null,
       rr = null,
-      Y = null,
+      X = null,
       U = null,
       or = !1;
     try {
@@ -13917,7 +13923,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           "strmm-out",
           GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
         )),
-        (Y = j(
+        (X = j(
           r,
           [
             { value: x, type: "u32" },
@@ -13929,7 +13935,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
           ],
           "strmm-tri-params",
         )));
-      let lr = N(r, C.getBindGroupLayout(0), [er, tr, Y]),
+      let lr = N(r, C.getBindGroupLayout(0), [er, tr, X]),
         sr = H ? ar : tr,
         cr = H ? m : z,
         fr = H ? tr : ar,
@@ -13985,22 +13991,22 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       let qr = Tr(r, Lr, Pr),
         vr = c ? null : I(r, Lr, rr);
       $(r, Lr);
-      let Xr = await X(qr);
+      let Yr = await Y(qr);
       if (c)
         return (
           f(l._buf),
           (l._buf = rr),
           (or = !0),
-          Xr !== void 0 ? { gpuTimeMs: Xr } : {}
+          Yr !== void 0 ? { gpuTimeMs: Yr } : {}
         );
       let me = await G(vr, Float32Array);
-      return Xr !== void 0 ? { B: me, gpuTimeMs: Xr } : { B: me };
+      return Yr !== void 0 ? { B: me, gpuTimeMs: Yr } : { B: me };
     } finally {
       (!p && er && f(er),
         !c && ar && f(ar),
         tr && f(tr),
         rr && !or && f(rr),
-        Y && f(Y),
+        X && f(X),
         U && f(U));
     }
   }
@@ -14159,8 +14165,8 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       q = null,
       er = null,
       ar = [];
-    function tr(rr, Y) {
-      let U = j(r, rr, Y);
+    function tr(rr, X) {
+      let U = j(r, rr, X);
       return (ar.push(U), U);
     }
     try {
@@ -14169,7 +14175,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
         H && (q = dr(r, E * 64 * 64 * 4, "strsm-Ainv")),
         (er = dr(r, (E > 1 ? 64 * S : 4) * 4, "strsm-Xblock")));
       let rr = b === "column-major" ? ae(C, 0, 1, m) : ae(C, 0, m, 1),
-        Y = a === "left" ? rr : Me(rr),
+        X = a === "left" ? rr : Me(rr),
         U = _ === "transpose" ? ae(K, 0, 1, d) : ae(K, 0, d, 1),
         or = a === "left" ? U : Me(U),
         lr = ae(er, 0, S, 1),
@@ -14203,7 +14209,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
       if (u === 0) {
         let pr = ae(er, 0, 1, 1);
         gr(pr, pr, ae(C, 0, m, 1), B, v, 0, 0, 0);
-      } else if (E === 1) kr(or, Y, x, u, 0);
+      } else if (E === 1) kr(or, X, x, u, 0);
       else {
         if (u !== 1) {
           let pr = ae(er, 0, 1, 1);
@@ -14228,7 +14234,7 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
               Lr = yr - wr,
               Kr = (wr / 64) * 64 * 64,
               Qr = a === "left" ? ae(q, Kr, 1, 64) : ae(q, Kr, 64, 1);
-            gr(Qr, ge(Y, wr, 0), lr, Lr, S, Lr, 1, 0, A ? 5 : 6);
+            gr(Qr, ge(X, wr, 0), lr, Lr, S, Lr, 1, 0, A ? 5 : 6);
             let qr = tr(
               [
                 { value: wr, type: "u32" },
@@ -14246,26 +14252,26 @@ ${m.map((c) => `  ${u(c.lineNum)}: ${c.message}`).join(`
               mr.setBindGroup(0, N(r, O.getBindGroupLayout(0), [er, C, qr])),
               vn(mr, Ra(r, "strsm", Lr, S)));
             let vr = A ? yr : 0,
-              Xr = A ? x : wr;
-            vr >= Xr ||
-              gr(ge(or, vr, wr), lr, ge(Y, vr, 0), Xr - vr, S, Lr, -1, 1);
+              Yr = A ? x : wr;
+            vr >= Yr ||
+              gr(ge(or, vr, wr), lr, ge(X, vr, 0), Yr - vr, S, Lr, -1, 1);
           }
         } else
           for (let pr of L) {
             let wr = Math.min(pr + 64, x),
               yr = wr - pr;
-            kr(ge(or, pr, pr), ge(Y, pr, 0), yr, 1, S);
+            kr(ge(or, pr, pr), ge(X, pr, 0), yr, 1, S);
             let Lr = A ? wr : 0,
               Pr = A ? x : pr;
             Lr >= Pr ||
-              gr(ge(or, Lr, pr), lr, ge(Y, Lr, 0), Pr - Lr, S, yr, -1, 1);
+              gr(ge(or, Lr, pr), lr, ge(X, Lr, 0), Pr - Lr, S, yr, -1, 1);
           }
       }
       mr.end();
       let Ir = Tr(r, sr, cr),
         xr = c ? null : I(r, sr, C);
       $(r, sr);
-      let Dr = await X(Ir);
+      let Dr = await Y(Ir);
       if (c) return Dr !== void 0 ? { gpuTimeMs: Dr } : {};
       let Nr = await G(xr, Float32Array);
       return Dr !== void 0 ? { B: Nr, gpuTimeMs: Dr } : { B: Nr };

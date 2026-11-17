@@ -1,4 +1,4 @@
-// Peak memory bandwidth probe — the memory roof for scripts/roofline.py.
+// Peak memory bandwidth probe — the roofline's memory roof (benchmarks/roofline).
 //
 // The companion to fma.js. Between them the two roofs are measured rather than
 // typed in from a datasheet, which matters because every "% of roof" figure in
