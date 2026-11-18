@@ -2,7 +2,7 @@ include tests/tests.mk
 include benchmarks/bench.mk
 include examples/examples.mk
 
-.PHONY: typecheck protect-results check-links install-tools install-naga install-deno install-shader-tools publish-docs repl help
+.PHONY: typecheck protect-results check-links install-tools install-naga install-deno install-shader-tools repl help
 
 repl:
 	node repl.mjs
@@ -14,19 +14,11 @@ help:
 	@echo "  typecheck             Verify public API types are aligned (tsc --noEmit)"
 	@echo "  protect-results       Prevent benchmark re-runs from dirtying git status (run once after clone)"
 	@echo "  check-links           Check all markdown and docs HTML links with lychee"
-	@echo "  publish-docs          Enforce correct order: guard uncommitted changes → build docs → commit → push"
 	@echo "  install-tools         Install dev tools (lychee, naga, deno, shader validators)"
 	@echo "  install-naga          Install naga, wgpu's WGSL compiler, for tests/shaders (needs Rust)"
 	@echo "  install-shader-tools  Install spirv-val, glslangValidator and dxc for tests/shaders/src/test.backends.js"
 	@echo "  install-deno          Install Deno, whose WebGPU (wgpu) runs make test-wgpu"
 
-
-publish-docs:
-	@git diff --quiet && git diff --cached --quiet || { echo "Error: commit your source changes before building docs"; exit 1; }
-	npm run docs
-	git add docs/
-	git diff --cached --quiet || git commit -m "rebuild docs"
-	git push
 
 typecheck:
 	npx tsc --noEmit
