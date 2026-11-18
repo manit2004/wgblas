@@ -12,11 +12,20 @@
 //   - routine-params.js, assets/routines/routine_params.json
 //     (window.wgblasRoutineParams): the roofline's levels and FLOP counts, as
 //     of the code this build ships, not whatever main has since.
+//   - browser-tests/, the test suite as a page anyone can open and press Run
+//     on (tests/browser/build-page.mjs), embedded on the tests/browser page.
 import esbuild from "esbuild";
-import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { localSource } from "../benchmarks/results-reader.mjs";
+import { buildTestPage, findTestFiles } from "../tests/browser/build-page.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 // The docs root: docs/, or another TypeDoc output given as the argument.
@@ -59,4 +68,13 @@ writeFileSync(
 );
 console.log(
   `assets/routines/routine_params.json -> ${join(out, "routine-params.js")}`,
+);
+
+const testsOut = join(out, "browser-tests");
+rmSync(testsOut, { recursive: true, force: true });
+mkdirSync(testsOut);
+const files = findTestFiles();
+const nodeOnly = await buildTestPage(files, testsOut, { report: false });
+console.log(
+  `${files.length - nodeOnly.length} test files (of ${files.length}; the rest need Node) -> ${testsOut}`,
 );

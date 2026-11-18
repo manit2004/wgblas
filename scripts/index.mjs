@@ -6,7 +6,7 @@
  * |---|---|---|
  * | `build-browser.mjs` | Bundles the library into one IIFE file, `window.wgblas` | `npm run build:browser`, `npm run docs`, `prepublishOnly` |
  * | `gen-sitemap.mjs` | Writes `docs/sitemap.xml` and `robots.txt`; copies site-verification files into `docs/` | `npm run docs` |
- * | `copy-docs-assets.mjs` | Puts the benchmark results viewer and a plain-script build of `benchmarks/results-reader.mjs` into `docs/` | `npm run docs` |
+ * | `copy-docs-assets.mjs` | Puts the benchmark results viewer, a plain-script build of `benchmarks/results-reader.mjs`, and the browser test page (`docs/browser-tests/`, embedded on the `tests/browser` page) into `docs/` | `npm run docs` |
  * | `roofline.mjs` | Prints each GPU's roofline from the local results, with checks for suspect rows | by hand |
  * | `docs-mcp.mjs` | Serves this checkout's `docs/api.json` and benchmark results over MCP | an MCP client |
  *

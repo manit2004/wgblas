@@ -1,59 +1,48 @@
-// Prints test results, in the spirit of node --test's spec reporter.
+// Prints a test run as the test page reports it (page/runner.js lists its
+// events), through the page's own transcript (page/transcript.js), so the
+// terminal shows what the page's "Copy report" copies.
+import { createTranscript, formatSummary } from "./page/transcript.js";
 
-/** @typedef {import("./stand-ins/node-test.mjs").TestResult} TestResult */
-
-const indented = (text, indent) =>
-  indent + text.split("\n").join(`\n${indent}`);
-
-/**
- * Prints one test's result, indented by its depth. Results arrive as each
- * test finishes, so subtests print before their parent.
- * @param {TestResult} r
- */
-export function printResult(r) {
-  const indent = "  ".repeat(r.path.length);
-  const name = r.path[r.path.length - 1];
-  if (r.status === "pass")
-    console.log(`${indent}✔ ${name} (${Math.round(r.ms)}ms)`);
-  else if (r.status === "skip")
-    console.log(`${indent}﹣ ${name} # SKIP${r.reason ? ` ${r.reason}` : ""}`);
-  else {
-    console.log(`${indent}✖ ${name}`);
-    if (r.error) console.log(indented(r.error, `${indent}  `));
-  }
-  for (const d of r.diagnostics ?? []) console.log(`${indent}  ℹ ${d}`);
+/** Prints the run's totals and which files failed or need Node. */
+export function printSummary(summary) {
+  console.log(formatSummary(summary));
 }
 
 /**
- * Prints a failure that belongs to no test: an uncaught error, a timeout, a
- * crashed page, a file that wouldn't bundle.
- * @param {string} message
+ * Follows the test page's events, printing each as it arrives.
+ * @param {object} options
+ * @param {string[]} options.nodeOnly - test files that need Node, and why
+ * @returns the transcript (its browser, summary, missingAdapter), plus
+ *   handle(event) for each event, fail(message) to end the run with a failure
+ *   of its own (once the page is done, ignored), lastEventAt, and done, which
+ *   resolves when the page says it's done or the run fails
  */
-export function printProblem(message) {
-  console.log(`  ✖ ${indented(message, "    ").trimStart()}`);
-}
-
-/** Prints what a test page logged to its console. */
-export function printConsole(text) {
-  if (text) console.log(indented(text, "    "));
-}
-
-/**
- * Prints the run's totals and which files failed or need Node.
- * @param {{ passed: string[], failed: string[], nodeOnly: string[],
- *   tests: Record<TestResult["status"], number> }} summary - file names, and
- *   test counts (every test and subtest) by status
- */
-export function printSummary({ passed, failed, nodeOnly, tests }) {
-  const ran = passed.length + failed.length;
-  console.log(
-    `browser: ${passed.length}/${ran} files passed; ` +
-      `tests: ${tests.pass} passed, ${tests.fail} failed, ${tests.skip} skipped`,
-  );
-  if (nodeOnly.length)
-    console.log(
-      `not run, need Node:\n${nodeOnly.map((f) => `  ${f}`).join("\n")}`,
-    );
-  if (failed.length)
-    console.log(`failed:\n${failed.map((f) => `  ${f}`).join("\n")}`);
+export function collectEvents({ nodeOnly }) {
+  const transcript = createTranscript({
+    nodeOnly,
+    write: (text) => console.log(text),
+  });
+  const { handle, fail } = transcript;
+  let finished = false;
+  let resolveDone;
+  const done = new Promise((resolve) => (resolveDone = resolve));
+  const finish = () => {
+    finished = true;
+    resolveDone();
+  };
+  return Object.assign(transcript, {
+    /** When the page last reported, once it has started. */
+    lastEventAt: undefined,
+    done,
+    handle(event) {
+      transcript.lastEventAt = Date.now();
+      handle(event);
+      if (event.type === "done") finish();
+    },
+    fail(message) {
+      if (finished) return;
+      fail(message);
+      finish();
+    },
+  });
 }

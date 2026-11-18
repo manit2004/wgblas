@@ -6,6 +6,7 @@
     "src/shaders/index.mjs",
     "src/util/*.mjs",
     "tests/index.mjs",
+    "tests/browser/index.mjs",
     "tests/helpers/ulp.js",
     "tests/helpers/fixtures.js",
     "tests/helpers/validation.js",
