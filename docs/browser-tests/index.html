@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wgblas browser tests</title>
+    <link rel="icon" href="data:," />
+    <script>
+      // Loads runner.js against this page's own folder, even where a static
+      // server has "cleaned" its URL: `npx serve` redirects
+      // .../browser-tests/index.html to .../browser-tests, without the slash,
+      // and from there the page's files would resolve one folder up. Added
+      // here rather than as a <script src> so the browser can't fetch it
+      // ahead of the <base>.
+      (function () {
+        var path = location.pathname;
+        if (location.protocol !== "file:" && !/(\/|\.html)$/.test(path)) {
+          var base = document.createElement("base");
+          base.href = /\/index$/.test(path)
+            ? path.slice(0, -"index".length)
+            : path + "/";
+          document.head.appendChild(base);
+        }
+        var runner = document.createElement("script");
+        runner.type = "module";
+        runner.src = "runner.js";
+        document.head.appendChild(runner);
+      })();
+    </script>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfbfa;
+        --surface: #ffffff;
+        --border: #e2e1dc;
+        --text: #1f1e1b;
+        --muted: #6b6a64;
+        --pass: #1d7a3e;
+        --fail: #b42318;
+        --skip: #8a6d00;
+        --run: #2759c4;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      /* Dark: the system's, unless the docs site's theme (data-theme, from
+         ?theme=) says otherwise. */
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #161614;
+          --surface: #1f1f1c;
+          --border: #34332f;
+          --text: #ecebe6;
+          --muted: #9d9b93;
+          --pass: #5cc483;
+          --fail: #f2766b;
+          --skip: #d9b84a;
+          --run: #7ea3f2;
+        }
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #161614;
+        --surface: #1f1f1c;
+        --border: #34332f;
+        --text: #ecebe6;
+        --muted: #9d9b93;
+        --pass: #5cc483;
+        --fail: #f2766b;
+        --skip: #d9b84a;
+        --run: #7ea3f2;
+      }
+      :root[data-theme="light"] {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.45 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      .meta {
+        color: var(--muted);
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      .counts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        margin: 16px 0;
+        padding: 12px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-variant-numeric: tabular-nums;
+      }
+      .counts b {
+        font-size: 18px;
+      }
+      .status {
+        font-weight: 600;
+      }
+      progress {
+        width: 100%;
+        height: 6px;
+        accent-color: var(--run);
+      }
+      #files {
+        list-style: none;
+        margin: 16px 0 0;
+        padding: 0;
+        border-top: 1px solid var(--border);
+      }
+      #files > li {
+        border-bottom: 1px solid var(--border);
+      }
+      details > summary {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        padding: 8px 4px;
+        cursor: pointer;
+        list-style: none;
+      }
+      details > summary::-webkit-details-marker {
+        display: none;
+      }
+      .name {
+        font-family: var(--mono);
+        font-size: 13px;
+        overflow-wrap: anywhere;
+        flex: 1;
+      }
+      .tally {
+        color: var(--muted);
+        font-size: 13px;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .mark {
+        width: 1.2em;
+        text-align: center;
+        flex: none;
+      }
+      .pass {
+        color: var(--pass);
+      }
+      .fail {
+        color: var(--fail);
+      }
+      .skip {
+        color: var(--skip);
+      }
+      .run {
+        color: var(--run);
+      }
+      .lines {
+        margin: 0 0 10px 30px;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .lines div {
+        padding: 1px 0;
+      }
+      .note {
+        color: var(--muted);
+      }
+      #controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 16px 0 0;
+      }
+      #controls[hidden] {
+        display: none;
+      }
+      #suite {
+        flex: 1 1 220px;
+        min-width: 0;
+        padding: 8px 10px;
+        font: inherit;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      button {
+        padding: 8px 16px;
+        font: inherit;
+        font-weight: 600;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      #run {
+        background: var(--run);
+        border-color: var(--run);
+        color: var(--bg);
+      }
+      #report-text {
+        width: 100%;
+        height: 240px;
+        margin-top: 12px;
+        font: 12px/1.4 var(--mono);
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
+      }
+      #node-only {
+        margin-top: 16px;
+        font-size: 13px;
+      }
+      #node-only summary {
+        cursor: pointer;
+      }
+      #node-only li {
+        font-family: var(--mono);
+        overflow-wrap: anywhere;
+      }
+      #frames iframe {
+        width: 1px;
+        height: 1px;
+        border: 0;
+        position: absolute;
+        left: -10px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>wgblas browser tests</h1>
+      <p class="meta" id="browser">Starting…</p>
+      <p class="meta" id="adapter"></p>
+      <noscript><p class="fail">The tests need JavaScript.</p></noscript>
+      <p class="fail" id="from-disk" hidden>
+        Opened from disk: browsers won't load this page's modules from a file://
+        address. Serve the folder over HTTP and open it from localhost, e.g.
+        <code>python3 -m http.server -d docs</code>, then
+        http://localhost:8000/browser-tests/.
+      </p>
+      <script>
+        // A plain script: it runs from disk, where the page's modules don't.
+        if (location.protocol === "file:") {
+          document.getElementById("from-disk").hidden = false;
+          document.getElementById("browser").textContent = "";
+        }
+      </script>
+      <div id="controls" hidden>
+        <select id="suite" aria-label="Which tests to run"></select>
+        <button id="run" type="button">Run all</button>
+        <button id="copy" type="button" hidden>Copy report</button>
+      </div>
+      <div class="counts" aria-live="polite">
+        <span class="status" id="status">Checking WebGPU…</span>
+        <span
+          ><b id="files-done">0</b> /
+          <span id="files-total">0</span> files</span
+        >
+        <span class="pass"><b id="n-pass">0</b> passed</span>
+        <span class="fail"><b id="n-fail">0</b> failed</span>
+        <span class="skip"><b id="n-skip">0</b> skipped</span>
+      </div>
+      <progress id="progress" value="0" max="1"></progress>
+      <ul id="files"></ul>
+      <textarea id="report-text" hidden readonly aria-label="Report"></textarea>
+      <details class="meta" id="node-only" hidden>
+        <summary></summary>
+        <ul></ul>
+      </details>
+      <div id="frames" aria-hidden="true"></div>
+    </main>
+  </body>
+</html>

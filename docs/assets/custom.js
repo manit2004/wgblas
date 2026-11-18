@@ -402,10 +402,56 @@
     document.head.appendChild(s);
   }
 
+  // The browser test runner (browser-tests/ at the docs root, built by
+  // copy-docs-assets.mjs), embedded where a page asks for it: the
+  // tests/browser page. It follows the docs' light/dark theme, live.
+  function initTestRunner() {
+    document.querySelectorAll("[data-wgblas-tests]").forEach(function (box) {
+      if (box.firstChild) return;
+      var url = getDocsRoot() + "browser-tests/index.html";
+      var theme = function () {
+        return document.documentElement.dataset.theme || "os";
+      };
+
+      var open = document.createElement("p");
+      var link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = "Open the test runner in a tab of its own";
+      open.appendChild(link);
+
+      var frame = document.createElement("iframe");
+      // The theme in the fragment: some servers redirect the page's URL
+      // (`npx serve` drops ".html"), keeping a fragment but not a query.
+      frame.src = url + "#theme=" + theme();
+      frame.title = "wgblas browser tests";
+      frame.allow = "clipboard-write";
+      frame.style.cssText =
+        "width:100%;height:80vh;border:1px solid var(--color-accent);" +
+        "border-radius:8px;";
+
+      box.appendChild(open);
+      box.appendChild(frame);
+      new MutationObserver(function () {
+        try {
+          frame.contentDocument.documentElement.dataset.theme = theme();
+        } catch {
+          // Not loaded yet, or opened from disk (file://), where the page
+          // can't reach into the frame: it keeps the theme it started with.
+        }
+      }).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+    });
+  }
+
   function init() {
     document.querySelectorAll("pre").forEach(addRunButton);
     document.querySelectorAll("pre").forEach(addHtmlPreview);
     initBench();
+    initTestRunner();
   }
 
   init();
