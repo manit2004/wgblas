@@ -95,19 +95,37 @@ function withTimeout(promise, ms, message) {
 }
 
 // The browser's WebGPU adapter, described, or null if it offers none.
+// The browser's WebGPU adapter: { adapter } described, or { missing } saying
+// how there's none, which is what a failed CI run needs to show (no
+// navigator.gpu at all, or requestAdapter() resolving null, which is what
+// headless Firefox does with no display).
 async function describeAdapter(context, baseUrl) {
   const page = await context.newPage();
   try {
     await page.goto(baseUrl);
     return await page.evaluate(async () => {
-      const adapter = await navigator.gpu?.requestAdapter();
-      if (!adapter) return null;
+      if (!navigator.gpu)
+        return { missing: "navigator.gpu is undefined (WebGPU is off)" };
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        const fallback = await navigator.gpu.requestAdapter({
+          forceFallbackAdapter: true,
+        });
+        return {
+          missing:
+            "requestAdapter() resolved null" +
+            (fallback
+              ? ", though a fallback adapter exists"
+              : ", also with forceFallbackAdapter"),
+        };
+      }
       const { vendor, architecture, description } = adapter.info;
       // Firefox reports these empty (it doesn't reveal the hardware).
-      return (
-        [vendor, architecture, description].filter(Boolean).join(" ") ||
-        "(not named by the browser)"
-      );
+      return {
+        adapter:
+          [vendor, architecture, description].filter(Boolean).join(" ") ||
+          "(not named by the browser)",
+      };
     });
   } finally {
     await page.close();
@@ -197,11 +215,12 @@ const server = await serveDirectory(outdir);
 const browser = await LAUNCH[config.browser]();
 try {
   const context = await browser.newContext();
-  const adapter = await describeAdapter(context, server.url);
+  const { adapter, missing } = await describeAdapter(context, server.url);
   console.log(
-    `${config.browser} ${browser.version()}, WebGPU adapter: ${adapter ?? "none"}\n`,
+    `${config.browser} ${browser.version()}, WebGPU adapter: ${adapter ?? `none: ${missing}`}\n`,
   );
-  if (!adapter) throw new Error("the browser offers no WebGPU adapter");
+  if (!adapter)
+    throw new Error(`the browser offers no WebGPU adapter: ${missing}`);
   for (const file of files)
     await runTestFile(file, context, server.url, outdir);
 } finally {

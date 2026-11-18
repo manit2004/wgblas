@@ -55,6 +55,10 @@ jobs:
         shell: bash
     env:
       WGBLAS_BROWSER: firefox
+      # Headless Firefox with no display offers no WebGPU adapter at all
+      # (requestAdapter() resolves null, even with a GPU). So: a visible
+      # window, on Linux in a virtual display (xvfb-run, below).
+      WGBLAS_BROWSER_HEADED: "1"
     steps:
       # Keep LF line endings, as on Linux.
       - run: git config --global core.autocrlf false
@@ -67,7 +71,7 @@ jobs:
 
       # Playwright drives its own Firefox build, not an installed Firefox: the
       # one matching playwright-core's version, plus its system libraries on
-      # Linux.
+      # Linux (Xvfb among them).
       - name: Install Playwright's Firefox
         run: npx playwright-core install ${{ runner.os == 'Linux' && '--with-deps' || '' }} firefox
 
@@ -75,7 +79,7 @@ jobs:
       - if: runner.os == 'Linux'
         uses: ./.github/actions/lavapipe
 
-      # Prints the browser and its WebGPU adapter, then fails at once if there
-      # is none.
+      # Prints the browser and its WebGPU adapter, then fails at once, saying
+      # why, if there is none.
       - name: Test suite
-        run: node tests/browser/run.mjs
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a' || '' }} node tests/browser/run.mjs
