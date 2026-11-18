@@ -14,6 +14,11 @@
  * `copy-docs-assets.mjs`, in that order: TypeDoc wipes `docs/` on every build, so everything else that
  * lives there has to be written after it.
  *
+ * `docs/` is build output, not committed. The live site is built by
+ * `.github/workflows/docs.yml`, which runs `npm run docs` on every push to
+ * `main` and deploys the result to GitHub Pages; CI's link check builds it on
+ * pull requests too.
+ *
  * ## `build-browser.mjs` — the browser bundle
  *
  * Uses [esbuild](https://esbuild.github.io/) to bundle the whole library into

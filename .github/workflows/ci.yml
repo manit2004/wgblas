@@ -90,12 +90,20 @@ jobs:
         continue-on-error: true
         run: npm audit --audit-level=high
 
+  # The markdown, and the docs site as the Docs workflow would deploy it:
+  # docs/ isn't committed, so it's built here first, which also catches a
+  # docs build that fails before it reaches main.
   check-links:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Build the docs
+        run: npm run docs
 
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
