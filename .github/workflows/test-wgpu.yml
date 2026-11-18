@@ -1,9 +1,15 @@
 name: wgpu Tests
 
 # The suite on wgpu (Firefox's engine), through Deno's WebGPU
-# (tests/wgpu/run.mjs), on each of its backends without a real GPU: Vulkan on
-# Mesa's lavapipe, D3D12 on WARP, Metal on Apple's paravirtual GPU. Shaders go
-# through naga instead of Dawn's Tint.
+# (tests/wgpu/run.mjs), without a real GPU: Vulkan on Mesa's lavapipe, Metal on
+# Apple's paravirtual GPU. Shaders go through naga instead of Dawn's Tint.
+#
+# No Windows job: wgpu's D3D12 on WARP (the hosted runners' only adapter) took
+# ~40 minutes, mostly FXC optimising a few large shaders, and 7 test files
+# crashed inside WARP's shader JIT
+# (d3d10warp!ComputeShaderTransformer::ConstructLoadStoreSets), a WARP bug,
+# not wgpu's or wgblas's. D3D12 stays covered by Dawn on WARP (test-dawn.yml)
+# and Chrome on Windows (test-browser.yml).
 
 on:
   pull_request:
@@ -36,33 +42,14 @@ jobs:
           DENO_WEBGPU_BACKEND: vulkan
         run: make test-wgpu
 
-  native:
-    name: wgpu on ${{ matrix.backend }} (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # No GPU: WARP. Shaders go through naga's HLSL.
-          - os: windows-latest
-            backend: dx12
-          # Apple's paravirtual GPU. Shaders go through naga's MSL.
-          - os: macos-15
-            backend: metal
-    runs-on: ${{ matrix.os }}
-    # Windows: the suite takes ~40 minutes on WARP, the crash diagnostics ~8 more.
-    timeout-minutes: 60
-    # macOS passes; Windows stays non-blocking until it does (test processes
-    # crash in the symv, trsv and dgemv-transpose kernels).
-    continue-on-error: ${{ matrix.os == 'windows-latest' }}
-    defaults:
-      run:
-        shell: bash
+  metal:
+    name: wgpu on Metal (macOS)
+    runs-on: macos-15
+    timeout-minutes: 30
+    # Apple's paravirtual GPU. Shaders go through naga's MSL.
     env:
-      DENO_WEBGPU_BACKEND: ${{ matrix.backend }}
+      DENO_WEBGPU_BACKEND: metal
     steps:
-      # Keep LF line endings, as on Linux.
-      - run: git config --global core.autocrlf false
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -71,7 +58,7 @@ jobs:
 
       - uses: ./.github/actions/setup-deno
 
-      # wgpu may not hand out a CPU adapter like WARP; fail here, plainly, if not.
+      # Fails here, plainly, if wgpu finds no adapter.
       - name: Which adapter
         run: |
           deno eval --unstable-webgpu '
@@ -80,47 +67,4 @@ jobs:
             console.log(a.info);
           '
 
-      # make test-wgpu, without depending on make being installed.
-      - name: Test suite
-        run: node tests/wgpu/run.mjs
-
-      # Temporary diagnostics: on Windows, eight test files crash with
-      # 0xC0000005 (an access violation in native code) around the kernels in
-      # tests/wgpu/diagnostics/crash.diag.mjs. Each kernel in its own process:
-      # the last marker printed before a crash says whether compiling or
-      # running its pipeline is where it dies (dgemv_n is a passing control).
-      - name: "Diagnose crash: compile or run, per kernel"
-        if: always() && runner.os == 'Windows'
-        continue-on-error: true
-        run: |
-          for c in dgemv_n dgemv_t dsymv_tile ssymv strsv_invert_block strsv_step dtrsv_small dtrsv_step; do
-            echo "== $c"
-            deno run -A --unstable-webgpu --no-lock --node-modules-dir=manual \
-              tests/wgpu/diagnostics/crash.diag.mjs "$c" || echo "== $c: exited with status $?"
-          done
-
-      # Which module the access violation is in. Every kernel compiles and then
-      # crashes when run, so it's wgpu's dispatch or WARP running the shader.
-      # ProcDump (Sysinternals) launches deno and writes a full dump when it
-      # crashes (Windows Error Reporting wrote none here), and cdb prints the
-      # stack with Microsoft's public symbols: d3d10warp is WARP, d3d12 or
-      # D3D12Core the runtime, deno itself wgpu. ssymv: the simplest kernel that
-      # crashes.
-      - name: "Diagnose crash: stack of the first crash"
-        if: always() && runner.os == 'Windows'
-        continue-on-error: true
-        run: |
-          cdb="/c/Program Files (x86)/Windows Kits/10/Debuggers/x64/cdb.exe"
-          if [ ! -x "$cdb" ]; then echo "no cdb on this runner"; exit 0; fi
-          curl -fsSL -o "$RUNNER_TEMP/procdump.zip" https://download.sysinternals.com/files/Procdump.zip
-          pwsh -NoProfile -Command "Expand-Archive -Path '$RUNNER_TEMP/procdump.zip' -DestinationPath '$RUNNER_TEMP/procdump'"
-          mkdir -p "$RUNNER_TEMP/dumps"
-          "$RUNNER_TEMP/procdump/procdump64.exe" -accepteula -ma -e -x "$(cygpath -w "$RUNNER_TEMP/dumps")" \
-            "$(cygpath -w "$(command -v deno.exe || command -v deno)")" run -A --unstable-webgpu --no-lock --node-modules-dir=manual \
-            tests/wgpu/diagnostics/crash.diag.mjs ssymv || true
-          dump=$(find "$RUNNER_TEMP/dumps" -name '*.dmp' | head -1)
-          if [ -z "$dump" ]; then echo "ssymv: no dump was written"; exit 0; fi
-          echo "== ssymv: $dump"
-          "$cdb" -z "$(cygpath -w "$dump")" \
-            -y "srv*$(cygpath -w "$RUNNER_TEMP")\\symbols*https://msdl.microsoft.com/download/symbols" \
-            -c ".ecxr; kn 40; lm o; q" | tail -n 150
+      - run: make test-wgpu
