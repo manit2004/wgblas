@@ -29,8 +29,10 @@ test-wgpu:
 test-wgpu-%:
 	WGBLAS_POWER_PREFERENCE=$(ARGS) node tests/wgpu/run.mjs $$(find tests/$*/src -name 'test.*.js' -o -name 'gpustorage.*.js')
 
-# The same test files in a real browser (Chrome, driven by Playwright) instead
-# of Node's WebGPU; see tests/browser/run.mjs. Headless Chrome renders on
+# The same test files in a real browser (driven by Playwright) instead of
+# Node's WebGPU; see tests/browser/run.mjs. Chrome by default;
+# WGBLAS_BROWSER=firefox for Firefox, after a one-time
+# `npx playwright-core install firefox`. Headless Chrome renders on
 # SwiftShader, its CPU renderer; WGBLAS_BROWSER_HEADED=1 uses the GPU.
 test-browser:
 	node tests/browser/run.mjs

@@ -1,6 +1,7 @@
 // make test-browser: the test files in a real browser's WebGPU instead of
-// Node's (the "webgpu" npm package). Chrome by default, driven by Playwright;
-// on Windows it compiles shaders with DXC, which the npm package's Dawn can't.
+// Node's (the "webgpu" npm package), driven by Playwright. Chrome (Dawn; on
+// Windows it compiles shaders with DXC, which the npm package's Dawn can't) or
+// Firefox (wgpu, the build Firefox ships rather than Deno's).
 //
 // Each test file is bundled for the browser (bundle.mjs), served locally
 // (server.mjs), and run in a page of its own, as node --test runs each file
@@ -9,13 +10,17 @@
 //
 // Usage: node tests/browser/run.mjs [test files, relative to the repo root]
 // Environment:
-//   WGBLAS_BROWSER_CHANNEL  Playwright's Chromium channel: "chrome" (default,
-//                           the installed Google Chrome), "msedge", …
+//   WGBLAS_BROWSER          "chrome" (default) or "firefox". Firefox is
+//                           Playwright's own build: install it once with
+//                           `npx playwright-core install firefox`.
+//   WGBLAS_BROWSER_CHANNEL  Chrome only: Playwright's Chromium channel,
+//                           "chrome" (default, the installed Google Chrome),
+//                           "msedge", …
 //   WGBLAS_BROWSER_HEADED   "1" for a visible window. Headless Chrome renders
 //                           on SwiftShader, its CPU renderer; headed uses the
 //                           GPU (and needs a display).
-//   WGBLAS_BROWSER_ARGS     extra Chrome flags, space-separated
-import { chromium } from "playwright-core";
+//   WGBLAS_BROWSER_ARGS     Chrome only: extra flags, space-separated
+import { chromium, firefox } from "playwright-core";
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
@@ -34,18 +39,41 @@ import {
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 const config = {
-  channel: process.env.WGBLAS_BROWSER_CHANNEL ?? "chrome",
+  browser: process.env.WGBLAS_BROWSER ?? "chrome",
   headless: process.env.WGBLAS_BROWSER_HEADED !== "1",
-  args: [
-    // WebGPU is still behind a flag on some platforms (Linux), where Vulkan
-    // is its backend; the blocklist would turn it off on some GPUs.
-    "--enable-unsafe-webgpu",
-    "--enable-features=Vulkan",
-    "--ignore-gpu-blocklist",
-    ...(process.env.WGBLAS_BROWSER_ARGS?.split(" ").filter(Boolean) ?? []),
-  ],
   fileTimeoutMs: 20 * 60 * 1000,
 };
+
+// Each browser launched with WebGPU on, whatever its default on this
+// platform, and its GPU blocklist out of the way.
+const LAUNCH = {
+  chrome: () =>
+    chromium.launch({
+      channel: process.env.WGBLAS_BROWSER_CHANNEL ?? "chrome",
+      headless: config.headless,
+      args: [
+        // Behind a flag on Linux, where Vulkan is its backend.
+        "--enable-unsafe-webgpu",
+        "--enable-features=Vulkan",
+        "--ignore-gpu-blocklist",
+        ...(process.env.WGBLAS_BROWSER_ARGS?.split(" ").filter(Boolean) ?? []),
+      ],
+    }),
+  firefox: () =>
+    firefox.launch({
+      headless: config.headless,
+      firefoxUserPrefs: {
+        "dom.webgpu.enabled": true,
+        "gfx.webgpu.ignore-blocklist": true,
+      },
+    }),
+};
+if (!(config.browser in LAUNCH)) {
+  console.error(
+    `WGBLAS_BROWSER must be one of: ${Object.keys(LAUNCH).join(", ")}`,
+  );
+  process.exit(2);
+}
 
 // Every test.*.js and gpustorage.*.js under dir, as `make test` and `make
 // test-gpu` pick them.
@@ -67,15 +95,37 @@ function withTimeout(promise, ms, message) {
 }
 
 // The browser's WebGPU adapter, described, or null if it offers none.
+// The browser's WebGPU adapter: { adapter } described, or { missing } saying
+// how there's none, which is what a failed CI run needs to show (no
+// navigator.gpu at all, or requestAdapter() resolving null, which is what
+// headless Firefox does with no display).
 async function describeAdapter(context, baseUrl) {
   const page = await context.newPage();
   try {
     await page.goto(baseUrl);
     return await page.evaluate(async () => {
-      const adapter = await navigator.gpu?.requestAdapter();
-      if (!adapter) return null;
+      if (!navigator.gpu)
+        return { missing: "navigator.gpu is undefined (WebGPU is off)" };
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        const fallback = await navigator.gpu.requestAdapter({
+          forceFallbackAdapter: true,
+        });
+        return {
+          missing:
+            "requestAdapter() resolved null" +
+            (fallback
+              ? ", though a fallback adapter exists"
+              : ", also with forceFallbackAdapter"),
+        };
+      }
       const { vendor, architecture, description } = adapter.info;
-      return [vendor, architecture, description].filter(Boolean).join(" ");
+      // Firefox reports these empty (it doesn't reveal the hardware).
+      return {
+        adapter:
+          [vendor, architecture, description].filter(Boolean).join(" ") ||
+          "(not named by the browser)",
+      };
     });
   } finally {
     await page.close();
@@ -97,7 +147,11 @@ async function runInPage(context, baseUrl, bundle) {
     streamed.push(result);
     printResult(result);
   });
-  page.on("console", (msg) => printConsole(msg.text()));
+  page.on("console", (msg) => {
+    // Firefox's own deprecation notices about the page, not test output.
+    if (!msg.text().startsWith("[JavaScript Warning:"))
+      printConsole(msg.text());
+  });
   page.on("pageerror", (err) => problems.push(`uncaught: ${err.message}`));
   try {
     await page.goto(baseUrl);
@@ -158,18 +212,15 @@ const files = (
 
 const outdir = mkdtempSync(join(tmpdir(), "wgblas-browser-"));
 const server = await serveDirectory(outdir);
-const browser = await chromium.launch({
-  channel: config.channel,
-  headless: config.headless,
-  args: config.args,
-});
+const browser = await LAUNCH[config.browser]();
 try {
   const context = await browser.newContext();
-  const adapter = await describeAdapter(context, server.url);
+  const { adapter, missing } = await describeAdapter(context, server.url);
   console.log(
-    `${config.channel} ${browser.version()}, WebGPU adapter: ${adapter ?? "none"}\n`,
+    `${config.browser} ${browser.version()}, WebGPU adapter: ${adapter ?? `none: ${missing}`}\n`,
   );
-  if (!adapter) throw new Error("the browser offers no WebGPU adapter");
+  if (!adapter)
+    throw new Error(`the browser offers no WebGPU adapter: ${missing}`);
   for (const file of files)
     await runTestFile(file, context, server.url, outdir);
 } finally {

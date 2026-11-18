@@ -1,8 +1,10 @@
 name: Browser Tests
 
-# The suite in a real browser: each runner's preinstalled Google Chrome, driven
-# by Playwright (tests/browser/run.mjs). This is Chrome's own WebGPU, which on
-# Windows compiles shaders with DXC, as the webgpu npm package's Dawn can't.
+# The suite in real browsers, driven by Playwright (tests/browser/run.mjs):
+#   - each runner's preinstalled Google Chrome: Chrome's own Dawn, which on
+#     Windows compiles shaders with DXC, as the webgpu npm package's can't;
+#   - Playwright's build of Firefox, on Linux and macOS: Firefox's own wgpu,
+#     not Deno's.
 
 on:
   pull_request:
@@ -38,3 +40,47 @@ jobs:
       # if there is none.
       - name: Test suite
         run: node tests/browser/run.mjs
+
+  firefox:
+    name: Firefox (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      # Not Windows: the hosted runners' only adapter there is WARP (the
+      # "Basic Render Driver"), on which Firefox offers no WebGPU adapter at
+      # all, headed or not. Firefox's Windows path is wgpu on D3D12, which on
+      # WARP was ~40 minutes and crashed in WARP's shader JIT under Deno (see
+      # test-wgpu.yml). D3D12 stays covered by Chrome (DXC) above and Dawn
+      # (FXC) in test-dawn.yml.
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    # Non-blocking until a run shows the suite passes in Firefox on that system.
+    continue-on-error: true
+    env:
+      WGBLAS_BROWSER: firefox
+      # Headless Firefox with no display offers no WebGPU adapter at all
+      # (requestAdapter() resolves null, even with a GPU). So: a visible
+      # window, on Linux in a virtual display (xvfb-run, below).
+      WGBLAS_BROWSER_HEADED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      # Playwright drives its own Firefox build, not an installed Firefox: the
+      # one matching playwright-core's version, plus its system libraries on
+      # Linux (Xvfb among them).
+      - name: Install Playwright's Firefox
+        run: npx playwright-core install ${{ runner.os == 'Linux' && '--with-deps' || '' }} firefox
+
+      # Linux runners have no GPU; Firefox's WebGPU needs a Vulkan device.
+      - if: runner.os == 'Linux'
+        uses: ./.github/actions/lavapipe
+
+      # Prints the browser and its WebGPU adapter, then fails at once, saying
+      # why, if there is none.
+      - name: Test suite
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a' || '' }} node tests/browser/run.mjs
