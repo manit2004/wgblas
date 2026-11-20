@@ -1,6 +1,6 @@
 /**
- * Test suite for wgblas — all 43 BLAS Level 1, 2, and 3 routines (24 single
- * precision, 18 double precision, and `cscal`), each covered by four kinds of
+ * Test suite for wgblas — all 49 BLAS Level 1, 2, and 3 routines (24 single
+ * precision, 24 double precision, and `cscal`), each covered by four kinds of
  * test, plus `init()` and the internal utilities.
  *
  * ## Layout
@@ -135,6 +135,7 @@
  * | dsyr2 | 2 | forwardFactor | 5 | as ssyr2 |
  * | dtrsv | 2 | backwardResidualFactor | 5 | as strsv |
  * | dgemm | 3 | forwardFactor | 1 | $(k{+}2)\|\alpha\|\sum&#95;p\|A&#95;{ip}\|\|B&#95;{pj}\|+2\|\beta\|\|C&#95;{ij}\|$ — sgemm's, widened for the hi/lo split of A, B and C |
+ * | dtrsm | 3 | backwardResidualFactor | 5 | $(r{+}2)\sum&#95;k\|A&#95;{ik}\|\|X&#95;{kj}\|$ — strsm's, widened for the hi/lo split of A and B |
  *
  * `idamax` and `dasum`, the first two f64 routines, sit in the Level 1 block
  * of the table above.
@@ -143,9 +144,9 @@
  *
  * | Command | What it does |
  * |---|---|
- * | `make test` | Runs every `test.*.js` — all 43 routines' validation + fixtures + edge cases, plus `init` and the utility tests |
+ * | `make test` | Runs every `test.*.js` — all 49 routines' validation + fixtures + edge cases, plus `init` and the utility tests |
  * | `make test-<routine>` | Runs one routine's `test.<routine>.js`, e.g. `make test-saxpy` (also `make test-init`) |
- * | `make test-gpu` | Runs GPU-resident coverage for all 43 routines (`gpustorage.*.js`) |
+ * | `make test-gpu` | Runs GPU-resident coverage for all 49 routines (`gpustorage.*.js`) |
  * | `make test-gpu-<routine>` | Runs one routine's `gpustorage.<routine>.js` |
  * | `make test-utils` | Runs every `tests/utils/test.*.js` |
  * | `make test-util-<module>` | Runs one, e.g. `make test-util-buffer` |

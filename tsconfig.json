@@ -63,6 +63,7 @@
       "wgblas/dsyr2k": ["./src/dsyr2k/dsyr2k.d.mts"],
       "wgblas/dsymm": ["./src/dsymm/dsymm.d.mts"],
       "wgblas/dtrmm": ["./src/dtrmm/dtrmm.d.mts"],
+      "wgblas/dtrsm": ["./src/dtrsm/dtrsm.d.mts"],
       "wgblas/sgemm": ["./src/sgemm/sgemm.d.mts"],
       "wgblas/sgemmtr": ["./src/sgemmtr/sgemmtr.d.mts"],
       "wgblas/ssyrk": ["./src/ssyrk/ssyrk.d.mts"],

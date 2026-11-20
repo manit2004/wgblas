@@ -4,7 +4,7 @@
  *
  * ## What's Here
  *
- * **Routines** (`examples/<routine>/`, all 43) — three variants each:
+ * **Routines** (`examples/<routine>/`, all 49) — three variants each:
  *
  * - `<routine>.js` — the plain variant, on host typed arrays
  *   (`Float32Array` for `s*`, `Float64Array` for `d*`, `Complex32Array`

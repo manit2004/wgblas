@@ -48,6 +48,7 @@ import {
   dsyr2k,
   dsymm,
   dtrmm,
+  dtrsm,
   sgemm,
   sgemmtr,
   ssyrk,
@@ -111,6 +112,7 @@ Object.assign(r.context, {
   dsyr2k,
   dsymm,
   dtrmm,
+  dtrsm,
   sgemm,
   sgemmtr,
   ssyrk,
@@ -165,6 +167,7 @@ r.defineCommand("help", {
   dsyr2k(device, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)      (A, B, C: Float64Array or GpuMatrix)
   dsymm (device, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc)      (A, B, C: Float64Array or GpuMatrix)
   dtrmm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)  (A, B: Float64Array or GpuMatrix)
+  dtrsm (device, side, uplo, transA, diag, m, n, alpha, A, lda, B, ldb)  (A, B: Float64Array or GpuMatrix)
   sgemm (device, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
   sgemmtr(device, uplo, transA, transB, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
   ssyrk (device, uplo, trans, n, k, alpha, A, lda, beta, C, ldc)

@@ -705,7 +705,7 @@ function solveTriangular(
   const aElem = (row, col) =>
     isCM ? denseA[col * aOrder + row] : denseA[row * aOrder + col];
   const idxOf = (row, col) => (isCM ? col * ldb + row : row * ldb + col);
-  const out = Float32Array.from(B);
+  const out = B.constructor.from(B); // Float32Array or Float64Array, as B
 
   if (side === "left") {
     for (let step = 0; step < aOrder; step++) {
@@ -740,13 +740,15 @@ function solveTriangular(
 }
 
 // strsm: solves op(A)*X=alpha*B (side='left') or X*op(A)=alpha*B
-// (side='right') for X, overwriting B. A triangular.
+// (side='right') for X, overwriting B. A triangular. Computes in B's own
+// element type: f32 for strsm, f64 for dtrsm (dtrsmReference below) — no
+// stdlib package has trsm, so both use this substitution.
 export const strsmReference = (a) => {
   // BLAS: alpha=0 means A is not referenced and B need not be set before
   // entry — the result is a literal zero. solveTriangular's own `alpha *
   // B[...]` term would otherwise leak NaN/Inf from a poisoned B (0*Inf=NaN),
   // unlike real BLAS/netlib's unconditional B(I,J)=ZERO.
-  if (a.alpha === 0) return { B: new Float32Array(a.B.length) };
+  if (a.alpha === 0) return { B: new a.B.constructor(a.B.length) };
   const layout = a.layout ?? "row-major";
   const aOrder = a.side === "left" ? a.m : a.n;
   const denseA = denseTriangular(
@@ -773,3 +775,5 @@ export const strsmReference = (a) => {
   );
   return { B };
 };
+// dtrsm: strsm's substitution, in f64 (B's own type).
+export const dtrsmReference = strsmReference;
