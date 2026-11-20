@@ -195,6 +195,10 @@
       "types": "./src/dtrmm/dtrmm.d.mts",
       "import": "./src/dtrmm/dtrmm.mjs"
     },
+    "./dtrsm": {
+      "types": "./src/dtrsm/dtrsm.d.mts",
+      "import": "./src/dtrsm/dtrsm.mjs"
+    },
     "./sgemm": {
       "types": "./src/sgemm/sgemm.d.mts",
       "import": "./src/sgemm/sgemm.mjs"
