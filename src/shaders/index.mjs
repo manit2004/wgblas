@@ -58,7 +58,8 @@
  * - `sgemmtr`/`ssyrk`/`ssyr2k` all dispatch through `sgemm_small`/`sgemm_large` (`uplo` param),
  *   and `dgemmtr`/`dsyrk`/`dsyr2k` through `dgemm_small` alone (`dgemm_large` measured slower).
  * - `strsm` shares `strsm_small` and `strsv_invert_block` with strsv, plus its own
- *   `block_transfer` and the shared `sgemm_small`/`sgemm_large`.
+ *   `block_transfer` and the shared `sgemm_small`/`sgemm_large`; `dtrsm` has its own
+ *   `dtrsm_small`, plus `block_transfer` and `dgemm_small` for the trailing update.
  * - Every `d*` routine concatenates the `f64/` double-double shaders it needs in front of its
  *   own — see `getPipeline`'s `shaderName: string[]` behaviour.
  * - `random` has no entry — CPU-only, no `getPipeline()` call.
@@ -343,6 +344,18 @@ routineShaders.strsm = {
   block_transfer: blockTransfer,
   sgemm_small,
   sgemm_large,
+};
+
+import dtrsm_small from "./dtrsm_small.wgsl"; // f64 counterpart of strsm_small — DD substitution over one diagonal block, many right-hand sides, in place on B through views
+routineShaders.dtrsm = {
+  "f64/dekker": dekker,
+  "f64/utils/add": ddAddUtil,
+  "f64/utils/multiply": ddMulUtil,
+  "f64/utils/divide": ddDivUtil,
+  "f64/utils/batch": ddBatchUtil, // dgemm_small's four-lane ops
+  dtrsm_small,
+  dgemm_small, // the trailing update, on packed copies
+  block_transfer: blockTransfer, // gathers those copies and scatters the update back, per DD half
 };
 
 /**

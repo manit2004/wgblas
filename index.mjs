@@ -49,6 +49,7 @@ export { dsyrk } from "./src/dsyrk/dsyrk.mjs";
 export { dsyr2k } from "./src/dsyr2k/dsyr2k.mjs";
 export { dsymm } from "./src/dsymm/dsymm.mjs";
 export { dtrmm } from "./src/dtrmm/dtrmm.mjs";
+export { dtrsm } from "./src/dtrsm/dtrsm.mjs";
 export { sgemm } from "./src/sgemm/sgemm.mjs";
 export { sgemmtr } from "./src/sgemmtr/sgemmtr.mjs";
 export { ssyrk } from "./src/ssyrk/ssyrk.mjs";
